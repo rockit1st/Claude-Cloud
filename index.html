@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rocket Altitude Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0a0a2e 0%, #1a1a5e 50%, #0d2137 100%);
+      min-height: 100vh;
+      color: #e8f4fd;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 0 20px;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      color: #f0c040;
+      text-shadow: 0 0 20px rgba(240, 192, 64, 0.5);
+      letter-spacing: 2px;
+    }
+
+    header p {
+      color: #a8d8f0;
+      font-size: 1rem;
+      margin-top: 8px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 650px) {
+      .container { grid-template-columns: 1fr; }
+      header h1 { font-size: 1.7rem; }
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 28px;
+      backdrop-filter: blur(10px);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      color: #f0c040;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Input section */
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #a8d8f0;
+      margin-bottom: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="number"] {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ffffff;
+      font-size: 1.1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="number"]:focus {
+      border-color: #f0c040;
+      box-shadow: 0 0 0 3px rgba(240, 192, 64, 0.2);
+    }
+
+    input[type="number"]::placeholder { color: rgba(255,255,255,0.35); }
+
+    .unit-badge {
+      background: rgba(240, 192, 64, 0.2);
+      border: 1px solid rgba(240, 192, 64, 0.4);
+      color: #f0c040;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .unit-toggle {
+      display: flex;
+      gap: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.2);
+      margin-top: 4px;
+    }
+
+    .unit-toggle button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #a8d8f0;
+      padding: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-weight: 600;
+    }
+
+    .unit-toggle button.active {
+      background: #f0c040;
+      color: #0a0a2e;
+    }
+
+    .calculate-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #f0c040, #e08020);
+      border: none;
+      border-radius: 10px;
+      padding: 16px;
+      color: #0a0a2e;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 8px;
+      transition: transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(240, 192, 64, 0.35);
+    }
+
+    .calculate-btn:hover { box-shadow: 0 6px 28px rgba(240, 192, 64, 0.55); }
+    .calculate-btn:active { transform: scale(0.98); }
+
+    /* Result */
+    .result-box {
+      background: rgba(240, 192, 64, 0.1);
+      border: 2px solid rgba(240, 192, 64, 0.4);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-top: 16px;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: opacity 0.3s;
+    }
+
+    .result-box .altitude-value {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: #f0c040;
+      line-height: 1;
+      text-shadow: 0 0 20px rgba(240,192,64,0.6);
+    }
+
+    .result-box .altitude-label {
+      font-size: 0.85rem;
+      color: #a8d8f0;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .result-box .placeholder-text {
+      color: rgba(255,255,255,0.3);
+      font-size: 0.9rem;
+    }
+
+    /* Diagram */
+    .diagram-card {
+      grid-column: 1 / -1;
+    }
+
+    svg.diagram {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Steps */
+    .steps-card {
+      grid-column: 1 / -1;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 4px;
+    }
+
+    .step {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 16px;
+      border-left: 3px solid #f0c040;
+    }
+
+    .step-number {
+      font-size: 0.75rem;
+      color: #f0c040;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .step-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .step-desc {
+      font-size: 0.82rem;
+      color: #a8d8f0;
+      line-height: 1.5;
+    }
+
+    .formula {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      font-size: 1.05rem;
+      font-family: 'Courier New', monospace;
+      color: #f0c040;
+      margin: 16px 0;
+      letter-spacing: 1px;
+    }
+
+    /* Work shown */
+    #work-shown {
+      background: rgba(0,0,0,0.25);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.8;
+      color: #c8e8f8;
+      display: none;
+    }
+
+    #work-shown .step-line { color: #a8d8f0; }
+    #work-shown .answer-line { color: #f0c040; font-weight: 700; font-size: 1rem; }
+
+    .error-msg {
+      color: #ff7070;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      display: none;
+    }
+
+    /* Comparison bar */
+    .compare-section { margin-top: 16px; }
+    .compare-label { font-size: 0.8rem; color: #a8d8f0; margin-bottom: 6px; }
+    .bar-track {
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #f0c040, #e08020);
+      width: 0%;
+      transition: width 0.6s ease;
+    }
+    .compare-items {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.4);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚀 Rocket Altitude Calculator</h1>
+  <p>Use trigonometry to find how high your water bottle rocket flew!</p>
+</header>
+
+<div class="container">
+
+  <!-- Inputs -->
+  <div class="card">
+    <h2>Measurements</h2>
+
+    <div class="input-group">
+      <label>Distance from Launch Site</label>
+      <div class="input-row">
+        <input type="number" id="distance" placeholder="e.g. 30" min="0" step="any" />
+        <span class="unit-badge" id="dist-unit-badge">ft</span>
+      </div>
+      <div class="unit-toggle">
+        <button class="active" data-unit="ft" onclick="setDistUnit('ft', this)">Feet</button>
+        <button data-unit="m" onclick="setDistUnit('m', this)">Meters</button>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Angle of Elevation (inclinometer)</label>
+      <div class="input-row">
+        <input type="number" id="angle" placeholder="e.g. 65" min="0" max="89" step="any" />
+        <span class="unit-badge">deg</span>
+      </div>
+    </div>
+
+    <p class="error-msg" id="error-msg">Please enter a distance &gt; 0 and an angle between 1° and 89°.</p>
+
+    <button class="calculate-btn" onclick="calculate()">Calculate Altitude</button>
+
+    <div class="result-box" id="result-box">
+      <span class="placeholder-text">Enter measurements above and press Calculate</span>
+    </div>
+
+    <div id="work-shown"></div>
+
+    <div class="compare-section" id="compare-section" style="display:none">
+      <div class="compare-label">How does this compare to a 3-story building (~40 ft / 12 m)?</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
+      <div class="compare-items">
+        <span>Ground</span>
+        <span>3-story building</span>
+        <span>2×</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diagram -->
+  <div class="card">
+    <h2>Diagram</h2>
+    <svg class="diagram" viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ground line -->
+      <line x1="20" y1="220" x2="320" y2="220" stroke="#4a8ab0" stroke-width="2"/>
+
+      <!-- Vertical (altitude) -->
+      <line id="svg-altitude" x1="260" y1="220" x2="260" y2="60" stroke="#f0c040" stroke-width="2.5" stroke-dasharray="6,4"/>
+
+      <!-- Hypotenuse (line of sight) -->
+      <line id="svg-sight" x1="60" y1="220" x2="260" y2="60" stroke="#80e0a0" stroke-width="2"/>
+
+      <!-- Observer -->
+      <circle cx="60" cy="220" r="5" fill="#80e0a0"/>
+      <text x="60" y="240" text-anchor="middle" fill="#80e0a0" font-size="11">Observer</text>
+
+      <!-- Launch site / rocket base -->
+      <circle cx="260" cy="220" r="4" fill="#f0c040"/>
+      <text x="260" y="240" text-anchor="middle" fill="#f0c040" font-size="11">Launch Site</text>
+
+      <!-- Rocket at top -->
+      <text id="svg-rocket" x="260" y="50" text-anchor="middle" font-size="22">🚀</text>
+
+      <!-- Angle arc -->
+      <path id="svg-arc" d="M 90,220 A 30,30 0 0,0 75,202" fill="none" stroke="#ff9f40" stroke-width="2"/>
+      <text x="102" y="212" fill="#ff9f40" font-size="11" id="svg-angle-label">θ</text>
+
+      <!-- Labels -->
+      <!-- Distance label -->
+      <text x="160" y="215" text-anchor="middle" fill="#4a8ab0" font-size="11">distance (d)</text>
+
+      <!-- Altitude label -->
+      <text x="284" y="145" text-anchor="start" fill="#f0c040" font-size="11">altitude</text>
+      <text x="284" y="157" text-anchor="start" fill="#f0c040" font-size="11">(h)</text>
+
+      <!-- Right angle marker -->
+      <polyline points="250,220 250,210 260,210" fill="none" stroke="#aaa" stroke-width="1.5"/>
+
+      <!-- Line of sight label -->
+      <text x="148" y="125" text-anchor="middle" fill="#80e0a0" font-size="11" transform="rotate(-38,148,130)">line of sight</text>
+    </svg>
+  </div>
+
+  <!-- How it works -->
+  <div class="card steps-card">
+    <h2>How It Works</h2>
+    <div class="formula">altitude = distance × tan(angle)</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">Step 1</div>
+        <div class="step-title">Measure Distance</div>
+        <div class="step-desc">Stand a known distance away from the launch site. Use a measuring tape or count paces.</div>
+      </div>
+      <div class="step">
+        <div class="step-number">Step 2</div>
+        <div class="step-title">Read the Inclinometer</div>
+        <div class="step-desc">Aim your inclinometer at the rocket at its highest point and read the angle of elevation in degrees.</div>
+      </div>
+      <div class="step">
+        <div class="step-number">Step 3</div>
+        <div class="step-title">Apply Trigonometry</div>
+        <div class="step-desc">The rocket, launch site, and you form a right triangle. Tangent connects the opposite side (altitude) to the adjacent side (distance).</div>
+      </div>
+      <div class="step">
+        <div class="step-number">Step 4</div>
+        <div class="step-title">Calculate!</div>
+        <div class="step-desc">Multiply your distance by the tangent of the angle. The result is how high the rocket flew above the launch site.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let distUnit = 'ft';
+
+  function setDistUnit(unit, btn) {
+    distUnit = unit;
+    document.querySelectorAll('.unit-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('dist-unit-badge').textContent = unit;
+  }
+
+  function calculate() {
+    const distInput = parseFloat(document.getElementById('distance').value);
+    const angleInput = parseFloat(document.getElementById('angle').value);
+    const errorEl = document.getElementById('error-msg');
+    const resultBox = document.getElementById('result-box');
+    const workEl = document.getElementById('work-shown');
+    const compareSection = document.getElementById('compare-section');
+
+    errorEl.style.display = 'none';
+
+    if (!distInput || distInput <= 0 || !angleInput || angleInput <= 0 || angleInput >= 90) {
+      errorEl.style.display = 'block';
+      resultBox.innerHTML = '<span class="placeholder-text">Enter valid measurements to see results.</span>';
+      workEl.style.display = 'none';
+      compareSection.style.display = 'none';
+      return;
+    }
+
+    const angleRad = angleInput * Math.PI / 180;
+    const tanVal = Math.tan(angleRad);
+    const altitude = distInput * tanVal;
+    const unitLabel = distUnit;
+
+    // Benchmark in same unit
+    const benchmarkFt = distUnit === 'ft' ? 40 : 12; // 3-story building
+    const pct = Math.min((altitude / (benchmarkFt * 2)) * 100, 100);
+
+    // Display result
+    resultBox.innerHTML = `
+      <div class="altitude-value">${altitude.toFixed(1)} <span style="font-size:1.2rem">${unitLabel}</span></div>
+      <div class="altitude-label">Rocket Altitude</div>
+    `;
+
+    // Show work
+    workEl.style.display = 'block';
+    workEl.innerHTML = `
+      <div class="step-line">Given:</div>
+      <div>  distance (d) = ${distInput} ${unitLabel}</div>
+      <div>  angle (θ)    = ${angleInput}°</div>
+      <br/>
+      <div class="step-line">Formula:</div>
+      <div>  altitude = d × tan(θ)</div>
+      <br/>
+      <div class="step-line">Substitute:</div>
+      <div>  altitude = ${distInput} × tan(${angleInput}°)</div>
+      <div>  altitude = ${distInput} × ${tanVal.toFixed(4)}</div>
+      <br/>
+      <div class="answer-line">  altitude ≈ ${altitude.toFixed(2)} ${unitLabel}</div>
+    `;
+
+    // Comparison bar
+    compareSection.style.display = 'block';
+    setTimeout(() => {
+      document.getElementById('bar-fill').style.width = pct + '%';
+    }, 50);
+
+    // Update diagram angle label
+    document.getElementById('svg-angle-label').textContent = angleInput + '°';
+  }
+
+  // Allow Enter key to trigger calculation
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') calculate();
+  });
+</script>
+
+</body>
+</html>
