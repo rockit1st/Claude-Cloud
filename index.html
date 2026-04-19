@@ -304,6 +304,40 @@
       color: rgba(255,255,255,0.4);
       margin-top: 4px;
     }
+
+    /* Rocket launch animation */
+    #svg-rocket {
+      transform: translateY(170px);
+      transition: transform 1.6s cubic-bezier(0.25, 0.9, 0.35, 1);
+    }
+    #svg-rocket.launched {
+      transform: translateY(0);
+    }
+
+    /* Altitude & sight lines draw in as rocket rises */
+    #svg-altitude, #svg-sight {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      transition: stroke-dashoffset 1.6s ease-out;
+    }
+    #svg-altitude { stroke-dasharray: 6, 4; stroke-dashoffset: 0; opacity: 0; transition: opacity 1.6s ease-out; }
+    #svg-altitude.launched { opacity: 1; }
+    #svg-sight.launched { stroke-dashoffset: 0; }
+
+    /* Smoke puffs */
+    .smoke {
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .smoke.puff {
+      animation: puff 1.6s ease-out forwards;
+    }
+    @keyframes puff {
+      0%   { opacity: 0; transform: translateY(0) scale(0.3); }
+      30%  { opacity: 0.7; }
+      100% { opacity: 0; transform: translateY(30px) scale(1.8); }
+    }
   </style>
 </head>
 <body>
@@ -381,7 +415,12 @@
       <circle cx="260" cy="220" r="4" fill="#f0c040"/>
       <text x="260" y="240" text-anchor="middle" fill="#f0c040" font-size="11">Launch Site</text>
 
-      <!-- Rocket at top -->
+      <!-- Smoke puffs (behind rocket) -->
+      <circle class="smoke" id="smoke1" cx="255" cy="220" r="6" fill="#ffffff"/>
+      <circle class="smoke" id="smoke2" cx="265" cy="222" r="5" fill="#dddddd"/>
+      <circle class="smoke" id="smoke3" cx="258" cy="218" r="7" fill="#eeeeee"/>
+
+      <!-- Rocket (starts at launch site, animates to top) -->
       <text id="svg-rocket" x="260" y="50" text-anchor="middle" font-size="22">🚀</text>
 
       <!-- Angle arc -->
@@ -502,6 +541,25 @@
 
     // Update diagram angle label
     document.getElementById('svg-angle-label').textContent = angleInput + '°';
+
+    // Launch animation: reset then trigger
+    const rocket = document.getElementById('svg-rocket');
+    const altLine = document.getElementById('svg-altitude');
+    const sightLine = document.getElementById('svg-sight');
+    const smokes = document.querySelectorAll('.smoke');
+
+    rocket.classList.remove('launched');
+    altLine.classList.remove('launched');
+    sightLine.classList.remove('launched');
+    smokes.forEach(s => s.classList.remove('puff'));
+
+    // Force reflow so removing/re-adding the class actually replays the transition
+    void rocket.getBoundingClientRect();
+
+    rocket.classList.add('launched');
+    altLine.classList.add('launched');
+    sightLine.classList.add('launched');
+    smokes.forEach(s => s.classList.add('puff'));
   }
 
   // Allow Enter key to trigger calculation
