@@ -308,6 +308,8 @@
     /* Rocket launch animation — transform driven by JS */
     #svg-rocket {
       transition: transform 1.6s cubic-bezier(0.25, 0.9, 0.35, 1);
+      transform-box: fill-box;
+      transform-origin: center;
     }
 
     /* Lines fade in as rocket nears its peak */
@@ -420,7 +422,7 @@
       <circle class="smoke" id="smoke3" cx="258" cy="218" r="7" fill="#eeeeee"/>
 
       <!-- Rocket: y=50 is its resting position; JS sets translateY to park it at ground -->
-      <text id="svg-rocket" x="260" y="50" text-anchor="middle" font-size="22" style="transform:translateY(170px)">🚀</text>
+      <text id="svg-rocket" x="260" y="50" text-anchor="middle" font-size="22" style="transform:translateY(170px) rotate(-45deg)">🚀</text>
 
       <!-- Angle arc -->
       <path id="svg-arc" d="M 90,220 A 30,30 0 0,0 75,202" fill="none" stroke="#ff9f40" stroke-width="2"/>
@@ -569,12 +571,12 @@
     altLine.classList.remove('visible');
     sightLine.classList.remove('visible');
     rocket.style.transition = 'none';
-    rocket.style.transform = `translateY(${220 - svgRocketY}px)`;
+    rocket.style.transform = `translateY(${220 - svgRocketY}px) rotate(-45deg)`;
 
     void rocket.getBoundingClientRect(); // force reflow
 
     rocket.style.transition = 'transform 1.6s cubic-bezier(0.25, 0.9, 0.35, 1)';
-    rocket.style.transform = 'translateY(0)';
+    rocket.style.transform = 'translateY(0) rotate(-45deg)';
     altLine.classList.add('visible');
     sightLine.classList.add('visible');
 
@@ -585,7 +587,7 @@
     const rocket = document.getElementById('svg-rocket');
     const rocketY = parseFloat(rocket.getAttribute('y')) || 50;
     rocket.style.transition = 'none';
-    rocket.style.transform = `translateY(${220 - rocketY}px)`;
+    rocket.style.transform = `translateY(${220 - rocketY}px) rotate(-45deg)`;
     document.getElementById('svg-altitude').classList.remove('visible');
     document.getElementById('svg-sight').classList.remove('visible');
     document.querySelectorAll('.smoke').forEach(s => s.classList.remove('puff'));
