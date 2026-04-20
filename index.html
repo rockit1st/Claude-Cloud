@@ -327,9 +327,7 @@
 
     #svg-arc, #svg-angle-label {
       opacity: 0;
-      transition: opacity 0.4s ease-out 1.2s;
     }
-    #svg-arc.visible, #svg-angle-label.visible { opacity: 1; }
 
     /* Smoke puffs */
     .smoke {
@@ -546,10 +544,14 @@
       document.getElementById('bar-fill').style.width = pct + '%';
     }, 50);
 
-    // Update and show angle label and arc
-    document.getElementById('svg-angle-label').textContent = angleInput + '°';
-    document.getElementById('svg-arc').classList.add('visible');
-    document.getElementById('svg-angle-label').classList.add('visible');
+    // Update arc shape to match visual angle, then fade in
+    updateArc(svgRocketY, angleInput);
+    ['svg-arc', 'svg-angle-label'].forEach(id => {
+      const el = document.getElementById(id);
+      void el.getBoundingClientRect();
+      el.style.transition = 'opacity 0.4s ease-out 1.2s';
+      el.style.opacity = '1';
+    });
 
     // Scale angle to SVG coords: observer→launch is 200px wide, max visual height 190px
     const svgRocketY = Math.max(30, Math.round(220 - Math.min(200 * tanVal, 190)));
@@ -598,9 +600,38 @@
     rocket.style.transform = `translateY(${220 - rocketY}px) rotate(-45deg)`;
     document.getElementById('svg-altitude').classList.remove('visible');
     document.getElementById('svg-sight').classList.remove('visible');
-    document.getElementById('svg-arc').classList.remove('visible');
-    document.getElementById('svg-angle-label').classList.remove('visible');
+    ['svg-arc', 'svg-angle-label'].forEach(id => {
+      const el = document.getElementById(id);
+      el.style.transition = 'none';
+      el.style.opacity = '0';
+    });
     document.querySelectorAll('.smoke').forEach(s => s.classList.remove('puff'));
+  }
+
+  function updateArc(svgRocketY, inputAngle) {
+    const R = 28;
+    const cx = 60, cy = 220;
+    // Visual angle of the drawn line of sight (observer→rocket)
+    const visualAngle = Math.atan2(cy - svgRocketY, 260 - cx); // radians above horizontal
+
+    // Arc: from horizontal rightward, sweeping up to the line of sight
+    const startX = cx + R;
+    const startY = cy;
+    const endX = cx + R * Math.cos(visualAngle);
+    const endY = cy - R * Math.sin(visualAngle);
+    document.getElementById('svg-arc').setAttribute('d',
+      `M ${startX},${startY} A ${R},${R} 0 0,0 ${endX.toFixed(1)},${endY.toFixed(1)}`
+    );
+
+    // Label sits just outside the arc midpoint
+    const midAngle = visualAngle / 2;
+    const labelR = R + 12;
+    const lx = (cx + labelR * Math.cos(midAngle)).toFixed(1);
+    const ly = (cy - labelR * Math.sin(midAngle)).toFixed(1);
+    const label = document.getElementById('svg-angle-label');
+    label.setAttribute('x', lx);
+    label.setAttribute('y', ly);
+    label.textContent = inputAngle + '°';
   }
 
   // Reset diagram whenever the user edits either input
