@@ -544,6 +544,9 @@
       document.getElementById('bar-fill').style.width = pct + '%';
     }, 50);
 
+    // Scale angle to SVG coords: observer→launch is 200px wide, max visual height 190px
+    const svgRocketY = Math.max(30, Math.round(220 - Math.min(200 * tanVal, 190)));
+
     // Update arc shape to match visual angle, then fade in
     updateArc(svgRocketY, angleInput);
     ['svg-arc', 'svg-angle-label'].forEach(id => {
@@ -552,9 +555,6 @@
       el.style.transition = 'opacity 0.4s ease-out 1.2s';
       el.style.opacity = '1';
     });
-
-    // Scale angle to SVG coords: observer→launch is 200px wide, max visual height 190px
-    const svgRocketY = Math.max(30, Math.round(220 - Math.min(200 * tanVal, 190)));
 
     const rocket   = document.getElementById('svg-rocket');
     const altLine  = document.getElementById('svg-altitude');
