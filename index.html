@@ -305,24 +305,23 @@
       margin-top: 4px;
     }
 
-    /* Rocket launch animation */
+    /* Rocket launch animation — transform driven by JS */
     #svg-rocket {
-      transform: translateY(170px);
       transition: transform 1.6s cubic-bezier(0.25, 0.9, 0.35, 1);
     }
-    #svg-rocket.launched {
-      transform: translateY(0);
-    }
 
-    /* Altitude & sight lines draw in as rocket rises */
-    #svg-altitude, #svg-sight {
-      stroke-dasharray: 200;
-      stroke-dashoffset: 200;
-      transition: stroke-dashoffset 1.6s ease-out;
+    /* Lines fade in as rocket nears its peak */
+    #svg-altitude {
+      stroke-dasharray: 6, 4;
+      opacity: 0;
+      transition: opacity 0.4s ease-out 1.2s;
     }
-    #svg-altitude { stroke-dasharray: 6, 4; stroke-dashoffset: 0; opacity: 0; transition: opacity 1.6s ease-out; }
-    #svg-altitude.launched { opacity: 1; }
-    #svg-sight.launched { stroke-dashoffset: 0; }
+    #svg-altitude.visible { opacity: 1; }
+    #svg-sight {
+      opacity: 0;
+      transition: opacity 0.4s ease-out 1.2s;
+    }
+    #svg-sight.visible { opacity: 1; }
 
     /* Smoke puffs */
     .smoke {
@@ -420,8 +419,8 @@
       <circle class="smoke" id="smoke2" cx="265" cy="222" r="5" fill="#dddddd"/>
       <circle class="smoke" id="smoke3" cx="258" cy="218" r="7" fill="#eeeeee"/>
 
-      <!-- Rocket (starts at launch site, animates to top) -->
-      <text id="svg-rocket" x="260" y="50" text-anchor="middle" font-size="22">🚀</text>
+      <!-- Rocket: y=50 is its resting position; JS sets translateY to park it at ground -->
+      <text id="svg-rocket" x="260" y="50" text-anchor="middle" font-size="22" style="transform:translateY(170px)">🚀</text>
 
       <!-- Angle arc -->
       <path id="svg-arc" d="M 90,220 A 30,30 0 0,0 75,202" fill="none" stroke="#ff9f40" stroke-width="2"/>
@@ -438,8 +437,8 @@
       <!-- Right angle marker -->
       <polyline points="250,220 250,210 260,210" fill="none" stroke="#aaa" stroke-width="1.5"/>
 
-      <!-- Line of sight label -->
-      <text x="148" y="125" text-anchor="middle" fill="#80e0a0" font-size="11" transform="rotate(-38,148,130)">line of sight</text>
+      <!-- Line of sight label — position/rotation updated by JS -->
+      <text id="svg-sight-label" x="148" y="125" text-anchor="middle" fill="#80e0a0" font-size="11" transform="rotate(-38,148,130)">line of sight</text>
     </svg>
   </div>
 
@@ -539,28 +538,62 @@
       document.getElementById('bar-fill').style.width = pct + '%';
     }, 50);
 
-    // Update diagram angle label
+    // Update angle label
     document.getElementById('svg-angle-label').textContent = angleInput + '°';
 
-    // Launch animation: reset then trigger
-    const rocket = document.getElementById('svg-rocket');
-    const altLine = document.getElementById('svg-altitude');
+    // Scale angle to SVG coords: observer→launch is 200px wide, max visual height 190px
+    const svgRocketY = Math.max(30, Math.round(220 - Math.min(200 * tanVal, 190)));
+
+    const rocket   = document.getElementById('svg-rocket');
+    const altLine  = document.getElementById('svg-altitude');
     const sightLine = document.getElementById('svg-sight');
-    const smokes = document.querySelectorAll('.smoke');
+    const sightLabel = document.getElementById('svg-sight-label');
+    const smokes   = document.querySelectorAll('.smoke');
 
-    rocket.classList.remove('launched');
-    altLine.classList.remove('launched');
-    sightLine.classList.remove('launched');
-    smokes.forEach(s => s.classList.remove('puff'));
+    // Update line endpoints to match the computed angle
+    altLine.setAttribute('y2', svgRocketY);
+    sightLine.setAttribute('y2', svgRocketY);
 
-    // Force reflow so removing/re-adding the class actually replays the transition
-    void rocket.getBoundingClientRect();
+    // Rotate the "line of sight" label to follow the line
+    const midX = 160;
+    const midY = Math.round((220 + svgRocketY) / 2);
+    const visualAngleDeg = Math.atan2(220 - svgRocketY, 200) * 180 / Math.PI;
+    sightLabel.setAttribute('x', midX);
+    sightLabel.setAttribute('y', midY - 6);
+    sightLabel.setAttribute('transform', `rotate(${-visualAngleDeg.toFixed(1)},${midX},${midY})`);
 
-    rocket.classList.add('launched');
-    altLine.classList.add('launched');
-    sightLine.classList.add('launched');
-    smokes.forEach(s => s.classList.add('puff'));
+    // Move rocket's y attribute so translateY(0) lands it exactly at svgRocketY
+    rocket.setAttribute('y', svgRocketY);
+
+    // Hide lines, snap rocket back to ground, then animate
+    altLine.classList.remove('visible');
+    sightLine.classList.remove('visible');
+    rocket.style.transition = 'none';
+    rocket.style.transform = `translateY(${220 - svgRocketY}px)`;
+
+    void rocket.getBoundingClientRect(); // force reflow
+
+    rocket.style.transition = 'transform 1.6s cubic-bezier(0.25, 0.9, 0.35, 1)';
+    rocket.style.transform = 'translateY(0)';
+    altLine.classList.add('visible');
+    sightLine.classList.add('visible');
+
+    smokes.forEach(s => { s.classList.remove('puff'); void s.getBoundingClientRect(); s.classList.add('puff'); });
   }
+
+  function resetDiagram() {
+    const rocket = document.getElementById('svg-rocket');
+    const rocketY = parseFloat(rocket.getAttribute('y')) || 50;
+    rocket.style.transition = 'none';
+    rocket.style.transform = `translateY(${220 - rocketY}px)`;
+    document.getElementById('svg-altitude').classList.remove('visible');
+    document.getElementById('svg-sight').classList.remove('visible');
+    document.querySelectorAll('.smoke').forEach(s => s.classList.remove('puff'));
+  }
+
+  // Reset diagram whenever the user edits either input
+  document.getElementById('distance').addEventListener('input', resetDiagram);
+  document.getElementById('angle').addEventListener('input', resetDiagram);
 
   // Allow Enter key to trigger calculation
   document.addEventListener('keydown', function(e) {
