@@ -325,6 +325,12 @@
     }
     #svg-sight.visible { opacity: 1; }
 
+    #svg-arc, #svg-angle-label {
+      opacity: 0;
+      transition: opacity 0.4s ease-out 1.2s;
+    }
+    #svg-arc.visible, #svg-angle-label.visible { opacity: 1; }
+
     /* Smoke puffs */
     .smoke {
       opacity: 0;
@@ -540,8 +546,10 @@
       document.getElementById('bar-fill').style.width = pct + '%';
     }, 50);
 
-    // Update angle label
+    // Update and show angle label and arc
     document.getElementById('svg-angle-label').textContent = angleInput + '°';
+    document.getElementById('svg-arc').classList.add('visible');
+    document.getElementById('svg-angle-label').classList.add('visible');
 
     // Scale angle to SVG coords: observer→launch is 200px wide, max visual height 190px
     const svgRocketY = Math.max(30, Math.round(220 - Math.min(200 * tanVal, 190)));
@@ -590,6 +598,8 @@
     rocket.style.transform = `translateY(${220 - rocketY}px) rotate(-45deg)`;
     document.getElementById('svg-altitude').classList.remove('visible');
     document.getElementById('svg-sight').classList.remove('visible');
+    document.getElementById('svg-arc').classList.remove('visible');
+    document.getElementById('svg-angle-label').classList.remove('visible');
     document.querySelectorAll('.smoke').forEach(s => s.classList.remove('puff'));
   }
 
