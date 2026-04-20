@@ -102,6 +102,23 @@
 
     input[type="number"]::placeholder { color: rgba(255,255,255,0.35); }
 
+    input[type="text"] {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ffffff;
+      font-size: 1.1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: #f0c040;
+      box-shadow: 0 0 0 3px rgba(240, 192, 64, 0.2);
+    }
+    input[type="text"]::placeholder { color: rgba(255,255,255,0.35); }
+
     .unit-badge {
       background: rgba(240, 192, 64, 0.2);
       border: 1px solid rgba(240, 192, 64, 0.4);
@@ -158,6 +175,110 @@
 
     .calculate-btn:hover { box-shadow: 0 6px 28px rgba(240, 192, 64, 0.55); }
     .calculate-btn:active { transform: scale(0.98); }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .reset-btn {
+      flex: 1;
+      background: transparent;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-radius: 10px;
+      padding: 13px;
+      color: #a8d8f0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .reset-btn:hover { border-color: #a8d8f0; color: #ffffff; }
+
+    .save-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #40c07a, #208050);
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 10px;
+      display: none;
+      transition: box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(64, 192, 122, 0.3);
+    }
+    .save-btn:hover { box-shadow: 0 6px 24px rgba(64, 192, 122, 0.5); }
+
+    /* Results table */
+    .results-card { grid-column: 1 / -1; }
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .clear-btn {
+      background: transparent;
+      border: 1px solid rgba(255,100,100,0.4);
+      color: #ff8080;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background 0.2s;
+    }
+    .clear-btn:hover { background: rgba(255,100,100,0.15); }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .results-table th {
+      text-align: left;
+      padding: 10px 14px;
+      color: #f0c040;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .results-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      color: #e8f4fd;
+    }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr.new-row td { animation: rowIn 0.4s ease; }
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .rank-badge {
+      display: inline-block;
+      background: rgba(240,192,64,0.15);
+      color: #f0c040;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+    .empty-msg {
+      text-align: center;
+      color: rgba(255,255,255,0.3);
+      padding: 24px;
+      font-size: 0.9rem;
+    }
 
     /* Result */
     .result-box {
@@ -359,6 +480,11 @@
     <h2>Measurements</h2>
 
     <div class="input-group">
+      <label>Student Name</label>
+      <input type="text" id="student-name" placeholder="Enter your name" />
+    </div>
+
+    <div class="input-group">
       <label>Distance from Launch Site</label>
       <div class="input-row">
         <input type="number" id="distance" placeholder="e.g. 30" min="0" step="any" />
@@ -380,11 +506,16 @@
 
     <p class="error-msg" id="error-msg">Please enter a distance &gt; 0 and an angle between 1° and 89°.</p>
 
-    <button class="calculate-btn" onclick="calculate()">Calculate Altitude</button>
+    <div class="btn-row">
+      <button class="calculate-btn" style="flex:2" onclick="calculate()">Calculate</button>
+      <button class="reset-btn" onclick="fullReset()">Reset</button>
+    </div>
 
     <div class="result-box" id="result-box">
       <span class="placeholder-text">Enter measurements above and press Calculate</span>
     </div>
+
+    <button class="save-btn" id="save-btn" onclick="saveResult()">Save Result</button>
 
     <div id="work-shown"></div>
 
@@ -448,6 +579,28 @@
     </svg>
   </div>
 
+  <!-- Results table -->
+  <div class="card results-card" id="results-card" style="display:none">
+    <div class="results-header">
+      <h2 style="margin-bottom:0">Class Results</h2>
+      <button class="clear-btn" onclick="clearResults()">Clear All</button>
+    </div>
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Distance</th>
+          <th>Angle</th>
+          <th>Altitude</th>
+        </tr>
+      </thead>
+      <tbody id="results-body">
+        <tr><td colspan="5" class="empty-msg">No results saved yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
   <!-- How it works -->
   <div class="card steps-card">
     <h2>How It Works</h2>
@@ -480,6 +633,8 @@
 
 <script>
   let distUnit = 'ft';
+  let lastResult = null;
+  let resultCount = 0;
 
   function setDistUnit(unit, btn) {
     distUnit = unit;
@@ -591,6 +746,60 @@
     sightLine.classList.add('visible');
 
     smokes.forEach(s => { s.classList.remove('puff'); void s.getBoundingClientRect(); s.classList.add('puff'); });
+
+    // Store result and show Save button
+    lastResult = { name: document.getElementById('student-name').value.trim() || 'Anonymous',
+                   distance: distInput, angle: angleInput, altitude, unit: distUnit };
+    document.getElementById('save-btn').style.display = 'block';
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    resultCount++;
+    const tbody = document.getElementById('results-body');
+
+    // Remove empty message row if present
+    const emptyRow = tbody.querySelector('.empty-msg');
+    if (emptyRow) emptyRow.parentElement.remove();
+
+    const tr = document.createElement('tr');
+    tr.classList.add('new-row');
+    tr.innerHTML = `
+      <td><span class="rank-badge">${resultCount}</span></td>
+      <td>${lastResult.name}</td>
+      <td>${lastResult.distance} ${lastResult.unit}</td>
+      <td>${lastResult.angle}°</td>
+      <td><strong>${lastResult.altitude.toFixed(1)} ${lastResult.unit}</strong></td>
+    `;
+    tbody.appendChild(tr);
+
+    document.getElementById('results-card').style.display = 'block';
+    document.getElementById('save-btn').style.display = 'none';
+    lastResult = null;
+
+    // Scroll to results
+    document.getElementById('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function fullReset() {
+    document.getElementById('student-name').value = '';
+    document.getElementById('distance').value = '';
+    document.getElementById('angle').value = '';
+    document.getElementById('error-msg').style.display = 'none';
+    document.getElementById('result-box').innerHTML = '<span class="placeholder-text">Enter measurements above and press Calculate</span>';
+    document.getElementById('work-shown').style.display = 'none';
+    document.getElementById('compare-section').style.display = 'none';
+    document.getElementById('bar-fill').style.width = '0%';
+    document.getElementById('save-btn').style.display = 'none';
+    lastResult = null;
+    resetDiagram();
+  }
+
+  function clearResults() {
+    resultCount = 0;
+    document.getElementById('results-body').innerHTML =
+      '<tr><td colspan="5" class="empty-msg">No results saved yet.</td></tr>';
+    document.getElementById('results-card').style.display = 'none';
   }
 
   function resetDiagram() {
