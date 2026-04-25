@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Measuring | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    .banner {
+      margin-top: 60px;
+      background: linear-gradient(135deg, #0a000f 0%, #001a2e 50%, #002a1a 100%);
+      padding: 60px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 2px solid rgba(0,245,255,0.3);
+    }
+    .banner::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #00f5ff, transparent);
+      box-shadow: 0 0 20px #00f5ff;
+    }
+    .banner-icon { font-size: 4rem; margin-bottom: 16px; }
+    .banner-title {
+      font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 900;
+      color: #00f5ff; letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(0,245,255,0.7), 0 0 40px rgba(0,245,255,0.3);
+    }
+    .banner-sub { color: #9080b0; font-size: 1rem; margin-top: 10px; letter-spacing: 2px; }
+
+    .content { max-width: 800px; margin: 0 auto; padding: 60px 20px; }
+
+    .coming-soon-card {
+      background: rgba(0,245,255,0.05);
+      border: 1px solid rgba(0,245,255,0.25);
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .coming-soon-card h2 {
+      font-family: 'Orbitron', sans-serif; font-size: 1.4rem;
+      color: #00f5ff; letter-spacing: 3px; margin-bottom: 16px;
+    }
+    .coming-soon-card p { color: #9080b0; line-height: 1.8; font-size: 0.95rem; }
+
+    .teaser-title { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #00f5ff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
+    .teaser-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .teaser-list li {
+      background: rgba(0,245,255,0.04);
+      border: 1px solid rgba(0,245,255,0.15);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex; align-items: center; gap: 14px;
+      color: #c0d8e0; font-size: 0.95rem;
+    }
+    .teaser-list li .icon { font-size: 1.5rem; }
+    .teaser-list li .coming { margin-left: auto; font-size: 0.72rem; color: #00f5ff; background: rgba(0,245,255,0.1); border: 1px solid rgba(0,245,255,0.3); border-radius: 20px; padding: 3px 10px; white-space: nowrap; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
+
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 30px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #00f5ff; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link active">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">📐</div>
+  <div class="banner-title">MEASURING</div>
+  <div class="banner-sub">Tools &bull; Techniques &bull; Precision</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / Measuring</div>
+
+  <div class="coming-soon-card">
+    <h2>COMING SOON</h2>
+    <p>Measuring tools and interactive activities are currently being built for this section. Check back soon — this page will be filled with tools to help you master measurement in your technology projects.</p>
+  </div>
+
+  <div class="teaser-title">What's Coming</div>
+  <ul class="teaser-list">
+    <li><span class="icon">📏</span> Measurement conversion tools <span class="coming">In Progress</span></li>
+    <li><span class="icon">📊</span> Ruler &amp; scale reading practice <span class="coming">Coming Soon</span></li>
+    <li><span class="icon">🔧</span> Real-world measurement projects <span class="coming">Coming Soon</span></li>
+  </ul>
+</div>
+
+<footer>Technology Class &copy; 2025</footer>
+
+</body>
+</html>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rockets | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0a000f 0%, #1a0035 50%, #0d0a2e 100%);
+      min-height: 100vh;
+      color: #e8f4fd;
+      padding: 80px 20px 20px;
+    }
+
+    /* ── Shared Nav ── */
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(10,0,15,0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand {
+      font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900;
+      color: #ff2d78; text-decoration: none; letter-spacing: 3px;
+      text-shadow: 0 0 12px rgba(255,45,120,0.7);
+    }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link {
+      text-decoration: none; color: #9080b0; padding: 7px 14px;
+      border-radius: 6px; font-size: 0.82rem; font-weight: 600;
+      letter-spacing: 0.5px; transition: color 0.2s, background 0.2s;
+      border: 1px solid transparent;
+    }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    @media (max-width: 600px) {
+      .topnav { padding: 12px 16px; }
+      .nav-link { padding: 6px 10px; font-size: 0.75rem; }
+    }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      max-width: 900px; margin: 0 auto 16px;
+      font-size: 0.8rem; color: #9080b0;
+    }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #ff2d78; }
+
+    header {
+      text-align: center;
+      padding: 20px 0 24px;
+    }
+
+    header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.2rem;
+      color: #ff2d78;
+      text-shadow: 0 0 20px rgba(255,45,120,0.6), 0 0 40px rgba(255,45,120,0.3);
+      letter-spacing: 3px;
+    }
+
+    header p {
+      color: #9080b0;
+      font-size: 1rem;
+      margin-top: 8px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 650px) {
+      .container { grid-template-columns: 1fr; }
+      header h1 { font-size: 1.7rem; }
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(180,79,255,0.2);
+      border-radius: 16px;
+      padding: 28px;
+      backdrop-filter: blur(10px);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      color: #f0c040;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .input-group { margin-bottom: 20px; }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #a8d8f0;
+      margin-bottom: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-row { display: flex; gap: 8px; align-items: center; }
+
+    input[type="number"] {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ffffff;
+      font-size: 1.1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="number"]:focus { border-color: #f0c040; box-shadow: 0 0 0 3px rgba(240,192,64,0.2); }
+    input[type="number"]::placeholder { color: rgba(255,255,255,0.35); }
+
+    input[type="text"] {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ffffff;
+      font-size: 1.1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus { border-color: #f0c040; box-shadow: 0 0 0 3px rgba(240,192,64,0.2); }
+    input[type="text"]::placeholder { color: rgba(255,255,255,0.35); }
+
+    select {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ffffff;
+      font-size: 1.1rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a8d8f0' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+    select:focus { border-color: #f0c040; box-shadow: 0 0 0 3px rgba(240,192,64,0.2); }
+    select option { background: #0f0a2e; color: #ffffff; }
+
+    .unit-badge {
+      background: rgba(240,192,64,0.2);
+      border: 1px solid rgba(240,192,64,0.4);
+      color: #f0c040;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .unit-toggle {
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.2);
+      margin-top: 4px;
+    }
+    .unit-toggle button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #a8d8f0;
+      padding: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-weight: 600;
+    }
+    .unit-toggle button.active { background: #f0c040; color: #0a0a2e; }
+
+    .calculate-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #f0c040, #e08020);
+      border: none;
+      border-radius: 10px;
+      padding: 16px;
+      color: #0a0a2e;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 8px;
+      transition: transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(240,192,64,0.35);
+    }
+    .calculate-btn:hover { box-shadow: 0 6px 28px rgba(240,192,64,0.55); }
+    .calculate-btn:active { transform: scale(0.98); }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+
+    .reset-btn {
+      flex: 1;
+      background: transparent;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-radius: 10px;
+      padding: 13px;
+      color: #a8d8f0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .reset-btn:hover { border-color: #a8d8f0; color: #ffffff; }
+
+    .save-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #40c07a, #208050);
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 10px;
+      display: none;
+      transition: box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(64,192,122,0.3);
+    }
+    .save-btn:hover { box-shadow: 0 6px 24px rgba(64,192,122,0.5); }
+
+    .results-card { grid-column: 1 / -1; }
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .clear-btn {
+      background: transparent;
+      border: 1px solid rgba(255,100,100,0.4);
+      color: #ff8080;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background 0.2s;
+    }
+    .clear-btn:hover { background: rgba(255,100,100,0.15); }
+
+    .results-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .results-table th {
+      text-align: left; padding: 10px 14px; color: #f0c040;
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .results-table td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #e8f4fd; }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr.new-row td { animation: rowIn 0.4s ease; }
+    @keyframes rowIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+    .rank-badge { display:inline-block; background:rgba(240,192,64,0.15); color:#f0c040; border-radius:4px; padding:2px 8px; font-weight:700; font-size:0.8rem; }
+    .empty-msg { text-align:center; color:rgba(255,255,255,0.3); padding:24px; font-size:0.9rem; }
+
+    .result-box {
+      background: rgba(240,192,64,0.1);
+      border: 2px solid rgba(240,192,64,0.4);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-top: 16px;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .result-box .altitude-value { font-size: 2.8rem; font-weight: 900; color: #f0c040; line-height: 1; text-shadow: 0 0 20px rgba(240,192,64,0.6); }
+    .result-box .altitude-label { font-size: 0.85rem; color: #a8d8f0; margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
+    .result-box .placeholder-text { color: rgba(255,255,255,0.3); font-size: 0.9rem; }
+
+    .diagram-card { grid-column: 1 / -1; }
+    svg.diagram { width: 100%; height: auto; display: block; }
+
+    .steps-card { grid-column: 1 / -1; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 4px; }
+    .step { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 16px; border-left: 3px solid #f0c040; }
+    .step-number { font-size: 0.75rem; color: #f0c040; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .step-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .step-desc { font-size: 0.82rem; color: #a8d8f0; line-height: 1.5; }
+
+    .formula { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 16px; text-align: center; font-size: 1.05rem; font-family: 'Courier New', monospace; color: #f0c040; margin: 16px 0; letter-spacing: 1px; }
+
+    #work-shown { background: rgba(0,0,0,0.25); border-radius: 10px; padding: 16px; margin-top: 14px; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.8; color: #c8e8f8; display: none; }
+    #work-shown .step-line { color: #a8d8f0; }
+    #work-shown .answer-line { color: #f0c040; font-weight: 700; font-size: 1rem; }
+
+    .error-msg { color: #ff7070; font-size: 0.85rem; margin-top: 8px; display: none; }
+
+    .compare-section { margin-top: 16px; }
+    .compare-label { font-size: 0.8rem; color: #a8d8f0; margin-bottom: 6px; }
+    .bar-track { background: rgba(255,255,255,0.1); border-radius: 99px; height: 10px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #f0c040, #e08020); width: 0%; transition: width 0.6s ease; }
+    .compare-items { display: flex; justify-content: space-between; font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
+
+    #svg-rocket { transition: transform 1.6s cubic-bezier(0.25, 0.9, 0.35, 1); transform-box: fill-box; transform-origin: center; }
+    #svg-altitude { stroke-dasharray: 6, 4; opacity: 0; transition: opacity 0.4s ease-out 1.2s; }
+    #svg-altitude.visible { opacity: 1; }
+    #svg-sight { opacity: 0; transition: opacity 0.4s ease-out 1.2s; }
+    #svg-sight.visible { opacity: 1; }
+    #svg-arc, #svg-angle-label { opacity: 0; }
+
+    .smoke { opacity: 0; transform-box: fill-box; transform-origin: center; }
+    .smoke.puff { animation: puff 1.6s ease-out forwards; }
+    @keyframes puff {
+      0%   { opacity: 0; transform: translateY(0) scale(0.3); }
+      30%  { opacity: 0.7; }
+      100% { opacity: 0; transform: translateY(30px) scale(1.8); }
+    }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #0f0a2e; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 32px; width: 90%; max-width: 380px; text-align: center; animation: modalIn 0.2s ease; }
+    @keyframes modalIn { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:scale(1); } }
+    .modal h3 { font-size: 1.2rem; color: #f0c040; margin-bottom: 10px; }
+    .modal p  { font-size: 0.9rem; color: #a8d8f0; margin-bottom: 22px; line-height: 1.5; }
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-btns button { flex: 1; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; border: none; }
+    .modal-cancel { background: rgba(255,255,255,0.1); color: #e8f4fd; }
+    .modal-cancel:hover { background: rgba(255,255,255,0.18); }
+    .modal-confirm { background: linear-gradient(135deg, #f0c040, #e08020); color: #0a0a2e; }
+    .modal input[type="password"] { width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 1rem; outline: none; margin-bottom: 8px; text-align: center; letter-spacing: 4px; transition: border-color 0.2s; }
+    .modal input[type="password"]:focus { border-color: #f0c040; }
+    .modal .pw-error { color: #ff7070; font-size: 0.82rem; min-height: 18px; margin-bottom: 14px; }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link active">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+  </div>
+</nav>
+
+<div class="breadcrumb"><a href="index.html">← Hub</a> / Rockets</div>
+
+<header>
+  <h1>🚀 Rocket Altitude Calculator</h1>
+  <p>Use trigonometry to find how high your water bottle rocket flew!</p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>Measurements</h2>
+
+    <div class="input-group" style="display:flex;gap:12px">
+      <div style="flex:2">
+        <label>Student Name</label>
+        <input type="text" id="student-name" placeholder="Enter your name" />
+      </div>
+      <div style="flex:1">
+        <label>Period</label>
+        <select id="student-period">
+          <option value="" disabled selected>—</option>
+          <option>1</option><option>2</option><option>3</option>
+          <option>4</option><option>5</option><option>6</option>
+          <option>7</option><option>8</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Distance from Launch Site</label>
+      <div class="input-row">
+        <input type="number" id="distance" placeholder="e.g. 30" min="0" step="any" />
+        <span class="unit-badge" id="dist-unit-badge">ft</span>
+      </div>
+      <div class="unit-toggle">
+        <button class="active" onclick="setDistUnit('ft', this)">Feet</button>
+        <button onclick="setDistUnit('m', this)">Meters</button>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Angle of Elevation (inclinometer)</label>
+      <div class="input-row">
+        <input type="number" id="angle" placeholder="e.g. 65" min="0" max="89" step="any" />
+        <span class="unit-badge">deg</span>
+      </div>
+    </div>
+
+    <p class="error-msg" id="error-msg">Please enter a distance &gt; 0 and an angle between 1° and 89°.</p>
+
+    <div class="btn-row">
+      <button class="calculate-btn" style="flex:2" onclick="calculate()">Calculate</button>
+      <button class="reset-btn" onclick="fullReset()">Reset</button>
+    </div>
+
+    <div class="result-box" id="result-box">
+      <span class="placeholder-text">Enter measurements above and press Calculate</span>
+    </div>
+
+    <button class="save-btn" id="save-btn" onclick="saveResult()">Save Result</button>
+    <div id="work-shown"></div>
+
+    <div class="compare-section" id="compare-section" style="display:none">
+      <div class="compare-label">How does this compare to a 3-story building (~40 ft / 12 m)?</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
+      <div class="compare-items"><span>Ground</span><span>3-story building</span><span>2×</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Diagram</h2>
+    <svg class="diagram" viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg">
+      <line x1="20" y1="220" x2="320" y2="220" stroke="#4a8ab0" stroke-width="2"/>
+      <line id="svg-altitude" x1="260" y1="220" x2="260" y2="60" stroke="#f0c040" stroke-width="2.5" stroke-dasharray="6,4"/>
+      <line id="svg-sight" x1="60" y1="220" x2="260" y2="60" stroke="#80e0a0" stroke-width="2"/>
+      <circle cx="60" cy="220" r="5" fill="#80e0a0"/>
+      <text x="60" y="240" text-anchor="middle" fill="#80e0a0" font-size="11">Observer</text>
+      <circle cx="260" cy="220" r="4" fill="#f0c040"/>
+      <text x="260" y="240" text-anchor="middle" fill="#f0c040" font-size="11">Launch Site</text>
+      <circle class="smoke" id="smoke1" cx="255" cy="220" r="6" fill="#ffffff"/>
+      <circle class="smoke" id="smoke2" cx="265" cy="222" r="5" fill="#dddddd"/>
+      <circle class="smoke" id="smoke3" cx="258" cy="218" r="7" fill="#eeeeee"/>
+      <text id="svg-rocket" x="260" y="50" text-anchor="middle" font-size="22" style="transform:translateY(170px) rotate(-45deg)">🚀</text>
+      <path id="svg-arc" d="M 90,220 A 30,30 0 0,0 75,202" fill="none" stroke="#ff9f40" stroke-width="2"/>
+      <text x="102" y="212" fill="#ff9f40" font-size="11" id="svg-angle-label">θ</text>
+      <text x="160" y="215" text-anchor="middle" fill="#4a8ab0" font-size="11">distance (d)</text>
+      <text x="284" y="145" text-anchor="start" fill="#f0c040" font-size="11">altitude</text>
+      <text x="284" y="157" text-anchor="start" fill="#f0c040" font-size="11">(h)</text>
+      <polyline points="250,220 250,210 260,210" fill="none" stroke="#aaa" stroke-width="1.5"/>
+      <text id="svg-sight-label" x="148" y="125" text-anchor="middle" fill="#80e0a0" font-size="11" transform="rotate(-38,148,130)">line of sight</text>
+    </svg>
+  </div>
+
+  <div class="card results-card" id="results-card" style="display:none">
+    <div class="results-header">
+      <h2 style="margin-bottom:0">Class Results</h2>
+      <button class="clear-btn" onclick="clearResults()">Clear All</button>
+    </div>
+    <table class="results-table">
+      <thead>
+        <tr><th>#</th><th>Name</th><th>Period</th><th>Distance</th><th>Angle</th><th>Altitude</th></tr>
+      </thead>
+      <tbody id="results-body">
+        <tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card steps-card">
+    <h2>How It Works</h2>
+    <div class="formula">altitude = distance × tan(angle)</div>
+    <div class="steps">
+      <div class="step"><div class="step-number">Step 1</div><div class="step-title">Measure Distance</div><div class="step-desc">Stand a known distance away from the launch site. Use a measuring tape or count paces.</div></div>
+      <div class="step"><div class="step-number">Step 2</div><div class="step-title">Read the Inclinometer</div><div class="step-desc">Aim your inclinometer at the rocket at its highest point and read the angle of elevation in degrees.</div></div>
+      <div class="step"><div class="step-number">Step 3</div><div class="step-title">Apply Trigonometry</div><div class="step-desc">The rocket, launch site, and you form a right triangle. Tangent connects the opposite side (altitude) to the adjacent side (distance).</div></div>
+      <div class="step"><div class="step-number">Step 4</div><div class="step-title">Calculate!</div><div class="step-desc">Multiply your distance by the tangent of the angle. The result is how high the rocket flew above the launch site.</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div id="modal-step-1">
+      <h3>Clear All Results?</h3>
+      <p>This will permanently delete every saved result. Are you sure you want to continue?</p>
+      <div class="modal-btns">
+        <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+        <button class="modal-confirm" onclick="showPasswordStep()">Yes, Continue</button>
+      </div>
+    </div>
+    <div id="modal-step-2" style="display:none">
+      <h3>Teacher Password</h3>
+      <p>Enter the teacher password to clear all results.</p>
+      <input type="password" id="modal-pw" placeholder="••••••••" />
+      <div class="pw-error" id="pw-error"></div>
+      <div class="modal-btns">
+        <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+        <button class="modal-confirm" onclick="checkPassword()">Clear Results</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let distUnit = 'ft', lastResult = null, resultCount = 0;
+
+  function setDistUnit(unit, btn) {
+    distUnit = unit;
+    document.querySelectorAll('.unit-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('dist-unit-badge').textContent = unit;
+  }
+
+  function calculate() {
+    const distInput = parseFloat(document.getElementById('distance').value);
+    const angleInput = parseFloat(document.getElementById('angle').value);
+    const errorEl = document.getElementById('error-msg');
+    const resultBox = document.getElementById('result-box');
+    const workEl = document.getElementById('work-shown');
+    const compareSection = document.getElementById('compare-section');
+    errorEl.style.display = 'none';
+    if (!distInput || distInput <= 0 || !angleInput || angleInput <= 0 || angleInput >= 90) {
+      errorEl.style.display = 'block';
+      resultBox.innerHTML = '<span class="placeholder-text">Enter valid measurements to see results.</span>';
+      workEl.style.display = 'none'; compareSection.style.display = 'none'; return;
+    }
+    const angleRad = angleInput * Math.PI / 180;
+    const tanVal = Math.tan(angleRad);
+    const altitude = distInput * tanVal;
+    const unitLabel = distUnit;
+    const benchmarkFt = distUnit === 'ft' ? 40 : 12;
+    const pct = Math.min((altitude / (benchmarkFt * 2)) * 100, 100);
+    resultBox.innerHTML = `<div class="altitude-value">${altitude.toFixed(1)} <span style="font-size:1.2rem">${unitLabel}</span></div><div class="altitude-label">Rocket Altitude</div>`;
+    workEl.style.display = 'block';
+    workEl.innerHTML = `<div class="step-line">Given:</div><div>  distance (d) = ${distInput} ${unitLabel}</div><div>  angle (θ)    = ${angleInput}°</div><br/><div class="step-line">Formula:</div><div>  altitude = d × tan(θ)</div><br/><div class="step-line">Substitute:</div><div>  altitude = ${distInput} × tan(${angleInput}°)</div><div>  altitude = ${distInput} × ${tanVal.toFixed(4)}</div><br/><div class="answer-line">  altitude ≈ ${altitude.toFixed(2)} ${unitLabel}</div>`;
+    compareSection.style.display = 'block';
+    setTimeout(() => { document.getElementById('bar-fill').style.width = pct + '%'; }, 50);
+    const svgRocketY = Math.max(30, Math.round(220 - Math.min(200 * tanVal, 190)));
+    updateArc(svgRocketY, angleInput);
+    ['svg-arc', 'svg-angle-label'].forEach(id => {
+      const el = document.getElementById(id);
+      void el.getBoundingClientRect();
+      el.style.transition = 'opacity 0.4s ease-out 1.2s';
+      el.style.opacity = '1';
+    });
+    const rocket = document.getElementById('svg-rocket');
+    const altLine = document.getElementById('svg-altitude');
+    const sightLine = document.getElementById('svg-sight');
+    const sightLabel = document.getElementById('svg-sight-label');
+    const smokes = document.querySelectorAll('.smoke');
+    altLine.setAttribute('y2', svgRocketY); sightLine.setAttribute('y2', svgRocketY);
+    const midX = 160, midY = Math.round((220 + svgRocketY) / 2);
+    const visualAngleDeg = Math.atan2(220 - svgRocketY, 200) * 180 / Math.PI;
+    sightLabel.setAttribute('x', midX); sightLabel.setAttribute('y', midY - 6);
+    sightLabel.setAttribute('transform', `rotate(${-visualAngleDeg.toFixed(1)},${midX},${midY})`);
+    rocket.setAttribute('y', svgRocketY);
+    altLine.classList.remove('visible'); sightLine.classList.remove('visible');
+    rocket.style.transition = 'none';
+    rocket.style.transform = `translateY(${220 - svgRocketY}px) rotate(-45deg)`;
+    void rocket.getBoundingClientRect();
+    rocket.style.transition = 'transform 1.6s cubic-bezier(0.25, 0.9, 0.35, 1)';
+    rocket.style.transform = 'translateY(0) rotate(-45deg)';
+    altLine.classList.add('visible'); sightLine.classList.add('visible');
+    smokes.forEach(s => { s.classList.remove('puff'); void s.getBoundingClientRect(); s.classList.add('puff'); });
+    lastResult = { name: document.getElementById('student-name').value.trim() || 'Anonymous',
+                   period: document.getElementById('student-period').value || '—',
+                   distance: distInput, angle: angleInput, altitude, unit: distUnit };
+    document.getElementById('save-btn').style.display = 'block';
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    resultCount++;
+    const tbody = document.getElementById('results-body');
+    const emptyRow = tbody.querySelector('.empty-msg');
+    if (emptyRow) emptyRow.parentElement.remove();
+    const tr = document.createElement('tr');
+    tr.classList.add('new-row');
+    tr.innerHTML = `<td><span class="rank-badge">${resultCount}</span></td><td>${lastResult.name}</td><td>${lastResult.period}</td><td>${lastResult.distance} ${lastResult.unit}</td><td>${lastResult.angle}°</td><td><strong>${lastResult.altitude.toFixed(1)} ${lastResult.unit}</strong></td>`;
+    tbody.appendChild(tr);
+    document.getElementById('results-card').style.display = 'block';
+    document.getElementById('save-btn').style.display = 'none';
+    lastResult = null;
+    document.getElementById('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function fullReset() {
+    document.getElementById('student-name').value = '';
+    document.getElementById('student-period').value = '';
+    document.getElementById('distance').value = '';
+    document.getElementById('angle').value = '';
+    document.getElementById('error-msg').style.display = 'none';
+    document.getElementById('result-box').innerHTML = '<span class="placeholder-text">Enter measurements above and press Calculate</span>';
+    document.getElementById('work-shown').style.display = 'none';
+    document.getElementById('compare-section').style.display = 'none';
+    document.getElementById('bar-fill').style.width = '0%';
+    document.getElementById('save-btn').style.display = 'none';
+    lastResult = null; resetDiagram();
+  }
+
+  const TEACHER_PASSWORD = 'rocket';
+
+  function clearResults() {
+    document.getElementById('modal-step-1').style.display = 'block';
+    document.getElementById('modal-step-2').style.display = 'none';
+    document.getElementById('modal-pw').value = '';
+    document.getElementById('pw-error').textContent = '';
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+  function showPasswordStep() {
+    document.getElementById('modal-step-1').style.display = 'none';
+    document.getElementById('modal-step-2').style.display = 'block';
+    setTimeout(() => document.getElementById('modal-pw').focus(), 50);
+  }
+  function checkPassword() {
+    if (document.getElementById('modal-pw').value === TEACHER_PASSWORD) {
+      resultCount = 0;
+      document.getElementById('results-body').innerHTML = '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
+      document.getElementById('results-card').style.display = 'none';
+      closeModal();
+    } else {
+      document.getElementById('pw-error').textContent = 'Incorrect password. Try again.';
+      document.getElementById('modal-pw').value = '';
+      document.getElementById('modal-pw').focus();
+    }
+  }
+  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+  document.getElementById('modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+  document.getElementById('modal-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') checkPassword(); });
+
+  function resetDiagram() {
+    const rocket = document.getElementById('svg-rocket');
+    const rocketY = parseFloat(rocket.getAttribute('y')) || 50;
+    rocket.style.transition = 'none';
+    rocket.style.transform = `translateY(${220 - rocketY}px) rotate(-45deg)`;
+    document.getElementById('svg-altitude').classList.remove('visible');
+    document.getElementById('svg-sight').classList.remove('visible');
+    ['svg-arc', 'svg-angle-label'].forEach(id => {
+      const el = document.getElementById(id);
+      el.style.transition = 'none'; el.style.opacity = '0';
+    });
+    document.querySelectorAll('.smoke').forEach(s => s.classList.remove('puff'));
+  }
+
+  function updateArc(svgRocketY, inputAngle) {
+    const R = 28, cx = 60, cy = 220;
+    const visualAngle = Math.atan2(cy - svgRocketY, 260 - cx);
+    const endX = cx + R * Math.cos(visualAngle);
+    const endY = cy - R * Math.sin(visualAngle);
+    document.getElementById('svg-arc').setAttribute('d', `M ${cx + R},${cy} A ${R},${R} 0 0,0 ${endX.toFixed(1)},${endY.toFixed(1)}`);
+    const midAngle = visualAngle / 2, labelR = R + 12;
+    const label = document.getElementById('svg-angle-label');
+    label.setAttribute('x', (cx + labelR * Math.cos(midAngle)).toFixed(1));
+    label.setAttribute('y', (cy - labelR * Math.sin(midAngle)).toFixed(1));
+    label.textContent = inputAngle + '°';
+  }
+
+  document.getElementById('distance').addEventListener('input', resetDiagram);
+  document.getElementById('angle').addEventListener('input', resetDiagram);
+  document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
+</script>
+</body>
+</html>
