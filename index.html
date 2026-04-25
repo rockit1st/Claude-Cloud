@@ -119,6 +119,25 @@
     }
     input[type="text"]::placeholder { color: rgba(255,255,255,0.35); }
 
+    select {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ffffff;
+      font-size: 1.1rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a8d8f0' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+    select:focus { border-color: #f0c040; box-shadow: 0 0 0 3px rgba(240,192,64,0.2); }
+    select option { background: #0f1a3a; color: #ffffff; }
+
     .unit-badge {
       background: rgba(240, 192, 64, 0.2);
       border: 1px solid rgba(240, 192, 64, 0.4);
@@ -527,9 +546,20 @@
   <div class="card">
     <h2>Measurements</h2>
 
-    <div class="input-group">
-      <label>Student Name</label>
-      <input type="text" id="student-name" placeholder="Enter your name" />
+    <div class="input-group" style="display:flex;gap:12px">
+      <div style="flex:2">
+        <label>Student Name</label>
+        <input type="text" id="student-name" placeholder="Enter your name" />
+      </div>
+      <div style="flex:1">
+        <label>Period</label>
+        <select id="student-period">
+          <option value="" disabled selected>—</option>
+          <option>1</option><option>2</option><option>3</option>
+          <option>4</option><option>5</option><option>6</option>
+          <option>7</option><option>8</option>
+        </select>
+      </div>
     </div>
 
     <div class="input-group">
@@ -638,13 +668,14 @@
         <tr>
           <th>#</th>
           <th>Name</th>
+          <th>Period</th>
           <th>Distance</th>
           <th>Angle</th>
           <th>Altitude</th>
         </tr>
       </thead>
       <tbody id="results-body">
-        <tr><td colspan="5" class="empty-msg">No results saved yet.</td></tr>
+        <tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>
       </tbody>
     </table>
   </div>
@@ -824,6 +855,7 @@
 
     // Store result and show Save button
     lastResult = { name: document.getElementById('student-name').value.trim() || 'Anonymous',
+                   period: document.getElementById('student-period').value || '—',
                    distance: distInput, angle: angleInput, altitude, unit: distUnit };
     document.getElementById('save-btn').style.display = 'block';
   }
@@ -842,6 +874,7 @@
     tr.innerHTML = `
       <td><span class="rank-badge">${resultCount}</span></td>
       <td>${lastResult.name}</td>
+      <td>${lastResult.period}</td>
       <td>${lastResult.distance} ${lastResult.unit}</td>
       <td>${lastResult.angle}°</td>
       <td><strong>${lastResult.altitude.toFixed(1)} ${lastResult.unit}</strong></td>
@@ -858,6 +891,7 @@
 
   function fullReset() {
     document.getElementById('student-name').value = '';
+    document.getElementById('student-period').value = '';
     document.getElementById('distance').value = '';
     document.getElementById('angle').value = '';
     document.getElementById('error-msg').style.display = 'none';
@@ -892,7 +926,7 @@
     if (entered === TEACHER_PASSWORD) {
       resultCount = 0;
       document.getElementById('results-body').innerHTML =
-        '<tr><td colspan="5" class="empty-msg">No results saved yet.</td></tr>';
+        '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
       document.getElementById('results-card').style.display = 'none';
       closeModal();
     } else {
