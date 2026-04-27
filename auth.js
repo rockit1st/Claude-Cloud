@@ -1,5 +1,5 @@
 // auth.js — shared Firebase Auth + Firestore helpers
-import { FIREBASE_CONFIG, TEACHER_EMAIL } from './firebase-config.js';
+import { FIREBASE_CONFIG, TEACHER_EMAILSS } from './firebase-config.js';
 
 import { initializeApp }        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -18,6 +18,8 @@ onAuthStateChanged(auth, user => {
   const name   = document.getElementById('auth-name');
   if (!btn) return;
 
+  const isTeacher = user && TEACHER_EMAILSS.includes(user.email);
+
   if (user) {
     btn.onclick = doSignOut;
     btn.title   = 'Sign out';
@@ -30,6 +32,22 @@ onAuthStateChanged(auth, user => {
     if (avatar) avatar.style.display = 'none';
     if (name)   name.textContent = 'Sign In';
     btn.classList.remove('signed-in');
+  }
+
+  // Show/hide teacher dashboard link in nav
+  const navLinks = document.querySelector('.nav-links');
+  if (navLinks) {
+    let dashLink = document.getElementById('nav-dashboard');
+    if (isTeacher && !dashLink) {
+      dashLink = document.createElement('a');
+      dashLink.id        = 'nav-dashboard';
+      dashLink.href      = 'dashboard.html';
+      dashLink.className = 'nav-link';
+      dashLink.textContent = '📊 Dashboard';
+      navLinks.appendChild(dashLink);
+    } else if (!isTeacher && dashLink) {
+      dashLink.remove();
+    }
   }
 
   // Expose current user globally so games can read it
@@ -75,10 +93,10 @@ window.requireTeacher = function(onReady) {
   onAuthStateChanged(auth, user => {
     if (!user) {
       doSignIn().then(() => onAuthStateChanged(auth, u => {
-        if (u?.email === TEACHER_EMAIL) onReady(u, db);
+        if (u && TEACHER_EMAILS.includes(u.email)) onReady(u, db);
         else document.getElementById('dash-status').textContent = 'Access denied.';
       }));
-    } else if (user.email === TEACHER_EMAIL) {
+    } else if (TEACHER_EMAILS.includes(user.email)) {
       onReady(user, db);
     } else {
       document.getElementById('dash-status').textContent =

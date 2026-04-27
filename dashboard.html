@@ -139,7 +139,7 @@
 <footer>Technology Class &copy; 2025 &mdash; Teacher View</footer>
 
 <script type="module">
-import { FIREBASE_CONFIG, TEACHER_EMAIL } from './firebase-config.js';
+import { FIREBASE_CONFIG, TEACHER_EMAILS } from './firebase-config.js';
 import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
                              from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -186,7 +186,7 @@ onAuthStateChanged(auth, async user => {
     doSignIn();
     return;
   }
-  if (user.email !== TEACHER_EMAIL) {
+  if (!TEACHER_EMAILS.includes(user.email)) {
     status.textContent = `Signed in as ${user.email} — this page is for teachers only.`;
     return;
   }

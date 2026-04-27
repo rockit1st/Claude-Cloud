@@ -5,7 +5,7 @@
 //            Authentication → Settings → Authorized domains
 //  STEP 4 — Go to Project Settings → Your apps → Add web app, copy the config
 //            object below and replace the placeholder values.
-//  STEP 5 — Set TEACHER_EMAIL to your own school Google account email.
+//  STEP 5 — TEACHER_EMAILS is already set to your two accounts below.
 // ─────────────────────────────────────────────────────────────
 
 export const FIREBASE_CONFIG = {
@@ -17,5 +17,8 @@ export const FIREBASE_CONFIG = {
   appId:             "1:000000000000:web:0000000000000000000000"
 };
 
-// Your school Gmail — only this account can view the teacher dashboard.
-export const TEACHER_EMAIL = "yourname@yourschool.edu";
+// Teacher accounts — only these emails can view the dashboard.
+export const TEACHER_EMAILS = [
+  "npcap724@gmail.com",
+  "ncapellini@hhh.k12.ny.us"
+];
