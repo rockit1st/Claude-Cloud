@@ -75,9 +75,24 @@
     .teaser-list li .icon { font-size: 1.5rem; }
     .teaser-list li .coming { margin-left: auto; font-size: 0.72rem; color: #00f5ff; background: rgba(0,245,255,0.1); border: 1px solid rgba(0,245,255,0.3); border-radius: 20px; padding: 3px 10px; white-space: nowrap; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
 
-    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 30px; }
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 40px; }
     .breadcrumb a { color: #9080b0; text-decoration: none; }
     .breadcrumb a:hover { color: #00f5ff; }
+
+    .section-label { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #00f5ff; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 24px; }
+
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 60px; }
+
+    .tool-card { background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.2); border-radius: 20px; padding: 36px 24px; text-align: center; text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; display: block; }
+    .tool-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,245,255,0.2); border-color: rgba(0,245,255,0.5); }
+    .tool-icon { font-size: 3.2rem; margin-bottom: 18px; }
+    .tool-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #00f5ff; letter-spacing: 2px; margin-bottom: 12px; text-shadow: 0 0 12px rgba(0,245,255,0.5); }
+    .tool-desc { font-size: 0.88rem; color: #9080b0; line-height: 1.7; }
+
+    .tool-card.coming { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); cursor: default; opacity: 0.5; }
+    .tool-card.coming:hover { transform: none; box-shadow: none; }
+    .tool-card.coming .tool-title { color: #6050a0; }
+    .coming-badge { display: inline-block; margin-top: 14px; font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 2px; color: #6050a0; border: 1px solid rgba(96,80,160,0.4); border-radius: 20px; padding: 3px 12px; }
 
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
   </style>
@@ -102,17 +117,31 @@
 <div class="content">
   <div class="breadcrumb"><a href="index.html">← Hub</a> / Measuring</div>
 
-  <div class="coming-soon-card">
-    <h2>COMING SOON</h2>
-    <p>Measuring tools and interactive activities are currently being built for this section. Check back soon — this page will be filled with tools to help you master measurement in your technology projects.</p>
-  </div>
+  <div class="section-label">Tools &amp; Resources</div>
 
-  <div class="teaser-title">What's Coming</div>
-  <ul class="teaser-list">
-    <li><span class="icon">📏</span> Measurement conversion tools <span class="coming">In Progress</span></li>
-    <li><span class="icon">📊</span> Ruler &amp; scale reading practice <span class="coming">Coming Soon</span></li>
-    <li><span class="icon">🔧</span> Real-world measurement projects <span class="coming">Coming Soon</span></li>
-  </ul>
+  <div class="tools-grid">
+
+    <a href="ruler-game.html" class="tool-card">
+      <div class="tool-icon">📏</div>
+      <div class="tool-title">Ruler Reading Game</div>
+      <div class="tool-desc">Practice reading a ruler to the nearest ¼, ⅛, or 1/16 of an inch. Choose your difficulty and go for a high score!</div>
+    </a>
+
+    <div class="tool-card coming">
+      <div class="tool-icon">📊</div>
+      <div class="tool-title">Conversion Calculator</div>
+      <div class="tool-desc">Convert between inches, centimeters, feet, and more.</div>
+      <div class="coming-badge">Coming Soon</div>
+    </div>
+
+    <div class="tool-card coming">
+      <div class="tool-icon">🔧</div>
+      <div class="tool-title">Real-World Projects</div>
+      <div class="tool-desc">Apply measurement skills to hands-on technology projects.</div>
+      <div class="coming-badge">Coming Soon</div>
+    </div>
+
+  </div>
 </div>
 
 <footer>Technology Class &copy; 2025</footer>

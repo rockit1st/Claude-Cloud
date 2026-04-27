@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ruler Reading Game | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px; background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    .banner {
+      margin-top: 60px;
+      background: linear-gradient(135deg, #0a000f 0%, #001a2e 50%, #002a1a 100%);
+      padding: 50px 20px; text-align: center; position: relative; overflow: hidden;
+      border-bottom: 2px solid rgba(0,245,255,0.3);
+    }
+    .banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #00f5ff, transparent); box-shadow: 0 0 20px #00f5ff; }
+    .banner-icon { font-size: 3.5rem; margin-bottom: 12px; }
+    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900; color: #00f5ff; letter-spacing: 4px; text-shadow: 0 0 20px rgba(0,245,255,0.7), 0 0 40px rgba(0,245,255,0.3); }
+    .banner-sub { color: #9080b0; font-size: 0.95rem; margin-top: 8px; letter-spacing: 2px; }
+
+    .content { max-width: 860px; margin: 0 auto; padding: 50px 20px 80px; }
+
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 36px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #00f5ff; }
+
+    /* Difficulty bar */
+    .diff-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+    .diff-label { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #00f5ff; letter-spacing: 2px; }
+    .diff-btns { display: flex; gap: 6px; }
+    .diff-btn {
+      padding: 7px 16px; border-radius: 6px; border: 1px solid rgba(0,245,255,0.3);
+      background: transparent; color: #9080b0;
+      font-family: 'Exo 2', sans-serif; font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .diff-btn:hover { color: #fff; border-color: rgba(0,245,255,0.6); }
+    .diff-btn.active { color: #00f5ff; background: rgba(0,245,255,0.1); border-color: #00f5ff; }
+
+    /* Score bar */
+    .score-bar {
+      display: flex; gap: 24px; align-items: center; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .score-pill {
+      background: rgba(0,245,255,0.07); border: 1px solid rgba(0,245,255,0.25);
+      border-radius: 8px; padding: 10px 20px;
+      font-family: 'Orbitron', sans-serif; font-size: 0.82rem; letter-spacing: 1px;
+    }
+    .score-pill span { color: #00f5ff; font-size: 1.3rem; font-weight: 900; }
+    .streak-pill {
+      background: rgba(240,192,64,0.07); border: 1px solid rgba(240,192,64,0.25);
+      border-radius: 8px; padding: 10px 20px;
+      font-family: 'Orbitron', sans-serif; font-size: 0.82rem; letter-spacing: 1px;
+    }
+    .streak-pill span { color: #f0c040; font-size: 1.3rem; font-weight: 900; }
+
+    /* Game card */
+    .game-card {
+      background: rgba(0,245,255,0.03); border: 1px solid rgba(0,245,255,0.2);
+      border-radius: 20px; padding: 36px 28px;
+    }
+
+    .question-text {
+      text-align: center; font-size: 1rem; color: #c0d8e0;
+      margin-bottom: 24px; line-height: 1.6;
+    }
+    .question-text strong { color: #00f5ff; }
+
+    /* Ruler SVG container */
+    .ruler-wrap { width: 100%; overflow-x: auto; margin-bottom: 10px; }
+    #ruler-svg { display: block; width: 100%; min-width: 340px; }
+
+    /* Choices */
+    .choices {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+      margin: 28px 0 20px;
+    }
+    @media (max-width: 500px) { .choices { grid-template-columns: 1fr 1fr; } }
+
+    .choice-btn {
+      padding: 16px 10px; border-radius: 12px;
+      border: 2px solid rgba(0,245,255,0.3);
+      background: rgba(0,245,255,0.05);
+      color: #e0f8ff;
+      font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700;
+      letter-spacing: 1px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .choice-btn:hover:not(:disabled) { background: rgba(0,245,255,0.12); border-color: #00f5ff; color: #fff; transform: translateY(-2px); }
+    .choice-btn.correct  { background: rgba(64,224,128,0.18); border-color: #40e080; color: #40e080; }
+    .choice-btn.wrong    { background: rgba(255,80,80,0.12); border-color: #ff5050; color: #ff5050; }
+    .choice-btn:disabled { cursor: default; transform: none; }
+
+    /* Feedback */
+    .feedback { text-align: center; min-height: 32px; font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; transition: opacity 0.3s; }
+    .feedback.correct { color: #40e080; }
+    .feedback.wrong   { color: #ff7070; }
+
+    /* Next button */
+    .next-btn {
+      display: block; margin: 0 auto;
+      padding: 14px 48px; border-radius: 10px;
+      background: linear-gradient(135deg, #00c8d4, #008090);
+      border: none; color: #0a000f;
+      font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 900;
+      letter-spacing: 3px; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,245,255,0.3);
+      transition: box-shadow 0.2s, opacity 0.2s;
+      opacity: 0; pointer-events: none;
+    }
+    .next-btn.visible { opacity: 1; pointer-events: auto; }
+    .next-btn:hover { box-shadow: 0 6px 30px rgba(0,245,255,0.55); }
+
+    /* Hint box */
+    .hint-box {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(0,245,255,0.15);
+      border-radius: 10px; padding: 14px 18px; margin-top: 28px;
+      font-size: 0.85rem; color: #9080b0; line-height: 1.7;
+    }
+    .hint-box strong { color: #00f5ff; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link active">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">📏</div>
+  <div class="banner-title">RULER READING GAME</div>
+  <div class="banner-sub">Read &bull; Measure &bull; Score</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="measuring.html">Measuring</a> / Ruler Reading Game</div>
+
+  <div class="diff-bar">
+    <span class="diff-label">Difficulty:</span>
+    <div class="diff-btns">
+      <button class="diff-btn active" onclick="setDiff(4,this)">¼ inch</button>
+      <button class="diff-btn" onclick="setDiff(2,this)">⅛ inch</button>
+      <button class="diff-btn" onclick="setDiff(1,this)">1/16 inch</button>
+    </div>
+  </div>
+
+  <div class="score-bar">
+    <div class="score-pill">Score: <span id="score-val">0</span> / <span id="total-val">0</span></div>
+    <div class="streak-pill">🔥 Streak: <span id="streak-val">0</span></div>
+  </div>
+
+  <div class="game-card">
+    <div class="question-text">Where is the <strong>red arrow</strong> pointing on the ruler?</div>
+
+    <div class="ruler-wrap">
+      <svg id="ruler-svg" viewBox="0 0 640 110" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div class="choices" id="choices"></div>
+
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">NEXT →</button>
+
+    <div class="hint-box">
+      <strong>How to read a ruler:</strong> Find the number to the left of the arrow, then count the small tick marks to the right. Each small tick = 1/16". Two ticks = 1/8", four ticks = 1/4", eight ticks = 1/2".
+    </div>
+  </div>
+</div>
+
+<footer>Technology Class &copy; 2025</footer>
+
+<script>
+  let difficulty = 4; // sixteenths per step: 4=quarter, 2=eighth, 1=sixteenth
+  let correct16 = 0;
+  let score = 0, total = 0, streak = 0;
+
+  // ── Fraction helpers ──────────────────────────────────────
+  function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+  function toLabel(n16) {
+    const whole = Math.floor(n16 / 16);
+    const rem   = n16 % 16;
+    if (rem === 0) return whole + '"';
+    const g = gcd(rem, 16), num = rem / g, den = 16 / g;
+    return whole === 0 ? `${num}/${den}"` : `${whole} ${num}/${den}"`;
+  }
+
+  // ── Ruler drawing ─────────────────────────────────────────
+  const RX = 20, RY = 12, RW = 600, RH = 50; // ruler rect
+  const INCH_PX = RW / 6;                     // 100 px per inch
+
+  function x16(n) { return RX + (n / 16) * INCH_PX; }
+
+  function tickH(n) {
+    if (n % 16 === 0) return RH;          // inch
+    if (n %  8 === 0) return 32;          // half inch
+    if (n %  4 === 0) return 22;          // quarter
+    if (n %  2 === 0) return 16;          // eighth
+    return 11;                            // sixteenth
+  }
+
+  function drawRuler(markerN) {
+    const svg = document.getElementById('ruler-svg');
+    svg.innerHTML = '';
+
+    function el(tag, attrs, text) {
+      const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    // Ruler body
+    svg.appendChild(el('rect', { x: RX, y: RY, width: RW, height: RH, rx: 3,
+      fill: '#060010', stroke: '#00f5ff', 'stroke-width': '2' }));
+
+    // Tick marks (all 1/16s across 6 inches)
+    for (let n = 0; n <= 96; n++) {
+      const tx = x16(n);
+      const h  = tickH(n);
+      svg.appendChild(el('line', {
+        x1: tx, y1: RY, x2: tx, y2: RY + h,
+        stroke: n % 16 === 0 ? '#ffffff' : n % 8 === 0 ? '#00f5ff' : 'rgba(0,245,255,0.55)',
+        'stroke-width': n % 16 === 0 ? '2' : '1'
+      }));
+
+      // Inch numbers (above bottom of ruler)
+      if (n % 16 === 0) {
+        svg.appendChild(el('text', {
+          x: tx, y: RY + RH + 18,
+          'text-anchor': 'middle', fill: '#ffffff',
+          'font-size': '13', 'font-family': 'Exo 2, sans-serif', 'font-weight': '600'
+        }, String(n / 16)));
+      }
+    }
+
+    // Arrow marker
+    const mx = x16(markerN);
+    const arrowBase = RY + RH + 40;
+    const arrowTip  = RY + RH + 4;
+
+    svg.appendChild(el('line', {
+      x1: mx, y1: arrowBase, x2: mx, y2: arrowTip + 10,
+      stroke: '#ff2d78', 'stroke-width': '2.5', 'stroke-linecap': 'round'
+    }));
+    svg.appendChild(el('polygon', {
+      points: `${mx},${arrowTip} ${mx - 7},${arrowTip + 12} ${mx + 7},${arrowTip + 12}`,
+      fill: '#ff2d78'
+    }));
+  }
+
+  // ── Question logic ────────────────────────────────────────
+  function setDiff(d, btn) {
+    difficulty = d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    score = total = streak = 0;
+    updateScore();
+    nextQuestion();
+  }
+
+  function randomChallenge() {
+    const all = [];
+    for (let n = difficulty; n <= 96 - difficulty; n += difficulty) all.push(n);
+    return all[Math.floor(Math.random() * all.length)];
+  }
+
+  function generateChoices(correct) {
+    const pool = new Set();
+    // Nearby candidates (±6 steps, same difficulty)
+    for (let d = -6; d <= 6; d++) {
+      if (d === 0) continue;
+      const v = correct + d * difficulty;
+      if (v > 0 && v < 96) pool.add(v);
+    }
+    const arr = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+    const choices = [correct, ...arr].sort(() => Math.random() - 0.5);
+    return choices;
+  }
+
+  function nextQuestion() {
+    correct16 = randomChallenge();
+    drawRuler(correct16);
+
+    const choices = generateChoices(correct16);
+    const container = document.getElementById('choices');
+    container.innerHTML = '';
+    choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = toLabel(c);
+      btn.onclick = () => checkAnswer(c, btn);
+      container.appendChild(btn);
+    });
+
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('feedback').className = 'feedback';
+    document.getElementById('next-btn').classList.remove('visible');
+  }
+
+  function checkAnswer(chosen, btn) {
+    // Lock all buttons
+    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
+    total++;
+    const fb = document.getElementById('feedback');
+
+    if (chosen === correct16) {
+      btn.classList.add('correct');
+      score++; streak++;
+      fb.textContent = streak >= 3 ? `🔥 ${streak} in a row! Keep going!` : 'Correct! Nice work!';
+      fb.className = 'feedback correct';
+    } else {
+      btn.classList.add('wrong');
+      // Highlight the correct answer
+      document.querySelectorAll('.choice-btn').forEach(b => {
+        if (b.textContent === toLabel(correct16)) b.classList.add('correct');
+      });
+      streak = 0;
+      fb.textContent = `Not quite — the answer was ${toLabel(correct16)}. Try the next one!`;
+      fb.className = 'feedback wrong';
+    }
+
+    updateScore();
+    document.getElementById('next-btn').classList.add('visible');
+  }
+
+  function updateScore() {
+    document.getElementById('score-val').textContent  = score;
+    document.getElementById('total-val').textContent  = total;
+    document.getElementById('streak-val').textContent = streak;
+  }
+
+  // Start
+  nextQuestion();
+</script>
+
+</body>
+</html>
