@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inclinometer | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    .banner {
+      margin-top: 60px;
+      background: linear-gradient(135deg, #0a000f 0%, #2a0020 50%, #1a000f 100%);
+      padding: 50px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 2px solid rgba(255,45,120,0.3);
+    }
+    .banner::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #ff2d78, transparent);
+      box-shadow: 0 0 20px #ff2d78;
+    }
+    .banner-icon { font-size: 3.5rem; margin-bottom: 12px; }
+    .banner-title {
+      font-family: 'Orbitron', sans-serif; font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900;
+      color: #ff2d78; letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(255,45,120,0.7), 0 0 40px rgba(255,45,120,0.3);
+    }
+    .banner-sub { color: #9080b0; font-size: 0.95rem; margin-top: 8px; letter-spacing: 2px; }
+
+    .content { max-width: 860px; margin: 0 auto; padding: 50px 20px 80px; }
+
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 36px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #ff2d78; }
+
+    .section { margin-bottom: 48px; }
+
+    .section-title {
+      font-family: 'Orbitron', sans-serif; font-size: 0.85rem;
+      color: #ff2d78; letter-spacing: 3px; text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .info-card {
+      background: rgba(255,45,120,0.05);
+      border: 1px solid rgba(255,45,120,0.2);
+      border-radius: 16px;
+      padding: 28px 32px;
+      line-height: 1.8;
+      font-size: 1rem;
+      color: #d8c8f0;
+    }
+    .info-card p + p { margin-top: 12px; }
+    .info-card strong { color: #ff2d78; }
+
+    .materials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+    }
+    .material-item {
+      background: rgba(255,45,120,0.05);
+      border: 1px solid rgba(255,45,120,0.18);
+      border-radius: 12px;
+      padding: 18px 16px;
+      text-align: center;
+    }
+    .material-icon { font-size: 2rem; margin-bottom: 8px; }
+    .material-name { font-size: 0.9rem; color: #d8c8f0; font-weight: 600; }
+    .material-note { font-size: 0.78rem; color: #9080b0; margin-top: 4px; }
+
+    .steps-list { display: flex; flex-direction: column; gap: 14px; }
+    .step-item {
+      display: flex; gap: 18px; align-items: flex-start;
+      background: rgba(255,45,120,0.04);
+      border: 1px solid rgba(255,45,120,0.15);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+    .step-num {
+      font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 900;
+      color: #ff2d78; min-width: 32px; line-height: 1.5;
+    }
+    .step-text { font-size: 0.95rem; color: #d8c8f0; line-height: 1.7; }
+    .step-text strong { color: #ff2d78; }
+
+    .math-box {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,45,120,0.3);
+      border-radius: 12px;
+      padding: 20px 24px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .math-formula {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1rem, 3vw, 1.4rem);
+      color: #ff2d78;
+      letter-spacing: 2px;
+      text-shadow: 0 0 12px rgba(255,45,120,0.5);
+    }
+    .math-example {
+      margin-top: 14px;
+      font-size: 0.9rem;
+      color: #9080b0;
+      line-height: 1.8;
+    }
+    .math-example span { color: #f0c040; font-weight: 700; }
+
+    /* Practice section */
+    .practice-card {
+      background: rgba(255,45,120,0.04);
+      border: 1px solid rgba(255,45,120,0.2);
+      border-radius: 20px;
+      padding: 32px;
+    }
+
+    .challenge-prompt {
+      text-align: center;
+      font-size: 1rem;
+      color: #d8c8f0;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .challenge-prompt strong { color: #ff2d78; }
+
+    #inclinometer-svg {
+      display: block;
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto 24px;
+    }
+
+    .answer-row {
+      display: flex; gap: 10px; align-items: center;
+      justify-content: center; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .answer-label { font-size: 0.9rem; color: #9080b0; }
+    .answer-input {
+      width: 80px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,45,120,0.4);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 1.1rem;
+      text-align: center;
+      outline: none;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .answer-input:focus { border-color: #ff2d78; box-shadow: 0 0 0 3px rgba(255,45,120,0.2); }
+    .deg-badge { color: #9080b0; font-size: 1rem; }
+
+    .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    .check-btn {
+      background: linear-gradient(135deg, #ff2d78, #c01050);
+      border: none; border-radius: 10px;
+      padding: 12px 32px;
+      color: #fff; font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(255,45,120,0.35);
+    }
+    .check-btn:hover { box-shadow: 0 6px 24px rgba(255,45,120,0.6); }
+
+    .new-btn {
+      background: transparent;
+      border: 2px solid rgba(255,45,120,0.4);
+      border-radius: 10px;
+      padding: 12px 32px;
+      color: #ff2d78; font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .new-btn:hover { border-color: #ff2d78; color: #fff; }
+
+    .feedback {
+      text-align: center;
+      min-height: 28px;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-top: 14px;
+      transition: opacity 0.3s;
+    }
+    .feedback.correct { color: #40e080; }
+    .feedback.wrong   { color: #ff7070; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link active">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">📐</div>
+  <div class="banner-title">INCLINOMETER</div>
+  <div class="banner-sub">Build It &bull; Use It &bull; Read It</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="rockets.html">Rockets</a> / Inclinometer</div>
+
+  <!-- What is it -->
+  <div class="section">
+    <div class="section-title">What is an Inclinometer?</div>
+    <div class="info-card">
+      <p>An inclinometer is a tool that measures <strong>angles</strong>. When your rocket launches, you need to know the angle between the ground and your line of sight to the rocket. That's called the <strong>angle of elevation</strong>.</p>
+      <p>You're going to build one yourself using everyday materials. It's simple, it works, and it's the same basic idea engineers have used for hundreds of years!</p>
+    </div>
+  </div>
+
+  <!-- Materials -->
+  <div class="section">
+    <div class="section-title">What You'll Need</div>
+    <div class="materials-grid">
+      <div class="material-item">
+        <div class="material-icon">🥤</div>
+        <div class="material-name">Straw</div>
+        <div class="material-note">You'll look through this</div>
+      </div>
+      <div class="material-item">
+        <div class="material-icon">📏</div>
+        <div class="material-name">Protractor</div>
+        <div class="material-note">Paper copy works great</div>
+      </div>
+      <div class="material-item">
+        <div class="material-icon">🧵</div>
+        <div class="material-name">String</div>
+        <div class="material-note">About 12 inches long</div>
+      </div>
+      <div class="material-item">
+        <div class="material-icon">🔩</div>
+        <div class="material-name">Metal Nut</div>
+        <div class="material-note">Acts as a pendulum weight</div>
+      </div>
+      <div class="material-item">
+        <div class="material-icon">🖊️</div>
+        <div class="material-name">Tape</div>
+        <div class="material-note">To hold it all together</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Build it -->
+  <div class="section">
+    <div class="section-title">Build It!</div>
+    <div class="steps-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-text">Tie the <strong>metal nut</strong> to one end of the string. This is your pendulum — it always points straight down because of gravity!</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-text">Tape the <strong>other end of the string</strong> to the center hole of the protractor. This is the pivot point — the string will swing freely from here.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-text">Tape the <strong>protractor to the straw</strong> with the <strong>flat edge along the straw</strong> and the <strong>curved part (arc) facing DOWN</strong>. The straw and flat edge should line up perfectly.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-text">Check that the string hangs <strong>freely</strong> below the protractor and swings when you tilt the straw. If it gets stuck, adjust the tape so the string has room to move.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-text">You're done! Hold the straw up and look through it at something far away. Watch the string swing as you tilt — you're measuring angles!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- How to read it -->
+  <div class="section">
+    <div class="section-title">How to Read It</div>
+    <div class="info-card">
+      <p>When you look through the straw at your rocket, the <strong>string always hangs straight down</strong> (gravity pulls it). But the protractor is tilted with the straw — so the string appears to point to a number on the arc.</p>
+      <p>Here's the trick: because the protractor is <strong>upside down</strong>, the number the string points to is <strong>not</strong> your elevation angle. You have to do one small calculation:</p>
+    </div>
+    <div class="math-box">
+      <div class="math-formula">Elevation Angle = 90° − String Reading</div>
+      <div class="math-example">
+        Example: String reads <span>35°</span><br>
+        Elevation = 90° − 35° = <span>55°</span>
+      </div>
+    </div>
+    <div class="info-card">
+      <p><strong>On launch day:</strong> aim the straw at the rocket at its highest point, pinch the string gently to hold it in place, then lower the straw and read the number. Subtract it from 90° — that's your elevation angle!</p>
+    </div>
+  </div>
+
+  <!-- Practice -->
+  <div class="section">
+    <div class="section-title">Practice Reading It</div>
+    <div class="practice-card">
+      <div class="challenge-prompt">
+        Look at where the <strong>string</strong> points on the inclinometer below.<br>
+        What number does it land on? Then figure out the elevation angle!
+      </div>
+
+      <svg id="inclinometer-svg" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"></svg>
+
+      <div class="answer-row">
+        <span class="answer-label">String reads:</span>
+        <input type="number" id="reading-input" class="answer-input" placeholder="?" min="0" max="180" />
+        <span class="deg-badge">°</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="check-btn" onclick="checkAnswer()">Check</button>
+        <button class="new-btn" onclick="newChallenge()">New Challenge</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Technology Class &copy; 2025</footer>
+
+<script>
+  const cx = 200, cy = 45, R = 150;
+  let currentReading = 0;
+
+  function toRad(deg) { return deg * Math.PI / 180; }
+
+  // Point on arc for a protractor reading θ (0=left, 90=bottom, 180=right)
+  function arcPoint(theta) {
+    const a = toRad(180 - theta);
+    return { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) };
+  }
+
+  function buildSVG(reading) {
+    const svg = document.getElementById('inclinometer-svg');
+    svg.innerHTML = '';
+
+    function el(tag, attrs, text) {
+      const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    // Arc (flat edge at top, arc curves down)
+    svg.appendChild(el('path', {
+      d: `M ${cx - R},${cy} A ${R},${R} 0 0,1 ${cx + R},${cy}`,
+      fill: 'rgba(255,45,120,0.06)',
+      stroke: 'rgba(255,45,120,0.6)',
+      'stroke-width': '2'
+    }));
+
+    // Flat edge (top)
+    svg.appendChild(el('line', {
+      x1: cx - R, y1: cy, x2: cx + R, y2: cy,
+      stroke: 'rgba(255,45,120,0.5)', 'stroke-width': '2'
+    }));
+
+    // Tick marks and labels
+    for (let θ = 0; θ <= 180; θ += 10) {
+      const outer = arcPoint(θ);
+      const innerR = θ % 30 === 0 ? R - 18 : R - 10;
+      const a = toRad(180 - θ);
+      const inner = { x: cx + innerR * Math.cos(a), y: cy + innerR * Math.sin(a) };
+
+      svg.appendChild(el('line', {
+        x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y,
+        stroke: θ % 30 === 0 ? 'rgba(255,45,120,0.9)' : 'rgba(255,45,120,0.4)',
+        'stroke-width': θ % 30 === 0 ? '2' : '1'
+      }));
+
+      if (θ % 30 === 0) {
+        const labelR = R - 28;
+        const lx = cx + labelR * Math.cos(a);
+        const ly = cy + labelR * Math.sin(a);
+        svg.appendChild(el('text', {
+          x: lx, y: ly + 4,
+          'text-anchor': 'middle',
+          fill: 'rgba(240,200,255,0.8)',
+          'font-size': '12',
+          'font-family': 'Exo 2, sans-serif'
+        }, θ + '°'));
+      }
+    }
+
+    // Center pivot dot
+    svg.appendChild(el('circle', { cx, cy, r: '5', fill: '#ff2d78' }));
+
+    // String line
+    const sp = arcPoint(reading);
+    svg.appendChild(el('line', {
+      x1: cx, y1: cy, x2: sp.x, y2: sp.y,
+      stroke: '#f0c040', 'stroke-width': '2.5',
+      'stroke-linecap': 'round'
+    }));
+
+    // Nut at end
+    svg.appendChild(el('circle', { cx: sp.x, cy: sp.y, r: '7', fill: '#f0c040' }));
+
+    // Straw (flat edge)
+    svg.appendChild(el('rect', {
+      x: cx - R - 10, y: cy - 7, width: R * 2 + 20, height: 7,
+      rx: '3',
+      fill: 'rgba(255,45,120,0.12)',
+      stroke: 'rgba(255,45,120,0.4)',
+      'stroke-width': '1'
+    }));
+
+    // "STRAW" label
+    svg.appendChild(el('text', {
+      x: cx - R - 6, y: cy - 10,
+      fill: 'rgba(255,45,120,0.5)',
+      'font-size': '9',
+      'font-family': 'Orbitron, sans-serif',
+      'letter-spacing': '2'
+    }, 'STRAW →'));
+  }
+
+  function newChallenge() {
+    // Protractor readings 20°–70° in steps of 5 (elevation = 90 - reading → 20°–70°)
+    const options = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
+    currentReading = options[Math.floor(Math.random() * options.length)];
+    buildSVG(currentReading);
+    document.getElementById('reading-input').value = '';
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('feedback').className = 'feedback';
+    document.getElementById('reading-input').focus();
+  }
+
+  function checkAnswer() {
+    const val = parseInt(document.getElementById('reading-input').value);
+    const fb = document.getElementById('feedback');
+    if (isNaN(val)) {
+      fb.textContent = 'Type a number first!';
+      fb.className = 'feedback wrong';
+      return;
+    }
+    if (val === currentReading) {
+      const elev = 90 - currentReading;
+      fb.textContent = `Nice work! 🎉  So the elevation angle = 90° − ${currentReading}° = ${elev}°`;
+      fb.className = 'feedback correct';
+    } else {
+      fb.textContent = 'Not quite — look closely at where the string lands. You\'ve got this!';
+      fb.className = 'feedback wrong';
+    }
+  }
+
+  document.getElementById('reading-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkAnswer();
+  });
+
+  newChallenge();
+</script>
+
+</body>
+</html>
