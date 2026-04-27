@@ -199,39 +199,81 @@
   hero.appendChild(el);
 })();
 
-// Occasional rocket flyby across the stars
+// Futuristic spacecraft flyby: straight → loop at sun → shoot upward
 (function() {
-  function flyRocket() {
+  const SHIP = `<svg width="56" height="28" viewBox="0 0 56 28" style="overflow:visible;display:block">
+    <ellipse cx="4" cy="14" rx="9" ry="4" fill="#ff2d78" opacity="0.35"/>
+    <ellipse cx="4" cy="14" rx="5" ry="2" fill="#ffb300" opacity="0.9"/>
+    <polygon points="14,14 3,26 24,20" fill="#5000b0"/>
+    <polygon points="14,14 3,2 24,8" fill="#5000b0"/>
+    <path d="M10,8 L48,11 L55,14 L48,17 L10,20 Z" fill="#0d0020"/>
+    <path d="M10,8 L48,11 L55,14 L48,17 L10,20 Z" fill="none" stroke="#b44fff" stroke-width="1.5"/>
+    <ellipse cx="38" cy="12" rx="9" ry="5" fill="#00f5ff" opacity="0.15"/>
+    <ellipse cx="38" cy="12" rx="9" ry="5" fill="none" stroke="#00f5ff" stroke-width="1.5"/>
+    <line x1="14" y1="12" x2="44" y2="12" stroke="#b44fff" stroke-width="0.8" opacity="0.5"/>
+  </svg>`;
+
+  function flySpacecraft() {
     const hero = document.querySelector('.hero');
-    const ltr = Math.random() > 0.5;
-    const yPct = 6 + Math.random() * 36; // stays in the star field above horizon
-    const duration = 5 + Math.random() * 4;
+    if (!hero) return;
 
-    const r = document.createElement('div');
-    r.textContent = '🚀';
-    r.style.cssText = [
-      'position:absolute',
-      'font-size:1.4rem',
-      'z-index:4',
-      'pointer-events:none',
-      `top:${yPct}%`,
-      ltr ? 'left:-60px' : 'right:-60px',
-      `transform:rotate(${ltr ? '-45' : '135'}deg)`,
-      'opacity:0.9',
-      `transition:${ltr ? 'left' : 'right'} ${duration}s linear`
-    ].join(';');
+    const W = hero.offsetWidth;
+    const H = hero.offsetHeight;
+    const loopR = Math.min(68, W * 0.07);
+    const startY = H * (0.10 + Math.random() * 0.26);
+    const loopStartX = W * 0.50;
 
-    hero.appendChild(r);
+    const el = document.createElement('div');
+    el.style.cssText = 'position:absolute;z-index:4;pointer-events:none;';
+    el.innerHTML = SHIP;
+    hero.appendChild(el);
 
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      r.style[ltr ? 'left' : 'right'] = 'calc(100% + 60px)';
-    }));
+    let x = -70, y = startY, theta = 0, upVel = 0, phase = 'straight';
 
-    setTimeout(() => r.remove(), (duration + 1) * 1000);
-    setTimeout(flyRocket, 14000 + Math.random() * 20000);
+    function place(px, py, rot) {
+      el.style.left = (px - 28) + 'px';
+      el.style.top  = (py - 14) + 'px';
+      el.style.transform = `rotate(${rot}deg)`;
+    }
+
+    function tick() {
+      if (phase === 'straight') {
+        x += 2.5;
+        place(x, y, 0);
+        if (x >= loopStartX) phase = 'loop';
+
+      } else if (phase === 'loop') {
+        // Parametric circle: enters at bottom going right, loops up and over
+        // x = loopStartX + loopR*sin(θ), y = startY + loopR*cos(θ) - loopR
+        // At θ=0: (loopStartX, startY) facing right
+        // At θ=2.5π: (loopStartX+loopR, startY-loopR) facing up  ← exit
+        theta += 0.038;
+        const px  = loopStartX + loopR * Math.sin(theta);
+        const py  = startY     + loopR * Math.cos(theta) - loopR;
+        const rot = Math.atan2(-Math.sin(theta), Math.cos(theta)) * 180 / Math.PI;
+        place(px, py, rot);
+        if (theta >= Math.PI * 2.5) {
+          phase = 'up';
+          x = px; y = py; upVel = -3;
+        }
+
+      } else {
+        upVel -= 0.3;
+        y += upVel;
+        place(x, y, -90);
+        if (y < -80) {
+          el.remove();
+          setTimeout(flySpacecraft, 15000 + Math.random() * 20000);
+          return;
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
   }
 
-  setTimeout(flyRocket, 4000 + Math.random() * 8000);
+  setTimeout(flySpacecraft, 5000 + Math.random() * 8000);
 })();
 </script>
 
