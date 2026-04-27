@@ -134,6 +134,27 @@
     }
     .hint-box strong { color: #00f5ff; }
 
+    /* Mode tabs */
+    .mode-tabs { display:flex; gap:0; border-radius:10px; overflow:hidden; border:1px solid rgba(0,245,255,0.3); margin-bottom:20px; }
+    .mode-tab { flex:1; padding:10px 6px; border:none; background:transparent; color:#9080b0; font-family:'Exo 2',sans-serif; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.2s; letter-spacing:0.5px; }
+    .mode-tab:hover { background:rgba(0,245,255,0.08); color:#fff; }
+    .mode-tab.active { background:rgba(0,245,255,0.15); color:#00f5ff; }
+
+    /* Strikes */
+    .strikes-pill { background:rgba(255,80,80,0.07); border:1px solid rgba(255,80,80,0.25); border-radius:8px; padding:10px 20px; font-family:'Orbitron',sans-serif; font-size:0.82rem; letter-spacing:1px; }
+    .strikes-pill .hearts { font-size:1.1rem; letter-spacing:2px; }
+
+    /* Timer */
+    .timer-pill { background:rgba(0,245,255,0.07); border:1px solid rgba(0,245,255,0.25); border-radius:8px; padding:10px 20px; font-family:'Orbitron',sans-serif; font-size:0.82rem; letter-spacing:1px; }
+    .timer-num { font-size:1.6rem; font-weight:900; color:#00f5ff; }
+    .timer-num.warn { color:#f0c040; }
+    .timer-num.danger { color:#ff2d78; }
+
+    /* Hint button (practice mode) */
+    .hint-btn { display:none; margin:0 auto 0; padding:10px 28px; border-radius:8px; background:transparent; border:1px solid rgba(0,245,255,0.35); color:#9080b0; font-family:'Exo 2',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+    .hint-btn:hover { color:#00f5ff; border-color:#00f5ff; }
+    .hint-btn.show { display:block; }
+
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top: 20px; }
 
     /* Congratulations modal */
@@ -154,6 +175,24 @@
     .congrats-sub strong { color: #f0c040; font-size: 1.2rem; }
     .congrats-btn { padding: 14px 40px; border-radius: 10px; background: linear-gradient(135deg,#00c8d4,#008090); border: none; color: #0a000f; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,245,255,0.4); transition: box-shadow 0.2s; }
     .congrats-btn:hover { box-shadow: 0 6px 30px rgba(0,245,255,0.7); }
+    /* Game over modal */
+    .gameover-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:500; }
+    .gameover-overlay.open { display:block; }
+    .gameover-modal { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#060010; border:2px solid #ff2d78; border-radius:24px; padding:48px 40px; width:90%; max-width:420px; text-align:center; box-shadow:0 0 40px rgba(255,45,120,0.4); animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    .gameover-title { font-family:'Orbitron',sans-serif; font-size:clamp(1.4rem,4vw,2rem); font-weight:900; color:#ff2d78; letter-spacing:3px; text-shadow:0 0 20px rgba(255,45,120,0.8); margin-bottom:12px; }
+    .gameover-sub { color:#9080b0; font-size:0.95rem; line-height:1.7; margin-bottom:28px; }
+    .gameover-sub strong { color:#f0c040; font-size:1.1rem; }
+    .gameover-btn { padding:14px 40px; border-radius:10px; background:linear-gradient(135deg,#ff2d78,#a01040); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:900; letter-spacing:2px; cursor:pointer; box-shadow:0 4px 20px rgba(255,45,120,0.4); transition:box-shadow 0.2s; }
+    .gameover-btn:hover { box-shadow:0 6px 30px rgba(255,45,120,0.7); }
+    /* Timed end modal */
+    .timedend-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:500; }
+    .timedend-overlay.open { display:block; }
+    .timedend-modal { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#060010; border:2px solid #b44fff; border-radius:24px; padding:48px 40px; width:90%; max-width:420px; text-align:center; box-shadow:0 0 40px rgba(180,79,255,0.4); animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    .timedend-title { font-family:'Orbitron',sans-serif; font-size:clamp(1.4rem,4vw,2rem); font-weight:900; color:#b44fff; letter-spacing:3px; margin-bottom:12px; }
+    .timedend-sub { color:#9080b0; font-size:0.95rem; line-height:1.7; margin-bottom:28px; }
+    .timedend-sub strong { color:#f0c040; font-size:1.1rem; }
+    .timedend-btn { padding:14px 40px; border-radius:10px; background:linear-gradient(135deg,#b44fff,#6010a0); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:900; letter-spacing:2px; cursor:pointer; box-shadow:0 4px 20px rgba(180,79,255,0.4); transition:box-shadow 0.2s; }
+    .timedend-btn:hover { box-shadow:0 6px 30px rgba(180,79,255,0.7); }
   </style>
 </head>
 <body>
@@ -176,6 +215,12 @@
 <div class="content">
   <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="measuring.html">Measuring</a> / Ruler Reading Game</div>
 
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('classic',this)">⚡ Classic</button>
+    <button class="mode-tab" onclick="setMode('practice',this)">🎓 Practice</button>
+    <button class="mode-tab" onclick="setMode('timed',this)">⏱️ Timed</button>
+  </div>
+
   <div class="diff-bar">
     <span class="diff-label">Difficulty:</span>
     <div class="diff-btns">
@@ -186,12 +231,14 @@
   </div>
 
   <div class="score-bar">
-    <div class="score-pill">Score: <span id="score-val">0</span> / <span id="total-val">0</span></div>
-    <div class="streak-pill">🔥 Streak: <span id="streak-val">0</span></div>
+    <div class="score-pill" id="pill-score">Score: <span id="score-val">0</span><span id="score-denom"> / 50</span></div>
+    <div class="strikes-pill" id="pill-strikes"><span class="hearts" id="hearts-val">❤️❤️❤️❤️❤️</span></div>
+    <div class="streak-pill" id="pill-streak">🔥 Streak: <span id="streak-val">0</span></div>
+    <div class="timer-pill" id="pill-timer" style="display:none">⏱️ <span class="timer-num" id="timer-val">60</span>s</div>
   </div>
 
   <div class="game-card">
-    <div class="question-text">Where is the <strong>red arrow</strong> pointing on the ruler?</div>
+    <div class="question-text" id="question-text">Where is the <strong>red arrow</strong> pointing on the ruler?</div>
 
     <div class="ruler-wrap">
       <svg id="ruler-svg" viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -201,6 +248,7 @@
 
     <div class="feedback" id="feedback"></div>
     <button class="next-btn" id="next-btn" onclick="nextQuestion()">NEXT →</button>
+    <button class="hint-btn" id="hint-btn" onclick="showHint()">Show Answer</button>
 
     <div class="hint-box">
       <strong>How to read a ruler:</strong> Find the number to the left of the arrow, then count the small tick marks to the right. Each small tick = 1/16". Two ticks = 1/8", four ticks = 1/4", eight ticks = 1/2".
@@ -212,17 +260,37 @@
   <div class="congrats-modal">
     <div class="congrats-emoji">🏆</div>
     <div class="congrats-title">CONGRATULATIONS!</div>
-    <div class="congrats-sub">You scored <strong>20 points!</strong><br>You're a ruler reading master!</div>
-    <button class="congrats-btn" onclick="closeCongrats()">PLAY AGAIN</button>
+    <div class="congrats-sub">You scored <strong>50 points!</strong><br>You're a ruler reading master!</div>
+    <button class="congrats-btn" onclick="closeModal('congrats-modal');resetGame()">PLAY AGAIN</button>
+  </div>
+</div>
+
+<div class="gameover-overlay" id="gameover-modal">
+  <div class="gameover-modal">
+    <div class="congrats-emoji">💀</div>
+    <div class="gameover-title">GAME OVER</div>
+    <div class="gameover-sub">You used all 5 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
+    <button class="gameover-btn" onclick="closeModal('gameover-modal');resetGame()">TRY AGAIN</button>
+  </div>
+</div>
+
+<div class="timedend-overlay" id="timedend-modal">
+  <div class="timedend-modal">
+    <div class="congrats-emoji">⏱️</div>
+    <div class="timedend-title">TIME'S UP!</div>
+    <div class="timedend-sub">You scored <strong><span id="timed-final">0</span> points</strong> in 60 seconds!</div>
+    <button class="timedend-btn" onclick="closeModal('timedend-modal');resetGame()">PLAY AGAIN</button>
   </div>
 </div>
 
 <footer>Technology Class &copy; 2025</footer>
 
 <script>
-  let difficulty = 4; // sixteenths per step: 4=quarter, 2=eighth, 1=sixteenth
+  let difficulty = 4, mode = 'classic';
   let correct16 = 0;
-  let score = 0, total = 0, streak = 0;
+  let score = 0, total = 0, streak = 0, strikes = 0;
+  let timerInterval = null, timeLeft = 60;
+  const WIN_SCORE = 50, MAX_STRIKES = 5, TIMED_SECS = 60;
 
   // ── Fraction helpers ──────────────────────────────────────
   function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
@@ -301,14 +369,68 @@
     }));
   }
 
-  // ── Question logic ────────────────────────────────────────
+  // ── Mode / Difficulty ─────────────────────────────────────
+  function setMode(m, btn) {
+    mode = m;
+    document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    resetGame();
+  }
+
   function setDiff(d, btn) {
     difficulty = d;
     document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    score = total = streak = 0;
-    updateScore();
+    resetGame();
+  }
+
+  function resetGame() {
+    stopTimer();
+    score = total = streak = strikes = 0;
+    timeLeft = TIMED_SECS;
+    updateHUD();
+    applyModeUI();
     nextQuestion();
+    if (mode === 'timed') startTimer();
+  }
+
+  function applyModeUI() {
+    const isClassic = mode === 'classic';
+    const isTimed   = mode === 'timed';
+    const isPractice= mode === 'practice';
+    document.getElementById('pill-strikes').style.display = isClassic ? '' : 'none';
+    document.getElementById('pill-streak').style.display  = isClassic ? '' : 'none';
+    document.getElementById('pill-timer').style.display   = isTimed   ? '' : 'none';
+    document.getElementById('score-denom').textContent    = isClassic ? ' / 50' : '';
+    document.getElementById('hint-btn').classList.toggle('show', isPractice);
+    document.getElementById('question-text').innerHTML = isPractice
+      ? 'Where is the <strong>red arrow</strong> pointing? (No pressure — take your time!)'
+      : 'Where is the <strong>red arrow</strong> pointing on the ruler?';
+  }
+
+  function startTimer() {
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+      if (timeLeft <= 0) { stopTimer(); endTimed(); }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function updateTimerDisplay() {
+    const el = document.getElementById('timer-val');
+    el.textContent = timeLeft;
+    el.className = 'timer-num' + (timeLeft <= 10 ? ' danger' : timeLeft <= 20 ? ' warn' : '');
+  }
+
+  function endTimed() {
+    document.getElementById('timed-final').textContent = score;
+    document.getElementById('timedend-modal').classList.add('open');
+    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
   }
 
   function randomChallenge() {
@@ -333,7 +455,6 @@
   function nextQuestion() {
     correct16 = randomChallenge();
     drawRuler(correct16);
-
     const choices = generateChoices(correct16);
     const container = document.getElementById('choices');
     container.innerHTML = '';
@@ -344,57 +465,80 @@
       btn.onclick = () => checkAnswer(c, btn);
       container.appendChild(btn);
     });
-
     document.getElementById('feedback').textContent = '';
     document.getElementById('feedback').className = 'feedback';
     document.getElementById('next-btn').classList.remove('visible');
+    if (mode === 'practice') document.getElementById('hint-btn').classList.add('show');
   }
 
   function checkAnswer(chosen, btn) {
-    // Lock all buttons
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-
+    document.getElementById('hint-btn').classList.remove('show');
     total++;
     const fb = document.getElementById('feedback');
+    const correct = chosen === correct16;
 
-    if (chosen === correct16) {
+    if (correct) {
       btn.classList.add('correct');
       score++; streak++;
       fb.textContent = streak >= 3 ? `🔥 ${streak} in a row! Keep going!` : 'Correct! Nice work!';
       fb.className = 'feedback correct';
     } else {
       btn.classList.add('wrong');
-      // Highlight the correct answer
       document.querySelectorAll('.choice-btn').forEach(b => {
         if (b.textContent === toLabel(correct16)) b.classList.add('correct');
       });
-      streak = 0;
-      fb.textContent = `Not quite — the answer was ${toLabel(correct16)}. Try the next one!`;
+      if (mode !== 'practice') streak = 0;
+      fb.textContent = `Not quite — the answer was ${toLabel(correct16)}.`;
       fb.className = 'feedback wrong';
+      if (mode === 'classic') { strikes++; }
     }
 
-    updateScore();
+    updateHUD();
+
+    if (mode === 'timed') {
+      setTimeout(nextQuestion, 700);
+    } else {
+      document.getElementById('next-btn').classList.add('visible');
+      if (mode === 'classic') {
+        if (score === WIN_SCORE) setTimeout(() => { stopTimer(); showCongrats(); }, 400);
+        else if (strikes >= MAX_STRIKES) setTimeout(showGameOver, 400);
+      }
+    }
+  }
+
+  function showHint() {
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      b.disabled = true;
+      if (b.textContent === toLabel(correct16)) b.classList.add('correct');
+    });
+    document.getElementById('hint-btn').classList.remove('show');
+    document.getElementById('feedback').textContent = `The answer is ${toLabel(correct16)}.`;
+    document.getElementById('feedback').className = 'feedback correct';
     document.getElementById('next-btn').classList.add('visible');
-    if (score === 20) setTimeout(showCongrats, 400);
   }
 
-  function updateScore() {
+  function updateHUD() {
     document.getElementById('score-val').textContent  = score;
-    document.getElementById('total-val').textContent  = total;
     document.getElementById('streak-val').textContent = streak;
+    // Hearts for strikes
+    let h = '';
+    for (let i = 0; i < MAX_STRIKES; i++) h += i < (MAX_STRIKES - strikes) ? '❤️' : '🖤';
+    document.getElementById('hearts-val').textContent = h;
   }
 
-  // ── Celebration ───────────────────────────────────────────
   function showCongrats() {
     document.getElementById('congrats-modal').classList.add('open');
     fireLasers();
   }
 
-  function closeCongrats() {
-    document.getElementById('congrats-modal').classList.remove('open');
-    score = total = streak = 0;
-    updateScore();
-    nextQuestion();
+  function showGameOver() {
+    document.getElementById('gameover-score').textContent = score;
+    document.getElementById('gameover-modal').classList.add('open');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
   }
 
   function fireLasers() {
@@ -433,7 +577,7 @@
   }
 
   // Start
-  nextQuestion();
+  resetGame();
 </script>
 
 </body>
