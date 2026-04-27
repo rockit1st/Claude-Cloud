@@ -81,7 +81,7 @@
     }
 
     /* Hero content */
-    .hero-content { position: absolute; top: 54%; left: 50%; transform: translateX(-50%); z-index: 2; text-align: center; padding: 0 20px; width: 100%; }
+    .hero-content { position: absolute; top: 60%; left: 50%; transform: translateX(-50%); z-index: 2; text-align: center; padding: 0 20px; width: 100%; }
     .hero-eyebrow { font-family: 'Exo 2', sans-serif; font-size: 0.9rem; letter-spacing: 6px; color: #b44fff; text-transform: uppercase; margin-bottom: 16px; }
     .hero-title {
       font-family: 'Orbitron', sans-serif; font-size: clamp(2.8rem, 8vw, 6rem); font-weight: 900;
@@ -197,6 +197,41 @@
   dot.style.boxShadow = shadows.join(',');
   el.appendChild(dot);
   hero.appendChild(el);
+})();
+
+// Occasional rocket flyby across the stars
+(function() {
+  function flyRocket() {
+    const hero = document.querySelector('.hero');
+    const ltr = Math.random() > 0.5;
+    const yPct = 6 + Math.random() * 36; // stays in the star field above horizon
+    const duration = 5 + Math.random() * 4;
+
+    const r = document.createElement('div');
+    r.textContent = '🚀';
+    r.style.cssText = [
+      'position:absolute',
+      'font-size:1.4rem',
+      'z-index:4',
+      'pointer-events:none',
+      `top:${yPct}%`,
+      ltr ? 'left:-60px' : 'right:-60px',
+      `transform:rotate(${ltr ? '-45' : '135'}deg)`,
+      'opacity:0.9',
+      `transition:${ltr ? 'left' : 'right'} ${duration}s linear`
+    ].join(';');
+
+    hero.appendChild(r);
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      r.style[ltr ? 'left' : 'right'] = 'calc(100% + 60px)';
+    }));
+
+    setTimeout(() => r.remove(), (duration + 1) * 1000);
+    setTimeout(flyRocket, 14000 + Math.random() * 20000);
+  }
+
+  setTimeout(flyRocket, 4000 + Math.random() * 8000);
 })();
 </script>
 
