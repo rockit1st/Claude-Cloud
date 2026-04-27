@@ -373,39 +373,40 @@
     // Arc (flat edge at top, arc curves down)
     svg.appendChild(el('path', {
       d: `M ${cx - R},${cy} A ${R},${R} 0 0,1 ${cx + R},${cy}`,
-      fill: 'rgba(255,45,120,0.06)',
-      stroke: 'rgba(255,45,120,0.6)',
-      'stroke-width': '2'
+      fill: 'rgba(255,45,120,0.08)',
+      stroke: '#ff2d78',
+      'stroke-width': '2.5'
     }));
 
     // Flat edge (top)
     svg.appendChild(el('line', {
       x1: cx - R, y1: cy, x2: cx + R, y2: cy,
-      stroke: 'rgba(255,45,120,0.5)', 'stroke-width': '2'
+      stroke: '#ff2d78', 'stroke-width': '2.5'
     }));
 
     // Tick marks and labels
     for (let θ = 0; θ <= 180; θ += 10) {
       const outer = arcPoint(θ);
-      const innerR = θ % 30 === 0 ? R - 18 : R - 10;
+      const innerR = θ % 30 === 0 ? R - 20 : R - 11;
       const a = toRad(180 - θ);
       const inner = { x: cx + innerR * Math.cos(a), y: cy + innerR * Math.sin(a) };
 
       svg.appendChild(el('line', {
         x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y,
-        stroke: θ % 30 === 0 ? 'rgba(255,45,120,0.9)' : 'rgba(255,45,120,0.4)',
-        'stroke-width': θ % 30 === 0 ? '2' : '1'
+        stroke: θ % 30 === 0 ? '#ffffff' : 'rgba(255,150,180,0.85)',
+        'stroke-width': θ % 30 === 0 ? '2.5' : '1.5'
       }));
 
       if (θ % 30 === 0) {
-        const labelR = R - 28;
+        const labelR = R - 32;
         const lx = cx + labelR * Math.cos(a);
         const ly = cy + labelR * Math.sin(a);
         svg.appendChild(el('text', {
           x: lx, y: ly + 4,
           'text-anchor': 'middle',
-          fill: 'rgba(240,200,255,0.8)',
-          'font-size': '12',
+          fill: '#ffffff',
+          'font-size': '13',
+          'font-weight': 'bold',
           'font-family': 'Exo 2, sans-serif'
         }, θ + '°'));
       }
