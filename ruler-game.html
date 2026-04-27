@@ -135,6 +135,24 @@
     .hint-box strong { color: #00f5ff; }
 
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top: 20px; }
+
+    /* Congratulations modal */
+    .congrats-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 500; align-items: center; justify-content: center; }
+    .congrats-overlay.open { display: flex; }
+    .congrats-modal {
+      background: #060010; border: 2px solid #00f5ff;
+      border-radius: 24px; padding: 48px 40px; width: 90%; max-width: 420px;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(0,245,255,0.4), 0 0 80px rgba(0,245,255,0.15);
+      animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn { from { opacity:0; transform:scale(0.7); } to { opacity:1; transform:scale(1); } }
+    .congrats-emoji { font-size: 3.5rem; margin-bottom: 16px; }
+    .congrats-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.4rem,4vw,2rem); font-weight: 900; color: #00f5ff; letter-spacing: 3px; text-shadow: 0 0 20px rgba(0,245,255,0.8); margin-bottom: 12px; }
+    .congrats-sub { color: #9080b0; font-size: 0.95rem; line-height: 1.7; margin-bottom: 28px; }
+    .congrats-sub strong { color: #f0c040; font-size: 1.2rem; }
+    .congrats-btn { padding: 14px 40px; border-radius: 10px; background: linear-gradient(135deg,#00c8d4,#008090); border: none; color: #0a000f; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,245,255,0.4); transition: box-shadow 0.2s; }
+    .congrats-btn:hover { box-shadow: 0 6px 30px rgba(0,245,255,0.7); }
   </style>
 </head>
 <body>
@@ -175,7 +193,7 @@
     <div class="question-text">Where is the <strong>red arrow</strong> pointing on the ruler?</div>
 
     <div class="ruler-wrap">
-      <svg id="ruler-svg" viewBox="0 0 640 110" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="ruler-svg" viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
     <div class="choices" id="choices"></div>
@@ -186,6 +204,15 @@
     <div class="hint-box">
       <strong>How to read a ruler:</strong> Find the number to the left of the arrow, then count the small tick marks to the right. Each small tick = 1/16". Two ticks = 1/8", four ticks = 1/4", eight ticks = 1/2".
     </div>
+  </div>
+</div>
+
+<div class="congrats-overlay" id="congrats-modal">
+  <div class="congrats-modal">
+    <div class="congrats-emoji">🏆</div>
+    <div class="congrats-title">CONGRATULATIONS!</div>
+    <div class="congrats-sub">You scored <strong>20 points!</strong><br>You're a ruler reading master!</div>
+    <button class="congrats-btn" onclick="closeCongrats()">PLAY AGAIN</button>
   </div>
 </div>
 
@@ -208,7 +235,7 @@
   }
 
   // ── Ruler drawing ─────────────────────────────────────────
-  const RX = 20, RY = 12, RW = 600, RH = 50; // ruler rect
+  const RX = 20, RY = 48, RW = 600, RH = 50; // ruler rect (RY leaves room for arrow above)
   const INCH_PX = RW / 6;                     // 100 px per inch
 
   function x16(n) { return RX + (n / 16) * INCH_PX; }
@@ -236,8 +263,9 @@
     svg.appendChild(el('rect', { x: RX, y: RY, width: RW, height: RH, rx: 3,
       fill: '#060010', stroke: '#00f5ff', 'stroke-width': '2' }));
 
-    // Tick marks (all 1/16s across 6 inches)
+    // Tick marks — only draw marks relevant to the current difficulty
     for (let n = 0; n <= 96; n++) {
+      if (n % difficulty !== 0) continue; // hide finer marks than selected difficulty
       const tx = x16(n);
       const h  = tickH(n);
       svg.appendChild(el('line', {
@@ -256,17 +284,18 @@
       }
     }
 
-    // Arrow marker
-    const mx = x16(markerN);
-    const arrowBase = RY + RH + 40;
-    const arrowTip  = RY + RH + 4;
+    // Arrow marker — above the ruler, pointing DOWN to the measurement
+    const mx      = x16(markerN);
+    const arrowTip  = RY;       // tip touches the top edge of the ruler
+    const arrowBase = 6;        // tail of the arrow stem
 
     svg.appendChild(el('line', {
-      x1: mx, y1: arrowBase, x2: mx, y2: arrowTip + 10,
+      x1: mx, y1: arrowBase, x2: mx, y2: arrowTip - 11,
       stroke: '#ff2d78', 'stroke-width': '2.5', 'stroke-linecap': 'round'
     }));
+    // Downward-pointing triangle: tip at bottom, wide end at top
     svg.appendChild(el('polygon', {
-      points: `${mx},${arrowTip} ${mx - 7},${arrowTip + 12} ${mx + 7},${arrowTip + 12}`,
+      points: `${mx},${arrowTip} ${mx - 8},${arrowTip - 14} ${mx + 8},${arrowTip - 14}`,
       fill: '#ff2d78'
     }));
   }
@@ -345,12 +374,61 @@
 
     updateScore();
     document.getElementById('next-btn').classList.add('visible');
+    if (score === 20) setTimeout(showCongrats, 400);
   }
 
   function updateScore() {
     document.getElementById('score-val').textContent  = score;
     document.getElementById('total-val').textContent  = total;
     document.getElementById('streak-val').textContent = streak;
+  }
+
+  // ── Celebration ───────────────────────────────────────────
+  function showCongrats() {
+    document.getElementById('congrats-modal').classList.add('open');
+    fireLasers();
+  }
+
+  function closeCongrats() {
+    document.getElementById('congrats-modal').classList.remove('open');
+    score = total = streak = 0;
+    updateScore();
+    nextQuestion();
+  }
+
+  function fireLasers() {
+    const colors = ['#00f5ff','#ff2d78','#b44fff','#f0c040','#40e080','#ffb300'];
+    const count = 28;
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const beam   = document.createElement('div');
+        const horiz  = Math.random() > 0.4;
+        const color  = colors[Math.floor(Math.random() * colors.length)];
+        const dur    = 0.35 + Math.random() * 0.35;
+
+        if (horiz) {
+          const fromLeft = Math.random() > 0.5;
+          const yPct = 3 + Math.random() * 94;
+          const w    = 120 + Math.random() * 120;
+          beam.style.cssText = `position:fixed;top:${yPct}%;${fromLeft?'left:-'+w+'px':'right:-'+w+'px'};width:${w}px;height:3px;background:linear-gradient(90deg,transparent,${color},${color},transparent);box-shadow:0 0 8px ${color},0 0 16px ${color};z-index:9999;pointer-events:none;transition:transform ${dur}s linear;`;
+          document.body.appendChild(beam);
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            beam.style.transform = fromLeft ? `translateX(${window.innerWidth + w + 20}px)` : `translateX(-${window.innerWidth + w + 20}px)`;
+          }));
+        } else {
+          const fromTop = Math.random() > 0.5;
+          const xPct = 3 + Math.random() * 94;
+          const h    = 120 + Math.random() * 120;
+          beam.style.cssText = `position:fixed;left:${xPct}%;${fromTop?'top:-'+h+'px':'bottom:-'+h+'px'};width:3px;height:${h}px;background:linear-gradient(180deg,transparent,${color},${color},transparent);box-shadow:0 0 8px ${color},0 0 16px ${color};z-index:9999;pointer-events:none;transition:transform ${dur}s linear;`;
+          document.body.appendChild(beam);
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            beam.style.transform = fromTop ? `translateY(${window.innerHeight + h + 20}px)` : `translateY(-${window.innerHeight + h + 20}px)`;
+          }));
+        }
+
+        setTimeout(() => beam.remove(), (dur + 0.1) * 1000);
+      }, i * 80);
+    }
   }
 
   // Start
