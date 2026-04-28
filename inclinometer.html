@@ -212,6 +212,36 @@
     .feedback.correct { color: #40e080; }
     .feedback.wrong   { color: #ff7070; }
 
+    /* ── Game HUD ── */
+    .game-hud { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin-bottom:22px; }
+    .hud-pill { background:rgba(255,45,120,0.08); border:1px solid rgba(255,45,120,0.25); border-radius:20px; padding:6px 16px; font-family:'Orbitron',sans-serif; font-size:0.72rem; color:#ff2d78; letter-spacing:1px; display:flex; align-items:center; gap:8px; }
+    .hud-val { font-size:1.1rem; font-weight:900; }
+
+    /* ── Choice buttons ── */
+    .choices-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:340px; margin:0 auto 16px; }
+    .choice-btn { background:rgba(255,45,120,0.07); border:1px solid rgba(255,45,120,0.3); border-radius:10px; padding:14px 10px; font-family:'Orbitron',sans-serif; font-size:1rem; color:#f0e6ff; cursor:pointer; transition:all 0.2s; }
+    .choice-btn:hover:not(:disabled) { background:rgba(255,45,120,0.2); border-color:#ff2d78; }
+    .choice-btn.correct { background:rgba(64,224,128,0.2); border-color:#40e080; color:#40e080; }
+    .choice-btn.wrong   { background:rgba(255,80,80,0.2);  border-color:#ff5060; color:#ff5060; }
+    .choice-btn:disabled { cursor:default; }
+
+    /* ── Modals ── */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:500; }
+    .modal-overlay.open { display:block; }
+    .modal-box { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); border-radius:24px; padding:40px 32px; text-align:center; max-width:360px; width:90%; }
+    .modal-title { font-family:'Orbitron',sans-serif; font-size:1.2rem; font-weight:900; letter-spacing:3px; margin-bottom:12px; }
+    .modal-sub  { color:#9080b0; font-size:0.9rem; line-height:1.7; margin-bottom:22px; }
+    .modal-score { font-family:'Orbitron',sans-serif; font-size:2.4rem; font-weight:900; margin-bottom:4px; }
+    .modal-btn { border:none; border-radius:10px; padding:12px 32px; font-family:'Orbitron',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:2px; cursor:pointer; }
+    #win-modal .modal-box      { background:linear-gradient(135deg,#001520,#002535); border:2px solid rgba(0,245,255,0.4); }
+    #win-modal .modal-title    { color:#00f5ff; text-shadow:0 0 16px rgba(0,245,255,0.6); }
+    #win-modal .modal-score    { color:#00f5ff; }
+    #win-modal .modal-btn      { background:linear-gradient(135deg,#00c8d0,#0080a0); color:#fff; }
+    #gameover-modal .modal-box   { background:linear-gradient(135deg,#150010,#250020); border:2px solid rgba(255,45,120,0.4); }
+    #gameover-modal .modal-title { color:#ff2d78; text-shadow:0 0 16px rgba(255,45,120,0.6); }
+    #gameover-modal .modal-score { color:#ff2d78; }
+    #gameover-modal .modal-btn   { background:linear-gradient(135deg,#ff2d78,#c01050); color:#fff; }
+
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top: 20px; }
   </style>
 </head>
@@ -326,28 +356,43 @@
     </div>
   </div>
 
-  <!-- Practice -->
+  <!-- Game -->
   <div class="section">
-    <div class="section-title">Practice Reading It</div>
+    <div class="section-title">Practice Challenge</div>
     <div class="practice-card">
-      <div class="challenge-prompt">
-        Look at where the <strong>string</strong> points on the inclinometer below.<br>
-        What number does it land on? Then figure out the elevation angle!
+
+      <div class="game-hud">
+        <div class="hud-pill">SCORE <span class="hud-val" id="score-val">0</span><span style="color:#6050a0"> / 20</span></div>
+        <div class="hud-pill">LIVES <span class="hud-val" id="hearts-val">❤️❤️❤️❤️❤️</span></div>
+        <div class="hud-pill">STREAK <span class="hud-val" id="streak-val">0</span></div>
       </div>
+
+      <div class="challenge-prompt" id="question-text"></div>
 
       <svg id="inclinometer-svg" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"></svg>
 
-      <div class="answer-row">
-        <span class="answer-label">String reads:</span>
-        <input type="number" id="reading-input" class="answer-input" placeholder="?" min="0" max="180" />
-        <span class="deg-badge">°</span>
-      </div>
-
-      <div class="btn-row">
-        <button class="check-btn" onclick="checkAnswer()">Check</button>
-        <button class="new-btn" onclick="newChallenge()">New Challenge</button>
-      </div>
+      <div class="choices-grid" id="choices"></div>
       <div class="feedback" id="feedback"></div>
+    </div>
+  </div>
+
+  <!-- Win modal -->
+  <div class="modal-overlay" id="win-modal">
+    <div class="modal-box">
+      <div class="modal-title">YOU DID IT!</div>
+      <div class="modal-score">20 pts</div>
+      <div class="modal-sub">You can read an inclinometer AND calculate elevation angles. That's real engineering!</div>
+      <button class="modal-btn" onclick="restartGame(); document.getElementById('win-modal').classList.remove('open')">Play Again</button>
+    </div>
+  </div>
+
+  <!-- Game over modal -->
+  <div class="modal-overlay" id="gameover-modal">
+    <div class="modal-box">
+      <div class="modal-title">GAME OVER</div>
+      <div class="modal-score" id="gameover-score">0</div>
+      <div class="modal-sub">Nice try! You scored <span id="gameover-pts"></span> points. Keep practicing — you'll get there!</div>
+      <button class="modal-btn" onclick="restartGame(); document.getElementById('gameover-modal').classList.remove('open')">Try Again</button>
     </div>
   </div>
 
@@ -357,11 +402,14 @@
 
 <script>
   const cx = 200, cy = 45, R = 150;
-  let currentReading = 0;
+  const READINGS = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
+  const WIN_SCORE = 20, MAX_STRIKES = 5;
 
-  function toRad(deg) { return deg * Math.PI / 180; }
+  let score = 0, strikes = 0, streak = 0;
+  let currentReading = 0, questionType = 'reading'; // 'reading' or 'elevation'
 
-  // Point on arc for a protractor reading θ (0=left, 90=bottom, 180=right)
+  function toRad(d) { return d * Math.PI / 180; }
+
   function arcPoint(theta) {
     const a = toRad(180 - theta);
     return { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) };
@@ -370,123 +418,149 @@
   function buildSVG(reading) {
     const svg = document.getElementById('inclinometer-svg');
     svg.innerHTML = '';
-
     function el(tag, attrs, text) {
       const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
       for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
       if (text !== undefined) e.textContent = text;
       return e;
     }
-
-    // Arc (flat edge at top, arc curves down)
-    svg.appendChild(el('path', {
-      d: `M ${cx - R},${cy} A ${R},${R} 0 0,1 ${cx + R},${cy}`,
-      fill: 'rgba(255,45,120,0.08)',
-      stroke: '#ff2d78',
-      'stroke-width': '2.5'
-    }));
-
-    // Flat edge (top)
-    svg.appendChild(el('line', {
-      x1: cx - R, y1: cy, x2: cx + R, y2: cy,
-      stroke: '#ff2d78', 'stroke-width': '2.5'
-    }));
-
-    // Tick marks and labels
+    svg.appendChild(el('path', { d: `M ${cx-R},${cy} A ${R},${R} 0 0,1 ${cx+R},${cy}`, fill:'rgba(255,45,120,0.08)', stroke:'#ff2d78', 'stroke-width':'2.5' }));
+    svg.appendChild(el('line', { x1:cx-R, y1:cy, x2:cx+R, y2:cy, stroke:'#ff2d78', 'stroke-width':'2.5' }));
     for (let θ = 0; θ <= 180; θ += 10) {
       const outer = arcPoint(θ);
       const innerR = θ % 30 === 0 ? R - 20 : R - 11;
       const a = toRad(180 - θ);
       const inner = { x: cx + innerR * Math.cos(a), y: cy + innerR * Math.sin(a) };
-
-      svg.appendChild(el('line', {
-        x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y,
-        stroke: θ % 30 === 0 ? '#ffffff' : 'rgba(255,150,180,0.85)',
-        'stroke-width': θ % 30 === 0 ? '2.5' : '1.5'
-      }));
-
+      svg.appendChild(el('line', { x1:inner.x, y1:inner.y, x2:outer.x, y2:outer.y, stroke: θ%30===0 ? '#ffffff' : 'rgba(255,150,180,0.85)', 'stroke-width': θ%30===0 ? '2.5' : '1.5' }));
       if (θ % 30 === 0) {
-        const labelR = R - 32;
-        const lx = cx + labelR * Math.cos(a);
-        const ly = cy + labelR * Math.sin(a);
-        svg.appendChild(el('text', {
-          x: lx, y: ly + 4,
-          'text-anchor': 'middle',
-          fill: '#ffffff',
-          'font-size': '13',
-          'font-weight': 'bold',
-          'font-family': 'Exo 2, sans-serif'
-        }, θ + '°'));
+        const labelR = R - 32, a2 = toRad(180 - θ);
+        svg.appendChild(el('text', { x: cx+labelR*Math.cos(a2), y: cy+labelR*Math.sin(a2)+4, 'text-anchor':'middle', fill:'#ffffff', 'font-size':'13', 'font-weight':'bold', 'font-family':'Exo 2, sans-serif' }, θ+'°'));
       }
     }
-
-    // Center pivot dot
-    svg.appendChild(el('circle', { cx, cy, r: '5', fill: '#ff2d78' }));
-
-    // String line
+    svg.appendChild(el('circle', { cx, cy, r:'5', fill:'#ff2d78' }));
     const sp = arcPoint(reading);
-    svg.appendChild(el('line', {
-      x1: cx, y1: cy, x2: sp.x, y2: sp.y,
-      stroke: '#f0c040', 'stroke-width': '2.5',
-      'stroke-linecap': 'round'
-    }));
-
-    // Nut at end
-    svg.appendChild(el('circle', { cx: sp.x, cy: sp.y, r: '7', fill: '#f0c040' }));
-
-    // Straw (flat edge)
-    svg.appendChild(el('rect', {
-      x: cx - R - 10, y: cy - 7, width: R * 2 + 20, height: 7,
-      rx: '3',
-      fill: 'rgba(255,45,120,0.12)',
-      stroke: 'rgba(255,45,120,0.4)',
-      'stroke-width': '1'
-    }));
-
-    // "STRAW" label
-    svg.appendChild(el('text', {
-      x: cx - R - 6, y: cy - 10,
-      fill: 'rgba(255,45,120,0.5)',
-      'font-size': '9',
-      'font-family': 'Orbitron, sans-serif',
-      'letter-spacing': '2'
-    }, 'STRAW →'));
+    svg.appendChild(el('line', { x1:cx, y1:cy, x2:sp.x, y2:sp.y, stroke:'#f0c040', 'stroke-width':'2.5', 'stroke-linecap':'round' }));
+    svg.appendChild(el('circle', { cx:sp.x, cy:sp.y, r:'7', fill:'#f0c040' }));
+    svg.appendChild(el('rect', { x:cx-R-10, y:cy-7, width:R*2+20, height:7, rx:'3', fill:'rgba(255,45,120,0.12)', stroke:'rgba(255,45,120,0.4)', 'stroke-width':'1' }));
+    svg.appendChild(el('text', { x:cx-R-6, y:cy-10, fill:'rgba(255,45,120,0.5)', 'font-size':'9', 'font-family':'Orbitron, sans-serif', 'letter-spacing':'2' }, 'STRAW →'));
   }
 
-  function newChallenge() {
-    // Protractor readings 20°–70° in steps of 5 (elevation = 90 - reading → 20°–70°)
-    const options = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
-    currentReading = options[Math.floor(Math.random() * options.length)];
+  function generateChoices(correct, pool) {
+    const set = new Set([correct]);
+    const candidates = pool.filter(v => v !== correct);
+    candidates.sort(() => Math.random() - 0.5);
+    for (const v of candidates) { if (set.size >= 4) break; set.add(v); }
+    return [...set].sort(() => Math.random() - 0.5);
+  }
+
+  function nextQuestion() {
+    currentReading = READINGS[Math.floor(Math.random() * READINGS.length)];
+    questionType = Math.random() < 0.5 ? 'reading' : 'elevation';
     buildSVG(currentReading);
-    document.getElementById('reading-input').value = '';
+
+    const correctAnswer = questionType === 'reading' ? currentReading : 90 - currentReading;
+    const pool = questionType === 'reading'
+      ? READINGS
+      : READINGS.map(r => 90 - r);
+    const choices = generateChoices(correctAnswer, pool);
+
+    const qt = document.getElementById('question-text');
+    qt.innerHTML = questionType === 'reading'
+      ? 'What number does the <strong>yellow string</strong> point to on the protractor?'
+      : 'Using the formula <strong>90° − string reading</strong>, what is the <strong>elevation angle</strong>?';
+
+    const container = document.getElementById('choices');
+    container.innerHTML = '';
+    choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = c + '°';
+      btn.onclick = () => checkAnswer(c, btn);
+      container.appendChild(btn);
+    });
     document.getElementById('feedback').textContent = '';
     document.getElementById('feedback').className = 'feedback';
-    document.getElementById('reading-input').focus();
   }
 
-  function checkAnswer() {
-    const val = parseInt(document.getElementById('reading-input').value);
+  function checkAnswer(chosen, btn) {
+    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+    const correct = questionType === 'reading' ? currentReading : 90 - currentReading;
+    const isRight = chosen === correct;
     const fb = document.getElementById('feedback');
-    if (isNaN(val)) {
-      fb.textContent = 'Type a number first!';
-      fb.className = 'feedback wrong';
-      return;
-    }
-    if (val === currentReading) {
-      const elev = 90 - currentReading;
-      fb.textContent = `Nice work! 🎉  So the elevation angle = 90° − ${currentReading}° = ${elev}°`;
+
+    if (isRight) {
+      btn.classList.add('correct');
+      score++; streak++;
+      const msg = questionType === 'reading'
+        ? `Correct! The string reads ${correct}°, so elevation = 90° − ${correct}° = ${90 - correct}°`
+        : `Correct! ${correct}° is the elevation angle.`;
+      fb.textContent = streak >= 3 ? `🔥 ${streak} in a row! ${msg}` : msg;
       fb.className = 'feedback correct';
     } else {
-      fb.textContent = 'Not quite — look closely at where the string lands. You\'ve got this!';
+      btn.classList.add('wrong');
+      document.querySelectorAll('.choice-btn').forEach(b => { if (b.textContent === correct + '°') b.classList.add('correct'); });
+      strikes++; streak = 0;
+      fb.textContent = `Not quite — the answer was ${correct}°.`;
       fb.className = 'feedback wrong';
+    }
+
+    updateHUD();
+
+    if (score >= WIN_SCORE) { setTimeout(showWin, 500); return; }
+    if (strikes >= MAX_STRIKES) { setTimeout(showGameOver, 500); return; }
+    setTimeout(nextQuestion, 1400);
+  }
+
+  function updateHUD() {
+    document.getElementById('score-val').textContent  = score;
+    document.getElementById('streak-val').textContent = streak;
+    let h = '';
+    for (let i = 0; i < MAX_STRIKES; i++) h += i < (MAX_STRIKES - strikes) ? '❤️' : '🖤';
+    document.getElementById('hearts-val').textContent = h;
+  }
+
+  function showWin() {
+    document.getElementById('win-modal').classList.add('open');
+    fireLasers();
+  }
+
+  function showGameOver() {
+    document.getElementById('gameover-score').textContent = score + ' pts';
+    document.getElementById('gameover-pts').textContent   = score;
+    document.getElementById('gameover-modal').classList.add('open');
+  }
+
+  function restartGame() {
+    score = strikes = streak = 0;
+    updateHUD();
+    nextQuestion();
+  }
+
+  function fireLasers() {
+    const colors = ['#00f5ff','#ff2d78','#b44fff','#f0c040','#40e080','#ffb300'];
+    for (let i = 0; i < 28; i++) {
+      setTimeout(() => {
+        const beam  = document.createElement('div');
+        const horiz = Math.random() > 0.4;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const dur   = 0.35 + Math.random() * 0.35;
+        if (horiz) {
+          const fromLeft = Math.random() > 0.5, yPct = 3 + Math.random() * 94, w = 120 + Math.random() * 120;
+          beam.style.cssText = `position:fixed;top:${yPct}%;${fromLeft?'left:-'+w+'px':'right:-'+w+'px'};width:${w}px;height:3px;background:linear-gradient(90deg,transparent,${color},${color},transparent);box-shadow:0 0 8px ${color},0 0 16px ${color};z-index:9999;pointer-events:none;transition:transform ${dur}s linear;`;
+          document.body.appendChild(beam);
+          requestAnimationFrame(() => requestAnimationFrame(() => { beam.style.transform = fromLeft ? `translateX(${window.innerWidth+w+20}px)` : `translateX(-${window.innerWidth+w+20}px)`; }));
+        } else {
+          const fromTop = Math.random() > 0.5, xPct = 3 + Math.random() * 94, h = 120 + Math.random() * 120;
+          beam.style.cssText = `position:fixed;left:${xPct}%;${fromTop?'top:-'+h+'px':'bottom:-'+h+'px'};width:3px;height:${h}px;background:linear-gradient(180deg,transparent,${color},${color},transparent);box-shadow:0 0 8px ${color},0 0 16px ${color};z-index:9999;pointer-events:none;transition:transform ${dur}s linear;`;
+          document.body.appendChild(beam);
+          requestAnimationFrame(() => requestAnimationFrame(() => { beam.style.transform = fromTop ? `translateY(${window.innerHeight+h+20}px)` : `translateY(-${window.innerHeight+h+20}px)`; }));
+        }
+        setTimeout(() => beam.remove(), (dur + 0.1) * 1000);
+      }, i * 80);
     }
   }
 
-  document.getElementById('reading-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') checkAnswer();
-  });
-
-  newChallenge();
+  nextQuestion();
 </script>
 <script type="module" src="auth.js"></script>
 </body>
