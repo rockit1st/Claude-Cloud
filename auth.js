@@ -1,5 +1,5 @@
 // auth.js — shared Firebase Auth + Firestore helpers
-import { FIREBASE_CONFIG, TEACHER_EMAILSS } from './firebase-config.js';
+import { FIREBASE_CONFIG, TEACHER_EMAILS } from './firebase-config.js';
 
 import { initializeApp }        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
@@ -18,7 +18,7 @@ onAuthStateChanged(auth, user => {
   const name   = document.getElementById('auth-name');
   if (!btn) return;
 
-  const isTeacher = user && TEACHER_EMAILSS.includes(user.email);
+  const isTeacher = user && TEACHER_EMAILS.includes(user.email);
 
   if (user) {
     btn.onclick = doSignOut;
