@@ -2,7 +2,7 @@
 import { FIREBASE_CONFIG, TEACHER_EMAILS } from './firebase-config.js';
 
 import { initializeApp }        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
                                  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, serverTimestamp }
                                  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -56,11 +56,14 @@ onAuthStateChanged(auth, user => {
 
 async function doSignIn() {
   try {
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    await signInWithRedirect(auth, new GoogleAuthProvider());
   } catch (e) {
     console.error('Sign-in failed', e);
   }
 }
+
+// Handle return from Google redirect
+getRedirectResult(auth).catch(e => console.error('Redirect result error', e));
 
 async function doSignOut() {
   await signOut(auth);
