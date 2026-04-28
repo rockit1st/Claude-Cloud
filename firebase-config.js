@@ -9,12 +9,12 @@
 // ─────────────────────────────────────────────────────────────
 
 export const FIREBASE_CONFIG = {
-  apiKey:            "PASTE_YOUR_API_KEY_HERE",
-  authDomain:        "your-project-id.firebaseapp.com",
-  projectId:         "your-project-id",
-  storageBucket:     "your-project-id.appspot.com",
-  messagingSenderId: "000000000000",
-  appId:             "1:000000000000:web:0000000000000000000000"
+  apiKey:            "AIzaSyBKGSWItkS0HkZcYCTc30C_fTugw1SoymI",
+  authDomain:        "techno-teacher-6d631.firebaseapp.com",
+  projectId:         "techno-teacher-6d631",
+  storageBucket:     "techno-teacher-6d631.firebasestorage.app",
+  messagingSenderId: "270196601225",
+  appId:             "1:270196601225:web:07efb1169c2b0492313158"
 };
 
 // Teacher accounts — only these emails can view the dashboard.
