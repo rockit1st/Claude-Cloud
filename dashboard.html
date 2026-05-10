@@ -74,6 +74,26 @@
     .score-low  { color: #ff5060; }
 
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
+    /* ── Light Mode ── */
+    body.light-mode { background: #f4eeff; color: #1a0030; }
+    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
+    body.light-mode .nav-link { color: #5a4a8a; }
+    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
+    body.light-mode .auth-btn { background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.25); color: #5a4a8a; }
+    body.light-mode .auth-btn:hover { color: #1a0030; }
+    body.light-mode .stat-card { background: rgba(255,255,255,0.9); border-color: rgba(180,79,255,0.2); }
+    body.light-mode .stat-label { color: #5a4a8a; }
+    body.light-mode .filter-bar { background: rgba(255,255,255,0.85); border-color: rgba(180,79,255,0.2); }
+    body.light-mode .filter-btn { color: #5a4a8a; border-color: rgba(180,79,255,0.2); }
+    body.light-mode .filter-btn.active { background: rgba(180,79,255,0.15); color: #6030a0; border-color: rgba(180,79,255,0.4); }
+    body.light-mode .score-table { background: rgba(255,255,255,0.9); border-color: rgba(180,79,255,0.15); }
+    body.light-mode .score-table th { background: rgba(180,79,255,0.08); color: #5a4a8a; }
+    body.light-mode .score-table td { color: #1a0030; border-color: rgba(180,79,255,0.08); }
+    body.light-mode .score-table tr:hover td { background: rgba(180,79,255,0.05); }
+    body.light-mode footer { color: rgba(90,74,130,0.55); border-top-color: rgba(180,79,255,0.12); background: #f4eeff; }
+    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
+    .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
+    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
   </style>
 </head>
 <body>
@@ -150,8 +170,8 @@ const app  = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-// ── Auth button ───────────────────────────────────────────────
-onAuthStateChanged(auth, user => {
+// ── Auth button ────────────────────────────────────────────────────
+onauthStateChanged(auth, user => {
   const btn    = document.getElementById('auth-btn');
   const avatar = document.getElementById('auth-avatar');
   const name   = document.getElementById('auth-name');
@@ -176,7 +196,7 @@ async function doSignIn() {
 
 getRedirectResult(auth).catch(e => console.error('Redirect result error', e));
 
-// ── Teacher access guard ──────────────────────────────────────
+// ── Teacher access guard ──────────────────────────────────────────────
 let allRows = [];
 let activeFilter = 'all';
 
@@ -205,7 +225,7 @@ async function loadScores() {
   renderStats(allRows);
 }
 
-// ── Filtering ─────────────────────────────────────────────────
+// ── Filtering ─────────────────────────────────────────────────────
 window.setFilter = function(game, btn) {
   activeFilter = game;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -215,7 +235,7 @@ window.setFilter = function(game, btn) {
   renderStats(filtered);
 };
 
-// ── Stats ─────────────────────────────────────────────────────
+// ── Stats ─────────────────────────────────────────────────────────
 function renderStats(rows) {
   const students = new Set(rows.map(r => r.uid)).size;
   const scores   = rows.map(r => r.score).filter(s => s != null);
@@ -227,7 +247,7 @@ function renderStats(rows) {
   document.getElementById('stat-wins').textContent     = wins;
 }
 
-// ── Table ─────────────────────────────────────────────────────
+// ── Table ─────────────────────────────────────────────────────────
 function scoreClass(score, game) {
   if (game === 'ruler-game') {
     if (score >= 50) return 'score-high';
@@ -272,7 +292,7 @@ window.exportCSV = function() {
   const filtered = activeFilter === 'all' ? allRows : allRows.filter(r => r.game === activeFilter);
   const header = 'Student,Email,Game,Score,Mode,Difficulty,Date';
   const lines  = filtered.map(r => [
-    `"${r.displayName || ''}"`,
+    `"${r.displayName || ''}"`  ,
     `"${r.email || ''}"`,
     r.game || '',
     r.score ?? '',
@@ -289,5 +309,9 @@ window.exportCSV = function() {
 };
 </script>
 
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
+</script>
 </body>
 </html>
