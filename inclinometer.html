@@ -243,6 +243,32 @@
     #gameover-modal .modal-btn   { background:linear-gradient(135deg,#ff2d78,#c01050); color:#fff; }
 
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top: 20px; }
+    /* ── Light Mode ── */
+    body.light-mode { background: #f4eeff; color: #1a0030; }
+    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
+    body.light-mode .nav-link { color: #5a4a8a; }
+    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
+    body.light-mode .nav-link.active { color: #c01050; background: rgba(255,45,120,0.08); border-color: rgba(255,45,120,0.3); }
+    body.light-mode .auth-btn { background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.25); color: #5a4a8a; }
+    body.light-mode .auth-btn:hover { color: #1a0030; }
+    body.light-mode .breadcrumb, body.light-mode .breadcrumb a { color: #5a4a8a; }
+    body.light-mode .info-card { background: rgba(255,255,255,0.92); border-color: rgba(255,45,120,0.2); color: #1a0030; }
+    body.light-mode .step-item { background: rgba(255,255,255,0.9); border-color: rgba(255,45,120,0.15); }
+    body.light-mode .step-text { color: #1a0030; }
+    body.light-mode .material-item { background: rgba(255,255,255,0.9); border-color: rgba(255,45,120,0.15); }
+    body.light-mode .material-name { color: #1a0030; }
+    body.light-mode .material-note { color: #5a4a8a; }
+    body.light-mode .math-box { background: rgba(255,255,255,0.9); border-color: rgba(255,45,120,0.25); }
+    body.light-mode .math-example { color: #5a4a8a; }
+    body.light-mode .practice-card { background: rgba(255,255,255,0.9); border-color: rgba(255,45,120,0.2); }
+    body.light-mode .challenge-prompt { color: #1a0030; }
+    body.light-mode .hud-pill { background: rgba(255,45,120,0.06); border-color: rgba(255,45,120,0.2); color: #c01050; }
+    body.light-mode .choice-btn { background: rgba(255,255,255,0.85); border-color: rgba(255,45,120,0.3); color: #1a0030; }
+    body.light-mode .choice-btn:hover:not(:disabled) { background: rgba(255,45,120,0.08); }
+    body.light-mode footer { color: rgba(90,74,130,0.55); border-top-color: rgba(180,79,255,0.12); background: #f4eeff; }
+    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
+    .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
+    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
   </style>
 </head>
 <body>
@@ -269,7 +295,6 @@
 <div class="content">
   <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="rockets.html">Rockets</a> / Inclinometer</div>
 
-  <!-- What is it -->
   <div class="section">
     <div class="section-title">What is an Inclinometer?</div>
     <div class="info-card">
@@ -278,7 +303,6 @@
     </div>
   </div>
 
-  <!-- Materials -->
   <div class="section">
     <div class="section-title">What You'll Need</div>
     <div class="materials-grid">
@@ -310,7 +334,6 @@
     </div>
   </div>
 
-  <!-- Build it -->
   <div class="section">
     <div class="section-title">Build It!</div>
     <div class="steps-list">
@@ -337,7 +360,6 @@
     </div>
   </div>
 
-  <!-- How to read it -->
   <div class="section">
     <div class="section-title">How to Read It</div>
     <div class="info-card">
@@ -356,7 +378,6 @@
     </div>
   </div>
 
-  <!-- Game -->
   <div class="section">
     <div class="section-title">Practice Challenge</div>
     <div class="practice-card">
@@ -376,7 +397,6 @@
     </div>
   </div>
 
-  <!-- Win modal -->
   <div class="modal-overlay" id="win-modal">
     <div class="modal-box">
       <div class="modal-title">YOU DID IT!</div>
@@ -386,7 +406,6 @@
     </div>
   </div>
 
-  <!-- Game over modal -->
   <div class="modal-overlay" id="gameover-modal">
     <div class="modal-box">
       <div class="modal-title">GAME OVER</div>
@@ -406,7 +425,7 @@
   const WIN_SCORE = 20, MAX_STRIKES = 5;
 
   let score = 0, strikes = 0, streak = 0;
-  let currentReading = 0, questionType = 'reading'; // 'reading' or 'elevation'
+  let currentReading = 0, questionType = 'reading';
 
   function toRad(d) { return d * Math.PI / 180; }
 
@@ -561,6 +580,10 @@
   }
 
   nextQuestion();
+</script>
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
 </script>
 <script type="module" src="auth.js"></script>
 </body>
