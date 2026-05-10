@@ -84,6 +84,22 @@
     .breadcrumb a:hover { color: #b44fff; }
 
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
+    /* ── Light Mode ── */
+    body.light-mode { background: #f4eeff; color: #1a0030; }
+    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
+    body.light-mode .nav-link { color: #5a4a8a; }
+    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
+    body.light-mode .nav-link.active { color: #6030a0; background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.3); }
+    body.light-mode .auth-btn { background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.25); color: #5a4a8a; }
+    body.light-mode .auth-btn:hover { color: #1a0030; }
+    body.light-mode .breadcrumb, body.light-mode .breadcrumb a { color: #5a4a8a; }
+    body.light-mode .coming-soon-card { background: rgba(255,255,255,0.92); border-color: rgba(180,79,255,0.2); }
+    body.light-mode .coming-soon-card p { color: #5a4a8a; }
+    body.light-mode .teaser-list li { background: rgba(255,255,255,0.9); border-color: rgba(180,79,255,0.15); color: #1a0030; }
+    body.light-mode footer { color: rgba(90,74,130,0.55); border-top-color: rgba(180,79,255,0.12); background: #f4eeff; }
+    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
+    .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
+    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
   </style>
 </head>
 <body>
@@ -124,6 +140,10 @@
 </div>
 
 <footer>Technology Class &copy; 2025</footer>
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
+</script>
 <script type="module" src="auth.js"></script>
 </body>
 </html>
