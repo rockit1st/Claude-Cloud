@@ -197,6 +197,30 @@
     .timedend-sub strong { color:#f0c040; font-size:1.1rem; }
     .timedend-btn { padding:14px 40px; border-radius:10px; background:linear-gradient(135deg,#b44fff,#6010a0); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:900; letter-spacing:2px; cursor:pointer; box-shadow:0 4px 20px rgba(180,79,255,0.4); transition:box-shadow 0.2s; }
     .timedend-btn:hover { box-shadow:0 6px 30px rgba(180,79,255,0.7); }
+    /* ── Light Mode ── */
+    body.light-mode { background: #f4eeff; color: #1a0030; }
+    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
+    body.light-mode .nav-link { color: #5a4a8a; }
+    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
+    body.light-mode .nav-link.active { color: #007a90; background: rgba(0,180,220,0.08); border-color: rgba(0,180,220,0.3); }
+    body.light-mode .auth-btn { background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.25); color: #5a4a8a; }
+    body.light-mode .auth-btn:hover { color: #1a0030; }
+    body.light-mode .breadcrumb, body.light-mode .breadcrumb a { color: #5a4a8a; }
+    body.light-mode .game-card { background: rgba(255,255,255,0.9); border-color: rgba(0,180,220,0.2); }
+    body.light-mode .question-text { color: #1a0030; }
+    body.light-mode .question-text strong { color: #007a90; }
+    body.light-mode .choice-btn { background: rgba(255,255,255,0.85); border-color: rgba(0,180,220,0.3); color: #1a0030; }
+    body.light-mode .choice-btn:hover:not(:disabled) { background: rgba(0,180,220,0.1); border-color: #0090b0; color: #1a0030; }
+    body.light-mode .score-pill { background: rgba(0,180,220,0.08); border-color: rgba(0,180,220,0.2); color: #1a0030; }
+    body.light-mode .score-pill span { color: #007a90; }
+    body.light-mode .streak-pill { background: rgba(180,140,0,0.08); border-color: rgba(180,140,0,0.2); color: #1a0030; }
+    body.light-mode .streak-pill span { color: #7a5800; }
+    body.light-mode .diff-btn { color: #5a4a8a; border-color: rgba(0,180,220,0.25); }
+    body.light-mode .diff-btn.active { color: #007a90; background: rgba(0,180,220,0.1); border-color: #0090b0; }
+    body.light-mode footer { color: rgba(90,74,130,0.55); border-top-color: rgba(180,79,255,0.12); background: #f4eeff; }
+    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
+    .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
+    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
   </style>
 </head>
 <body>
@@ -300,7 +324,6 @@
   let timerInterval = null, timeLeft = 60;
   const WIN_SCORE = 50, MAX_STRIKES = 5, TIMED_SECS = 60;
 
-  // ── Fraction helpers ──────────────────────────────────────
   function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 
   function toLabel(n16) {
@@ -311,18 +334,17 @@
     return whole === 0 ? `${num}/${den}"` : `${whole} ${num}/${den}"`;
   }
 
-  // ── Ruler drawing ─────────────────────────────────────────
-  const RX = 20, RY = 48, RW = 600, RH = 50; // ruler rect (RY leaves room for arrow above)
-  const INCH_PX = RW / 6;                     // 100 px per inch
+  const RX = 20, RY = 48, RW = 600, RH = 50;
+  const INCH_PX = RW / 6;
 
   function x16(n) { return RX + (n / 16) * INCH_PX; }
 
   function tickH(n) {
-    if (n % 16 === 0) return RH;          // inch
-    if (n %  8 === 0) return 32;          // half inch
-    if (n %  4 === 0) return 22;          // quarter
-    if (n %  2 === 0) return 16;          // eighth
-    return 11;                            // sixteenth
+    if (n % 16 === 0) return RH;
+    if (n %  8 === 0) return 32;
+    if (n %  4 === 0) return 22;
+    if (n %  2 === 0) return 16;
+    return 11;
   }
 
   function drawRuler(markerN) {
@@ -336,13 +358,11 @@
       return e;
     }
 
-    // Ruler body
     svg.appendChild(el('rect', { x: RX, y: RY, width: RW, height: RH, rx: 3,
       fill: '#060010', stroke: '#00f5ff', 'stroke-width': '2' }));
 
-    // Tick marks — only draw marks relevant to the current difficulty
     for (let n = 0; n <= 96; n++) {
-      if (n % difficulty !== 0) continue; // hide finer marks than selected difficulty
+      if (n % difficulty !== 0) continue;
       const tx = x16(n);
       const h  = tickH(n);
       svg.appendChild(el('line', {
@@ -351,7 +371,6 @@
         'stroke-width': n % 16 === 0 ? '2' : '1'
       }));
 
-      // Inch numbers (above bottom of ruler)
       if (n % 16 === 0) {
         svg.appendChild(el('text', {
           x: tx, y: RY + RH + 18,
@@ -361,23 +380,20 @@
       }
     }
 
-    // Arrow marker — above the ruler, pointing DOWN to the measurement
     const mx      = x16(markerN);
-    const arrowTip  = RY;       // tip touches the top edge of the ruler
-    const arrowBase = 6;        // tail of the arrow stem
+    const arrowTip  = RY;
+    const arrowBase = 6;
 
     svg.appendChild(el('line', {
       x1: mx, y1: arrowBase, x2: mx, y2: arrowTip - 11,
       stroke: '#ff2d78', 'stroke-width': '2.5', 'stroke-linecap': 'round'
     }));
-    // Downward-pointing triangle: tip at bottom, wide end at top
     svg.appendChild(el('polygon', {
       points: `${mx},${arrowTip} ${mx - 8},${arrowTip - 14} ${mx + 8},${arrowTip - 14}`,
       fill: '#ff2d78'
     }));
   }
 
-  // ── Mode / Difficulty ─────────────────────────────────────
   function setMode(m, btn) {
     mode = m;
     document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
@@ -450,7 +466,6 @@
 
   function generateChoices(correct) {
     const pool = new Set();
-    // Nearby candidates (±6 steps, same difficulty)
     for (let d = -6; d <= 6; d++) {
       if (d === 0) continue;
       const v = correct + d * difficulty;
@@ -530,7 +545,6 @@
   function updateHUD() {
     document.getElementById('score-val').textContent  = score;
     document.getElementById('streak-val').textContent = streak;
-    // Hearts for strikes
     let h = '';
     for (let i = 0; i < MAX_STRIKES; i++) h += i < (MAX_STRIKES - strikes) ? '❤️' : '🖤';
     document.getElementById('hearts-val').textContent = h;
@@ -593,6 +607,10 @@
 
   // Start
   resetGame();
+</script>
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
 </script>
 <script type="module" src="auth.js"></script>
 </body>
