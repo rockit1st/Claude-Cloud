@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Scout",
+    "slug": "scout",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": { "resizeMode": "contain", "backgroundColor": "#0F172A" },
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.scout.app" },
+    "android": { "adaptiveIcon": { "backgroundColor": "#0F172A" }, "package": "com.scout.app" },
+    "plugins": ["expo-router", ["expo-notifications", { "icon": "./assets/icon.png", "color": "#0F172A" }]]
+  }
+}
