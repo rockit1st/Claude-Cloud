@@ -21,6 +21,10 @@
     .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
     .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
     .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
     @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
 
     .banner {
@@ -211,7 +215,7 @@
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top: 20px; }
   </style>
 </head>
-<body>
+<body style="visibility:hidden">
 
 <nav class="topnav">
   <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
@@ -219,6 +223,10 @@
     <a href="rockets.html" class="nav-link active">&#128640; Rockets</a>
     <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
     <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
   </div>
 </nav>
 
@@ -480,5 +488,8 @@
   newChallenge();
 </script>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>
