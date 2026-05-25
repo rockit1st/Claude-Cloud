@@ -2,12 +2,12 @@
 // After creating your Firebase project, replace ALL values below with the ones
 // from: Firebase Console → Project Settings → Your Apps → SDK setup & config
 const firebaseConfig = {
-  apiKey:            "PASTE_YOUR_API_KEY_HERE",
-  authDomain:        "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "PASTE_YOUR_PROJECT_ID",
-  storageBucket:     "PASTE_YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID",
-  appId:             "PASTE_YOUR_APP_ID"
+  apiKey:            "AIzaSyBKGSWItkS0HkZcYCTc30C_fTugw1SoymI",
+  authDomain:        "techno-teacher-6d631.firebaseapp.com",
+  projectId:         "techno-teacher-6d631",
+  storageBucket:     "techno-teacher-6d631.firebasestorage.app",
+  messagingSenderId: "270196601225",
+  appId:             "1:270196601225:web:07efb1169c2b0492313158"
 };
 
 const ALLOWED_DOMAIN = "hhh.k12.ny.us";
