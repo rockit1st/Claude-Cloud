@@ -435,6 +435,9 @@
   }
 
   function buildSVG(reading) {
+    const isLight = document.body.classList.contains('light-mode');
+    const tickColor = isLight ? '#1a0030' : '#ffffff';
+    const minorTickColor = isLight ? 'rgba(180,0,80,0.7)' : 'rgba(255,150,180,0.85)';
     const svg = document.getElementById('inclinometer-svg');
     svg.innerHTML = '';
     function el(tag, attrs, text) {
@@ -450,10 +453,10 @@
       const innerR = θ % 30 === 0 ? R - 20 : R - 11;
       const a = toRad(180 - θ);
       const inner = { x: cx + innerR * Math.cos(a), y: cy + innerR * Math.sin(a) };
-      svg.appendChild(el('line', { x1:inner.x, y1:inner.y, x2:outer.x, y2:outer.y, stroke: θ%30===0 ? '#ffffff' : 'rgba(255,150,180,0.85)', 'stroke-width': θ%30===0 ? '2.5' : '1.5' }));
+      svg.appendChild(el('line', { x1:inner.x, y1:inner.y, x2:outer.x, y2:outer.y, stroke: θ%30===0 ? tickColor : minorTickColor, 'stroke-width': θ%30===0 ? '2.5' : '1.5' }));
       if (θ % 30 === 0) {
         const labelR = R - 32, a2 = toRad(180 - θ);
-        svg.appendChild(el('text', { x: cx+labelR*Math.cos(a2), y: cy+labelR*Math.sin(a2)+4, 'text-anchor':'middle', fill:'#ffffff', 'font-size':'13', 'font-weight':'bold', 'font-family':'Exo 2, sans-serif' }, θ+'°'));
+        svg.appendChild(el('text', { x: cx+labelR*Math.cos(a2), y: cy+labelR*Math.sin(a2)+4, 'text-anchor':'middle', fill: tickColor, 'font-size':'13', 'font-weight':'bold', 'font-family':'Exo 2, sans-serif' }, θ+'°'));
       }
     }
     svg.appendChild(el('circle', { cx, cy, r:'5', fill:'#ff2d78' }));
@@ -583,7 +586,7 @@
 </script>
 <button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
 <script>
-(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';if(typeof buildSVG==='function'&&typeof currentReading!=='undefined')buildSVG(currentReading);}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
 </script>
 <script type="module" src="auth.js"></script>
 </body>
