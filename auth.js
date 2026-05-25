@@ -1,17 +1,17 @@
 // auth.js — shared Firebase Auth + Firestore helpers
 import { FIREBASE_CONFIG, TEACHER_EMAILS } from './firebase-config.js';
 
-import { initializeApp }        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
                                  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, serverTimestamp }
                                  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const app  = initializeApp(FIREBASE_CONFIG);
+const app  = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-// ── Auth state → update nav ───────────────────────────────────
+// ── Auth state → update nav ─────────────────────────────────────────────
 onAuthStateChanged(auth, user => {
   const btn    = document.getElementById('auth-btn');
   const avatar = document.getElementById('auth-avatar');
@@ -69,7 +69,7 @@ async function doSignOut() {
   await signOut(auth);
 }
 
-// ── Score saving ──────────────────────────────────────────────
+// ── Score saving ──────────────────────────────────────────────────────────────
 // Call this from any game when a round ends.
 // game: string identifier e.g. 'ruler-game'
 // data: plain object with score fields (e.g. { score, mode, difficulty })
@@ -90,7 +90,7 @@ window.saveScore = async function(game, data) {
   }
 };
 
-// ── Teacher guard ─────────────────────────────────────────────
+// ── Teacher guard ────────────────────────────────────────────────────────────
 // Call on dashboard.html to redirect non-teachers away.
 window.requireTeacher = function(onReady) {
   onAuthStateChanged(auth, user => {
