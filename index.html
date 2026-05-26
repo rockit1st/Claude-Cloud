@@ -46,7 +46,7 @@
     .hero {
       position: relative; min-height: 100vh;
       background: linear-gradient(to bottom, #0a000f 0%, #100025 45%, #1e0040 70%, #2a0050 100%);
-      display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: flex-start; justify-content: center;
       overflow: hidden; padding-top: 60px;
     }
 
@@ -84,8 +84,8 @@
       box-shadow: 0 0 18px #ff2d78, 0 0 36px rgba(255,45,120,0.5), 0 -2px 18px rgba(255,179,0,0.4);
     }
 
-    /* Hero content */
-    .hero-content { position: relative; z-index: 2; text-align: center; padding: 0 20px; }
+    /* Hero content — sits just below the sun peak (sun top ≈ 52vh−90px, +24px gap) */
+    .hero-content { position: relative; z-index: 2; text-align: center; padding: calc(52vh - 126px) 20px 0; width: 100%; }
     .hero-eyebrow { font-family: 'Exo 2', sans-serif; font-size: 0.9rem; letter-spacing: 6px; color: #b44fff; text-transform: uppercase; margin-bottom: 16px; }
     .hero-title {
       font-family: 'Orbitron', sans-serif; font-size: clamp(2.8rem, 8vw, 6rem); font-weight: 900;
@@ -190,6 +190,7 @@
 <footer>&copy; 2026 Tech Class Hub &mdash; Powered by curiosity</footer>
 
 <script>
+// Star field
 (function() {
   const hero = document.querySelector('.hero');
   const el = document.createElement('div');
@@ -208,6 +209,22 @@
   el.appendChild(dot);
   hero.appendChild(el);
 })();
+
+// Rocket flyby
+function launchRocket() {
+  const el = document.createElement('div');
+  const startX = 5 + Math.random() * 20;
+  el.style.cssText = 'position:fixed;left:' + startX + 'vw;bottom:-70px;font-size:2.8rem;z-index:9;pointer-events:none;transform:rotate(-45deg);transition:transform 3.6s cubic-bezier(0.15,0,0.4,1),opacity 3.6s ease;opacity:1;';
+  el.textContent = '🚀';
+  document.body.appendChild(el);
+  requestAnimationFrame(function() { requestAnimationFrame(function() {
+    el.style.transform = 'translate(' + (25 + Math.random() * 15) + 'vw, -110vh) rotate(-45deg)';
+    el.style.opacity = '0';
+  }); });
+  setTimeout(function() { el.remove(); }, 4200);
+}
+setTimeout(launchRocket, 1800);
+setInterval(launchRocket, 13000);
 </script>
 
 
