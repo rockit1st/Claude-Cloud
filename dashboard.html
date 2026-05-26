@@ -189,6 +189,16 @@
 <script src="auth.js"></script>
 <script>
   const TEACHER_PASSWORD = 'rocket';
+  const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
+
+  // Auto-unlock for teacher account
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user && user.email === TEACHER_EMAIL) {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('dashboard-content').style.display = 'block';
+      loadResults();
+    }
+  });
   var allResults = [], allGameResults = [], activeFilter = 'all', activeTab = 'altitude';
 
   // Enter on password field

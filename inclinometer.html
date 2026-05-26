@@ -212,6 +212,18 @@
     .feedback.correct { color: #40e080; }
     .feedback.wrong   { color: #ff7070; }
 
+    /* ── Mode & Difficulty tabs ── */
+    .mode-tabs { display:flex; gap:0; border-radius:10px; overflow:hidden; border:1px solid rgba(255,45,120,0.3); margin-bottom:16px; }
+    .mode-tab { flex:1; padding:10px 6px; border:none; background:transparent; color:#9080b0; font-family:'Exo 2',sans-serif; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.2s; letter-spacing:0.5px; }
+    .mode-tab:hover { background:rgba(255,45,120,0.08); color:#fff; }
+    .mode-tab.active { background:rgba(255,45,120,0.15); color:#ff2d78; }
+    .diff-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+    .diff-label { font-family:'Orbitron',sans-serif; font-size:0.75rem; color:#ff2d78; letter-spacing:2px; }
+    .diff-btns { display:flex; gap:6px; }
+    .diff-btn { background:transparent; border:1px solid rgba(255,45,120,0.3); border-radius:20px; padding:5px 14px; font-size:0.78rem; font-weight:600; color:#9080b0; cursor:pointer; font-family:'Exo 2',sans-serif; transition:all 0.2s; }
+    .diff-btn:hover { color:#fff; border-color:rgba(255,45,120,0.6); }
+    .diff-btn.active { color:#ff2d78; background:rgba(255,45,120,0.1); border-color:#ff2d78; }
+
     /* ── Game HUD ── */
     .game-hud { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin-bottom:22px; }
     .hud-pill { background:rgba(255,45,120,0.08); border:1px solid rgba(255,45,120,0.25); border-radius:20px; padding:6px 16px; font-family:'Orbitron',sans-serif; font-size:0.72rem; color:#ff2d78; letter-spacing:1px; display:flex; align-items:center; gap:8px; }
@@ -224,6 +236,8 @@
     .choice-btn.correct { background:rgba(64,224,128,0.2); border-color:#40e080; color:#40e080; }
     .choice-btn.wrong   { background:rgba(255,80,80,0.2);  border-color:#ff5060; color:#ff5060; }
     .choice-btn:disabled { cursor:default; }
+    .hint-btn { display:none; background:transparent; border:1px solid rgba(255,45,120,0.3); border-radius:8px; padding:7px 18px; color:#ff2d78; font-family:'Exo 2',sans-serif; font-size:0.8rem; font-weight:600; cursor:pointer; margin:0 auto 12px; transition:background 0.2s; }
+    .hint-btn:hover { background:rgba(255,45,120,0.1); }
 
     /* ── Modals ── */
     .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:500; }
@@ -392,16 +406,33 @@
         </select>
       </div>
 
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="setMode('classic',this)">⚡ Classic</button>
+        <button class="mode-tab" onclick="setMode('practice',this)">🎓 Practice</button>
+        <button class="mode-tab" onclick="setMode('timed',this)">⏱️ Timed</button>
+      </div>
+
+      <div class="diff-bar">
+        <span class="diff-label">Difficulty:</span>
+        <div class="diff-btns">
+          <button class="diff-btn active" onclick="setDiff('easy',this)">Easy</button>
+          <button class="diff-btn" onclick="setDiff('medium',this)">Medium</button>
+          <button class="diff-btn" onclick="setDiff('hard',this)">Hard</button>
+        </div>
+      </div>
+
       <div class="game-hud">
-        <div class="hud-pill">SCORE <span class="hud-val" id="score-val">0</span><span style="color:#6050a0"> / 20</span></div>
-        <div class="hud-pill">LIVES <span class="hud-val" id="hearts-val">❤️❤️❤️❤️❤️</span></div>
+        <div class="hud-pill">SCORE <span class="hud-val" id="score-val">0</span><span id="score-denom" style="color:#6050a0"> / 20</span></div>
+        <div class="hud-pill" id="pill-lives">LIVES <span class="hud-val" id="hearts-val">❤️❤️❤️❤️❤️</span></div>
         <div class="hud-pill">STREAK <span class="hud-val" id="streak-val">0</span></div>
+        <div class="hud-pill" id="pill-timer" style="display:none">⏱️ <span class="hud-val" id="timer-val">60</span>s</div>
       </div>
 
       <div class="challenge-prompt" id="question-text"></div>
 
       <svg id="inclinometer-svg" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"></svg>
 
+      <button class="hint-btn" id="hint-btn" onclick="showHint()">💡 Show Hint</button>
       <div class="choices-grid" id="choices"></div>
       <div class="feedback" id="feedback"></div>
     </div>
@@ -431,11 +462,16 @@
 
 <script>
   const cx = 200, cy = 45, R = 150;
-  const READINGS = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
-  const WIN_SCORE = 20, MAX_STRIKES = 5;
+  const READINGS = {
+    easy:   [30, 45, 60, 90, 120, 135, 150],
+    medium: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70],
+    hard:   [22, 27, 33, 38, 43, 48, 53, 58, 63, 68, 73, 78]
+  };
+  const WIN_SCORE = 20, MAX_STRIKES = 5, TIMED_SECS = 60;
 
-  let score = 0, strikes = 0, streak = 0;
+  let score = 0, strikes = 0, streak = 0, timeLeft = TIMED_SECS, timerInterval = null;
   let currentReading = 0, questionType = 'reading';
+  let mode = 'classic', difficulty = 'easy';
 
   function toRad(d) { return d * Math.PI / 180; }
 
@@ -485,8 +521,62 @@
     return [...set].sort(() => Math.random() - 0.5);
   }
 
+  function setMode(m, btn) {
+    mode = m;
+    document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    restartGame();
+  }
+
+  function setDiff(d, btn) {
+    difficulty = d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    restartGame();
+  }
+
+  function applyModeUI() {
+    const isClassic = mode === 'classic', isTimed = mode === 'timed', isPractice = mode === 'practice';
+    document.getElementById('pill-lives').style.display = isTimed ? 'none' : '';
+    document.getElementById('pill-timer').style.display = isTimed ? '' : 'none';
+    document.getElementById('score-denom').textContent = isTimed ? '' : ' / 20';
+    document.getElementById('hint-btn').style.display = isPractice ? 'inline-block' : 'none';
+  }
+
+  function startTimer() {
+    timeLeft = TIMED_SECS;
+    document.getElementById('timer-val').textContent = timeLeft;
+    timerInterval = setInterval(function() {
+      timeLeft--;
+      document.getElementById('timer-val').textContent = timeLeft;
+      if (timeLeft <= 0) { stopTimer(); endTimed(); }
+    }, 1000);
+  }
+
+  function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+  function endTimed() {
+    saveGameScore('timed-end');
+    document.getElementById('gameover-score').textContent = score + ' pts';
+    document.getElementById('gameover-pts').textContent = score;
+    document.querySelector('#gameover-modal .modal-sub').textContent = 'Time\'s up! You scored ' + score + ' points in 60 seconds!';
+    document.getElementById('gameover-modal').classList.add('open');
+  }
+
+  function showHint() {
+    const correct = questionType === 'reading' ? currentReading : 90 - currentReading;
+    const fb = document.getElementById('feedback');
+    fb.textContent = questionType === 'reading'
+      ? 'Hint: Look where the yellow string crosses the arc numbers.'
+      : 'Hint: Elevation = 90° − ' + currentReading + '° = ' + correct + '°';
+    fb.className = 'feedback';
+    fb.style.color = '#f0c040';
+  }
+
   function nextQuestion() {
-    currentReading = READINGS[Math.floor(Math.random() * READINGS.length)];
+    document.getElementById('feedback').style.color = '';
+    const pool = READINGS[difficulty];
+    currentReading = pool[Math.floor(Math.random() * pool.length)];
     questionType = Math.random() < 0.5 ? 'reading' : 'elevation';
     buildSVG(currentReading);
 
@@ -538,8 +628,8 @@
 
     updateHUD();
 
-    if (score >= WIN_SCORE) { setTimeout(showWin, 500); return; }
-    if (strikes >= MAX_STRIKES) { setTimeout(showGameOver, 500); return; }
+    if (mode !== 'timed' && score >= WIN_SCORE) { setTimeout(showWin, 500); return; }
+    if (mode !== 'timed' && mode !== 'practice' && strikes >= MAX_STRIKES) { setTimeout(showGameOver, 500); return; }
     setTimeout(nextQuestion, 1400);
   }
 
@@ -581,7 +671,10 @@
 
   function restartGame() {
     score = strikes = streak = 0;
+    stopTimer();
+    applyModeUI();
     updateHUD();
+    if (mode === 'timed') startTimer();
     nextQuestion();
   }
 
@@ -609,6 +702,7 @@
     }
   }
 
+  applyModeUI();
   nextQuestion();
 </script>
 <button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
