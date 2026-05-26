@@ -21,11 +21,11 @@
     .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
     .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
     .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
     @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
-    .auth-btn { display:flex; align-items:center; gap:6px; background:rgba(180,79,255,0.12); border:1px solid rgba(180,79,255,0.35); border-radius:20px; padding:6px 14px; cursor:pointer; font-family:'Exo 2',sans-serif; font-size:0.8rem; font-weight:600; color:#c0a0e0; letter-spacing:0.5px; transition:all 0.2s; white-space:nowrap; }
-    .auth-btn:hover { background:rgba(180,79,255,0.25); border-color:rgba(180,79,255,0.6); color:#fff; }
-    .auth-btn.signed-in { border-color:rgba(0,245,255,0.35); color:#00f5ff; background:rgba(0,245,255,0.08); }
-    .auth-btn img { width:22px; height:22px; border-radius:50%; }
 
     .banner {
       margin-top: 60px;
@@ -118,7 +118,7 @@
     body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
   </style>
 </head>
-<body>
+<body style="visibility:hidden">
 
 <nav class="topnav">
   <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
@@ -126,11 +126,13 @@
     <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
     <a href="measuring.html" class="nav-link active">&#128208; Measuring</a>
     <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
   </div>
-  <button id="auth-btn" class="auth-btn">
-    <img id="auth-avatar" style="display:none">
-    <span id="auth-name">Sign In</span>
-  </button>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
 </nav>
 
 <div class="banner">
@@ -174,6 +176,8 @@
 <script>
 (function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
 </script>
-<script type="module" src="auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>

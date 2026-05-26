@@ -21,11 +21,11 @@
     .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
     .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
     .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
     @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
-    .auth-btn { display:flex; align-items:center; gap:6px; background:rgba(180,79,255,0.12); border:1px solid rgba(180,79,255,0.35); border-radius:20px; padding:6px 14px; cursor:pointer; font-family:'Exo 2',sans-serif; font-size:0.8rem; font-weight:600; color:#c0a0e0; letter-spacing:0.5px; transition:all 0.2s; white-space:nowrap; }
-    .auth-btn:hover { background:rgba(180,79,255,0.25); border-color:rgba(180,79,255,0.6); color:#fff; }
-    .auth-btn.signed-in { border-color:rgba(0,245,255,0.35); color:#00f5ff; background:rgba(0,245,255,0.08); }
-    .auth-btn img { width:22px; height:22px; border-radius:50%; }
 
     .banner {
       margin-top: 60px;
@@ -212,6 +212,18 @@
     .feedback.correct { color: #40e080; }
     .feedback.wrong   { color: #ff7070; }
 
+    /* ── Mode & Difficulty tabs ── */
+    .mode-tabs { display:flex; gap:0; border-radius:10px; overflow:hidden; border:1px solid rgba(255,45,120,0.3); margin-bottom:16px; }
+    .mode-tab { flex:1; padding:10px 6px; border:none; background:transparent; color:#9080b0; font-family:'Exo 2',sans-serif; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.2s; letter-spacing:0.5px; }
+    .mode-tab:hover { background:rgba(255,45,120,0.08); color:#fff; }
+    .mode-tab.active { background:rgba(255,45,120,0.15); color:#ff2d78; }
+    .diff-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+    .diff-label { font-family:'Orbitron',sans-serif; font-size:0.75rem; color:#ff2d78; letter-spacing:2px; }
+    .diff-btns { display:flex; gap:6px; }
+    .diff-btn { background:transparent; border:1px solid rgba(255,45,120,0.3); border-radius:20px; padding:5px 14px; font-size:0.78rem; font-weight:600; color:#9080b0; cursor:pointer; font-family:'Exo 2',sans-serif; transition:all 0.2s; }
+    .diff-btn:hover { color:#fff; border-color:rgba(255,45,120,0.6); }
+    .diff-btn.active { color:#ff2d78; background:rgba(255,45,120,0.1); border-color:#ff2d78; }
+
     /* ── Game HUD ── */
     .game-hud { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin-bottom:22px; }
     .hud-pill { background:rgba(255,45,120,0.08); border:1px solid rgba(255,45,120,0.25); border-radius:20px; padding:6px 16px; font-family:'Orbitron',sans-serif; font-size:0.72rem; color:#ff2d78; letter-spacing:1px; display:flex; align-items:center; gap:8px; }
@@ -224,6 +236,8 @@
     .choice-btn.correct { background:rgba(64,224,128,0.2); border-color:#40e080; color:#40e080; }
     .choice-btn.wrong   { background:rgba(255,80,80,0.2);  border-color:#ff5060; color:#ff5060; }
     .choice-btn:disabled { cursor:default; }
+    .hint-btn { display:none; background:transparent; border:1px solid rgba(255,45,120,0.3); border-radius:8px; padding:7px 18px; color:#ff2d78; font-family:'Exo 2',sans-serif; font-size:0.8rem; font-weight:600; cursor:pointer; margin:0 auto 12px; transition:background 0.2s; }
+    .hint-btn:hover { background:rgba(255,45,120,0.1); }
 
     /* ── Modals ── */
     .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:500; }
@@ -233,6 +247,8 @@
     .modal-sub  { color:#9080b0; font-size:0.9rem; line-height:1.7; margin-bottom:22px; }
     .modal-score { font-family:'Orbitron',sans-serif; font-size:2.4rem; font-weight:900; margin-bottom:4px; }
     .modal-btn { border:none; border-radius:10px; padding:12px 32px; font-family:'Orbitron',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:2px; cursor:pointer; }
+    .scoreboard-toggle { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0; font-size:0.82rem; color:#9080b0; cursor:pointer; }
+    .scoreboard-toggle input { accent-color:#00f5ff; width:16px; height:16px; cursor:pointer; }
     #win-modal .modal-box      { background:linear-gradient(135deg,#001520,#002535); border:2px solid rgba(0,245,255,0.4); }
     #win-modal .modal-title    { color:#00f5ff; text-shadow:0 0 16px rgba(0,245,255,0.6); }
     #win-modal .modal-score    { color:#00f5ff; }
@@ -271,7 +287,7 @@
     body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
   </style>
 </head>
-<body>
+<body style="visibility:hidden">
 
 <nav class="topnav">
   <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
@@ -279,11 +295,13 @@
     <a href="rockets.html" class="nav-link active">&#128640; Rockets</a>
     <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
     <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
   </div>
-  <button id="auth-btn" class="auth-btn">
-    <img id="auth-avatar" style="display:none">
-    <span id="auth-name">Sign In</span>
-  </button>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
 </nav>
 
 <div class="banner">
@@ -382,16 +400,42 @@
     <div class="section-title">Practice Challenge</div>
     <div class="practice-card">
 
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(255,45,120,0.15)">
+        <input type="text" id="player-name" placeholder="Your name" style="flex:1;min-width:140px;max-width:200px;padding:9px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,45,120,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none" />
+        <select id="player-period" style="padding:9px 14px;background:rgba(20,0,40,0.9);border:1px solid rgba(255,45,120,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none">
+          <option value="" disabled selected>Period</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
+      </div>
+
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="setMode('classic',this)">⚡ Classic</button>
+        <button class="mode-tab" onclick="setMode('practice',this)">🎓 Practice</button>
+        <button class="mode-tab" onclick="setMode('timed',this)">⏱️ Timed</button>
+      </div>
+
+      <div class="diff-bar">
+        <span class="diff-label">Difficulty:</span>
+        <div class="diff-btns">
+          <button class="diff-btn active" onclick="setDiff('easy',this)">Easy</button>
+          <button class="diff-btn" onclick="setDiff('medium',this)">Medium</button>
+          <button class="diff-btn" onclick="setDiff('hard',this)">Hard</button>
+        </div>
+      </div>
+
       <div class="game-hud">
-        <div class="hud-pill">SCORE <span class="hud-val" id="score-val">0</span><span style="color:#6050a0"> / 20</span></div>
-        <div class="hud-pill">LIVES <span class="hud-val" id="hearts-val">❤️❤️❤️❤️❤️</span></div>
+        <div class="hud-pill">SCORE <span class="hud-val" id="score-val">0</span><span id="score-denom" style="color:#6050a0"> / 20</span></div>
+        <div class="hud-pill" id="pill-lives">LIVES <span class="hud-val" id="hearts-val">❤️❤️❤️❤️❤️</span></div>
         <div class="hud-pill">STREAK <span class="hud-val" id="streak-val">0</span></div>
+        <div class="hud-pill" id="pill-timer" style="display:none">⏱️ <span class="hud-val" id="timer-val">60</span>s</div>
       </div>
 
       <div class="challenge-prompt" id="question-text"></div>
 
       <svg id="inclinometer-svg" viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"></svg>
 
+      <button class="hint-btn" id="hint-btn" onclick="showHint()">💡 Show Hint</button>
       <div class="choices-grid" id="choices"></div>
       <div class="feedback" id="feedback"></div>
     </div>
@@ -400,8 +444,9 @@
   <div class="modal-overlay" id="win-modal">
     <div class="modal-box">
       <div class="modal-title">YOU DID IT!</div>
-      <div class="modal-score">20 pts</div>
+      <div class="modal-score" id="win-final-score">20 pts</div>
       <div class="modal-sub">You can read an inclinometer AND calculate elevation angles. That's real engineering!</div>
+      <label class="scoreboard-toggle"><input type="checkbox" id="win-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
       <button class="modal-btn" onclick="restartGame(); document.getElementById('win-modal').classList.remove('open')">Play Again</button>
     </div>
   </div>
@@ -411,6 +456,7 @@
       <div class="modal-title">GAME OVER</div>
       <div class="modal-score" id="gameover-score">0</div>
       <div class="modal-sub">Nice try! You scored <span id="gameover-pts"></span> points. Keep practicing — you'll get there!</div>
+      <label class="scoreboard-toggle"><input type="checkbox" id="gameover-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
       <button class="modal-btn" onclick="restartGame(); document.getElementById('gameover-modal').classList.remove('open')">Try Again</button>
     </div>
   </div>
@@ -421,11 +467,17 @@
 
 <script>
   const cx = 200, cy = 45, R = 150;
-  const READINGS = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
-  const WIN_SCORE = 20, MAX_STRIKES = 5;
+  const READINGS = {
+    easy:   [30, 45, 60, 90, 120, 135, 150],
+    medium: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70],
+    hard:   [22, 27, 33, 38, 43, 48, 53, 58, 63, 68, 73, 78]
+  };
+  const WIN_SCORE = 20, MAX_STRIKES = 5, TIMED_SECS = 60;
 
-  let score = 0, strikes = 0, streak = 0;
+  let score = 0, strikes = 0, streak = 0, timeLeft = TIMED_SECS, timerInterval = null;
   let currentReading = 0, questionType = 'reading';
+  let mode = 'classic', difficulty = 'easy';
+  let lastSavedDocRef = null;
 
   function toRad(d) { return d * Math.PI / 180; }
 
@@ -475,16 +527,71 @@
     return [...set].sort(() => Math.random() - 0.5);
   }
 
+  function setMode(m, btn) {
+    mode = m;
+    document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    restartGame();
+  }
+
+  function setDiff(d, btn) {
+    difficulty = d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    restartGame();
+  }
+
+  function applyModeUI() {
+    const isClassic = mode === 'classic', isTimed = mode === 'timed', isPractice = mode === 'practice';
+    document.getElementById('pill-lives').style.display = isTimed ? 'none' : '';
+    document.getElementById('pill-timer').style.display = isTimed ? '' : 'none';
+    document.getElementById('score-denom').textContent = isTimed ? '' : ' / 20';
+    document.getElementById('hint-btn').style.display = isPractice ? 'inline-block' : 'none';
+  }
+
+  function startTimer() {
+    timeLeft = TIMED_SECS;
+    document.getElementById('timer-val').textContent = timeLeft;
+    timerInterval = setInterval(function() {
+      timeLeft--;
+      document.getElementById('timer-val').textContent = timeLeft;
+      if (timeLeft <= 0) { stopTimer(); endTimed(); }
+    }, 1000);
+  }
+
+  function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+  function endTimed() {
+    saveGameScore('timed-end');
+    document.getElementById('gameover-score').textContent = score + ' pts';
+    document.getElementById('gameover-pts').textContent = score;
+    document.querySelector('#gameover-modal .modal-sub').textContent = 'Time\'s up! You scored ' + score + ' points in 60 seconds!';
+    document.getElementById('gameover-scoreboard-cb').checked = false;
+    document.getElementById('gameover-modal').classList.add('open');
+  }
+
+  function showHint() {
+    const correct = questionType === 'reading' ? currentReading : 90 - currentReading;
+    const fb = document.getElementById('feedback');
+    fb.textContent = questionType === 'reading'
+      ? 'Hint: Look where the yellow string crosses the arc numbers.'
+      : 'Hint: Elevation = 90° − ' + currentReading + '° = ' + correct + '°';
+    fb.className = 'feedback';
+    fb.style.color = '#f0c040';
+  }
+
   function nextQuestion() {
-    currentReading = READINGS[Math.floor(Math.random() * READINGS.length)];
+    document.getElementById('feedback').style.color = '';
+    const diffPool = READINGS[difficulty];
+    currentReading = diffPool[Math.floor(Math.random() * diffPool.length)];
     questionType = Math.random() < 0.5 ? 'reading' : 'elevation';
     buildSVG(currentReading);
 
     const correctAnswer = questionType === 'reading' ? currentReading : 90 - currentReading;
-    const pool = questionType === 'reading'
-      ? READINGS
-      : READINGS.map(r => 90 - r);
-    const choices = generateChoices(correctAnswer, pool);
+    const choicePool = questionType === 'reading'
+      ? diffPool
+      : diffPool.map(r => 90 - r);
+    const choices = generateChoices(correctAnswer, choicePool);
 
     const qt = document.getElementById('question-text');
     qt.innerHTML = questionType === 'reading'
@@ -528,8 +635,8 @@
 
     updateHUD();
 
-    if (score >= WIN_SCORE) { setTimeout(showWin, 500); return; }
-    if (strikes >= MAX_STRIKES) { setTimeout(showGameOver, 500); return; }
+    if (mode !== 'timed' && score >= WIN_SCORE) { setTimeout(showWin, 500); return; }
+    if (mode !== 'timed' && mode !== 'practice' && strikes >= MAX_STRIKES) { setTimeout(showGameOver, 500); return; }
     setTimeout(nextQuestion, 1400);
   }
 
@@ -541,20 +648,51 @@
     document.getElementById('hearts-val').textContent = h;
   }
 
+  function saveGameScore(result) {
+    if (typeof firebase === 'undefined') return;
+    const user = firebase.auth().currentUser;
+    firebase.firestore().collection('game-results').add({
+      game:             'inclinometer',
+      name:             document.getElementById('player-name').value.trim() || 'Anonymous',
+      period:           document.getElementById('player-period').value || '—',
+      score:            score,
+      maxScore:         WIN_SCORE,
+      result:           result,
+      mode:             mode,
+      difficulty:       difficulty,
+      userEmail:        user ? user.email : '',
+      showOnScoreboard: false,
+      savedAt:          firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function(ref) { lastSavedDocRef = ref; }).catch(function(e) { console.error(e); });
+  }
+
+  function toggleScoreboard(checked) {
+    if (!lastSavedDocRef) return;
+    lastSavedDocRef.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
+  }
+
   function showWin() {
+    saveGameScore('win');
+    document.getElementById('win-final-score').textContent = score + ' pts';
+    document.getElementById('win-scoreboard-cb').checked = false;
     document.getElementById('win-modal').classList.add('open');
     fireLasers();
   }
 
   function showGameOver() {
+    saveGameScore('game-over');
     document.getElementById('gameover-score').textContent = score + ' pts';
     document.getElementById('gameover-pts').textContent   = score;
+    document.getElementById('gameover-scoreboard-cb').checked = false;
     document.getElementById('gameover-modal').classList.add('open');
   }
 
   function restartGame() {
     score = strikes = streak = 0;
+    stopTimer();
+    applyModeUI();
     updateHUD();
+    if (mode === 'timed') startTimer();
     nextQuestion();
   }
 
@@ -582,12 +720,16 @@
     }
   }
 
+  applyModeUI();
   nextQuestion();
 </script>
 <button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
 <script>
 (function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';if(typeof buildSVG==='function'&&typeof currentReading!=='undefined')buildSVG(currentReading);}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
 </script>
-<script type="module" src="auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>

@@ -33,20 +33,20 @@
     }
     .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
     .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
     @media (max-width: 600px) {
       .topnav { padding: 12px 16px; }
       .nav-link { padding: 6px 10px; font-size: 0.75rem; }
     }
-    .auth-btn { display:flex; align-items:center; gap:6px; background:rgba(180,79,255,0.12); border:1px solid rgba(180,79,255,0.35); border-radius:20px; padding:6px 14px; cursor:pointer; font-family:'Exo 2',sans-serif; font-size:0.8rem; font-weight:600; color:#c0a0e0; letter-spacing:0.5px; transition:all 0.2s; white-space:nowrap; }
-    .auth-btn:hover { background:rgba(180,79,255,0.25); border-color:rgba(180,79,255,0.6); color:#fff; }
-    .auth-btn.signed-in { border-color:rgba(0,245,255,0.35); color:#00f5ff; background:rgba(0,245,255,0.08); }
-    .auth-btn img { width:22px; height:22px; border-radius:50%; }
 
     /* ── Hero ── */
     .hero {
       position: relative; min-height: 100vh;
       background: linear-gradient(to bottom, #0a000f 0%, #100025 45%, #1e0040 70%, #2a0050 100%);
-      display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: flex-start; justify-content: center;
       overflow: hidden; padding-top: 60px;
     }
 
@@ -84,8 +84,8 @@
       box-shadow: 0 0 18px #ff2d78, 0 0 36px rgba(255,45,120,0.5), 0 -2px 18px rgba(255,179,0,0.4);
     }
 
-    /* Hero content */
-    .hero-content { position: absolute; top: 60%; left: 50%; transform: translateX(-50%); z-index: 2; text-align: center; padding: 0 20px; width: 100%; }
+    /* Hero content — sits just below the horizon line (horizon ≈ 52vh from hero top, +24px gap) */
+    .hero-content { position: relative; z-index: 2; text-align: center; padding: calc(52vh - 36px) 20px 0; width: 100%; }
     .hero-eyebrow { font-family: 'Exo 2', sans-serif; font-size: 0.9rem; letter-spacing: 6px; color: #b44fff; text-transform: uppercase; margin-bottom: 16px; }
     .hero-title {
       font-family: 'Orbitron', sans-serif; font-size: clamp(2.8rem, 8vw, 6rem); font-weight: 900;
@@ -134,36 +134,9 @@
     .enter-btn.purple:hover { box-shadow: 0 0 35px rgba(180,79,255,0.8), 0 0 70px rgba(180,79,255,0.3); }
 
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.5); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
-
-    /* ── Light Mode ── */
-    body.light-mode { background: #f4eeff; color: #1a0030; }
-    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
-    body.light-mode .nav-link { color: #5a4a8a; }
-    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
-    body.light-mode .nav-link.active { color: #0090b0; background: rgba(0,180,220,0.1); border-color: rgba(0,180,220,0.3); }
-    body.light-mode .auth-btn { background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.25); color: #5a4a8a; }
-    body.light-mode .auth-btn:hover { color: #1a0030; background: rgba(180,79,255,0.15); }
-    body.light-mode .auth-btn.signed-in { color: #007a90; background: rgba(0,180,220,0.1); border-color: rgba(0,180,220,0.3); }
-    body.light-mode .topic-card { background: rgba(255,255,255,0.92); border-color: rgba(180,79,255,0.18); box-shadow: 0 4px 20px rgba(180,79,255,0.08); }
-    body.light-mode .card-desc { color: #5a4a8a; }
-    body.light-mode footer { color: rgba(90,74,130,0.55); border-top-color: rgba(180,79,255,0.12); background: #f4eeff; }
-
-    /* ── Theme Toggle Button ── */
-    .theme-toggle {
-      position: fixed; bottom: 24px; right: 24px; z-index: 200;
-      width: 50px; height: 50px; border-radius: 50%;
-      border: 1px solid rgba(180,79,255,0.4);
-      background: rgba(20,0,40,0.85); backdrop-filter: blur(10px);
-      cursor: pointer; font-size: 1.4rem;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.4);
-    }
-    .theme-toggle:hover { transform: scale(1.12); box-shadow: 0 6px 28px rgba(180,79,255,0.5); }
-    body.light-mode .theme-toggle { background: rgba(255,255,255,0.92); border-color: rgba(180,79,255,0.25); box-shadow: 0 4px 18px rgba(180,79,255,0.15); }
   </style>
 </head>
-<body>
+<body style="visibility:hidden">
 
 <nav class="topnav">
   <a href="index.html" class="nav-brand">⚡ TECH CLASS</a>
@@ -171,11 +144,13 @@
     <a href="rockets.html" class="nav-link">🚀 Rockets</a>
     <a href="measuring.html" class="nav-link">📐 Measuring</a>
     <a href="sailboat.html" class="nav-link">⛵ Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
   </div>
-  <button id="auth-btn" class="auth-btn">
-    <img id="auth-avatar" style="display:none">
-    <span id="auth-name">Sign In</span>
-  </button>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
 </nav>
 
 <section class="hero">
@@ -214,9 +189,8 @@
 
 <footer>&copy; 2026 Tech Class Hub &mdash; Powered by curiosity</footer>
 
-<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
-
 <script>
+// Star field
 (function() {
   const hero = document.querySelector('.hero');
   const el = document.createElement('div');
@@ -236,96 +210,26 @@
   hero.appendChild(el);
 })();
 
-// Futuristic spacecraft flyby: straight → loop at sun → shoot upward
-(function() {
-  const SHIP = `<svg width="56" height="28" viewBox="0 0 56 28" style="overflow:visible;display:block">
-    <ellipse cx="4" cy="14" rx="9" ry="4" fill="#ff2d78" opacity="0.35"/>
-    <ellipse cx="4" cy="14" rx="5" ry="2" fill="#ffb300" opacity="0.9"/>
-    <polygon points="14,14 3,26 24,20" fill="#5000b0"/>
-    <polygon points="14,14 3,2 24,8" fill="#5000b0"/>
-    <path d="M10,8 L48,11 L55,14 L48,17 L10,20 Z" fill="#0d0020"/>
-    <path d="M10,8 L48,11 L55,14 L48,17 L10,20 Z" fill="none" stroke="#b44fff" stroke-width="1.5"/>
-    <ellipse cx="38" cy="12" rx="9" ry="5" fill="#00f5ff" opacity="0.15"/>
-    <ellipse cx="38" cy="12" rx="9" ry="5" fill="none" stroke="#00f5ff" stroke-width="1.5"/>
-    <line x1="14" y1="12" x2="44" y2="12" stroke="#b44fff" stroke-width="0.8" opacity="0.5"/>
-  </svg>`;
-
-  function flySpacecraft() {
-    const hero = document.querySelector('.hero');
-    if (!hero) return;
-
-    const W = hero.offsetWidth;
-    const H = hero.offsetHeight;
-    const loopR = Math.min(68, W * 0.07);
-    const startY = H * 0.52 - 90 - 20;
-    const loopStartX = W * 0.50;
-
-    const el = document.createElement('div');
-    el.style.cssText = 'position:absolute;z-index:4;pointer-events:none;';
-    el.innerHTML = SHIP;
-    hero.appendChild(el);
-
-    let x = -70, y = startY, theta = 0, upVel = 0, phase = 'straight';
-
-    function place(px, py, rot) {
-      el.style.left = (px - 28) + 'px';
-      el.style.top  = (py - 14) + 'px';
-      el.style.transform = `rotate(${rot}deg)`;
-    }
-
-    function tick() {
-      if (phase === 'straight') {
-        x += 2.5;
-        place(x, y, 0);
-        if (x >= loopStartX) phase = 'loop';
-
-      } else if (phase === 'loop') {
-        theta += 0.038;
-        const px  = loopStartX + loopR * Math.sin(theta);
-        const py  = startY     + loopR * Math.cos(theta) - loopR;
-        const rot = Math.atan2(-Math.sin(theta), Math.cos(theta)) * 180 / Math.PI;
-        place(px, py, rot);
-        if (theta >= Math.PI * 2.5) {
-          phase = 'up';
-          x = px; y = py; upVel = -3;
-        }
-
-      } else {
-        upVel -= 0.3;
-        y += upVel;
-        place(x, y, -90);
-        if (y < -80) {
-          el.remove();
-          setTimeout(flySpacecraft, 15000 + Math.random() * 20000);
-          return;
-        }
-      }
-      requestAnimationFrame(tick);
-    }
-
-    requestAnimationFrame(tick);
-  }
-
-  setTimeout(flySpacecraft, 5000 + Math.random() * 8000);
-})();
-
-// Theme toggle
-(function() {
-  const btn  = document.getElementById('theme-toggle');
-  const body = document.body;
-  function apply(light) {
-    body.classList.toggle('light-mode', light);
-    btn.textContent = light ? '🌙' : '☀️';
-    btn.title = light ? 'Switch to dark mode' : 'Switch to light mode';
-  }
-  apply(localStorage.getItem('theme') === 'light');
-  btn.addEventListener('click', () => {
-    const light = !body.classList.contains('light-mode');
-    apply(light);
-    localStorage.setItem('theme', light ? 'light' : 'dark');
-  });
-})();
+// Rocket flyby
+function launchRocket() {
+  const el = document.createElement('div');
+  const startX = 5 + Math.random() * 20;
+  el.style.cssText = 'position:fixed;left:' + startX + 'vw;bottom:-70px;font-size:2.8rem;z-index:9;pointer-events:none;transform:rotate(-45deg);transition:transform 3.6s cubic-bezier(0.15,0,0.4,1),opacity 3.6s ease;opacity:1;';
+  el.textContent = '🚀';
+  document.body.appendChild(el);
+  requestAnimationFrame(function() { requestAnimationFrame(function() {
+    el.style.transform = 'translate(' + (25 + Math.random() * 15) + 'vw, -110vh) rotate(-45deg)';
+    el.style.opacity = '0';
+  }); });
+  setTimeout(function() { el.remove(); }, 4200);
+}
+setTimeout(launchRocket, 1800);
+setInterval(launchRocket, 13000);
 </script>
-<script type="module" src="auth.js"></script>
+
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>

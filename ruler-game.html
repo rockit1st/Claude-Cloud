@@ -20,11 +20,11 @@
     .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
     .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
     .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
     @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
-    .auth-btn { display:flex; align-items:center; gap:6px; background:rgba(180,79,255,0.12); border:1px solid rgba(180,79,255,0.35); border-radius:20px; padding:6px 14px; cursor:pointer; font-family:'Exo 2',sans-serif; font-size:0.8rem; font-weight:600; color:#c0a0e0; letter-spacing:0.5px; transition:all 0.2s; white-space:nowrap; }
-    .auth-btn:hover { background:rgba(180,79,255,0.25); border-color:rgba(180,79,255,0.6); color:#fff; }
-    .auth-btn.signed-in { border-color:rgba(0,245,255,0.35); color:#00f5ff; background:rgba(0,245,255,0.08); }
-    .auth-btn img { width:22px; height:22px; border-radius:50%; }
 
     .banner {
       margin-top: 60px;
@@ -197,6 +197,8 @@
     .timedend-sub strong { color:#f0c040; font-size:1.1rem; }
     .timedend-btn { padding:14px 40px; border-radius:10px; background:linear-gradient(135deg,#b44fff,#6010a0); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:900; letter-spacing:2px; cursor:pointer; box-shadow:0 4px 20px rgba(180,79,255,0.4); transition:box-shadow 0.2s; }
     .timedend-btn:hover { box-shadow:0 6px 30px rgba(180,79,255,0.7); }
+    .scoreboard-toggle { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0 4px; font-size:0.82rem; color:#9080b0; cursor:pointer; }
+    .scoreboard-toggle input { accent-color:#00f5ff; width:16px; height:16px; cursor:pointer; }
     /* ── Light Mode ── */
     body.light-mode { background: #f4eeff; color: #1a0030; }
     body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
@@ -223,7 +225,7 @@
     body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
   </style>
 </head>
-<body>
+<body style="visibility:hidden">
 
 <nav class="topnav">
   <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
@@ -231,11 +233,13 @@
     <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
     <a href="measuring.html" class="nav-link active">&#128208; Measuring</a>
     <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
   </div>
-  <button id="auth-btn" class="auth-btn">
-    <img id="auth-avatar" style="display:none">
-    <span id="auth-name">Sign In</span>
-  </button>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
 </nav>
 
 <div class="banner">
@@ -246,6 +250,15 @@
 
 <div class="content">
   <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="measuring.html">Measuring</a> / Ruler Reading Game</div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <input type="text" id="player-name" placeholder="Your name" style="flex:1;min-width:140px;max-width:200px;padding:9px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none" />
+    <select id="player-period" style="padding:9px 14px;background:rgba(0,10,30,0.9);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none">
+      <option value="" disabled selected>Period</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option>
+      <option>5</option><option>6</option><option>7</option><option>8</option>
+    </select>
+  </div>
 
   <div class="mode-tabs">
     <button class="mode-tab active" onclick="setMode('classic',this)">⚡ Classic</button>
@@ -293,6 +306,7 @@
     <div class="congrats-emoji">🏆</div>
     <div class="congrats-title">CONGRATULATIONS!</div>
     <div class="congrats-sub">You scored <strong>50 points!</strong><br>You're a ruler reading master!</div>
+    <label class="scoreboard-toggle"><input type="checkbox" id="congrats-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="congrats-btn" onclick="closeModal('congrats-modal');resetGame()">PLAY AGAIN</button>
   </div>
 </div>
@@ -302,6 +316,7 @@
     <div class="congrats-emoji">💀</div>
     <div class="gameover-title">GAME OVER</div>
     <div class="gameover-sub">You used all 5 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
+    <label class="scoreboard-toggle"><input type="checkbox" id="gameover-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="gameover-btn" onclick="closeModal('gameover-modal');resetGame()">TRY AGAIN</button>
   </div>
 </div>
@@ -311,6 +326,7 @@
     <div class="congrats-emoji">⏱️</div>
     <div class="timedend-title">TIME'S UP!</div>
     <div class="timedend-sub">You scored <strong><span id="timed-final">0</span> points</strong> in 60 seconds!</div>
+    <label class="scoreboard-toggle"><input type="checkbox" id="timedend-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="timedend-btn" onclick="closeModal('timedend-modal');resetGame()">PLAY AGAIN</button>
   </div>
 </div>
@@ -454,6 +470,7 @@
   function endTimed() {
     document.getElementById('timed-final').textContent = score;
     document.getElementById('timedend-modal').classList.add('open');
+    document.getElementById('timedend-scoreboard-cb').checked = false;
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
     if (window.saveScore) window.saveScore('ruler-game', { score, mode, difficulty, result: 'timed-end' });
   }
@@ -556,6 +573,7 @@
 
   function showCongrats() {
     document.getElementById('congrats-modal').classList.add('open');
+    document.getElementById('congrats-scoreboard-cb').checked = false;
     fireLasers();
     _saveScore({ result: 'win' });
   }
@@ -563,6 +581,7 @@
   function showGameOver() {
     document.getElementById('gameover-score').textContent = score;
     document.getElementById('gameover-modal').classList.add('open');
+    document.getElementById('gameover-scoreboard-cb').checked = false;
     _saveScore({ result: 'game-over' });
   }
 
@@ -612,6 +631,28 @@
 <script>
 (function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
 </script>
-<script type="module" src="auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  let lastSavedDocRef = null;
+  window.saveScore = function(game, data) {
+    if (typeof firebase === 'undefined') return;
+    const user = firebase.auth().currentUser;
+    firebase.firestore().collection('game-results').add(Object.assign({
+      game:             game,
+      name:             document.getElementById('player-name').value.trim() || 'Anonymous',
+      period:           document.getElementById('player-period').value || '—',
+      userEmail:        user ? user.email : '',
+      showOnScoreboard: false,
+      savedAt:          firebase.firestore.FieldValue.serverTimestamp()
+    }, data)).then(function(ref) { lastSavedDocRef = ref; }).catch(function(e) { console.error(e); });
+  };
+  function toggleScoreboard(checked) {
+    if (!lastSavedDocRef) return;
+    lastSavedDocRef.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
+  }
+</script>
 </body>
 </html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Exo 2', sans-serif;
+      background: #0a000f;
+      color: #f0e6ff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Perspective grid background */
+    .grid-wrap {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 50%;
+      overflow: hidden; pointer-events: none; z-index: 0;
+    }
+    .grid-wrap::before {
+      content: '';
+      position: absolute; top: 0; left: -100%; right: -100%; bottom: 0;
+      background:
+        repeating-linear-gradient(0deg, transparent 0px, transparent 59px, rgba(255,45,120,0.35) 59px, rgba(255,45,120,0.35) 60px),
+        repeating-linear-gradient(90deg, transparent 0px, transparent 79px, rgba(255,45,120,0.18) 79px, rgba(255,45,120,0.18) 80px);
+      transform: perspective(220px) rotateX(52deg);
+      transform-origin: top center;
+    }
+
+    /* Synthwave sun */
+    .sun {
+      position: fixed; bottom: 48%; left: 50%; transform: translateX(-50%);
+      width: 140px; height: 70px;
+      background: linear-gradient(to bottom, #ffb300 0%, #ff6000 40%, #ff2d78 100%);
+      border-radius: 70px 70px 0 0; overflow: hidden;
+      box-shadow: 0 0 40px rgba(255,45,120,0.8), 0 0 80px rgba(255,45,120,0.3);
+      z-index: 0;
+    }
+    .sun::before {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(to bottom, transparent 0px, transparent 9px, rgba(10,0,15,0.85) 9px, rgba(10,0,15,0.85) 14px);
+    }
+
+    .horizon-line {
+      position: fixed; bottom: 48%; left: 0; right: 0; height: 2px; z-index: 0;
+      background: linear-gradient(90deg, transparent 0%, #ff2d78 25%, #ffb300 50%, #ff2d78 75%, transparent 100%);
+      box-shadow: 0 0 18px #ff2d78;
+    }
+
+    /* Login card */
+    .card {
+      position: relative; z-index: 10;
+      background: rgba(10, 0, 20, 0.85);
+      border: 1px solid rgba(180,79,255,0.3);
+      border-radius: 24px;
+      padding: 52px 44px 44px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 0 60px rgba(180,79,255,0.15), 0 40px 80px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem; font-weight: 900;
+      color: #ff2d78; letter-spacing: 3px;
+      text-shadow: 0 0 12px rgba(255,45,120,0.7);
+      margin-bottom: 28px;
+    }
+
+    .card-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.6rem; font-weight: 900;
+      background: linear-gradient(to bottom, #ffffff 0%, #00f5ff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 12px rgba(0,245,255,0.4));
+      margin-bottom: 8px;
+    }
+
+    .card-sub {
+      font-size: 0.85rem; color: #9080b0;
+      letter-spacing: 1px; margin-bottom: 36px;
+    }
+
+    /* Google button */
+    .google-btn {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      width: 100%; padding: 14px 24px;
+      background: #fff; color: #1a1a1a;
+      border: none; border-radius: 10px;
+      font-family: 'Exo 2', sans-serif; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; letter-spacing: 0.5px;
+      transition: box-shadow 0.2s, transform 0.1s;
+      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    }
+    .google-btn:hover {
+      box-shadow: 0 0 30px rgba(255,255,255,0.25), 0 6px 20px rgba(0,0,0,0.3);
+      transform: translateY(-2px);
+    }
+    .google-btn:active { transform: scale(0.98); }
+    .google-btn svg { flex-shrink: 0; }
+
+    .domain-note {
+      margin-top: 20px;
+      font-size: 0.78rem; color: rgba(144,128,176,0.6);
+      letter-spacing: 0.5px;
+    }
+
+    /* Error message */
+    .error-msg {
+      display: none;
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: rgba(255,45,120,0.1);
+      border: 1px solid rgba(255,45,120,0.4);
+      border-radius: 8px;
+      color: #ff2d78; font-size: 0.85rem; line-height: 1.5;
+    }
+    .error-msg.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="grid-wrap"></div>
+<div class="sun"></div>
+<div class="horizon-line"></div>
+
+<div class="card">
+  <div class="logo">⚡ TECH CLASS</div>
+  <div class="card-title">SIGN IN</div>
+  <div class="card-sub">Students only &bull; Use your school account</div>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <button class="google-btn" onclick="signInWithGoogle()">
+    <svg width="20" height="20" viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      <path fill="none" d="M0 0h48v48H0z"/>
+    </svg>
+    Sign in with Google
+  </button>
+
+  <div class="domain-note">Only @hhh.k12.ny.us accounts are permitted</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+  // ── Firebase config — same values as auth.js ──────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBKGSWItkS0HkZcYCTc30C_fTugw1SoymI",
+    authDomain:        "techno-teacher-6d631.firebaseapp.com",
+    projectId:         "techno-teacher-6d631",
+    storageBucket:     "techno-teacher-6d631.firebasestorage.app",
+    messagingSenderId: "270196601225",
+    appId:             "1:270196601225:web:07efb1169c2b0492313158"
+  };
+
+  const ALLOWED_DOMAIN = "hhh.k12.ny.us";
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+
+  // Check for error param
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("error") === "domain") {
+    showError("Only @hhh.k12.ny.us Google accounts are allowed.");
+  }
+
+  // If already logged in with the right domain, go straight to index
+  firebase.auth().onAuthStateChanged(function (user) {
+    if (user) {
+      const domain = user.email.split("@")[1];
+      if (domain === ALLOWED_DOMAIN) {
+        window.location.replace("index.html");
+      } else {
+        firebase.auth().signOut();
+        showError("Only @hhh.k12.ny.us Google accounts are allowed.");
+      }
+    }
+  });
+
+  function signInWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
+    firebase.auth().signInWithPopup(provider).catch(function (err) {
+      if (err.code !== "auth/popup-closed-by-user") {
+        showError("Sign-in failed. Please try again.");
+      }
+    });
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("error-msg");
+    el.textContent = msg;
+    el.classList.add("visible");
+  }
+</script>
+</body>
+</html>

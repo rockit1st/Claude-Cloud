@@ -20,298 +20,352 @@
     .nav-links { display: flex; gap: 6px; }
     .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
     .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
-    .nav-link.active { color: #ff2d78; background: rgba(255,45,120,0.08); border-color: rgba(255,45,120,0.3); }
+    .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
     @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
-    .auth-btn { display:flex; align-items:center; gap:6px; background:rgba(180,79,255,0.12); border:1px solid rgba(180,79,255,0.35); border-radius:20px; padding:6px 14px; cursor:pointer; font-family:'Exo 2',sans-serif; font-size:0.8rem; font-weight:600; color:#c0a0e0; letter-spacing:0.5px; transition:all 0.2s; white-space:nowrap; }
-    .auth-btn:hover { background:rgba(180,79,255,0.25); border-color:rgba(180,79,255,0.6); color:#fff; }
-    .auth-btn.signed-in { border-color:rgba(0,245,255,0.35); color:#00f5ff; background:rgba(0,245,255,0.08); }
-    .auth-btn img { width:22px; height:22px; border-radius:50%; }
 
-    .banner {
-      margin-top: 60px;
-      background: linear-gradient(135deg, #0a000f 0%, #1a0020 50%, #0a000f 100%);
-      padding: 50px 20px 40px;
-      text-align: center;
-      border-bottom: 2px solid rgba(255,45,120,0.3);
+    /* Password gate */
+    .gate {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(10,0,15,0.97);
+      display: flex; align-items: center; justify-content: center;
     }
-    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.6rem, 5vw, 2.8rem); font-weight: 900; color: #ff2d78; letter-spacing: 4px; text-shadow: 0 0 20px rgba(255,45,120,0.6); }
-    .banner-sub { color: #9080b0; font-size: 0.95rem; margin-top: 8px; letter-spacing: 2px; }
-
-    .content { max-width: 1100px; margin: 0 auto; padding: 50px 20px 80px; }
-
-    #dash-status {
-      text-align: center; padding: 60px 20px;
-      font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #9080b0; letter-spacing: 2px;
+    .gate-card {
+      background: rgba(20,0,40,0.9); border: 1px solid rgba(180,79,255,0.3);
+      border-radius: 20px; padding: 44px 40px; text-align: center;
+      width: 100%; max-width: 380px; backdrop-filter: blur(12px);
     }
+    .gate-title { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 900; color: #b44fff; letter-spacing: 3px; margin-bottom: 8px; }
+    .gate-sub { font-size: 0.85rem; color: #9080b0; margin-bottom: 28px; }
+    .gate-input {
+      width: 100%; padding: 12px 16px; border-radius: 10px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(180,79,255,0.3);
+      color: #f0e6ff; font-family: 'Exo 2', sans-serif; font-size: 1rem;
+      margin-bottom: 12px; outline: none;
+    }
+    .gate-input:focus { border-color: #b44fff; }
+    .gate-btn {
+      width: 100%; padding: 13px; border-radius: 10px; border: none;
+      background: #b44fff; color: #fff; font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+    .gate-btn:hover { box-shadow: 0 0 24px rgba(180,79,255,0.6); }
+    .gate-error { color: #ff2d78; font-size: 0.82rem; margin-top: 10px; min-height: 18px; }
 
-    /* Controls bar */
-    .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 28px; }
-    .filter-label { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; color: #9080b0; letter-spacing: 2px; }
-    .filter-btn { background: rgba(255,45,120,0.08); border: 1px solid rgba(255,45,120,0.25); border-radius: 20px; padding: 6px 14px; cursor: pointer; font-family: 'Exo 2', sans-serif; font-size: 0.8rem; color: #c090b0; transition: all 0.2s; }
-    .filter-btn:hover, .filter-btn.active { background: rgba(255,45,120,0.2); border-color: rgba(255,45,120,0.55); color: #fff; }
-    .export-btn { margin-left: auto; background: rgba(0,245,255,0.08); border: 1px solid rgba(0,245,255,0.3); border-radius: 20px; padding: 7px 18px; cursor: pointer; font-family: 'Exo 2', sans-serif; font-size: 0.8rem; color: #00f5ff; transition: all 0.2s; }
-    .export-btn:hover { background: rgba(0,245,255,0.2); }
+    /* Dashboard content */
+    .content { padding: 100px 24px 60px; max-width: 1100px; margin: 0 auto; }
+    .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+    .dash-title { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 900; color: #b44fff; letter-spacing: 3px; }
+    .dash-sub { color: #9080b0; font-size: 0.85rem; margin-top: 4px; }
+    .refresh-btn {
+      background: transparent; border: 1px solid rgba(180,79,255,0.4); color: #b44fff;
+      padding: 8px 18px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover { background: rgba(180,79,255,0.1); }
 
-    /* Summary cards */
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 36px; }
-    .stat-card { background: rgba(255,45,120,0.06); border: 1px solid rgba(255,45,120,0.2); border-radius: 14px; padding: 20px 18px; text-align: center; }
-    .stat-val { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900; color: #ff2d78; }
+    /* Period filter tabs */
+    .period-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+    .period-tab {
+      background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #9080b0;
+      border-radius: 20px; padding: 6px 16px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; font-family: 'Exo 2', sans-serif;
+    }
+    .period-tab:hover { border-color: rgba(180,79,255,0.4); color: #b44fff; }
+    .period-tab.active { background: rgba(180,79,255,0.15); border-color: #b44fff; color: #b44fff; }
+
+    /* Stats row */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: rgba(20,0,40,0.6); border: 1px solid rgba(180,79,255,0.2); border-radius: 14px; padding: 20px; text-align: center; }
+    .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900; color: #b44fff; }
     .stat-label { font-size: 0.75rem; color: #9080b0; margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
 
-    /* Table */
-    .section-label { font-family: 'Orbitron', sans-serif; font-size: 0.78rem; color: #ff2d78; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
-    .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid rgba(255,45,120,0.2); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    thead tr { background: rgba(255,45,120,0.12); }
-    th { padding: 12px 16px; text-align: left; font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 2px; color: #ff2d78; white-space: nowrap; }
-    td { padding: 11px 16px; border-top: 1px solid rgba(255,45,120,0.08); color: #d0c0e0; }
-    tbody tr:hover { background: rgba(255,45,120,0.05); }
-    .badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:0.7rem; font-family:'Orbitron',sans-serif; letter-spacing:1px; }
-    .badge-ruler { background:rgba(0,245,255,0.1); border:1px solid rgba(0,245,255,0.3); color:#00f5ff; }
-    .badge-altitude { background:rgba(255,45,120,0.1); border:1px solid rgba(255,45,120,0.3); color:#ff2d78; }
-    .score-high { color: #40e080; font-weight: 700; }
-    .score-mid  { color: #ffb300; }
-    .score-low  { color: #ff5060; }
+    /* Period sections */
+    .period-section { margin-bottom: 32px; }
+    .period-heading {
+      font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 700;
+      color: #f0c040; letter-spacing: 2px; margin-bottom: 12px;
+      padding-bottom: 8px; border-bottom: 1px solid rgba(240,192,64,0.2);
+    }
 
-    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
-    /* ── Light Mode ── */
-    body.light-mode { background: #f4eeff; color: #1a0030; }
-    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
-    body.light-mode .nav-link { color: #5a4a8a; }
-    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
-    body.light-mode .auth-btn { background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.25); color: #5a4a8a; }
-    body.light-mode .auth-btn:hover { color: #1a0030; }
-    body.light-mode .stat-card { background: rgba(255,255,255,0.9); border-color: rgba(180,79,255,0.2); }
-    body.light-mode .stat-label { color: #5a4a8a; }
-    body.light-mode .filter-bar { background: rgba(255,255,255,0.85); border-color: rgba(180,79,255,0.2); }
-    body.light-mode .filter-btn { color: #5a4a8a; border-color: rgba(180,79,255,0.2); }
-    body.light-mode .filter-btn.active { background: rgba(180,79,255,0.15); color: #6030a0; border-color: rgba(180,79,255,0.4); }
-    body.light-mode .score-table { background: rgba(255,255,255,0.9); border-color: rgba(180,79,255,0.15); }
-    body.light-mode .score-table th { background: rgba(180,79,255,0.08); color: #5a4a8a; }
-    body.light-mode .score-table td { color: #1a0030; border-color: rgba(180,79,255,0.08); }
-    body.light-mode .score-table tr:hover td { background: rgba(180,79,255,0.05); }
-    body.light-mode footer { color: rgba(90,74,130,0.55); border-top-color: rgba(180,79,255,0.12); background: #f4eeff; }
-    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
-    .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
-    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
+    /* Table */
+    .results-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .results-table th {
+      text-align: left; padding: 10px 14px; color: #b44fff;
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px;
+      border-bottom: 1px solid rgba(180,79,255,0.2);
+    }
+    .results-table td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e8f4fd; }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr:hover td { background: rgba(180,79,255,0.05); }
+    .altitude-val { font-weight: 700; color: #f0c040; }
+
+    .empty-msg { text-align: center; color: #9080b0; padding: 32px; font-size: 0.9rem; }
+    .loading-msg { text-align: center; color: #9080b0; padding: 60px; font-size: 0.9rem; }
+
+    .clear-period-btn {
+      background: transparent; border: 1px solid rgba(255,100,100,0.3); color: #ff8080;
+      padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; margin-left: 12px; font-family: 'Exo 2', sans-serif;
+      transition: background 0.2s; vertical-align: middle;
+    }
+    .clear-period-btn:hover { background: rgba(255,100,100,0.1); }
+    .clear-all-btn {
+      background: transparent; border: 1px solid rgba(255,100,100,0.4); color: #ff8080;
+      padding: 8px 18px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px;
+      transition: background 0.2s;
+    }
+    .clear-all-btn:hover { background: rgba(255,100,100,0.1); }
   </style>
 </head>
-<body>
+<body style="visibility:hidden">
 
 <nav class="topnav">
-  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <a href="index.html" class="nav-brand">⚡ TECH CLASS</a>
   <div class="nav-links">
-    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
-    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
-    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
-    <a href="dashboard.html" class="nav-link active">&#128202; Dashboard</a>
+    <a href="rockets.html" class="nav-link">🚀 Rockets</a>
+    <a href="measuring.html" class="nav-link">📐 Measuring</a>
+    <a href="sailboat.html" class="nav-link">⛵ Sail Cars</a>
+    <a href="dashboard.html" class="nav-link active">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
   </div>
-  <button id="auth-btn" class="auth-btn">
-    <img id="auth-avatar" style="display:none">
-    <span id="auth-name">Sign In</span>
-  </button>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
 </nav>
 
-<div class="banner">
-  <div class="banner-title">TEACHER DASHBOARD</div>
-  <div class="banner-sub">Student Progress &bull; Scores &bull; Activity</div>
-</div>
-
-<div class="content">
-  <div id="dash-status">Checking access...</div>
-  <div id="dash-body" style="display:none">
-
-    <div class="summary-grid">
-      <div class="stat-card"><div class="stat-val" id="stat-students">—</div><div class="stat-label">Students</div></div>
-      <div class="stat-card"><div class="stat-val" id="stat-sessions">—</div><div class="stat-label">Total Sessions</div></div>
-      <div class="stat-card"><div class="stat-val" id="stat-avg">—</div><div class="stat-label">Avg Score</div></div>
-      <div class="stat-card"><div class="stat-val" id="stat-wins">—</div><div class="stat-label">Perfect Scores</div></div>
-    </div>
-
-    <div class="controls">
-      <span class="filter-label">Game:</span>
-      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
-      <button class="filter-btn" onclick="setFilter('ruler-game', this)">Ruler Game</button>
-      <button class="filter-btn" onclick="setFilter('altitude-calculator', this)">Altitude Calc</button>
-      <button class="export-btn" onclick="exportCSV()">&#8595; Export CSV</button>
-    </div>
-
-    <div class="section-label">Recent Activity</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Student</th>
-            <th>Game</th>
-            <th>Score</th>
-            <th>Mode</th>
-            <th>Difficulty</th>
-            <th>Date &amp; Time</th>
-          </tr>
-        </thead>
-        <tbody id="score-tbody"></tbody>
-      </table>
-    </div>
-
+<!-- Password gate -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-title">TEACHER ACCESS</div>
+    <div class="gate-sub">Enter your teacher password to view the dashboard</div>
+    <input class="gate-input" type="password" id="gate-pw" placeholder="••••••••" />
+    <button class="gate-btn" onclick="checkGate()">ENTER DASHBOARD</button>
+    <div class="gate-error" id="gate-error"></div>
   </div>
 </div>
 
-<footer>Technology Class &copy; 2025 &mdash; Teacher View</footer>
+<!-- Dashboard -->
+<div class="content" id="dashboard-content" style="display:none">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">TEACHER DASHBOARD</div>
+      <div class="dash-sub" id="dash-sub">Loading results...</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="refresh-btn" onclick="loadResults()">↻ Refresh</button>
+      <button class="clear-all-btn" onclick="clearAll()">Clear All Results</button>
+    </div>
+  </div>
 
-<script type="module">
-import { FIREBASE_CONFIG, TEACHER_EMAILS } from './firebase-config.js';
-import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
-                             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, query, orderBy, limit, getDocs }
-                             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
+    <button id="tab-altitude" onclick="switchTab('altitude')" style="padding:8px 20px;border-radius:20px;border:1px solid #b44fff;background:rgba(180,79,255,0.15);color:#b44fff;font-family:'Exo 2',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer">🚀 Altitude Calculator</button>
+    <button id="tab-games" onclick="switchTab('games')" style="padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9080b0;font-family:'Exo 2',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer">🎮 Games</button>
+  </div>
 
-const app  = initializeApp(FIREBASE_CONFIG);
-const auth = getAuth(app);
-const db   = getFirestore(app);
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Results</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-avg">—</div><div class="stat-label">Avg Altitude (ft)</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-high">—</div><div class="stat-label">Highest (ft)</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-periods">—</div><div class="stat-label">Active Periods</div></div>
+  </div>
 
-// ── Auth button ────────────────────────────────────────────────────
-onauthStateChanged(auth, user => {
-  const btn    = document.getElementById('auth-btn');
-  const avatar = document.getElementById('auth-avatar');
-  const name   = document.getElementById('auth-name');
-  if (user) {
-    btn.onclick = () => signOut(auth);
-    btn.title = 'Sign out';
-    if (avatar) { avatar.src = user.photoURL || ''; avatar.style.display = 'inline-block'; }
-    if (name)   name.textContent = user.displayName?.split(' ')[0] || user.email;
-    btn.classList.add('signed-in');
-  } else {
-    btn.onclick = doSignIn;
-    btn.title = 'Sign in';
-    if (avatar) avatar.style.display = 'none';
-    if (name)   name.textContent = 'Sign In';
-    btn.classList.remove('signed-in');
-  }
-});
+  <div class="period-tabs" id="period-tabs"></div>
 
-async function doSignIn() {
-  try { await signInWithRedirect(auth, new GoogleAuthProvider()); } catch(e) { console.error(e); }
-}
+  <div id="results-area">
+    <div class="loading-msg">Loading...</div>
+  </div>
+</div>
 
-getRedirectResult(auth).catch(e => console.error('Redirect result error', e));
-
-// ── Teacher access guard ──────────────────────────────────────────────
-let allRows = [];
-let activeFilter = 'all';
-
-onAuthStateChanged(auth, async user => {
-  const status = document.getElementById('dash-status');
-  const body   = document.getElementById('dash-body');
-  if (!user) {
-    status.textContent = 'Please sign in with your teacher Google account.';
-    doSignIn();
-    return;
-  }
-  if (!TEACHER_EMAILS.includes(user.email)) {
-    status.textContent = `Signed in as ${user.email} — this page is for teachers only.`;
-    return;
-  }
-  status.style.display = 'none';
-  body.style.display   = '';
-  await loadScores();
-});
-
-async function loadScores() {
-  const q = query(collection(db, 'scores'), orderBy('ts', 'desc'), limit(500));
-  const snap = await getDocs(q);
-  allRows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderTable(allRows);
-  renderStats(allRows);
-}
-
-// ── Filtering ─────────────────────────────────────────────────────
-window.setFilter = function(game, btn) {
-  activeFilter = game;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const filtered = game === 'all' ? allRows : allRows.filter(r => r.game === game);
-  renderTable(filtered);
-  renderStats(filtered);
-};
-
-// ── Stats ─────────────────────────────────────────────────────────
-function renderStats(rows) {
-  const students = new Set(rows.map(r => r.uid)).size;
-  const scores   = rows.map(r => r.score).filter(s => s != null);
-  const avg      = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : '—';
-  const wins     = rows.filter(r => r.score >= 50).length;
-  document.getElementById('stat-students').textContent = students;
-  document.getElementById('stat-sessions').textContent = rows.length;
-  document.getElementById('stat-avg').textContent      = avg;
-  document.getElementById('stat-wins').textContent     = wins;
-}
-
-// ── Table ─────────────────────────────────────────────────────────
-function scoreClass(score, game) {
-  if (game === 'ruler-game') {
-    if (score >= 50) return 'score-high';
-    if (score >= 25) return 'score-mid';
-    return 'score-low';
-  }
-  return '';
-}
-
-function gameBadge(game) {
-  if (game === 'ruler-game')         return `<span class="badge badge-ruler">Ruler</span>`;
-  if (game === 'altitude-calculator') return `<span class="badge badge-altitude">Altitude</span>`;
-  return `<span class="badge">${game}</span>`;
-}
-
-function formatDate(ts) {
-  if (!ts) return '—';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ' ' +
-         d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-}
-
-function renderTable(rows) {
-  const tbody = document.getElementById('score-tbody');
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6050a0;padding:30px;">No scores recorded yet.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = rows.map(r => `
-    <tr>
-      <td>${r.displayName || r.email}</td>
-      <td>${gameBadge(r.game)}</td>
-      <td class="${scoreClass(r.score, r.game)}">${r.score ?? '—'}</td>
-      <td style="text-transform:capitalize">${r.mode || '—'}</td>
-      <td>${r.difficulty ? '1/' + r.difficulty : '—'}</td>
-      <td style="color:#9080b0">${formatDate(r.ts)}</td>
-    </tr>`).join('');
-}
-
-// ── CSV Export ────────────────────────────────────────────────
-window.exportCSV = function() {
-  const filtered = activeFilter === 'all' ? allRows : allRows.filter(r => r.game === activeFilter);
-  const header = 'Student,Email,Game,Score,Mode,Difficulty,Date';
-  const lines  = filtered.map(r => [
-    `"${r.displayName || ''}"`  ,
-    `"${r.email || ''}"`,
-    r.game || '',
-    r.score ?? '',
-    r.mode || '',
-    r.difficulty ? '1/' + r.difficulty : '',
-    r.ts ? (r.ts.toDate ? r.ts.toDate() : new Date(r.ts)).toISOString() : ''
-  ].join(','));
-  const csv  = [header, ...lines].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url; a.download = 'techclass-scores.csv';
-  a.click(); URL.revokeObjectURL(url);
-};
-</script>
-
-<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
 <script>
-(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
+  const TEACHER_PASSWORD = 'rocket';
+  const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
+
+  // Auto-unlock for teacher account
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user && user.email === TEACHER_EMAIL) {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('dashboard-content').style.display = 'block';
+      loadResults();
+    }
+  });
+  var allResults = [], allGameResults = [], activeFilter = 'all', activeTab = 'altitude';
+
+  // Enter on password field
+  document.getElementById('gate-pw').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkGate();
+  });
+
+  function checkGate() {
+    const pw = document.getElementById('gate-pw').value;
+    if (pw === TEACHER_PASSWORD) {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('dashboard-content').style.display = 'block';
+      loadResults();
+    } else {
+      document.getElementById('gate-error').textContent = 'Incorrect password. Try again.';
+      document.getElementById('gate-pw').value = '';
+      document.getElementById('gate-pw').focus();
+    }
+  }
+
+  function loadResults() {
+    document.getElementById('results-area').innerHTML = '<div class="loading-msg">Loading results...</div>';
+    const db = firebase.firestore();
+    Promise.all([
+      db.collection('results').orderBy('savedAt', 'desc').get(),
+      db.collection('game-results').orderBy('savedAt', 'desc').get()
+    ]).then(function(snapshots) {
+      allResults = [];
+      snapshots[0].forEach(function(doc) { allResults.push(Object.assign({ id: doc.id }, doc.data())); });
+      allGameResults = [];
+      snapshots[1].forEach(function(doc) { allGameResults.push(Object.assign({ id: doc.id }, doc.data())); });
+      renderDashboard();
+    }).catch(function() {
+      document.getElementById('results-area').innerHTML = '<div class="empty-msg">Error loading results. Make sure Firestore is set up.</div>';
+    });
+  }
+
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tab-altitude').style.cssText = tab === 'altitude'
+      ? 'padding:8px 20px;border-radius:20px;border:1px solid #b44fff;background:rgba(180,79,255,0.15);color:#b44fff;font-family:\'Exo 2\',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer'
+      : 'padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9080b0;font-family:\'Exo 2\',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer';
+    document.getElementById('tab-games').style.cssText = tab === 'games'
+      ? 'padding:8px 20px;border-radius:20px;border:1px solid #b44fff;background:rgba(180,79,255,0.15);color:#b44fff;font-family:\'Exo 2\',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer'
+      : 'padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9080b0;font-family:\'Exo 2\',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer';
+    renderDashboard();
+  }
+
+  function renderGameResults() {
+    const area = document.getElementById('results-area');
+    document.getElementById('stats-row').style.display = 'none';
+    document.getElementById('period-tabs').style.display = 'none';
+    if (allGameResults.length === 0) {
+      area.innerHTML = '<div class="empty-msg">No game results yet. Students need to finish a game.</div>';
+      return;
+    }
+    const groups = { inclinometer: [], 'ruler-game': [] };
+    allGameResults.forEach(function(r) { if (groups[r.game]) groups[r.game].push(r); });
+    const labels = { inclinometer: '📐 Inclinometer Game', 'ruler-game': '📏 Ruler Reading Game' };
+    area.innerHTML = '';
+    Object.keys(groups).forEach(function(game) {
+      const rows = groups[game];
+      if (rows.length === 0) return;
+      const section = document.createElement('div');
+      section.className = 'period-section';
+      section.innerHTML = `
+        <div class="period-heading">${labels[game]} <span style="color:#9080b0;font-size:0.78rem;font-weight:400">${rows.length} result${rows.length !== 1 ? 's' : ''}</span></div>
+        <table class="results-table">
+          <thead><tr><th>#</th><th>Name</th><th>Period</th><th>Score</th><th>Result</th><th>Time</th></tr></thead>
+          <tbody>${rows.map(function(r, i) {
+            const time = r.savedAt ? new Date(r.savedAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—';
+            const resultLabel = r.result === 'win' ? '✅ Win' : r.result === 'game-over' ? '❌ Game Over' : '⏱️ Timed End';
+            return `<tr><td>${i+1}</td><td>${r.name||'Anonymous'}</td><td>${r.period||'—'}</td><td class="altitude-val">${r.score}${r.maxScore ? ' / '+r.maxScore : ''}</td><td>${resultLabel}</td><td style="color:#9080b0;font-size:0.82rem">${time}</td></tr>`;
+          }).join('')}</tbody>
+        </table>`;
+      area.appendChild(section);
+    });
+  }
+
+  function renderDashboard() {
+    if (activeTab === 'games') { renderGameResults(); return; }
+    document.getElementById('stats-row').style.display = '';
+    document.getElementById('period-tabs').style.display = '';
+    // Stats
+    const ftResults = allResults.filter(r => r.unit === 'ft');
+    const altitudes = ftResults.map(r => r.altitude);
+    const periods = [...new Set(allResults.map(r => r.period).filter(p => p && p !== '—'))].sort();
+
+    document.getElementById('stat-total').textContent = allResults.length;
+    document.getElementById('stat-avg').textContent = altitudes.length ? (altitudes.reduce((a,b)=>a+b,0)/altitudes.length).toFixed(1) : '—';
+    document.getElementById('stat-high').textContent = altitudes.length ? Math.max(...altitudes).toFixed(1) : '—';
+    document.getElementById('stat-periods').textContent = periods.length;
+    document.getElementById('dash-sub').textContent = allResults.length + ' result' + (allResults.length !== 1 ? 's' : '') + ' across ' + periods.length + ' period' + (periods.length !== 1 ? 's' : '');
+
+    // Period tabs
+    const tabsEl = document.getElementById('period-tabs');
+    tabsEl.innerHTML = '';
+    const allTab = document.createElement('button');
+    allTab.className = 'period-tab' + (activeFilter === 'all' ? ' active' : '');
+    allTab.textContent = 'All Periods';
+    allTab.onclick = function() { activeFilter = 'all'; renderDashboard(); };
+    tabsEl.appendChild(allTab);
+    periods.forEach(function(p) {
+      const btn = document.createElement('button');
+      btn.className = 'period-tab' + (activeFilter === p ? ' active' : '');
+      btn.textContent = 'Period ' + p;
+      btn.onclick = function() { activeFilter = p; renderDashboard(); };
+      tabsEl.appendChild(btn);
+    });
+
+    // Filter results
+    const filtered = activeFilter === 'all' ? allResults : allResults.filter(r => r.period === activeFilter);
+
+    // Group by period
+    const area = document.getElementById('results-area');
+    if (filtered.length === 0) {
+      area.innerHTML = '<div class="empty-msg">No results yet. Students need to save their calculations.</div>';
+      return;
+    }
+
+    const groups = {};
+    filtered.forEach(function(r) {
+      const key = r.period || '—';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(r);
+    });
+
+    area.innerHTML = '';
+    Object.keys(groups).sort().forEach(function(period) {
+      const rows = groups[period];
+      const section = document.createElement('div');
+      section.className = 'period-section';
+      section.innerHTML = `
+        <div class="period-heading">
+          Period ${period} &nbsp;<span style="color:#9080b0;font-size:0.78rem;font-weight:400">${rows.length} student${rows.length !== 1 ? 's' : ''}</span>
+        </div>
+        <table class="results-table">
+          <thead><tr><th>#</th><th>Name</th><th>Distance</th><th>Angle</th><th>Altitude</th><th>Time</th></tr></thead>
+          <tbody>${rows.map(function(r, i) {
+            const time = r.savedAt ? new Date(r.savedAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—';
+            return `<tr>
+              <td>${i+1}</td>
+              <td>${r.name || 'Anonymous'}</td>
+              <td>${r.distance} ${r.unit}</td>
+              <td>${r.angle}°</td>
+              <td class="altitude-val">${parseFloat(r.altitude).toFixed(1)} ${r.unit}</td>
+              <td style="color:#9080b0;font-size:0.82rem">${time}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>`;
+      area.appendChild(section);
+    });
+  }
+
+  function clearAll() {
+    if (!confirm('Delete ALL results from the database? This cannot be undone.')) return;
+    const db = firebase.firestore();
+    const batch = db.batch();
+    allResults.forEach(function(r) {
+      batch.delete(db.collection('results').doc(r.id));
+    });
+    batch.commit().then(function() {
+      allResults = [];
+      renderDashboard();
+    });
+  }
 </script>
 </body>
 </html>

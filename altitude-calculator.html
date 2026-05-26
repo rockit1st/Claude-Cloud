@@ -16,6 +16,7 @@
       padding: 80px 20px 20px;
     }
 
+    /* ── Shared Nav ── */
     .topnav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
@@ -38,15 +39,16 @@
     }
     .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
     .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
     @media (max-width: 600px) {
       .topnav { padding: 12px 16px; }
       .nav-link { padding: 6px 10px; font-size: 0.75rem; }
     }
-    .auth-btn { display:flex; align-items:center; gap:6px; background:rgba(180,79,255,0.12); border:1px solid rgba(180,79,255,0.35); border-radius:20px; padding:6px 14px; cursor:pointer; font-family:'Exo 2',sans-serif; font-size:0.8rem; font-weight:600; color:#c0a0e0; letter-spacing:0.5px; transition:all 0.2s; white-space:nowrap; }
-    .auth-btn:hover { background:rgba(180,79,255,0.25); border-color:rgba(180,79,255,0.6); color:#fff; }
-    .auth-btn.signed-in { border-color:rgba(0,245,255,0.35); color:#00f5ff; background:rgba(0,245,255,0.08); }
-    .auth-btn img { width:22px; height:22px; border-radius:50%; }
 
+    /* ── Breadcrumb ── */
     .breadcrumb {
       max-width: 900px; margin: 0 auto 16px;
       font-size: 0.8rem; color: #9080b0;
@@ -251,7 +253,15 @@
     .save-btn:hover { box-shadow: 0 6px 24px rgba(64,192,122,0.5); }
 
     .results-card { grid-column: 1 / -1; }
-    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .period-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .period-tab {
+      background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #9080b0;
+      border-radius: 20px; padding: 5px 14px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; font-family: 'Exo 2', sans-serif;
+    }
+    .period-tab:hover { border-color: rgba(240,192,64,0.4); color: #f0c040; }
+    .period-tab.active { background: rgba(240,192,64,0.15); border-color: #f0c040; color: #f0c040; }
     .clear-btn {
       background: transparent;
       border: 1px solid rgba(255,100,100,0.4);
@@ -274,6 +284,8 @@
     }
     .results-table td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #e8f4fd; }
     .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr.new-row td { animation: rowIn 0.4s ease; }
+    @keyframes rowIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
     .rank-badge { display:inline-block; background:rgba(240,192,64,0.15); color:#f0c040; border-radius:4px; padding:2px 8px; font-weight:700; font-size:0.8rem; }
     .empty-msg { text-align:center; color:rgba(255,255,255,0.3); padding:24px; font-size:0.9rem; }
 
@@ -346,37 +358,9 @@
     .modal input[type="password"] { width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 1rem; outline: none; margin-bottom: 8px; text-align: center; letter-spacing: 4px; transition: border-color 0.2s; }
     .modal input[type="password"]:focus { border-color: #f0c040; }
     .modal .pw-error { color: #ff7070; font-size: 0.82rem; min-height: 18px; margin-bottom: 14px; }
-    /* Period filter tabs */
-    .period-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
-    .period-tab { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:6px 16px; font-size:0.78rem; font-weight:700; color:#a8d8f0; cursor:pointer; transition:all 0.2s; letter-spacing:0.5px; }
-    .period-tab.active { background:#f0c040; color:#0a0a2e; border-color:#f0c040; }
-    .period-tab:hover:not(.active) { background:rgba(240,192,64,0.15); border-color:rgba(240,192,64,0.4); color:#f0c040; }
-    .submit-status { text-align:center; font-size:0.85rem; margin-top:8px; min-height:20px; }
-    /* ── Light Mode ── */
-    body.light-mode { background: #f4eeff; color: #1a0030; }
-    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
-    body.light-mode .nav-link { color: #5a4a8a; }
-    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
-    body.light-mode .auth-btn { background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.25); color: #5a4a8a; }
-    body.light-mode .auth-btn:hover { color: #1a0030; }
-    body.light-mode .card { background: rgba(255,255,255,0.92); border-color: rgba(180,79,255,0.2); }
-    body.light-mode .card h2 { color: #7a6000; }
-    body.light-mode label { color: #007a90; }
-    body.light-mode input[type="number"], body.light-mode input[type="text"], body.light-mode select { background: rgba(255,255,255,0.9); border-color: rgba(180,79,255,0.25); color: #1a0030; }
-    body.light-mode input::placeholder { color: rgba(0,0,0,0.35); }
-    body.light-mode select option { background: #f4eeff; color: #1a0030; }
-    body.light-mode header p { color: #5a4a8a; }
-    body.light-mode .breadcrumb, body.light-mode .breadcrumb a { color: #5a4a8a; }
-    body.light-mode footer { color: rgba(90,74,130,0.55); border-top-color: rgba(180,79,255,0.12); background: #f4eeff; }
-    body.light-mode .period-tab { background:rgba(255,255,255,0.7); border-color:rgba(180,79,255,0.2); color:#5a4a8a; }
-    body.light-mode .period-tab.active { background:#b44fff; color:#fff; border-color:#b44fff; }
-    body.light-mode .period-tab:hover:not(.active) { background:rgba(180,79,255,0.1); color:#6030a0; }
-    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
-    .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
-    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
   </style>
 </head>
-<body>
+<body style="visibility:hidden">
 
 <nav class="topnav">
   <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
@@ -384,11 +368,13 @@
     <a href="rockets.html" class="nav-link active">&#128640; Rockets</a>
     <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
     <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
   </div>
-  <button id="auth-btn" class="auth-btn">
-    <img id="auth-avatar" style="display:none">
-    <span id="auth-name">Sign In</span>
-  </button>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
 </nav>
 
 <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="rockets.html">Rockets</a> / Altitude Calculator</div>
@@ -450,8 +436,7 @@
       <span class="placeholder-text">Enter measurements above and press Calculate</span>
     </div>
 
-    <button class="save-btn" id="save-btn" onclick="saveResult()">Add to Class Results</button>
-    <div class="submit-status" id="submit-status"></div>
+    <button class="save-btn" id="save-btn" onclick="saveResult()">Save Result</button>
     <div id="work-shown"></div>
 
     <div class="compare-section" id="compare-section" style="display:none">
@@ -485,25 +470,28 @@
     </svg>
   </div>
 
-  <div class="card results-card" id="results-card">
+  <div class="card results-card" id="results-card" style="display:none">
     <div class="results-header">
       <h2 style="margin-bottom:0">Class Results</h2>
       <button class="clear-btn" onclick="clearResults()">Clear All</button>
     </div>
-    <div class="period-tabs">
-      <button class="period-tab active" onclick="filterPeriod('all',this)">All Periods</button>
-      <button class="period-tab" onclick="filterPeriod('1',this)">Period 1</button>
-      <button class="period-tab" onclick="filterPeriod('2',this)">Period 2</button>
-      <button class="period-tab" onclick="filterPeriod('3',this)">Period 3</button>
-      <button class="period-tab" onclick="filterPeriod('4',this)">Period 4</button>
-      <button class="period-tab" onclick="filterPeriod('5',this)">Period 5</button>
+    <div class="period-tabs" id="period-tabs">
+      <button class="period-tab active" onclick="filterPeriod('all', this)">All Periods</button>
+      <button class="period-tab" onclick="filterPeriod('1', this)">Period 1</button>
+      <button class="period-tab" onclick="filterPeriod('2', this)">Period 2</button>
+      <button class="period-tab" onclick="filterPeriod('3', this)">Period 3</button>
+      <button class="period-tab" onclick="filterPeriod('4', this)">Period 4</button>
+      <button class="period-tab" onclick="filterPeriod('5', this)">Period 5</button>
+      <button class="period-tab" onclick="filterPeriod('6', this)">Period 6</button>
+      <button class="period-tab" onclick="filterPeriod('7', this)">Period 7</button>
+      <button class="period-tab" onclick="filterPeriod('8', this)">Period 8</button>
     </div>
     <table class="results-table">
       <thead>
-        <tr><th>#</th><th>Name</th><th>Period</th><th>Altitude</th></tr>
+        <tr><th>#</th><th>Name</th><th>Period</th><th>Distance</th><th>Angle</th><th>Altitude</th></tr>
       </thead>
       <tbody id="results-body">
-        <tr><td colspan="4" class="empty-msg">Loading results…</td></tr>
+        <tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>
       </tbody>
     </table>
   </div>
@@ -545,7 +533,7 @@
 </div>
 
 <script>
-  let distUnit = 'ft', lastResult = null, currentPeriodFilter = 'all';
+  let distUnit = 'ft', lastResult = null, resultCount = 0, activePeriodFilter = 'all';
 
   function setDistUnit(unit, btn) {
     distUnit = unit;
@@ -608,71 +596,58 @@
     lastResult = { name: document.getElementById('student-name').value.trim() || 'Anonymous',
                    period: document.getElementById('student-period').value || '—',
                    distance: distInput, angle: angleInput, altitude, unit: distUnit };
-    const saveBtn = document.getElementById('save-btn');
-    saveBtn.textContent = 'Add to Class Results';
-    saveBtn.disabled = false;
-    saveBtn.style.display = 'block';
-    document.getElementById('submit-status').textContent = '';
+    document.getElementById('save-btn').style.display = 'block';
   }
 
-  async function saveResult() {
-    if (!lastResult) return;
-    const btn = document.getElementById('save-btn');
-    const statusEl = document.getElementById('submit-status');
-    btn.disabled = true;
-    btn.textContent = 'SUBMITTING…';
-    statusEl.style.color = '#a8d8f0';
-    statusEl.textContent = 'Saving your result…';
-    if (window.submitAltitude) {
-      const res = await window.submitAltitude(lastResult);
-      if (res.ok) {
-        statusEl.style.color = '#40e080';
-        statusEl.textContent = '✓ Added to class results!';
-        btn.style.display = 'none';
-        lastResult = null;
-        document.getElementById('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      } else {
-        statusEl.style.color = '#ff7070';
-        statusEl.textContent = 'Error saving — please try again.';
-        btn.disabled = false;
-        btn.textContent = 'Add to Class Results';
-      }
-    } else {
-      statusEl.style.color = '#ff7070';
-      statusEl.textContent = 'Still loading — please try again in a moment.';
-      btn.disabled = false;
-      btn.textContent = 'Add to Class Results';
-    }
-  }
+  var allResults = [];
 
   function filterPeriod(period, btn) {
-    currentPeriodFilter = period;
+    activePeriodFilter = period;
     document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    window.renderClassResults();
+    renderResults();
   }
 
-  function escapeHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  window.renderClassResults = function() {
-    const all = window._altitudeResults || [];
-    const list = currentPeriodFilter === 'all' ? all : all.filter(r => String(r.period) === currentPeriodFilter);
-    const sorted = [...list].sort((a, b) => b.altitude - a.altitude);
+  function renderResults() {
     const tbody = document.getElementById('results-body');
-    if (sorted.length === 0) {
-      const msg = currentPeriodFilter === 'all' ? 'No results yet.' : 'No results yet for this period.';
-      tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">${msg}</td></tr>`;
+    tbody.innerHTML = '';
+    const filtered = activePeriodFilter === 'all'
+      ? allResults
+      : allResults.filter(r => r.period === activePeriodFilter);
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No results yet.</td></tr>';
       return;
     }
-    tbody.innerHTML = '';
-    sorted.forEach((r, i) => {
+    filtered.forEach(function(r, i) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td><span class="rank-badge">${i+1}</span></td><td>${escapeHtml(r.name)}</td><td>Period ${escapeHtml(r.period)}</td><td><strong>${Number(r.altitude).toFixed(1)} ${r.unit||'ft'}</strong></td>`;
+      tr.innerHTML = `<td><span class="rank-badge">${i + 1}</span></td><td>${r.name}</td><td>${r.period}</td><td>${r.distance} ${r.unit}</td><td>${r.angle}°</td><td><strong>${r.altitude.toFixed(1)} ${r.unit}</strong></td>`;
       tbody.appendChild(tr);
     });
-  };
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    const db = firebase.firestore();
+    const user = firebase.auth().currentUser;
+    db.collection('results').add({
+      name:      lastResult.name,
+      period:    lastResult.period,
+      distance:  lastResult.distance,
+      angle:     lastResult.angle,
+      altitude:  lastResult.altitude,
+      unit:      lastResult.unit,
+      userEmail: user ? user.email : '',
+      savedAt:   firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(err) { console.error('Save failed:', err); });
+
+    resultCount++;
+    allResults.push(lastResult);
+    document.getElementById('results-card').style.display = 'block';
+    renderResults();
+    document.getElementById('save-btn').style.display = 'none';
+    lastResult = null;
+    document.getElementById('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 
   function fullReset() {
     document.getElementById('student-name').value = '';
@@ -685,7 +660,6 @@
     document.getElementById('compare-section').style.display = 'none';
     document.getElementById('bar-fill').style.width = '0%';
     document.getElementById('save-btn').style.display = 'none';
-    document.getElementById('submit-status').textContent = '';
     lastResult = null; resetDiagram();
   }
 
@@ -703,9 +677,15 @@
     document.getElementById('modal-step-2').style.display = 'block';
     setTimeout(() => document.getElementById('modal-pw').focus(), 50);
   }
-  async function checkPassword() {
+  function checkPassword() {
     if (document.getElementById('modal-pw').value === TEACHER_PASSWORD) {
-      if (window.deleteAllAltitudes) await window.deleteAllAltitudes();
+      resultCount = 0;
+      allResults = [];
+      activePeriodFilter = 'all';
+      document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+      document.querySelector('.period-tab').classList.add('active');
+      document.getElementById('results-body').innerHTML = '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
+      document.getElementById('results-card').style.display = 'none';
       closeModal();
     } else {
       document.getElementById('pw-error').textContent = 'Incorrect password. Try again.';
@@ -748,50 +728,10 @@
   document.getElementById('angle').addEventListener('input', resetDiagram);
   document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
 </script>
-<script type="module">
-import { FIREBASE_CONFIG } from './firebase-config.js';
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, getDocs, serverTimestamp }
-  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const app = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
-const db  = getFirestore(app);
-const COLL = 'altitude_results';
-
-window.submitAltitude = async function(data) {
-  try {
-    await addDoc(collection(db, COLL), {
-      name:     data.name,
-      period:   data.period,
-      altitude: data.altitude,
-      unit:     data.unit,
-      ts:       serverTimestamp()
-    });
-    return { ok: true };
-  } catch(e) {
-    console.error('submitAltitude failed', e);
-    return { ok: false, error: e.message };
-  }
-};
-
-window.deleteAllAltitudes = async function() {
-  const snap = await getDocs(collection(db, COLL));
-  await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
-};
-
-onSnapshot(
-  query(collection(db, COLL), orderBy('ts', 'desc')),
-  snap => {
-    window._altitudeResults = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (typeof window.renderClassResults === 'function') window.renderClassResults();
-  },
-  err => console.error('altitude_results snapshot error', err)
-);
-</script>
-<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
-<script>
-(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
-</script>
-<script type="module" src="auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>
