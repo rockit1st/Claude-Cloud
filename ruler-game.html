@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ruler Reading Game | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px; background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    .banner {
+      margin-top: 60px;
+      background: linear-gradient(135deg, #0a000f 0%, #001a2e 50%, #002a1a 100%);
+      padding: 50px 20px; text-align: center; position: relative; overflow: hidden;
+      border-bottom: 2px solid rgba(0,245,255,0.3);
+    }
+    .banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #00f5ff, transparent); box-shadow: 0 0 20px #00f5ff; }
+    .banner-icon { font-size: 3.5rem; margin-bottom: 12px; }
+    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900; color: #00f5ff; letter-spacing: 4px; text-shadow: 0 0 20px rgba(0,245,255,0.7), 0 0 40px rgba(0,245,255,0.3); }
+    .banner-sub { color: #9080b0; font-size: 0.95rem; margin-top: 8px; letter-spacing: 2px; }
+
+    .content { max-width: 860px; margin: 0 auto; padding: 50px 20px 80px; }
+
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 36px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #00f5ff; }
+
+    /* Difficulty bar */
+    .diff-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+    .diff-label { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #00f5ff; letter-spacing: 2px; }
+    .diff-btns { display: flex; gap: 6px; }
+    .diff-btn {
+      padding: 7px 16px; border-radius: 6px; border: 1px solid rgba(0,245,255,0.3);
+      background: transparent; color: #9080b0;
+      font-family: 'Exo 2', sans-serif; font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .diff-btn:hover { color: #fff; border-color: rgba(0,245,255,0.6); }
+    .diff-btn.active { color: #00f5ff; background: rgba(0,245,255,0.1); border-color: #00f5ff; }
+
+    /* Score bar */
+    .score-bar {
+      display: flex; gap: 24px; align-items: center; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .score-pill {
+      background: rgba(0,245,255,0.07); border: 1px solid rgba(0,245,255,0.25);
+      border-radius: 8px; padding: 10px 20px;
+      font-family: 'Orbitron', sans-serif; font-size: 0.82rem; letter-spacing: 1px;
+    }
+    .score-pill span { color: #00f5ff; font-size: 1.3rem; font-weight: 900; }
+    .streak-pill {
+      background: rgba(240,192,64,0.07); border: 1px solid rgba(240,192,64,0.25);
+      border-radius: 8px; padding: 10px 20px;
+      font-family: 'Orbitron', sans-serif; font-size: 0.82rem; letter-spacing: 1px;
+    }
+    .streak-pill span { color: #f0c040; font-size: 1.3rem; font-weight: 900; }
+
+    /* Game card */
+    .game-card {
+      background: rgba(0,245,255,0.03); border: 1px solid rgba(0,245,255,0.2);
+      border-radius: 20px; padding: 36px 28px;
+    }
+
+    .question-text {
+      text-align: center; font-size: 1rem; color: #c0d8e0;
+      margin-bottom: 24px; line-height: 1.6;
+    }
+    .question-text strong { color: #00f5ff; }
+
+    /* Ruler SVG container */
+    .ruler-wrap { width: 100%; overflow-x: auto; margin-bottom: 10px; }
+    #ruler-svg { display: block; width: 100%; min-width: 340px; }
+
+    /* Choices */
+    .choices {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+      margin: 28px 0 20px;
+    }
+    @media (max-width: 500px) { .choices { grid-template-columns: 1fr 1fr; } }
+
+    .choice-btn {
+      padding: 16px 10px; border-radius: 12px;
+      border: 2px solid rgba(0,245,255,0.3);
+      background: rgba(0,245,255,0.05);
+      color: #e0f8ff;
+      font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700;
+      letter-spacing: 1px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .choice-btn:hover:not(:disabled) { background: rgba(0,245,255,0.12); border-color: #00f5ff; color: #fff; transform: translateY(-2px); }
+    .choice-btn.correct  { background: rgba(64,224,128,0.18); border-color: #40e080; color: #40e080; }
+    .choice-btn.wrong    { background: rgba(255,80,80,0.12); border-color: #ff5050; color: #ff5050; }
+    .choice-btn:disabled { cursor: default; transform: none; }
+
+    /* Feedback */
+    .feedback { text-align: center; min-height: 32px; font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; transition: opacity 0.3s; }
+    .feedback.correct { color: #40e080; }
+    .feedback.wrong   { color: #ff7070; }
+
+    /* Next button */
+    .next-btn {
+      display: block; margin: 0 auto;
+      padding: 14px 48px; border-radius: 10px;
+      background: linear-gradient(135deg, #00c8d4, #008090);
+      border: none; color: #0a000f;
+      font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 900;
+      letter-spacing: 3px; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,245,255,0.3);
+      transition: box-shadow 0.2s, opacity 0.2s;
+      opacity: 0; pointer-events: none;
+    }
+    .next-btn.visible { opacity: 1; pointer-events: auto; }
+    .next-btn:hover { box-shadow: 0 6px 30px rgba(0,245,255,0.55); }
+
+    /* Hint box */
+    .hint-box {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(0,245,255,0.15);
+      border-radius: 10px; padding: 14px 18px; margin-top: 28px;
+      font-size: 0.85rem; color: #9080b0; line-height: 1.7;
+    }
+    .hint-box strong { color: #00f5ff; }
+
+    /* Mode tabs */
+    .mode-tabs { display:flex; gap:0; border-radius:10px; overflow:hidden; border:1px solid rgba(0,245,255,0.3); margin-bottom:20px; }
+    .mode-tab { flex:1; padding:10px 6px; border:none; background:transparent; color:#9080b0; font-family:'Exo 2',sans-serif; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.2s; letter-spacing:0.5px; }
+    .mode-tab:hover { background:rgba(0,245,255,0.08); color:#fff; }
+    .mode-tab.active { background:rgba(0,245,255,0.15); color:#00f5ff; }
+
+    /* Strikes */
+    .strikes-pill { background:rgba(255,80,80,0.07); border:1px solid rgba(255,80,80,0.25); border-radius:8px; padding:10px 20px; font-family:'Orbitron',sans-serif; font-size:0.82rem; letter-spacing:1px; }
+    .strikes-pill .hearts { font-size:1.1rem; letter-spacing:2px; }
+
+    /* Timer */
+    .timer-pill { background:rgba(0,245,255,0.07); border:1px solid rgba(0,245,255,0.25); border-radius:8px; padding:10px 20px; font-family:'Orbitron',sans-serif; font-size:0.82rem; letter-spacing:1px; }
+    .timer-num { font-size:1.6rem; font-weight:900; color:#00f5ff; }
+    .timer-num.warn { color:#f0c040; }
+    .timer-num.danger { color:#ff2d78; }
+
+    /* Hint button (practice mode) */
+    .hint-btn { display:none; margin:0 auto 0; padding:10px 28px; border-radius:8px; background:transparent; border:1px solid rgba(0,245,255,0.35); color:#9080b0; font-family:'Exo 2',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+    .hint-btn:hover { color:#00f5ff; border-color:#00f5ff; }
+    .hint-btn.show { display:block; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top: 20px; }
+
+    /* Congratulations modal */
+    .congrats-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 500; }
+    .congrats-overlay.open { display: block; }
+    .congrats-modal {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #060010; border: 2px solid #00f5ff;
+      border-radius: 24px; padding: 48px 40px; width: 90%; max-width: 420px;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(0,245,255,0.4), 0 0 80px rgba(0,245,255,0.15);
+      animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn { from { opacity:0; transform:scale(0.7); } to { opacity:1; transform:scale(1); } }
+    .congrats-emoji { font-size: 3.5rem; margin-bottom: 16px; }
+    .congrats-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.4rem,4vw,2rem); font-weight: 900; color: #00f5ff; letter-spacing: 3px; text-shadow: 0 0 20px rgba(0,245,255,0.8); margin-bottom: 12px; }
+    .congrats-sub { color: #9080b0; font-size: 0.95rem; line-height: 1.7; margin-bottom: 28px; }
+    .congrats-sub strong { color: #f0c040; font-size: 1.2rem; }
+    .congrats-btn { padding: 14px 40px; border-radius: 10px; background: linear-gradient(135deg,#00c8d4,#008090); border: none; color: #0a000f; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,245,255,0.4); transition: box-shadow 0.2s; }
+    .congrats-btn:hover { box-shadow: 0 6px 30px rgba(0,245,255,0.7); }
+    /* Game over modal */
+    .gameover-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:500; }
+    .gameover-overlay.open { display:block; }
+    .gameover-modal { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#060010; border:2px solid #ff2d78; border-radius:24px; padding:48px 40px; width:90%; max-width:420px; text-align:center; box-shadow:0 0 40px rgba(255,45,120,0.4); animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    .gameover-title { font-family:'Orbitron',sans-serif; font-size:clamp(1.4rem,4vw,2rem); font-weight:900; color:#ff2d78; letter-spacing:3px; text-shadow:0 0 20px rgba(255,45,120,0.8); margin-bottom:12px; }
+    .gameover-sub { color:#9080b0; font-size:0.95rem; line-height:1.7; margin-bottom:28px; }
+    .gameover-sub strong { color:#f0c040; font-size:1.1rem; }
+    .gameover-btn { padding:14px 40px; border-radius:10px; background:linear-gradient(135deg,#ff2d78,#a01040); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:900; letter-spacing:2px; cursor:pointer; box-shadow:0 4px 20px rgba(255,45,120,0.4); transition:box-shadow 0.2s; }
+    .gameover-btn:hover { box-shadow:0 6px 30px rgba(255,45,120,0.7); }
+    /* Timed end modal */
+    .timedend-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:500; }
+    .timedend-overlay.open { display:block; }
+    .timedend-modal { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#060010; border:2px solid #b44fff; border-radius:24px; padding:48px 40px; width:90%; max-width:420px; text-align:center; box-shadow:0 0 40px rgba(180,79,255,0.4); animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    .timedend-title { font-family:'Orbitron',sans-serif; font-size:clamp(1.4rem,4vw,2rem); font-weight:900; color:#b44fff; letter-spacing:3px; margin-bottom:12px; }
+    .timedend-sub { color:#9080b0; font-size:0.95rem; line-height:1.7; margin-bottom:28px; }
+    .timedend-sub strong { color:#f0c040; font-size:1.1rem; }
+    .timedend-btn { padding:14px 40px; border-radius:10px; background:linear-gradient(135deg,#b44fff,#6010a0); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:900; letter-spacing:2px; cursor:pointer; box-shadow:0 4px 20px rgba(180,79,255,0.4); transition:box-shadow 0.2s; }
+    .timedend-btn:hover { box-shadow:0 6px 30px rgba(180,79,255,0.7); }
+    /* ── Light Mode ── */
+    body.light-mode { background: #f4eeff; color: #1a0030; }
+    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
+    body.light-mode .nav-link { color: #5a4a8a; }
+    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
+    body.light-mode .nav-link.active { color: #007a90; background: rgba(0,180,220,0.08); border-color: rgba(0,180,220,0.3); }
+    body.light-mode .auth-btn { background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.25); color: #5a4a8a; }
+    body.light-mode .auth-btn:hover { color: #1a0030; }
+    body.light-mode .breadcrumb, body.light-mode .breadcrumb a { color: #5a4a8a; }
+    body.light-mode .game-card { background: rgba(255,255,255,0.9); border-color: rgba(0,180,220,0.2); }
+    body.light-mode .question-text { color: #1a0030; }
+    body.light-mode .question-text strong { color: #007a90; }
+    body.light-mode .choice-btn { background: rgba(255,255,255,0.85); border-color: rgba(0,180,220,0.3); color: #1a0030; }
+    body.light-mode .choice-btn:hover:not(:disabled) { background: rgba(0,180,220,0.1); border-color: #0090b0; color: #1a0030; }
+    body.light-mode .score-pill { background: rgba(0,180,220,0.08); border-color: rgba(0,180,220,0.2); color: #1a0030; }
+    body.light-mode .score-pill span { color: #007a90; }
+    body.light-mode .streak-pill { background: rgba(180,140,0,0.08); border-color: rgba(180,140,0,0.2); color: #1a0030; }
+    body.light-mode .streak-pill span { color: #7a5800; }
+    body.light-mode .diff-btn { color: #5a4a8a; border-color: rgba(0,180,220,0.25); }
+    body.light-mode .diff-btn.active { color: #007a90; background: rgba(0,180,220,0.1); border-color: #0090b0; }
+    body.light-mode footer { color: rgba(90,74,130,0.55); border-top-color: rgba(180,79,255,0.12); background: #f4eeff; }
+    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
+    .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
+    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
+  </style>
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link active">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">📏</div>
+  <div class="banner-title">RULER READING GAME</div>
+  <div class="banner-sub">Read &bull; Measure &bull; Score</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="measuring.html">Measuring</a> / Ruler Reading Game</div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('classic',this)">⚡ Classic</button>
+    <button class="mode-tab" onclick="setMode('practice',this)">🎓 Practice</button>
+    <button class="mode-tab" onclick="setMode('timed',this)">⏱️ Timed</button>
+  </div>
+
+  <div class="diff-bar">
+    <span class="diff-label">Difficulty:</span>
+    <div class="diff-btns">
+      <button class="diff-btn active" onclick="setDiff(4,this)">¼ inch</button>
+      <button class="diff-btn" onclick="setDiff(2,this)">⅛ inch</button>
+      <button class="diff-btn" onclick="setDiff(1,this)">1/16 inch</button>
+    </div>
+  </div>
+
+  <div class="score-bar">
+    <div class="score-pill" id="pill-score">Score: <span id="score-val">0</span><span id="score-denom"> / 50</span></div>
+    <div class="strikes-pill" id="pill-strikes"><span class="hearts" id="hearts-val">❤️❤️❤️❤️❤️</span></div>
+    <div class="streak-pill" id="pill-streak">🔥 Streak: <span id="streak-val">0</span></div>
+    <div class="timer-pill" id="pill-timer" style="display:none">⏱️ <span class="timer-num" id="timer-val">60</span>s</div>
+  </div>
+
+  <div class="game-card">
+    <div class="question-text" id="question-text">Where is the <strong>red arrow</strong> pointing on the ruler?</div>
+
+    <div class="ruler-wrap">
+      <svg id="ruler-svg" viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div class="choices" id="choices"></div>
+
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">NEXT →</button>
+    <button class="hint-btn" id="hint-btn" onclick="showHint()">Show Answer</button>
+
+    <div class="hint-box">
+      <strong>How to read a ruler:</strong> Find the number to the left of the arrow, then count the small tick marks to the right. Each small tick = 1/16". Two ticks = 1/8", four ticks = 1/4", eight ticks = 1/2".
+    </div>
+  </div>
+</div>
+
+<div class="congrats-overlay" id="congrats-modal">
+  <div class="congrats-modal">
+    <div class="congrats-emoji">🏆</div>
+    <div class="congrats-title">CONGRATULATIONS!</div>
+    <div class="congrats-sub">You scored <strong>50 points!</strong><br>You're a ruler reading master!</div>
+    <button class="congrats-btn" onclick="closeModal('congrats-modal');resetGame()">PLAY AGAIN</button>
+  </div>
+</div>
+
+<div class="gameover-overlay" id="gameover-modal">
+  <div class="gameover-modal">
+    <div class="congrats-emoji">💀</div>
+    <div class="gameover-title">GAME OVER</div>
+    <div class="gameover-sub">You used all 5 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
+    <button class="gameover-btn" onclick="closeModal('gameover-modal');resetGame()">TRY AGAIN</button>
+  </div>
+</div>
+
+<div class="timedend-overlay" id="timedend-modal">
+  <div class="timedend-modal">
+    <div class="congrats-emoji">⏱️</div>
+    <div class="timedend-title">TIME'S UP!</div>
+    <div class="timedend-sub">You scored <strong><span id="timed-final">0</span> points</strong> in 60 seconds!</div>
+    <button class="timedend-btn" onclick="closeModal('timedend-modal');resetGame()">PLAY AGAIN</button>
+  </div>
+</div>
+
+<footer>Technology Class &copy; 2025</footer>
+
+<script>
+  let difficulty = 4, mode = 'classic';
+  let correct16 = 0;
+  let score = 0, total = 0, streak = 0, strikes = 0;
+  let timerInterval = null, timeLeft = 60;
+  const WIN_SCORE = 50, MAX_STRIKES = 5, TIMED_SECS = 60;
+
+  function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+  function toLabel(n16) {
+    const whole = Math.floor(n16 / 16);
+    const rem   = n16 % 16;
+    if (rem === 0) return whole + '"';
+    const g = gcd(rem, 16), num = rem / g, den = 16 / g;
+    return whole === 0 ? `${num}/${den}"` : `${whole} ${num}/${den}"`;
+  }
+
+  const RX = 20, RY = 48, RW = 600, RH = 50;
+  const INCH_PX = RW / 6;
+
+  function x16(n) { return RX + (n / 16) * INCH_PX; }
+
+  function tickH(n) {
+    if (n % 16 === 0) return RH;
+    if (n %  8 === 0) return 32;
+    if (n %  4 === 0) return 22;
+    if (n %  2 === 0) return 16;
+    return 11;
+  }
+
+  function drawRuler(markerN) {
+    const svg = document.getElementById('ruler-svg');
+    svg.innerHTML = '';
+
+    function el(tag, attrs, text) {
+      const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    svg.appendChild(el('rect', { x: RX, y: RY, width: RW, height: RH, rx: 3,
+      fill: '#060010', stroke: '#00f5ff', 'stroke-width': '2' }));
+
+    for (let n = 0; n <= 96; n++) {
+      if (n % difficulty !== 0) continue;
+      const tx = x16(n);
+      const h  = tickH(n);
+      svg.appendChild(el('line', {
+        x1: tx, y1: RY, x2: tx, y2: RY + h,
+        stroke: n % 16 === 0 ? '#ffffff' : n % 8 === 0 ? '#00f5ff' : 'rgba(0,245,255,0.55)',
+        'stroke-width': n % 16 === 0 ? '2' : '1'
+      }));
+
+      if (n % 16 === 0) {
+        svg.appendChild(el('text', {
+          x: tx, y: RY + RH + 18,
+          'text-anchor': 'middle', fill: '#ffffff',
+          'font-size': '13', 'font-family': 'Exo 2, sans-serif', 'font-weight': '600'
+        }, String(n / 16)));
+      }
+    }
+
+    const mx      = x16(markerN);
+    const arrowTip  = RY;
+    const arrowBase = 6;
+
+    svg.appendChild(el('line', {
+      x1: mx, y1: arrowBase, x2: mx, y2: arrowTip - 11,
+      stroke: '#ff2d78', 'stroke-width': '2.5', 'stroke-linecap': 'round'
+    }));
+    svg.appendChild(el('polygon', {
+      points: `${mx},${arrowTip} ${mx - 8},${arrowTip - 14} ${mx + 8},${arrowTip - 14}`,
+      fill: '#ff2d78'
+    }));
+  }
+
+  function setMode(m, btn) {
+    mode = m;
+    document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    resetGame();
+  }
+
+  function setDiff(d, btn) {
+    difficulty = d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    resetGame();
+  }
+
+  function resetGame() {
+    stopTimer();
+    score = total = streak = strikes = 0;
+    timeLeft = TIMED_SECS;
+    updateHUD();
+    applyModeUI();
+    nextQuestion();
+    if (mode === 'timed') startTimer();
+  }
+
+  function applyModeUI() {
+    const isClassic = mode === 'classic';
+    const isTimed   = mode === 'timed';
+    const isPractice= mode === 'practice';
+    document.getElementById('pill-strikes').style.display = isClassic ? '' : 'none';
+    document.getElementById('pill-streak').style.display  = isClassic ? '' : 'none';
+    document.getElementById('pill-timer').style.display   = isTimed   ? '' : 'none';
+    document.getElementById('score-denom').textContent    = isClassic ? ' / 50' : '';
+    document.getElementById('hint-btn').classList.toggle('show', isPractice);
+    document.getElementById('question-text').innerHTML = isPractice
+      ? 'Where is the <strong>red arrow</strong> pointing? (No pressure — take your time!)'
+      : 'Where is the <strong>red arrow</strong> pointing on the ruler?';
+  }
+
+  function startTimer() {
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+      if (timeLeft <= 0) { stopTimer(); endTimed(); }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function updateTimerDisplay() {
+    const el = document.getElementById('timer-val');
+    el.textContent = timeLeft;
+    el.className = 'timer-num' + (timeLeft <= 10 ? ' danger' : timeLeft <= 20 ? ' warn' : '');
+  }
+
+  function endTimed() {
+    document.getElementById('timed-final').textContent = score;
+    document.getElementById('timedend-modal').classList.add('open');
+    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+    if (window.saveScore) window.saveScore('ruler-game', { score, mode, difficulty, result: 'timed-end' });
+  }
+
+  function randomChallenge() {
+    const all = [];
+    for (let n = difficulty; n <= 96 - difficulty; n += difficulty) all.push(n);
+    return all[Math.floor(Math.random() * all.length)];
+  }
+
+  function generateChoices(correct) {
+    const pool = new Set();
+    for (let d = -6; d <= 6; d++) {
+      if (d === 0) continue;
+      const v = correct + d * difficulty;
+      if (v > 0 && v < 96) pool.add(v);
+    }
+    const arr = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+    const choices = [correct, ...arr].sort(() => Math.random() - 0.5);
+    return choices;
+  }
+
+  function nextQuestion() {
+    correct16 = randomChallenge();
+    drawRuler(correct16);
+    const choices = generateChoices(correct16);
+    const container = document.getElementById('choices');
+    container.innerHTML = '';
+    choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = toLabel(c);
+      btn.onclick = () => checkAnswer(c, btn);
+      container.appendChild(btn);
+    });
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('feedback').className = 'feedback';
+    document.getElementById('next-btn').classList.remove('visible');
+    if (mode === 'practice') document.getElementById('hint-btn').classList.add('show');
+  }
+
+  function checkAnswer(chosen, btn) {
+    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+    document.getElementById('hint-btn').classList.remove('show');
+    total++;
+    const fb = document.getElementById('feedback');
+    const correct = chosen === correct16;
+
+    if (correct) {
+      btn.classList.add('correct');
+      score++; streak++;
+      fb.textContent = streak >= 3 ? `🔥 ${streak} in a row! Keep going!` : 'Correct! Nice work!';
+      fb.className = 'feedback correct';
+    } else {
+      btn.classList.add('wrong');
+      document.querySelectorAll('.choice-btn').forEach(b => {
+        if (b.textContent === toLabel(correct16)) b.classList.add('correct');
+      });
+      if (mode !== 'practice') streak = 0;
+      fb.textContent = `Not quite — the answer was ${toLabel(correct16)}.`;
+      fb.className = 'feedback wrong';
+      if (mode === 'classic') { strikes++; }
+    }
+
+    updateHUD();
+
+    if (mode === 'timed') {
+      setTimeout(nextQuestion, 700);
+    } else {
+      document.getElementById('next-btn').classList.add('visible');
+      if (mode === 'classic') {
+        if (score === WIN_SCORE) setTimeout(() => { stopTimer(); showCongrats(); }, 400);
+        else if (strikes >= MAX_STRIKES) setTimeout(showGameOver, 400);
+      }
+    }
+  }
+
+  function showHint() {
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      b.disabled = true;
+      if (b.textContent === toLabel(correct16)) b.classList.add('correct');
+    });
+    document.getElementById('hint-btn').classList.remove('show');
+    document.getElementById('feedback').textContent = `The answer is ${toLabel(correct16)}.`;
+    document.getElementById('feedback').className = 'feedback correct';
+    document.getElementById('next-btn').classList.add('visible');
+  }
+
+  function updateHUD() {
+    document.getElementById('score-val').textContent  = score;
+    document.getElementById('streak-val').textContent = streak;
+    let h = '';
+    for (let i = 0; i < MAX_STRIKES; i++) h += i < (MAX_STRIKES - strikes) ? '❤️' : '🖤';
+    document.getElementById('hearts-val').textContent = h;
+  }
+
+  function _saveScore(extra) {
+    if (window.saveScore) window.saveScore('ruler-game', { score, mode, difficulty, ...extra });
+  }
+
+  function showCongrats() {
+    document.getElementById('congrats-modal').classList.add('open');
+    fireLasers();
+    _saveScore({ result: 'win' });
+  }
+
+  function showGameOver() {
+    document.getElementById('gameover-score').textContent = score;
+    document.getElementById('gameover-modal').classList.add('open');
+    _saveScore({ result: 'game-over' });
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function fireLasers() {
+    const colors = ['#00f5ff','#ff2d78','#b44fff','#f0c040','#40e080','#ffb300'];
+    const count = 28;
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const beam   = document.createElement('div');
+        const horiz  = Math.random() > 0.4;
+        const color  = colors[Math.floor(Math.random() * colors.length)];
+        const dur    = 0.35 + Math.random() * 0.35;
+
+        if (horiz) {
+          const fromLeft = Math.random() > 0.5;
+          const yPct = 3 + Math.random() * 94;
+          const w    = 120 + Math.random() * 120;
+          beam.style.cssText = `position:fixed;top:${yPct}%;${fromLeft?'left:-'+w+'px':'right:-'+w+'px'};width:${w}px;height:3px;background:linear-gradient(90deg,transparent,${color},${color},transparent);box-shadow:0 0 8px ${color},0 0 16px ${color};z-index:9999;pointer-events:none;transition:transform ${dur}s linear;`;
+          document.body.appendChild(beam);
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            beam.style.transform = fromLeft ? `translateX(${window.innerWidth + w + 20}px)` : `translateX(-${window.innerWidth + w + 20}px)`;
+          }));
+        } else {
+          const fromTop = Math.random() > 0.5;
+          const xPct = 3 + Math.random() * 94;
+          const h    = 120 + Math.random() * 120;
+          beam.style.cssText = `position:fixed;left:${xPct}%;${fromTop?'top:-'+h+'px':'bottom:-'+h+'px'};width:3px;height:${h}px;background:linear-gradient(180deg,transparent,${color},${color},transparent);box-shadow:0 0 8px ${color},0 0 16px ${color};z-index:9999;pointer-events:none;transition:transform ${dur}s linear;`;
+          document.body.appendChild(beam);
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            beam.style.transform = fromTop ? `translateY(${window.innerHeight + h + 20}px)` : `translateY(-${window.innerHeight + h + 20}px)`;
+          }));
+        }
+
+        setTimeout(() => beam.remove(), (dur + 0.1) * 1000);
+      }, i * 80);
+    }
+  }
+
+  // Start
+  resetGame();
+</script>
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
+</body>
+</html>
