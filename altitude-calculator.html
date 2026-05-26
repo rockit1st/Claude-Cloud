@@ -253,7 +253,15 @@
     .save-btn:hover { box-shadow: 0 6px 24px rgba(64,192,122,0.5); }
 
     .results-card { grid-column: 1 / -1; }
-    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .period-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .period-tab {
+      background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #9080b0;
+      border-radius: 20px; padding: 5px 14px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; font-family: 'Exo 2', sans-serif;
+    }
+    .period-tab:hover { border-color: rgba(240,192,64,0.4); color: #f0c040; }
+    .period-tab.active { background: rgba(240,192,64,0.15); border-color: #f0c040; color: #f0c040; }
     .clear-btn {
       background: transparent;
       border: 1px solid rgba(255,100,100,0.4);
@@ -465,6 +473,17 @@
       <h2 style="margin-bottom:0">Class Results</h2>
       <button class="clear-btn" onclick="clearResults()">Clear All</button>
     </div>
+    <div class="period-tabs" id="period-tabs">
+      <button class="period-tab active" onclick="filterPeriod('all', this)">All Periods</button>
+      <button class="period-tab" onclick="filterPeriod('1', this)">Period 1</button>
+      <button class="period-tab" onclick="filterPeriod('2', this)">Period 2</button>
+      <button class="period-tab" onclick="filterPeriod('3', this)">Period 3</button>
+      <button class="period-tab" onclick="filterPeriod('4', this)">Period 4</button>
+      <button class="period-tab" onclick="filterPeriod('5', this)">Period 5</button>
+      <button class="period-tab" onclick="filterPeriod('6', this)">Period 6</button>
+      <button class="period-tab" onclick="filterPeriod('7', this)">Period 7</button>
+      <button class="period-tab" onclick="filterPeriod('8', this)">Period 8</button>
+    </div>
     <table class="results-table">
       <thead>
         <tr><th>#</th><th>Name</th><th>Period</th><th>Distance</th><th>Angle</th><th>Altitude</th></tr>
@@ -512,7 +531,7 @@
 </div>
 
 <script>
-  let distUnit = 'ft', lastResult = null, resultCount = 0;
+  let distUnit = 'ft', lastResult = null, resultCount = 0, activePeriodFilter = 'all';
 
   function setDistUnit(unit, btn) {
     distUnit = unit;
@@ -578,17 +597,38 @@
     document.getElementById('save-btn').style.display = 'block';
   }
 
+  var allResults = [];
+
+  function filterPeriod(period, btn) {
+    activePeriodFilter = period;
+    document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderResults();
+  }
+
+  function renderResults() {
+    const tbody = document.getElementById('results-body');
+    tbody.innerHTML = '';
+    const filtered = activePeriodFilter === 'all'
+      ? allResults
+      : allResults.filter(r => r.period === activePeriodFilter);
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No results yet.</td></tr>';
+      return;
+    }
+    filtered.forEach(function(r, i) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><span class="rank-badge">${i + 1}</span></td><td>${r.name}</td><td>${r.period}</td><td>${r.distance} ${r.unit}</td><td>${r.angle}°</td><td><strong>${r.altitude.toFixed(1)} ${r.unit}</strong></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
   function saveResult() {
     if (!lastResult) return;
     resultCount++;
-    const tbody = document.getElementById('results-body');
-    const emptyRow = tbody.querySelector('.empty-msg');
-    if (emptyRow) emptyRow.parentElement.remove();
-    const tr = document.createElement('tr');
-    tr.classList.add('new-row');
-    tr.innerHTML = `<td><span class="rank-badge">${resultCount}</span></td><td>${lastResult.name}</td><td>${lastResult.period}</td><td>${lastResult.distance} ${lastResult.unit}</td><td>${lastResult.angle}°</td><td><strong>${lastResult.altitude.toFixed(1)} ${lastResult.unit}</strong></td>`;
-    tbody.appendChild(tr);
+    allResults.push(lastResult);
     document.getElementById('results-card').style.display = 'block';
+    renderResults();
     document.getElementById('save-btn').style.display = 'none';
     lastResult = null;
     document.getElementById('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -625,6 +665,10 @@
   function checkPassword() {
     if (document.getElementById('modal-pw').value === TEACHER_PASSWORD) {
       resultCount = 0;
+      allResults = [];
+      activePeriodFilter = 'all';
+      document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+      document.querySelector('.period-tab').classList.add('active');
       document.getElementById('results-body').innerHTML = '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
       document.getElementById('results-card').style.display = 'none';
       closeModal();
