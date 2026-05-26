@@ -197,6 +197,8 @@
     .timedend-sub strong { color:#f0c040; font-size:1.1rem; }
     .timedend-btn { padding:14px 40px; border-radius:10px; background:linear-gradient(135deg,#b44fff,#6010a0); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:900; letter-spacing:2px; cursor:pointer; box-shadow:0 4px 20px rgba(180,79,255,0.4); transition:box-shadow 0.2s; }
     .timedend-btn:hover { box-shadow:0 6px 30px rgba(180,79,255,0.7); }
+    .scoreboard-toggle { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0 4px; font-size:0.82rem; color:#9080b0; cursor:pointer; }
+    .scoreboard-toggle input { accent-color:#00f5ff; width:16px; height:16px; cursor:pointer; }
     /* ── Light Mode ── */
     body.light-mode { background: #f4eeff; color: #1a0030; }
     body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
@@ -232,6 +234,7 @@
     <a href="measuring.html" class="nav-link active">&#128208; Measuring</a>
     <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
     <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -303,6 +306,7 @@
     <div class="congrats-emoji">🏆</div>
     <div class="congrats-title">CONGRATULATIONS!</div>
     <div class="congrats-sub">You scored <strong>50 points!</strong><br>You're a ruler reading master!</div>
+    <label class="scoreboard-toggle"><input type="checkbox" id="congrats-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="congrats-btn" onclick="closeModal('congrats-modal');resetGame()">PLAY AGAIN</button>
   </div>
 </div>
@@ -312,6 +316,7 @@
     <div class="congrats-emoji">💀</div>
     <div class="gameover-title">GAME OVER</div>
     <div class="gameover-sub">You used all 5 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
+    <label class="scoreboard-toggle"><input type="checkbox" id="gameover-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="gameover-btn" onclick="closeModal('gameover-modal');resetGame()">TRY AGAIN</button>
   </div>
 </div>
@@ -321,6 +326,7 @@
     <div class="congrats-emoji">⏱️</div>
     <div class="timedend-title">TIME'S UP!</div>
     <div class="timedend-sub">You scored <strong><span id="timed-final">0</span> points</strong> in 60 seconds!</div>
+    <label class="scoreboard-toggle"><input type="checkbox" id="timedend-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="timedend-btn" onclick="closeModal('timedend-modal');resetGame()">PLAY AGAIN</button>
   </div>
 </div>
@@ -464,6 +470,7 @@
   function endTimed() {
     document.getElementById('timed-final').textContent = score;
     document.getElementById('timedend-modal').classList.add('open');
+    document.getElementById('timedend-scoreboard-cb').checked = false;
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
     if (window.saveScore) window.saveScore('ruler-game', { score, mode, difficulty, result: 'timed-end' });
   }
@@ -566,6 +573,7 @@
 
   function showCongrats() {
     document.getElementById('congrats-modal').classList.add('open');
+    document.getElementById('congrats-scoreboard-cb').checked = false;
     fireLasers();
     _saveScore({ result: 'win' });
   }
@@ -573,6 +581,7 @@
   function showGameOver() {
     document.getElementById('gameover-score').textContent = score;
     document.getElementById('gameover-modal').classList.add('open');
+    document.getElementById('gameover-scoreboard-cb').checked = false;
     _saveScore({ result: 'game-over' });
   }
 
@@ -627,17 +636,23 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 <script>
+  let lastSavedDocRef = null;
   window.saveScore = function(game, data) {
     if (typeof firebase === 'undefined') return;
     const user = firebase.auth().currentUser;
     firebase.firestore().collection('game-results').add(Object.assign({
-      game:      game,
-      name:      document.getElementById('player-name').value.trim() || 'Anonymous',
-      period:    document.getElementById('player-period').value || '—',
-      userEmail: user ? user.email : '',
-      savedAt:   firebase.firestore.FieldValue.serverTimestamp()
-    }, data)).catch(function(e) { console.error(e); });
+      game:             game,
+      name:             document.getElementById('player-name').value.trim() || 'Anonymous',
+      period:           document.getElementById('player-period').value || '—',
+      userEmail:        user ? user.email : '',
+      showOnScoreboard: false,
+      savedAt:          firebase.firestore.FieldValue.serverTimestamp()
+    }, data)).then(function(ref) { lastSavedDocRef = ref; }).catch(function(e) { console.error(e); });
   };
+  function toggleScoreboard(checked) {
+    if (!lastSavedDocRef) return;
+    lastSavedDocRef.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
+  }
 </script>
 </body>
 </html>

@@ -247,6 +247,8 @@
     .modal-sub  { color:#9080b0; font-size:0.9rem; line-height:1.7; margin-bottom:22px; }
     .modal-score { font-family:'Orbitron',sans-serif; font-size:2.4rem; font-weight:900; margin-bottom:4px; }
     .modal-btn { border:none; border-radius:10px; padding:12px 32px; font-family:'Orbitron',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:2px; cursor:pointer; }
+    .scoreboard-toggle { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0; font-size:0.82rem; color:#9080b0; cursor:pointer; }
+    .scoreboard-toggle input { accent-color:#00f5ff; width:16px; height:16px; cursor:pointer; }
     #win-modal .modal-box      { background:linear-gradient(135deg,#001520,#002535); border:2px solid rgba(0,245,255,0.4); }
     #win-modal .modal-title    { color:#00f5ff; text-shadow:0 0 16px rgba(0,245,255,0.6); }
     #win-modal .modal-score    { color:#00f5ff; }
@@ -294,6 +296,7 @@
     <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
     <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
     <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -441,8 +444,9 @@
   <div class="modal-overlay" id="win-modal">
     <div class="modal-box">
       <div class="modal-title">YOU DID IT!</div>
-      <div class="modal-score">20 pts</div>
+      <div class="modal-score" id="win-final-score">20 pts</div>
       <div class="modal-sub">You can read an inclinometer AND calculate elevation angles. That's real engineering!</div>
+      <label class="scoreboard-toggle"><input type="checkbox" id="win-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
       <button class="modal-btn" onclick="restartGame(); document.getElementById('win-modal').classList.remove('open')">Play Again</button>
     </div>
   </div>
@@ -452,6 +456,7 @@
       <div class="modal-title">GAME OVER</div>
       <div class="modal-score" id="gameover-score">0</div>
       <div class="modal-sub">Nice try! You scored <span id="gameover-pts"></span> points. Keep practicing — you'll get there!</div>
+      <label class="scoreboard-toggle"><input type="checkbox" id="gameover-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
       <button class="modal-btn" onclick="restartGame(); document.getElementById('gameover-modal').classList.remove('open')">Try Again</button>
     </div>
   </div>
@@ -472,6 +477,7 @@
   let score = 0, strikes = 0, streak = 0, timeLeft = TIMED_SECS, timerInterval = null;
   let currentReading = 0, questionType = 'reading';
   let mode = 'classic', difficulty = 'easy';
+  let lastSavedDocRef = null;
 
   function toRad(d) { return d * Math.PI / 180; }
 
@@ -560,6 +566,7 @@
     document.getElementById('gameover-score').textContent = score + ' pts';
     document.getElementById('gameover-pts').textContent = score;
     document.querySelector('#gameover-modal .modal-sub').textContent = 'Time\'s up! You scored ' + score + ' points in 60 seconds!';
+    document.getElementById('gameover-scoreboard-cb').checked = false;
     document.getElementById('gameover-modal').classList.add('open');
   }
 
@@ -575,16 +582,16 @@
 
   function nextQuestion() {
     document.getElementById('feedback').style.color = '';
-    const pool = READINGS[difficulty];
-    currentReading = pool[Math.floor(Math.random() * pool.length)];
+    const diffPool = READINGS[difficulty];
+    currentReading = diffPool[Math.floor(Math.random() * diffPool.length)];
     questionType = Math.random() < 0.5 ? 'reading' : 'elevation';
     buildSVG(currentReading);
 
     const correctAnswer = questionType === 'reading' ? currentReading : 90 - currentReading;
-    const pool = questionType === 'reading'
-      ? READINGS
-      : READINGS.map(r => 90 - r);
-    const choices = generateChoices(correctAnswer, pool);
+    const choicePool = questionType === 'reading'
+      ? diffPool
+      : diffPool.map(r => 90 - r);
+    const choices = generateChoices(correctAnswer, choicePool);
 
     const qt = document.getElementById('question-text');
     qt.innerHTML = questionType === 'reading'
@@ -645,19 +652,29 @@
     if (typeof firebase === 'undefined') return;
     const user = firebase.auth().currentUser;
     firebase.firestore().collection('game-results').add({
-      game:      'inclinometer',
-      name:      document.getElementById('player-name').value.trim() || 'Anonymous',
-      period:    document.getElementById('player-period').value || '—',
-      score:     score,
-      maxScore:  WIN_SCORE,
-      result:    result,
-      userEmail: user ? user.email : '',
-      savedAt:   firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(function(e) { console.error(e); });
+      game:             'inclinometer',
+      name:             document.getElementById('player-name').value.trim() || 'Anonymous',
+      period:           document.getElementById('player-period').value || '—',
+      score:            score,
+      maxScore:         WIN_SCORE,
+      result:           result,
+      mode:             mode,
+      difficulty:       difficulty,
+      userEmail:        user ? user.email : '',
+      showOnScoreboard: false,
+      savedAt:          firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function(ref) { lastSavedDocRef = ref; }).catch(function(e) { console.error(e); });
+  }
+
+  function toggleScoreboard(checked) {
+    if (!lastSavedDocRef) return;
+    lastSavedDocRef.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
   }
 
   function showWin() {
     saveGameScore('win');
+    document.getElementById('win-final-score').textContent = score + ' pts';
+    document.getElementById('win-scoreboard-cb').checked = false;
     document.getElementById('win-modal').classList.add('open');
     fireLasers();
   }
@@ -666,6 +683,7 @@
     saveGameScore('game-over');
     document.getElementById('gameover-score').textContent = score + ' pts';
     document.getElementById('gameover-pts').textContent   = score;
+    document.getElementById('gameover-scoreboard-cb').checked = false;
     document.getElementById('gameover-modal').classList.add('open');
   }
 
