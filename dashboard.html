@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Dashboard | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    /* Password gate */
+    .gate {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(10,0,15,0.97);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gate-card {
+      background: rgba(20,0,40,0.9); border: 1px solid rgba(180,79,255,0.3);
+      border-radius: 20px; padding: 44px 40px; text-align: center;
+      width: 100%; max-width: 380px; backdrop-filter: blur(12px);
+    }
+    .gate-title { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 900; color: #b44fff; letter-spacing: 3px; margin-bottom: 8px; }
+    .gate-sub { font-size: 0.85rem; color: #9080b0; margin-bottom: 28px; }
+    .gate-input {
+      width: 100%; padding: 12px 16px; border-radius: 10px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(180,79,255,0.3);
+      color: #f0e6ff; font-family: 'Exo 2', sans-serif; font-size: 1rem;
+      margin-bottom: 12px; outline: none;
+    }
+    .gate-input:focus { border-color: #b44fff; }
+    .gate-btn {
+      width: 100%; padding: 13px; border-radius: 10px; border: none;
+      background: #b44fff; color: #fff; font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+    .gate-btn:hover { box-shadow: 0 0 24px rgba(180,79,255,0.6); }
+    .gate-error { color: #ff2d78; font-size: 0.82rem; margin-top: 10px; min-height: 18px; }
+
+    /* Dashboard content */
+    .content { padding: 100px 24px 60px; max-width: 1100px; margin: 0 auto; }
+    .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+    .dash-title { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 900; color: #b44fff; letter-spacing: 3px; }
+    .dash-sub { color: #9080b0; font-size: 0.85rem; margin-top: 4px; }
+    .refresh-btn {
+      background: transparent; border: 1px solid rgba(180,79,255,0.4); color: #b44fff;
+      padding: 8px 18px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover { background: rgba(180,79,255,0.1); }
+
+    /* Period filter tabs */
+    .period-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+    .period-tab {
+      background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #9080b0;
+      border-radius: 20px; padding: 6px 16px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; font-family: 'Exo 2', sans-serif;
+    }
+    .period-tab:hover { border-color: rgba(180,79,255,0.4); color: #b44fff; }
+    .period-tab.active { background: rgba(180,79,255,0.15); border-color: #b44fff; color: #b44fff; }
+
+    /* Stats row */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: rgba(20,0,40,0.6); border: 1px solid rgba(180,79,255,0.2); border-radius: 14px; padding: 20px; text-align: center; }
+    .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900; color: #b44fff; }
+    .stat-label { font-size: 0.75rem; color: #9080b0; margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* Period sections */
+    .period-section { margin-bottom: 32px; }
+    .period-heading {
+      font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 700;
+      color: #f0c040; letter-spacing: 2px; margin-bottom: 12px;
+      padding-bottom: 8px; border-bottom: 1px solid rgba(240,192,64,0.2);
+    }
+
+    /* Table */
+    .results-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .results-table th {
+      text-align: left; padding: 10px 14px; color: #b44fff;
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px;
+      border-bottom: 1px solid rgba(180,79,255,0.2);
+    }
+    .results-table td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e8f4fd; }
+    .results-table tr:last-child td { border-bottom: none; }
+    .results-table tr:hover td { background: rgba(180,79,255,0.05); }
+    .altitude-val { font-weight: 700; color: #f0c040; }
+
+    .empty-msg { text-align: center; color: #9080b0; padding: 32px; font-size: 0.9rem; }
+    .loading-msg { text-align: center; color: #9080b0; padding: 60px; font-size: 0.9rem; }
+
+    .clear-period-btn {
+      background: transparent; border: 1px solid rgba(255,100,100,0.3); color: #ff8080;
+      padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; margin-left: 12px; font-family: 'Exo 2', sans-serif;
+      transition: background 0.2s; vertical-align: middle;
+    }
+    .clear-period-btn:hover { background: rgba(255,100,100,0.1); }
+    .clear-all-btn {
+      background: transparent; border: 1px solid rgba(255,100,100,0.4); color: #ff8080;
+      padding: 8px 18px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px;
+      transition: background 0.2s;
+    }
+    .clear-all-btn:hover { background: rgba(255,100,100,0.1); }
+  </style>
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">⚡ TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">🚀 Rockets</a>
+    <a href="measuring.html" class="nav-link">📐 Measuring</a>
+    <a href="sailboat.html" class="nav-link">⛵ Sail Cars</a>
+    <a href="dashboard.html" class="nav-link active">📊 Dashboard</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- Password gate -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-title">TEACHER ACCESS</div>
+    <div class="gate-sub">Enter your teacher password to view the dashboard</div>
+    <input class="gate-input" type="password" id="gate-pw" placeholder="••••••••" />
+    <button class="gate-btn" onclick="checkGate()">ENTER DASHBOARD</button>
+    <div class="gate-error" id="gate-error"></div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="content" id="dashboard-content" style="display:none">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">TEACHER DASHBOARD</div>
+      <div class="dash-sub" id="dash-sub">Loading results...</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="refresh-btn" onclick="loadResults()">↻ Refresh</button>
+      <button class="clear-all-btn" onclick="clearAll()">Clear All Results</button>
+    </div>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Results</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-avg">—</div><div class="stat-label">Avg Altitude (ft)</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-high">—</div><div class="stat-label">Highest (ft)</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-periods">—</div><div class="stat-label">Active Periods</div></div>
+  </div>
+
+  <div class="period-tabs" id="period-tabs"></div>
+
+  <div id="results-area">
+    <div class="loading-msg">Loading...</div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  const TEACHER_PASSWORD = 'rocket';
+  var allResults = [], activeFilter = 'all';
+
+  // Enter on password field
+  document.getElementById('gate-pw').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkGate();
+  });
+
+  function checkGate() {
+    const pw = document.getElementById('gate-pw').value;
+    if (pw === TEACHER_PASSWORD) {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('dashboard-content').style.display = 'block';
+      loadResults();
+    } else {
+      document.getElementById('gate-error').textContent = 'Incorrect password. Try again.';
+      document.getElementById('gate-pw').value = '';
+      document.getElementById('gate-pw').focus();
+    }
+  }
+
+  function loadResults() {
+    document.getElementById('results-area').innerHTML = '<div class="loading-msg">Loading results...</div>';
+    const db = firebase.firestore();
+    db.collection('results').orderBy('savedAt', 'desc').get().then(function(snapshot) {
+      allResults = [];
+      snapshot.forEach(function(doc) {
+        allResults.push(Object.assign({ id: doc.id }, doc.data()));
+      });
+      renderDashboard();
+    }).catch(function(err) {
+      document.getElementById('results-area').innerHTML = '<div class="empty-msg">Error loading results. Make sure Firestore is set up.</div>';
+    });
+  }
+
+  function renderDashboard() {
+    // Stats
+    const ftResults = allResults.filter(r => r.unit === 'ft');
+    const altitudes = ftResults.map(r => r.altitude);
+    const periods = [...new Set(allResults.map(r => r.period).filter(p => p && p !== '—'))].sort();
+
+    document.getElementById('stat-total').textContent = allResults.length;
+    document.getElementById('stat-avg').textContent = altitudes.length ? (altitudes.reduce((a,b)=>a+b,0)/altitudes.length).toFixed(1) : '—';
+    document.getElementById('stat-high').textContent = altitudes.length ? Math.max(...altitudes).toFixed(1) : '—';
+    document.getElementById('stat-periods').textContent = periods.length;
+    document.getElementById('dash-sub').textContent = allResults.length + ' result' + (allResults.length !== 1 ? 's' : '') + ' across ' + periods.length + ' period' + (periods.length !== 1 ? 's' : '');
+
+    // Period tabs
+    const tabsEl = document.getElementById('period-tabs');
+    tabsEl.innerHTML = '';
+    const allTab = document.createElement('button');
+    allTab.className = 'period-tab' + (activeFilter === 'all' ? ' active' : '');
+    allTab.textContent = 'All Periods';
+    allTab.onclick = function() { activeFilter = 'all'; renderDashboard(); };
+    tabsEl.appendChild(allTab);
+    periods.forEach(function(p) {
+      const btn = document.createElement('button');
+      btn.className = 'period-tab' + (activeFilter === p ? ' active' : '');
+      btn.textContent = 'Period ' + p;
+      btn.onclick = function() { activeFilter = p; renderDashboard(); };
+      tabsEl.appendChild(btn);
+    });
+
+    // Filter results
+    const filtered = activeFilter === 'all' ? allResults : allResults.filter(r => r.period === activeFilter);
+
+    // Group by period
+    const area = document.getElementById('results-area');
+    if (filtered.length === 0) {
+      area.innerHTML = '<div class="empty-msg">No results yet. Students need to save their calculations.</div>';
+      return;
+    }
+
+    const groups = {};
+    filtered.forEach(function(r) {
+      const key = r.period || '—';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(r);
+    });
+
+    area.innerHTML = '';
+    Object.keys(groups).sort().forEach(function(period) {
+      const rows = groups[period];
+      const section = document.createElement('div');
+      section.className = 'period-section';
+      section.innerHTML = `
+        <div class="period-heading">
+          Period ${period} &nbsp;<span style="color:#9080b0;font-size:0.78rem;font-weight:400">${rows.length} student${rows.length !== 1 ? 's' : ''}</span>
+        </div>
+        <table class="results-table">
+          <thead><tr><th>#</th><th>Name</th><th>Distance</th><th>Angle</th><th>Altitude</th><th>Time</th></tr></thead>
+          <tbody>${rows.map(function(r, i) {
+            const time = r.savedAt ? new Date(r.savedAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—';
+            return `<tr>
+              <td>${i+1}</td>
+              <td>${r.name || 'Anonymous'}</td>
+              <td>${r.distance} ${r.unit}</td>
+              <td>${r.angle}°</td>
+              <td class="altitude-val">${parseFloat(r.altitude).toFixed(1)} ${r.unit}</td>
+              <td style="color:#9080b0;font-size:0.82rem">${time}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>`;
+      area.appendChild(section);
+    });
+  }
+
+  function clearAll() {
+    if (!confirm('Delete ALL results from the database? This cannot be undone.')) return;
+    const db = firebase.firestore();
+    const batch = db.batch();
+    allResults.forEach(function(r) {
+      batch.delete(db.collection('results').doc(r.id));
+    });
+    batch.commit().then(function() {
+      allResults = [];
+      renderDashboard();
+    });
+  }
+</script>
+</body>
+</html>

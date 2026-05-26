@@ -368,6 +368,7 @@
     <a href="rockets.html" class="nav-link active">&#128640; Rockets</a>
     <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
     <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -625,6 +626,19 @@
 
   function saveResult() {
     if (!lastResult) return;
+    const db = firebase.firestore();
+    const user = firebase.auth().currentUser;
+    db.collection('results').add({
+      name:      lastResult.name,
+      period:    lastResult.period,
+      distance:  lastResult.distance,
+      angle:     lastResult.angle,
+      altitude:  lastResult.altitude,
+      unit:      lastResult.unit,
+      userEmail: user ? user.email : '',
+      savedAt:   firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(err) { console.error('Save failed:', err); });
+
     resultCount++;
     allResults.push(lastResult);
     document.getElementById('results-card').style.display = 'block';
@@ -716,6 +730,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 </body>
 </html>
