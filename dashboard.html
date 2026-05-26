@@ -164,6 +164,11 @@
     </div>
   </div>
 
+  <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
+    <button id="tab-altitude" onclick="switchTab('altitude')" style="padding:8px 20px;border-radius:20px;border:1px solid #b44fff;background:rgba(180,79,255,0.15);color:#b44fff;font-family:'Exo 2',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer">🚀 Altitude Calculator</button>
+    <button id="tab-games" onclick="switchTab('games')" style="padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9080b0;font-family:'Exo 2',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer">🎮 Games</button>
+  </div>
+
   <div class="stats-row" id="stats-row">
     <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Results</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-avg">—</div><div class="stat-label">Avg Altitude (ft)</div></div>
@@ -184,7 +189,7 @@
 <script src="auth.js"></script>
 <script>
   const TEACHER_PASSWORD = 'rocket';
-  var allResults = [], activeFilter = 'all';
+  var allResults = [], allGameResults = [], activeFilter = 'all', activeTab = 'altitude';
 
   // Enter on password field
   document.getElementById('gate-pw').addEventListener('keydown', function(e) {
@@ -207,18 +212,66 @@
   function loadResults() {
     document.getElementById('results-area').innerHTML = '<div class="loading-msg">Loading results...</div>';
     const db = firebase.firestore();
-    db.collection('results').orderBy('savedAt', 'desc').get().then(function(snapshot) {
+    Promise.all([
+      db.collection('results').orderBy('savedAt', 'desc').get(),
+      db.collection('game-results').orderBy('savedAt', 'desc').get()
+    ]).then(function(snapshots) {
       allResults = [];
-      snapshot.forEach(function(doc) {
-        allResults.push(Object.assign({ id: doc.id }, doc.data()));
-      });
+      snapshots[0].forEach(function(doc) { allResults.push(Object.assign({ id: doc.id }, doc.data())); });
+      allGameResults = [];
+      snapshots[1].forEach(function(doc) { allGameResults.push(Object.assign({ id: doc.id }, doc.data())); });
       renderDashboard();
-    }).catch(function(err) {
+    }).catch(function() {
       document.getElementById('results-area').innerHTML = '<div class="empty-msg">Error loading results. Make sure Firestore is set up.</div>';
     });
   }
 
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tab-altitude').style.cssText = tab === 'altitude'
+      ? 'padding:8px 20px;border-radius:20px;border:1px solid #b44fff;background:rgba(180,79,255,0.15);color:#b44fff;font-family:\'Exo 2\',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer'
+      : 'padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9080b0;font-family:\'Exo 2\',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer';
+    document.getElementById('tab-games').style.cssText = tab === 'games'
+      ? 'padding:8px 20px;border-radius:20px;border:1px solid #b44fff;background:rgba(180,79,255,0.15);color:#b44fff;font-family:\'Exo 2\',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer'
+      : 'padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#9080b0;font-family:\'Exo 2\',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer';
+    renderDashboard();
+  }
+
+  function renderGameResults() {
+    const area = document.getElementById('results-area');
+    document.getElementById('stats-row').style.display = 'none';
+    document.getElementById('period-tabs').style.display = 'none';
+    if (allGameResults.length === 0) {
+      area.innerHTML = '<div class="empty-msg">No game results yet. Students need to finish a game.</div>';
+      return;
+    }
+    const groups = { inclinometer: [], 'ruler-game': [] };
+    allGameResults.forEach(function(r) { if (groups[r.game]) groups[r.game].push(r); });
+    const labels = { inclinometer: '📐 Inclinometer Game', 'ruler-game': '📏 Ruler Reading Game' };
+    area.innerHTML = '';
+    Object.keys(groups).forEach(function(game) {
+      const rows = groups[game];
+      if (rows.length === 0) return;
+      const section = document.createElement('div');
+      section.className = 'period-section';
+      section.innerHTML = `
+        <div class="period-heading">${labels[game]} <span style="color:#9080b0;font-size:0.78rem;font-weight:400">${rows.length} result${rows.length !== 1 ? 's' : ''}</span></div>
+        <table class="results-table">
+          <thead><tr><th>#</th><th>Name</th><th>Period</th><th>Score</th><th>Result</th><th>Time</th></tr></thead>
+          <tbody>${rows.map(function(r, i) {
+            const time = r.savedAt ? new Date(r.savedAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—';
+            const resultLabel = r.result === 'win' ? '✅ Win' : r.result === 'game-over' ? '❌ Game Over' : '⏱️ Timed End';
+            return `<tr><td>${i+1}</td><td>${r.name||'Anonymous'}</td><td>${r.period||'—'}</td><td class="altitude-val">${r.score}${r.maxScore ? ' / '+r.maxScore : ''}</td><td>${resultLabel}</td><td style="color:#9080b0;font-size:0.82rem">${time}</td></tr>`;
+          }).join('')}</tbody>
+        </table>`;
+      area.appendChild(section);
+    });
+  }
+
   function renderDashboard() {
+    if (activeTab === 'games') { renderGameResults(); return; }
+    document.getElementById('stats-row').style.display = '';
+    document.getElementById('period-tabs').style.display = '';
     // Stats
     const ftResults = allResults.filter(r => r.unit === 'ft');
     const altitudes = ftResults.map(r => r.altitude);

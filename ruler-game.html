@@ -248,6 +248,15 @@
 <div class="content">
   <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="measuring.html">Measuring</a> / Ruler Reading Game</div>
 
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <input type="text" id="player-name" placeholder="Your name" style="flex:1;min-width:140px;max-width:200px;padding:9px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none" />
+    <select id="player-period" style="padding:9px 14px;background:rgba(0,10,30,0.9);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none">
+      <option value="" disabled selected>Period</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option>
+      <option>5</option><option>6</option><option>7</option><option>8</option>
+    </select>
+  </div>
+
   <div class="mode-tabs">
     <button class="mode-tab active" onclick="setMode('classic',this)">⚡ Classic</button>
     <button class="mode-tab" onclick="setMode('practice',this)">🎓 Practice</button>
@@ -615,6 +624,20 @@
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script>
+  window.saveScore = function(game, data) {
+    if (typeof firebase === 'undefined') return;
+    const user = firebase.auth().currentUser;
+    firebase.firestore().collection('game-results').add(Object.assign({
+      game:      game,
+      name:      document.getElementById('player-name').value.trim() || 'Anonymous',
+      period:    document.getElementById('player-period').value || '—',
+      userEmail: user ? user.email : '',
+      savedAt:   firebase.firestore.FieldValue.serverTimestamp()
+    }, data)).catch(function(e) { console.error(e); });
+  };
+</script>
 </body>
 </html>
