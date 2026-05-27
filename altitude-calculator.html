@@ -473,7 +473,7 @@
   <div class="card results-card" id="results-card" style="display:none">
     <div class="results-header">
       <h2 style="margin-bottom:0">Class Results</h2>
-      <button class="clear-btn" onclick="clearResults()">Clear All</button>
+      <button class="clear-btn" id="clear-all-btn" onclick="clearResults()" style="display:none">Clear All</button>
     </div>
     <div class="period-tabs" id="period-tabs">
       <button class="period-tab active" onclick="filterPeriod('all', this)">All Periods</button>
@@ -733,5 +733,13 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script>
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user && user.email === 'ncapellini@hhh.k12.ny.us') {
+      var btn = document.getElementById('clear-all-btn');
+      if (btn) btn.style.display = '';
+    }
+  });
+</script>
 </body>
 </html>
