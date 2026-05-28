@@ -136,10 +136,10 @@
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.5); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
 
     @keyframes rocketShake {
-      0%,100% { transform: translateX(0); }
-      20%     { transform: translateX(-6px); }
-      50%     { transform: translateX(6px); }
-      80%     { transform: translateX(-4px); }
+      0%,100% { transform: translateX(0) rotate(-45deg); }
+      20%     { transform: translateX(-6px) rotate(-45deg); }
+      50%     { transform: translateX(6px) rotate(-45deg); }
+      80%     { transform: translateX(-4px) rotate(-45deg); }
     }
   </style>
 </head>
@@ -222,7 +222,7 @@
   var hero = document.querySelector('.hero');
   function launchRocket() {
     var el = document.createElement('div');
-    el.style.cssText = 'position:absolute;left:calc(50% + 220px);bottom:48%;font-size:2.8rem;z-index:9;pointer-events:none;';
+    el.style.cssText = 'position:absolute;left:calc(50% + 220px);bottom:48%;font-size:2.8rem;z-index:9;pointer-events:none;transform:rotate(-45deg);';
     el.textContent = '🚀';
     hero.appendChild(el);
     // Phase 1: shake on the pad
@@ -232,7 +232,7 @@
       el.style.animation = 'none';
       void el.offsetWidth;
       el.style.transition = 'transform 2.6s cubic-bezier(0.25,0,0.6,1), opacity 0.8s linear 1.8s';
-      el.style.transform = 'translateY(-130vh)';
+      el.style.transform = 'translateY(-130vh) rotate(-45deg)';
       el.style.opacity = '0';
       setTimeout(function() {
         el.remove();
