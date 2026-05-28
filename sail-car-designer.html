@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sail Car Designer | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    /* ── Nav ── */
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { display: flex; align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    /* ── Banner ── */
+    .banner {
+      margin-top: 60px;
+      background: linear-gradient(135deg, #0a000f 0%, #1a0030 50%, #0d001a 100%);
+      padding: 48px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 2px solid rgba(180,79,255,0.3);
+    }
+    .banner::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #b44fff, transparent);
+      box-shadow: 0 0 20px #b44fff;
+    }
+    .banner-icon { font-size: 3.5rem; margin-bottom: 12px; }
+    .banner-title {
+      font-family: 'Orbitron', sans-serif; font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900;
+      color: #b44fff; letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(180,79,255,0.7), 0 0 40px rgba(180,79,255,0.3);
+    }
+    .banner-sub { color: #9080b0; font-size: 0.95rem; margin-top: 8px; letter-spacing: 2px; }
+
+    /* ── Layout ── */
+    .page-wrap { max-width: 1400px; margin: 0 auto; padding: 40px 20px 60px; }
+
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 28px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #b44fff; }
+    .breadcrumb span { color: #b44fff; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: rgba(180,79,255,0.05);
+      border: 1px solid rgba(180,79,255,0.2);
+      border-radius: 16px;
+      padding: 22px 20px;
+      margin-bottom: 18px;
+    }
+    .card-heading {
+      font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700;
+      color: #b44fff; letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-heading .ch-icon { font-size: 1rem; }
+
+    /* ── Inventory ── */
+    .inv-row { margin-bottom: 12px; }
+    .inv-label { font-size: 0.82rem; color: #c8b8e8; margin-bottom: 5px; display: flex; justify-content: space-between; }
+    .inv-label .inv-count { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; }
+    .inv-label .inv-count.over { color: #ff4466; }
+    .progress-track {
+      height: 8px; border-radius: 4px;
+      background: rgba(180,79,255,0.12);
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, #b44fff, #00f5ff);
+      transition: width 0.25s ease, background 0.25s ease;
+    }
+    .progress-fill.over { background: linear-gradient(90deg, #ff4466, #ff8800); }
+
+    .paper-status {
+      font-size: 0.82rem; color: #c8b8e8;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .paper-badge {
+      font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 1px;
+      padding: 3px 10px; border-radius: 20px;
+      border: 1px solid rgba(180,79,255,0.4); color: #b44fff; background: rgba(180,79,255,0.1);
+    }
+    .paper-badge.cut { border-color: rgba(240,192,64,0.5); color: #f0c040; background: rgba(240,192,64,0.08); }
+
+    /* ── Form Controls ── */
+    .field { margin-bottom: 16px; }
+    .field-label {
+      font-size: 0.8rem; color: #9080b0; letter-spacing: 0.5px;
+      margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .field-label .val { color: #b44fff; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; }
+
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 6px;
+      background: rgba(180,79,255,0.2); border-radius: 3px; outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 16px; height: 16px;
+      border-radius: 50%; background: #b44fff;
+      box-shadow: 0 0 8px rgba(180,79,255,0.8);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 16px; height: 16px; border-radius: 50%; background: #b44fff;
+      box-shadow: 0 0 8px rgba(180,79,255,0.8); cursor: pointer; border: none;
+    }
+
+    .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-opt {
+      flex: 1; min-width: 36px;
+      padding: 8px 6px; border-radius: 8px;
+      font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px;
+      background: rgba(180,79,255,0.06);
+      border: 1px solid rgba(180,79,255,0.2);
+      color: #9080b0; cursor: pointer; text-align: center;
+      transition: all 0.15s;
+    }
+    .btn-opt:hover { background: rgba(180,79,255,0.15); color: #d0b8f8; }
+    .btn-opt.active {
+      background: rgba(180,79,255,0.25); border-color: #b44fff;
+      color: #f0e6ff; box-shadow: 0 0 10px rgba(180,79,255,0.4);
+    }
+
+    .checkbox-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .checkbox-row input[type="checkbox"] { display: none; }
+    .checkbox-box {
+      width: 20px; height: 20px; border-radius: 5px;
+      border: 1px solid rgba(180,79,255,0.4); background: rgba(180,79,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .checkbox-box.checked { background: rgba(180,79,255,0.3); border-color: #b44fff; }
+    .checkbox-box.checked::after { content: '✓'; font-size: 0.75rem; color: #f0e6ff; }
+    .checkbox-label { font-size: 0.82rem; color: #c8b8e8; }
+
+    /* ── Save section ── */
+    .save-input {
+      width: 100%; padding: 10px 14px;
+      background: rgba(180,79,255,0.06); border: 1px solid rgba(180,79,255,0.25);
+      border-radius: 8px; color: #f0e6ff; font-family: 'Exo 2', sans-serif; font-size: 0.9rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .save-input:focus { border-color: #b44fff; box-shadow: 0 0 10px rgba(180,79,255,0.2); }
+
+    .save-row { display: flex; gap: 10px; margin-top: 10px; }
+    .save-row .save-input { flex: 1; }
+
+    .save-btn {
+      display: block; width: 100%; padding: 12px;
+      background: linear-gradient(135deg, #b44fff, #7722cc);
+      border: none; border-radius: 10px;
+      font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
+      color: #fff; cursor: pointer; margin-top: 14px;
+      box-shadow: 0 0 20px rgba(180,79,255,0.4);
+      transition: box-shadow 0.2s, transform 0.1s;
+    }
+    .save-btn:hover { box-shadow: 0 0 35px rgba(180,79,255,0.7); }
+    .save-btn:active { transform: scale(0.98); }
+    .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .save-status {
+      font-size: 0.8rem; text-align: center; margin-top: 10px; min-height: 20px;
+      letter-spacing: 0.5px; transition: color 0.3s;
+    }
+    .save-status.ok { color: #00f5ff; }
+    .save-status.err { color: #ff4466; }
+
+    /* ── Right column ── */
+    .right-col { display: flex; flex-direction: column; gap: 18px; }
+
+    .canvas-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 700px) {
+      .canvas-pair { grid-template-columns: 1fr; }
+    }
+
+    .canvas-card {
+      background: rgba(180,79,255,0.05);
+      border: 1px solid rgba(180,79,255,0.2);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .canvas-title {
+      font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 2px;
+      color: #9080b0; padding: 10px 14px 0;
+      text-transform: uppercase;
+    }
+    .canvas-card canvas {
+      display: block; width: 100%; height: auto;
+    }
+
+    /* ── Analysis grid ── */
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 500px) { .analysis-grid { grid-template-columns: 1fr; } }
+
+    .metric-card {
+      background: rgba(180,79,255,0.05);
+      border: 1px solid rgba(180,79,255,0.15);
+      border-radius: 12px; padding: 14px 16px;
+    }
+    .metric-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .metric-icon { font-size: 1.2rem; }
+    .metric-name { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: #9080b0; letter-spacing: 1px; text-transform: uppercase; }
+    .metric-value { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; color: #b44fff; margin-bottom: 3px; }
+    .metric-msg { font-size: 0.75rem; color: #9080b0; line-height: 1.4; }
+
+    .metric-card.good .metric-value { color: #00f5ff; }
+    .metric-card.warn .metric-value { color: #f0c040; }
+    .metric-card.bad .metric-value { color: #ff4466; }
+
+    /* ── Performance bar ── */
+    .perf-card {
+      background: rgba(180,79,255,0.05);
+      border: 1px solid rgba(180,79,255,0.2);
+      border-radius: 16px; padding: 20px;
+    }
+    .perf-heading {
+      font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #b44fff;
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .perf-score { font-size: 1.2rem; color: #f0e6ff; }
+    .perf-track {
+      height: 14px; border-radius: 7px;
+      background: rgba(180,79,255,0.1);
+      overflow: hidden; margin-bottom: 14px;
+      border: 1px solid rgba(180,79,255,0.15);
+    }
+    .perf-fill {
+      height: 100%; border-radius: 7px;
+      transition: width 0.35s ease, background 0.35s ease;
+    }
+    .perf-tips { font-size: 0.78rem; color: #9080b0; line-height: 1.7; }
+    .perf-tips li { margin-left: 16px; margin-bottom: 2px; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
+  </style>
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link active">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">&#128202; Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">&#127942; Scoreboard</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">&#9973;</div>
+  <div class="banner-title">SAIL CAR DESIGNER</div>
+  <div class="banner-sub">Design &bull; Analyze &bull; Optimize</div>
+</div>
+
+<div class="page-wrap">
+  <div class="breadcrumb">
+    <a href="index.html">&#8592; Hub</a> /
+    <a href="sailboat.html">Sail Cars</a> /
+    <span>Designer</span>
+  </div>
+
+  <div class="two-col">
+
+    <!-- ══════════════ LEFT COLUMN ══════════════ -->
+    <div class="left-col">
+
+      <!-- Material Inventory -->
+      <div class="card">
+        <div class="card-heading"><span class="ch-icon">&#128202;</span>Material Inventory</div>
+
+        <div class="inv-row">
+          <div class="inv-label">
+            <span>&#129323; Popsicle Sticks</span>
+            <span class="inv-count" id="stick-count">0 / 10</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="stick-bar" style="width:0%"></div></div>
+        </div>
+
+        <div class="inv-row">
+          <div class="inv-label">
+            <span>&#129360; Straws</span>
+            <span class="inv-count" id="straw-count">1 / 3</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="straw-bar" style="width:33%"></div></div>
+        </div>
+
+        <div class="inv-row">
+          <div class="paper-status">
+            <span>&#128196; Paper: 1 sheet (8.5" × 11")</span>
+            <span class="paper-badge" id="paper-badge">Full Sheet</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frame -->
+      <div class="card">
+        <div class="card-heading"><span class="ch-icon">&#9726;</span>Frame</div>
+
+        <div class="field">
+          <div class="field-label">Frame Length <span class="val" id="len-val">9.0"</span></div>
+          <input type="range" id="frameLen" min="4.5" max="18" step="0.5" value="9">
+        </div>
+
+        <div class="field">
+          <div class="field-label">Frame Width <span class="val" id="wid-val">3.0"</span></div>
+          <input type="range" id="frameWid" min="1" max="8" step="0.5" value="3">
+        </div>
+
+        <div class="field">
+          <div class="field-label">Cross Braces</div>
+          <div class="btn-group" id="braces-group">
+            <button class="btn-opt active" data-val="0">0</button>
+            <button class="btn-opt" data-val="1">1</button>
+            <button class="btn-opt" data-val="2">2</button>
+            <button class="btn-opt" data-val="3">3</button>
+            <button class="btn-opt" data-val="4">4</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Extra Bottom Sticks <span style="font-size:0.72rem;color:#6050a0">(adds friction + stability)</span></div>
+          <div class="btn-group" id="extra-group">
+            <button class="btn-opt active" data-val="0">0</button>
+            <button class="btn-opt" data-val="1">1</button>
+            <button class="btn-opt" data-val="2">2</button>
+            <button class="btn-opt" data-val="3">3</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mast & Supports -->
+      <div class="card">
+        <div class="card-heading"><span class="ch-icon">&#8739;</span>Mast &amp; Supports</div>
+
+        <div class="field">
+          <div class="field-label">Straws for Mast <span style="font-size:0.72rem;color:#6050a0">(taped end-to-end)</span></div>
+          <div class="btn-group" id="mast-group">
+            <button class="btn-opt active" data-val="1">1</button>
+            <button class="btn-opt" data-val="2">2</button>
+            <button class="btn-opt" data-val="3">3</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="checkbox-row" id="brace-toggle">
+            <input type="checkbox" id="lateral-brace">
+            <div class="checkbox-box" id="brace-box"></div>
+            <span class="checkbox-label">Lateral Brace Straw (+1 straw, adds horizontal support)</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Mast Position</div>
+          <div class="btn-group" id="mast-pos-group">
+            <button class="btn-opt" data-val="0.25">Front</button>
+            <button class="btn-opt active" data-val="0.5">Center</button>
+            <button class="btn-opt" data-val="0.75">Back</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sail -->
+      <div class="card">
+        <div class="card-heading"><span class="ch-icon">&#9651;</span>Sail</div>
+
+        <div class="field">
+          <div class="field-label">Sail Shape</div>
+          <div class="btn-group" id="sail-shape-group">
+            <button class="btn-opt active" data-val="rect">Rectangle</button>
+            <button class="btn-opt" data-val="rtri">Right Triangle</button>
+            <button class="btn-opt" data-val="itri">Isosceles Tri.</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Sail Width <span class="val" id="sw-val">5.0"</span></div>
+          <input type="range" id="sailW" min="1" max="8.5" step="0.25" value="5">
+        </div>
+
+        <div class="field">
+          <div class="field-label">Sail Height <span class="val" id="sh-val">7.0"</span></div>
+          <input type="range" id="sailH" min="1" max="11" step="0.25" value="7">
+        </div>
+      </div>
+
+      <!-- Save Design -->
+      <div class="card">
+        <div class="card-heading"><span class="ch-icon">&#128190;</span>Save Design</div>
+
+        <div class="field">
+          <div class="field-label">Student Name</div>
+          <input type="text" class="save-input" id="student-name" placeholder="Your full name">
+        </div>
+
+        <div class="field">
+          <div class="field-label">Period</div>
+          <select class="save-input" id="period-sel">
+            <option value="">— Select Period —</option>
+            <option value="1">Period 1</option>
+            <option value="2">Period 2</option>
+            <option value="3">Period 3</option>
+            <option value="4">Period 4</option>
+            <option value="5">Period 5</option>
+            <option value="6">Period 6</option>
+            <option value="7">Period 7</option>
+            <option value="8">Period 8</option>
+          </select>
+        </div>
+
+        <button class="save-btn" id="save-btn" onclick="saveDesign()">&#128190; Save Design</button>
+        <div class="save-status" id="save-status"></div>
+      </div>
+
+    </div><!-- /left-col -->
+
+    <!-- ══════════════ RIGHT COLUMN ══════════════ -->
+    <div class="right-col">
+
+      <!-- Canvas pair -->
+      <div class="canvas-pair">
+        <div class="canvas-card">
+          <div class="canvas-title">&#128065; Side View &nbsp;(wind &#8594;)</div>
+          <canvas id="side-canvas" width="400" height="280"></canvas>
+        </div>
+        <div class="canvas-card">
+          <div class="canvas-title">&#128065; Top-Down View &nbsp;(wind &#8595;)</div>
+          <canvas id="top-canvas" width="400" height="280"></canvas>
+        </div>
+      </div>
+
+      <!-- Analysis metrics -->
+      <div class="card" style="margin-bottom:0">
+        <div class="card-heading"><span class="ch-icon">&#9878;</span>Design Analysis</div>
+        <div class="analysis-grid">
+          <div class="metric-card" id="mc-wind">
+            <div class="metric-top"><span class="metric-icon">&#127774;</span><span class="metric-name">Wind Catch</span></div>
+            <div class="metric-value" id="mv-wind">—</div>
+            <div class="metric-msg" id="mm-wind"></div>
+          </div>
+          <div class="metric-card" id="mc-stab">
+            <div class="metric-top"><span class="metric-icon">&#9878;</span><span class="metric-name">Stability</span></div>
+            <div class="metric-value" id="mv-stab">—</div>
+            <div class="metric-msg" id="mm-stab"></div>
+          </div>
+          <div class="metric-card" id="mc-fric">
+            <div class="metric-top"><span class="metric-icon">&#129521;</span><span class="metric-name">Friction</span></div>
+            <div class="metric-value" id="mv-fric">—</div>
+            <div class="metric-msg" id="mm-fric"></div>
+          </div>
+          <div class="metric-card" id="mc-drag">
+            <div class="metric-top"><span class="metric-icon">&#128168;</span><span class="metric-name">Mast Drag</span></div>
+            <div class="metric-value" id="mv-drag">—</div>
+            <div class="metric-msg" id="mm-drag"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance estimate -->
+      <div class="perf-card">
+        <div class="perf-heading">
+          <span>&#9889; Performance Estimate</span>
+          <span class="perf-score" id="perf-score">0%</span>
+        </div>
+        <div class="perf-track"><div class="perf-fill" id="perf-fill" style="width:0%"></div></div>
+        <ul class="perf-tips" id="perf-tips"></ul>
+      </div>
+
+    </div><!-- /right-col -->
+  </div><!-- /two-col -->
+</div>
+
+<footer>Technology Class &copy; 2026</footer>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+
+<script>
+// ── Pre-fill name from auth ──────────────────────────────────────────────────
+firebase.auth().onAuthStateChanged(function(user) {
+  if (user && user.displayName) {
+    var nameEl = document.getElementById('student-name');
+    if (nameEl && !nameEl.value) nameEl.value = user.displayName;
+  }
+});
+
+// ── Physics constants ────────────────────────────────────────────────────────
+var STICK_LEN = 4.5, STICK_W = 0.375;
+var STRAW_LEN = 7.75, STRAW_DIA = 0.25;
+var PAPER_W = 8.5, PAPER_H = 11;
+var FRAME_THICKNESS = 0.5;
+
+// ── State ────────────────────────────────────────────────────────────────────
+var D = {
+  frameLen: 9, frameWid: 3,
+  braces: 0, extraBottom: 0,
+  mastStraws: 1, lateralBrace: false, mastPos: 0.5,
+  sailShape: 'rect', sailW: 5, sailH: 7
+};
+
+// ── Derived helpers ──────────────────────────────────────────────────────────
+function sticksUsed() {
+  return Math.ceil(D.frameLen / 4.5) * 2 + 2 + D.braces + D.extraBottom;
+}
+function strawsUsed() {
+  return D.mastStraws + (D.lateralBrace ? 1 : 0);
+}
+function mastHeight() { return D.mastStraws * STRAW_LEN; }
+function sailArea() {
+  if (D.sailShape === 'rect') return D.sailW * D.sailH;
+  return 0.5 * D.sailW * D.sailH;
+}
+function contactArea() {
+  return D.frameLen * D.frameWid + D.extraBottom * STICK_LEN * STRAW_DIA * 2;
+}
+function stabilityRatio() {
+  var mh = mastHeight();
+  var frameCG  = FRAME_THICKNESS / 2;
+  var mastCG   = FRAME_THICKNESS + mh / 2;
+  var sailCG   = FRAME_THICKNESS + mh - D.sailH / 2;
+  var fw = sticksUsed() * 0.15;
+  var mw = strawsUsed() * 0.05;
+  var sw = 0.15;
+  var totalW = fw + mw + sw;
+  var cg = (frameCG * fw + mastCG * mw + sailCG * sw) / totalW;
+  return cg / (D.frameWid / 2);
+}
+function performanceScore() {
+  var sa = sailArea();
+  var ca = contactArea();
+  var sr = stabilityRatio();
+  var over = (sticksUsed() > 10 || strawsUsed() > 3);
+  var score = 50 + (sa / 93.5) * 25 - (ca / 144) * 20 - Math.max(0, (sr - 1) * 15) - (over ? 20 : 0);
+  return Math.max(0, Math.min(100, score));
+}
+
+// ── Update all UI ────────────────────────────────────────────────────────────
+function update() {
+  updateInventory();
+  updateAnalysis();
+  drawSide();
+  drawTop();
+}
+
+function updateInventory() {
+  var sticks = sticksUsed();
+  var straws = strawsUsed();
+
+  var sc = document.getElementById('stick-count');
+  sc.textContent = sticks + ' / 10';
+  sc.classList.toggle('over', sticks > 10);
+  var sb = document.getElementById('stick-bar');
+  sb.style.width = Math.min(100, (sticks / 10) * 100) + '%';
+  sb.classList.toggle('over', sticks > 10);
+
+  var tc = document.getElementById('straw-count');
+  tc.textContent = straws + ' / 3';
+  tc.classList.toggle('over', straws > 3);
+  var tb = document.getElementById('straw-bar');
+  tb.style.width = Math.min(100, (straws / 3) * 100) + '%';
+  tb.classList.toggle('over', straws > 3);
+
+  var badge = document.getElementById('paper-badge');
+  var isFull = (D.sailW >= PAPER_W - 0.01 && D.sailH >= PAPER_H - 0.01);
+  badge.textContent = isFull ? 'Full Sheet' : 'Cut';
+  badge.className = 'paper-badge' + (isFull ? '' : ' cut');
+}
+
+function updateAnalysis() {
+  var sa  = sailArea();
+  var ca  = contactArea();
+  var sr  = stabilityRatio();
+  var mh  = mastHeight();
+  var mda = D.mastStraws * STRAW_DIA * 2 * mh; // mast cross-section area
+  var over = sticksUsed() > 10 || strawsUsed() > 3;
+  var score = performanceScore();
+
+  // Wind Catch
+  setMetric('wind', sa.toFixed(1) + ' sq in',
+    sa < 20  ? { cls:'bad',  msg:'Low — try a bigger sail to catch more wind.' } :
+    sa < 50  ? { cls:'good', msg:'Good sail coverage for this car.' } :
+               { cls:'good', msg:'Great! Large sail to catch maximum wind.' });
+
+  // Stability
+  setMetric('stab', 'Ratio ' + sr.toFixed(2),
+    sr < 1.2 ? { cls:'good', msg:'Stable — center of gravity is low.' } :
+    sr < 2.0 ? { cls:'warn', msg:'Risky — try widening frame or lowering sail.' } :
+               { cls:'bad',  msg:'Unstable — widen frame or reduce mast height.' });
+
+  // Friction
+  setMetric('fric', ca.toFixed(1) + ' sq in',
+    ca < 20  ? { cls:'good', msg:'Low friction — car will slide easily.' } :
+    ca < 50  ? { cls:'warn', msg:'Moderate friction — some resistance on floor.' } :
+               { cls:'bad',  msg:'High friction — may slow the car significantly.' });
+
+  // Drag
+  setMetric('drag', mda.toFixed(1) + ' sq in',
+    mda < 4  ? { cls:'good', msg:'Minimal mast drag — streamlined profile.' } :
+    mda < 10 ? { cls:'warn', msg:'Some drag from tall mast — consider shorter mast.' } :
+               { cls:'bad',  msg:'High mast drag — tall masts create extra resistance.' });
+
+  // Performance bar
+  var fill = document.getElementById('perf-fill');
+  fill.style.width = score.toFixed(0) + '%';
+  var r, g;
+  if (score <= 50) { r = 255; g = Math.round(score * 3.6); }
+  else { r = Math.round(255 - (score - 50) * 5.1); g = 255; }
+  fill.style.background = 'linear-gradient(90deg, rgb(' + r + ',' + g + ',0), rgb(' + Math.min(255,r+40) + ',' + Math.min(255,g+40) + ',40))';
+  document.getElementById('perf-score').textContent = score.toFixed(0) + '%';
+
+  // Tips
+  var tips = [];
+  if (sa < 20)  tips.push('Increase sail size to catch more wind.');
+  if (sa < 30)  tips.push('A larger sail area (aim for 40+ sq in) improves wind catch.');
+  if (sr > 1.5) tips.push('Widen the frame or lower the sail to improve stability.');
+  if (sr > 2.0) tips.push('This design may tip over — reduce mast height or widen the base.');
+  if (ca > 50)  tips.push('Reduce extra bottom sticks to lower friction.');
+  if (ca > 30 && D.extraBottom > 0) tips.push('Extra bottom sticks increase friction — use only if needed for stability.');
+  if (D.frameLen < 5) tips.push('A longer frame distributes weight and reduces tipping risk.');
+  if (mda > 8)  tips.push('Fewer mast straws reduce drag — 1 straw is often enough.');
+  if (over)     tips.push('You are over the material limit! Remove sticks or straws.');
+  if (tips.length === 0) tips.push('Looking solid! Fine-tune sail size vs stability for best performance.');
+
+  var ul = document.getElementById('perf-tips');
+  ul.innerHTML = tips.map(function(t){ return '<li>' + t + '</li>'; }).join('');
+}
+
+function setMetric(id, value, info) {
+  document.getElementById('mc-'  + id).className = 'metric-card ' + info.cls;
+  document.getElementById('mv-'  + id).textContent = value;
+  document.getElementById('mm-'  + id).textContent = info.msg;
+}
+
+// ── Canvas helpers ───────────────────────────────────────────────────────────
+function drawArrow(ctx, x1, y1, x2, y2, color) {
+  ctx.save();
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  var ang = Math.atan2(y2 - y1, x2 - x1);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - 10 * Math.cos(ang - 0.4), y2 - 10 * Math.sin(ang - 0.4));
+  ctx.lineTo(x2 - 10 * Math.cos(ang + 0.4), y2 - 10 * Math.sin(ang + 0.4));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function setupCanvas(canvas) {
+  var dpr = window.devicePixelRatio || 1;
+  var w = canvas.width, h = canvas.height;
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width  = w * dpr;
+  canvas.height = h * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return ctx;
+}
+
+function drawGrid(ctx, w, h, colMajor, colMinor) {
+  ctx.save();
+  ctx.strokeStyle = colMinor; ctx.lineWidth = 0.5;
+  var step = 20;
+  for (var x = 0; x <= w; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }
+  for (var y = 0; y <= h; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+  ctx.strokeStyle = colMajor; ctx.lineWidth = 0.5;
+  step = 80;
+  for (var x2 = 0; x2 <= w; x2 += step) {
+    ctx.beginPath(); ctx.moveTo(x2, 0); ctx.lineTo(x2, h); ctx.stroke();
+  }
+  for (var y2 = 0; y2 <= h; y2 += step) {
+    ctx.beginPath(); ctx.moveTo(0, y2); ctx.lineTo(w, y2); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ── Side View ────────────────────────────────────────────────────────────────
+function drawSide() {
+  var canvas = document.getElementById('side-canvas');
+  var ctx = canvas.getContext('2d');
+  var W = 400, H = 280;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#08000d';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid(ctx, W, H, 'rgba(180,79,255,0.15)', 'rgba(180,79,255,0.06)');
+
+  // Ground/horizon line
+  var groundY = H - 40;
+  var grd = ctx.createLinearGradient(0, groundY - 2, 0, groundY + 4);
+  grd.addColorStop(0, '#ff2d78');
+  grd.addColorStop(0.5, '#f0c040');
+  grd.addColorStop(1, '#ff2d78');
+  ctx.save();
+  ctx.strokeStyle = grd; ctx.lineWidth = 2;
+  ctx.shadowColor = '#ff2d78'; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
+  ctx.restore();
+
+  // Scale: px per inch
+  var maxFrameLen = 18; // full range
+  var scale = Math.min((W - 80) / D.frameLen, (H - 80) / (FRAME_THICKNESS + mastHeight() + 10));
+  scale = Math.min(scale, 12); // cap so it doesn't get too large
+
+  // Frame position
+  var frameW_px = D.frameLen * scale;
+  var frameH_px = FRAME_THICKNESS * scale;
+  var fx = (W - frameW_px) / 2;
+  var fy = groundY - frameH_px;
+
+  // Frame glow
+  ctx.save();
+  ctx.shadowColor = '#00f5ff'; ctx.shadowBlur = 14;
+  ctx.strokeStyle = '#00f5ff'; ctx.lineWidth = 2.5;
+  ctx.strokeRect(fx, fy, frameW_px, frameH_px);
+  ctx.fillStyle = 'rgba(0,245,255,0.06)';
+  ctx.fillRect(fx, fy, frameW_px, frameH_px);
+  ctx.restore();
+
+  // Mast
+  var mh = mastHeight();
+  var mast_x = fx + D.mastPos * frameW_px;
+  var mast_top_y = fy - mh * scale;
+  ctx.save();
+  ctx.shadowColor = '#f0c040'; ctx.shadowBlur = 12;
+  ctx.strokeStyle = '#f0c040'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(mast_x, fy); ctx.lineTo(mast_x, mast_top_y); ctx.stroke();
+  ctx.restore();
+
+  // Lateral brace (horizontal at 60% mast height)
+  if (D.lateralBrace) {
+    var braceY = fy - mh * 0.6 * scale;
+    var braceHalf = 20;
+    ctx.save();
+    ctx.strokeStyle = '#f0c040'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
+    ctx.shadowColor = '#f0c040'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(mast_x - braceHalf, braceY); ctx.lineTo(mast_x + braceHalf, braceY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Sail
+  var sailW_px = D.sailW * scale;
+  var sailH_px = D.sailH * scale;
+  ctx.save();
+  ctx.shadowColor = '#b44fff'; ctx.shadowBlur = 16;
+  ctx.fillStyle = 'rgba(180,79,255,0.45)';
+  ctx.strokeStyle = '#b44fff'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (D.sailShape === 'rect') {
+    ctx.rect(mast_x, mast_top_y, sailW_px, sailH_px);
+  } else if (D.sailShape === 'rtri') {
+    ctx.moveTo(mast_x, mast_top_y);
+    ctx.lineTo(mast_x + sailW_px, mast_top_y + sailH_px);
+    ctx.lineTo(mast_x, mast_top_y + sailH_px);
+    ctx.closePath();
+  } else { // isosceles
+    ctx.moveTo(mast_x, mast_top_y);
+    ctx.lineTo(mast_x + sailW_px / 2, mast_top_y + sailH_px);
+    ctx.lineTo(mast_x - sailW_px / 2, mast_top_y + sailH_px);
+    ctx.closePath();
+  }
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+
+  // Wind arrow (left side pointing right)
+  drawArrow(ctx, 22, H / 2 - 40, 60, H / 2 - 40, '#00f5ff');
+  ctx.save();
+  ctx.font = '600 10px "Exo 2", sans-serif';
+  ctx.fillStyle = '#00f5ff'; ctx.textAlign = 'center';
+  ctx.fillText('WIND', 35, H / 2 - 52);
+  ctx.restore();
+
+  // Dimension labels
+  ctx.save();
+  ctx.fillStyle = '#9080b0'; ctx.font = '10px "Exo 2", sans-serif'; ctx.textAlign = 'center';
+  // Frame length along bottom
+  ctx.fillText(D.frameLen + '"', fx + frameW_px / 2, groundY + 18);
+  // Mast height on right
+  ctx.save();
+  ctx.translate(W - 12, (fy + mast_top_y) / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(mh.toFixed(2) + '"', 0, 0);
+  ctx.restore();
+  ctx.restore();
+}
+
+// ── Top-Down View ────────────────────────────────────────────────────────────
+function drawTop() {
+  var canvas = document.getElementById('top-canvas');
+  var ctx = canvas.getContext('2d');
+  var W = 400, H = 280;
+
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.fillStyle = '#08000d';
+  ctx.fillRect(0, 0, W, H);
+  drawGrid(ctx, W, H, 'rgba(180,79,255,0.15)', 'rgba(180,79,255,0.06)');
+
+  var scale = Math.min((W - 100) / D.frameLen, (H - 80) / D.frameWid);
+  scale = Math.min(scale, 18);
+
+  var frameW_px = D.frameLen * scale;
+  var frameH_px = D.frameWid * scale;
+  var fx = (W - frameW_px) / 2;
+  var fy = (H - frameH_px) / 2;
+
+  // Frame outline
+  ctx.save();
+  ctx.shadowColor = '#00f5ff'; ctx.shadowBlur = 14;
+  ctx.strokeStyle = '#00f5ff'; ctx.lineWidth = 2.5;
+  ctx.strokeRect(fx, fy, frameW_px, frameH_px);
+  ctx.fillStyle = 'rgba(0,245,255,0.04)';
+  ctx.fillRect(fx, fy, frameW_px, frameH_px);
+  ctx.restore();
+
+  // Cross braces (dashed)
+  if (D.braces > 0) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,245,255,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+    var spacing = frameW_px / (D.braces + 1);
+    for (var i = 1; i <= D.braces; i++) {
+      var bx = fx + spacing * i;
+      ctx.beginPath(); ctx.moveTo(bx, fy); ctx.lineTo(bx, fy + frameH_px); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Extra bottom sticks (shown as dashed lines on outside)
+  if (D.extraBottom > 0) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(240,192,64,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([3, 5]);
+    for (var j = 1; j <= D.extraBottom; j++) {
+      var ey = fy + frameH_px + j * 5;
+      var len_px = Math.min(STICK_LEN * scale, frameW_px);
+      ctx.beginPath(); ctx.moveTo(fx, ey); ctx.lineTo(fx + len_px, ey); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Mast dot
+  var mast_x = fx + D.mastPos * frameW_px;
+  var mast_y = fy + frameH_px / 2;
+  ctx.save();
+  ctx.shadowColor = '#f0c040'; ctx.shadowBlur = 12;
+  ctx.fillStyle = '#f0c040';
+  ctx.beginPath(); ctx.arc(mast_x, mast_y, 5, 0, Math.PI * 2); ctx.fill();
+  // Mast outline
+  ctx.strokeStyle = '#f0c040'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(mast_x, mast_y, 9, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+
+  // Lateral brace
+  if (D.lateralBrace) {
+    ctx.save();
+    ctx.strokeStyle = '#f0c040'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
+    var bl = 22;
+    ctx.beginPath(); ctx.moveTo(mast_x - bl, mast_y); ctx.lineTo(mast_x + bl, mast_y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Sail footprint (from mast, extending "up" = wind direction = toward top of canvas)
+  var sailW_px = D.sailW * scale;
+  var sailH_px = D.sailH * scale; // projected up
+  ctx.save();
+  ctx.shadowColor = '#b44fff'; ctx.shadowBlur = 14;
+  ctx.fillStyle = 'rgba(180,79,255,0.25)';
+  ctx.strokeStyle = '#b44fff'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  if (D.sailShape === 'rect') {
+    ctx.rect(mast_x - sailW_px / 2, mast_y - sailH_px, sailW_px, sailH_px);
+  } else if (D.sailShape === 'rtri') {
+    ctx.moveTo(mast_x, mast_y);
+    ctx.lineTo(mast_x + sailW_px, mast_y - sailH_px);
+    ctx.lineTo(mast_x, mast_y - sailH_px);
+    ctx.closePath();
+  } else { // isosceles
+    ctx.moveTo(mast_x, mast_y);
+    ctx.lineTo(mast_x + sailW_px / 2, mast_y - sailH_px);
+    ctx.lineTo(mast_x - sailW_px / 2, mast_y - sailH_px);
+    ctx.closePath();
+  }
+  ctx.fill(); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Wind arrow (top pointing down)
+  drawArrow(ctx, W / 2 + 60, 16, W / 2 + 60, 54, '#00f5ff');
+  ctx.save();
+  ctx.font = '600 10px "Exo 2", sans-serif';
+  ctx.fillStyle = '#00f5ff'; ctx.textAlign = 'center';
+  ctx.fillText('WIND', W / 2 + 60, 12);
+  ctx.restore();
+
+  // Dimension labels
+  ctx.save();
+  ctx.fillStyle = '#9080b0'; ctx.font = '10px "Exo 2", sans-serif'; ctx.textAlign = 'center';
+  // Length above frame
+  ctx.fillText(D.frameLen + '"', fx + frameW_px / 2, fy - 10);
+  // Width to left
+  ctx.save();
+  ctx.translate(fx - 14, fy + frameH_px / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(D.frameWid + '"', 0, 0);
+  ctx.restore();
+  ctx.restore();
+}
+
+// ── Button group helper ──────────────────────────────────────────────────────
+function bindBtnGroup(groupId, stateKey, callback) {
+  var grp = document.getElementById(groupId);
+  grp.querySelectorAll('.btn-opt').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      grp.querySelectorAll('.btn-opt').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var v = btn.getAttribute('data-val');
+      D[stateKey] = isNaN(v) ? v : parseFloat(v);
+      if (callback) callback();
+      update();
+    });
+  });
+}
+
+// ── Bind controls ────────────────────────────────────────────────────────────
+document.getElementById('frameLen').addEventListener('input', function() {
+  D.frameLen = parseFloat(this.value);
+  document.getElementById('len-val').textContent = D.frameLen.toFixed(1) + '"';
+  update();
+});
+document.getElementById('frameWid').addEventListener('input', function() {
+  D.frameWid = parseFloat(this.value);
+  document.getElementById('wid-val').textContent = D.frameWid.toFixed(1) + '"';
+  update();
+});
+document.getElementById('sailW').addEventListener('input', function() {
+  D.sailW = parseFloat(this.value);
+  document.getElementById('sw-val').textContent = D.sailW.toFixed(1) + '"';
+  update();
+});
+document.getElementById('sailH').addEventListener('input', function() {
+  D.sailH = parseFloat(this.value);
+  document.getElementById('sh-val').textContent = D.sailH.toFixed(1) + '"';
+  update();
+});
+
+bindBtnGroup('braces-group',     'braces');
+bindBtnGroup('extra-group',      'extraBottom');
+bindBtnGroup('mast-group',       'mastStraws');
+bindBtnGroup('mast-pos-group',   'mastPos');
+bindBtnGroup('sail-shape-group', 'sailShape');
+
+// Lateral brace checkbox
+document.getElementById('brace-toggle').addEventListener('click', function(e) {
+  e.preventDefault();
+  D.lateralBrace = !D.lateralBrace;
+  document.getElementById('lateral-brace').checked = D.lateralBrace;
+  document.getElementById('brace-box').className = 'checkbox-box' + (D.lateralBrace ? ' checked' : '');
+  update();
+});
+
+// ── Save Design ──────────────────────────────────────────────────────────────
+function saveDesign() {
+  var name   = document.getElementById('student-name').value.trim();
+  var period = document.getElementById('period-sel').value;
+  var btn    = document.getElementById('save-btn');
+  var status = document.getElementById('save-status');
+
+  if (!name) {
+    status.textContent = 'Please enter your name.'; status.className = 'save-status err'; return;
+  }
+  if (!period) {
+    status.textContent = 'Please select your period.'; status.className = 'save-status err'; return;
+  }
+
+  var user = firebase.auth().currentUser;
+  if (!user) {
+    status.textContent = 'Not signed in.'; status.className = 'save-status err'; return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  status.textContent = ''; status.className = 'save-status';
+
+  firebase.firestore().collection('sail-car-designs').add({
+    name: name,
+    period: period,
+    email: user.email,
+    design: {
+      frameLen:     D.frameLen,
+      frameWid:     D.frameWid,
+      braces:       D.braces,
+      extraBottom:  D.extraBottom,
+      mastStraws:   D.mastStraws,
+      lateralBrace: D.lateralBrace,
+      mastPos:      D.mastPos,
+      sailShape:    D.sailShape,
+      sailW:        D.sailW,
+      sailH:        D.sailH
+    },
+    frameLength:  D.frameLen,
+    sailArea:     sailArea(),
+    savedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
+    btn.disabled = false;
+    btn.textContent = '💾 Save Design';
+    status.textContent = 'Design saved successfully!';
+    status.className = 'save-status ok';
+    setTimeout(function(){ status.textContent = ''; }, 4000);
+  }).catch(function(err) {
+    btn.disabled = false;
+    btn.textContent = '💾 Save Design';
+    status.textContent = 'Error: ' + err.message;
+    status.className = 'save-status err';
+  });
+}
+
+// ── Initial render ───────────────────────────────────────────────────────────
+update();
+</script>
+</body>
+</html>
