@@ -289,6 +289,35 @@
     .rank-badge { display:inline-block; background:rgba(240,192,64,0.15); color:#f0c040; border-radius:4px; padding:2px 8px; font-weight:700; font-size:0.8rem; }
     .empty-msg { text-align:center; color:rgba(255,255,255,0.3); padding:24px; font-size:0.9rem; }
 
+    .lock-btn { background:transparent; border:1px solid rgba(240,192,64,0.5); color:#f0c040; border-radius:6px; padding:6px 14px; font-size:0.8rem; font-weight:700; cursor:pointer; text-transform:uppercase; transition:background 0.2s; display:none; }
+    .lock-btn:hover { background:rgba(240,192,64,0.12); }
+    .lock-btn.locked { border-color:rgba(100,255,100,0.4); color:#80ff80; }
+
+    .rank-gold td   { background:rgba(240,192,64,0.1) !important; }
+    .rank-silver td { background:rgba(200,215,225,0.07) !important; }
+    .rank-bronze td { background:rgba(180,110,50,0.1) !important; }
+    .rank-gold td:first-child   { border-left:3px solid rgba(240,192,64,0.7); }
+    .rank-silver td:first-child { border-left:3px solid rgba(200,215,225,0.5); }
+    .rank-bronze td:first-child { border-left:3px solid rgba(180,110,50,0.6); }
+    .medal-emoji { font-size:1.2rem; }
+
+    /* Celebration overlay */
+    .podium-overlay { position:fixed; inset:0; z-index:500; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition:opacity 0.4s; }
+    .podium-overlay.show { opacity:1; pointer-events:all; }
+    .podium-card { background:rgba(10,0,20,0.95); border:1px solid rgba(240,192,64,0.4); border-radius:24px; padding:40px 48px; text-align:center; max-width:420px; width:90%; box-shadow:0 0 60px rgba(240,192,64,0.2); }
+    .podium-title { font-family:'Orbitron',sans-serif; font-size:1.1rem; color:#f0c040; letter-spacing:3px; margin-bottom:28px; text-shadow:0 0 20px rgba(240,192,64,0.6); }
+    .podium-places { display:flex; flex-direction:column; gap:14px; margin-bottom:28px; }
+    .podium-place { display:flex; align-items:center; gap:14px; padding:12px 16px; border-radius:12px; animation:podiumIn 0.5s ease both; }
+    .podium-place.p1 { background:rgba(240,192,64,0.12); border:1px solid rgba(240,192,64,0.35); animation-delay:0.1s; }
+    .podium-place.p2 { background:rgba(200,215,225,0.07); border:1px solid rgba(200,215,225,0.25); animation-delay:0.3s; }
+    .podium-place.p3 { background:rgba(180,110,50,0.1); border:1px solid rgba(180,110,50,0.3); animation-delay:0.5s; }
+    @keyframes podiumIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+    .podium-medal { font-size:2rem; }
+    .podium-name { font-weight:700; color:#f0e6ff; font-size:1rem; }
+    .podium-alt { font-family:'Orbitron',sans-serif; color:#f0c040; font-size:0.9rem; margin-top:2px; }
+    .podium-dismiss { background:rgba(240,192,64,0.15); border:1px solid rgba(240,192,64,0.4); color:#f0c040; border-radius:8px; padding:10px 28px; font-family:'Orbitron',sans-serif; font-size:0.75rem; letter-spacing:2px; cursor:pointer; transition:background 0.2s; }
+    .podium-dismiss:hover { background:rgba(240,192,64,0.25); }
+
     .result-box {
       background: rgba(240,192,64,0.1);
       border: 2px solid rgba(240,192,64,0.4);
@@ -473,7 +502,19 @@
   <div class="card results-card" id="results-card" style="display:none">
     <div class="results-header">
       <h2 style="margin-bottom:0">Class Results</h2>
-      <button class="clear-btn" id="clear-all-btn" onclick="clearResults()" style="display:none">Clear All</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="lock-btn" id="lock-btn" onclick="lockRankings()">🏆 Lock Rankings</button>
+        <button class="clear-btn" id="clear-all-btn" onclick="clearResults()" style="display:none">Clear All</button>
+      </div>
+    </div>
+
+    <!-- Celebration overlay -->
+    <div class="podium-overlay" id="podium-overlay">
+      <div class="podium-card">
+        <div class="podium-title">🏆 FINAL RANKINGS 🏆</div>
+        <div class="podium-places" id="podium-places"></div>
+        <button class="podium-dismiss" onclick="document.getElementById('podium-overlay').classList.remove('show')">CLOSE</button>
+      </div>
     </div>
     <div class="period-tabs" id="period-tabs">
       <button class="period-tab active" onclick="filterPeriod('all', this)">All Periods</button>
@@ -533,7 +574,7 @@
 </div>
 
 <script>
-  let distUnit = 'ft', lastResult = null, resultCount = 0, activePeriodFilter = 'all';
+  let distUnit = 'ft', lastResult = null, resultCount = 0, activePeriodFilter = 'all', rankingsLocked = false;
 
   function setDistUnit(unit, btn) {
     distUnit = unit;
@@ -618,11 +659,41 @@
       tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No results yet.</td></tr>';
       return;
     }
-    filtered.forEach(function(r, i) {
+
+    // When locked, sort by altitude descending to award medals
+    const rows = rankingsLocked
+      ? filtered.slice().sort((a, b) => b.altitude - a.altitude)
+      : filtered;
+    const medals = ['🥇', '🥈', '🥉'];
+    const medalClass = ['rank-gold', 'rank-silver', 'rank-bronze'];
+
+    rows.forEach(function(r, i) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td><span class="rank-badge">${i + 1}</span></td><td>${r.name}</td><td>${r.period}</td><td>${r.distance} ${r.unit}</td><td>${r.angle}°</td><td><strong>${r.altitude.toFixed(1)} ${r.unit}</strong></td>`;
+      if (rankingsLocked && i < 3) tr.className = medalClass[i];
+      const rankCell = rankingsLocked && i < 3
+        ? `<span class="medal-emoji">${medals[i]}</span>`
+        : `<span class="rank-badge">${i + 1}</span>`;
+      tr.innerHTML = `<td>${rankCell}</td><td>${r.name}</td><td>${r.period}</td><td>${r.distance} ${r.unit}</td><td>${r.angle}°</td><td><strong>${r.altitude.toFixed(1)} ${r.unit}</strong></td>`;
       tbody.appendChild(tr);
     });
+  }
+
+  function lockRankings() {
+    firebase.firestore().collection('settings').doc('altitude-rankings')
+      .set({ locked: true });
+  }
+
+  function showCelebration() {
+    const sorted = allResults.slice().sort((a, b) => b.altitude - a.altitude).slice(0, 3);
+    const medals = ['🥇', '🥈', '🥉'];
+    const classes = ['p1', 'p2', 'p3'];
+    document.getElementById('podium-places').innerHTML = sorted.map((r, i) =>
+      `<div class="podium-place ${classes[i]}">
+        <span class="podium-medal">${medals[i]}</span>
+        <div><div class="podium-name">${r.name}</div><div class="podium-alt">${r.altitude.toFixed(1)} ${r.unit}</div></div>
+      </div>`
+    ).join('');
+    document.getElementById('podium-overlay').classList.add('show');
   }
 
   function saveResult() {
@@ -683,11 +754,14 @@
     if (document.getElementById('modal-pw').value === TEACHER_PASSWORD) {
       closeModal();
       const db = firebase.firestore();
-      db.collection('results').get().then(function(snap) {
-        const batch = db.batch();
-        snap.docs.forEach(function(doc) { batch.delete(doc.ref); });
-        return batch.commit();
-      }).then(function() {
+      Promise.all([
+        db.collection('results').get().then(function(snap) {
+          const batch = db.batch();
+          snap.docs.forEach(function(doc) { batch.delete(doc.ref); });
+          return batch.commit();
+        }),
+        db.collection('settings').doc('altitude-rankings').set({ locked: false })
+      ]).then(function() {
         resultCount = 0;
         allResults = [];
         activePeriodFilter = 'all';
@@ -746,8 +820,8 @@
   firebase.auth().onAuthStateChanged(function(user) {
     if (!user) return;
     if (user.email === 'ncapellini@hhh.k12.ny.us') {
-      var btn = document.getElementById('clear-all-btn');
-      if (btn) btn.style.display = '';
+      document.getElementById('clear-all-btn').style.display = '';
+      document.getElementById('lock-btn').style.display = '';
     }
     // Load all saved results from Firestore on page load
     firebase.firestore().collection('results').orderBy('savedAt', 'desc').get().then(function(snap) {
@@ -762,6 +836,23 @@
         renderResults();
       }
     }).catch(function(err) { console.error('Load failed:', err); });
+
+    // Listen for rankings lock/unlock in real time
+    firebase.firestore().collection('settings').doc('altitude-rankings')
+      .onSnapshot(function(doc) {
+        var wasLocked = rankingsLocked;
+        rankingsLocked = doc.exists && doc.data().locked === true;
+        var lockBtn = document.getElementById('lock-btn');
+        if (rankingsLocked) {
+          lockBtn.textContent = '🔒 Rankings Locked';
+          lockBtn.classList.add('locked');
+        } else {
+          lockBtn.textContent = '🏆 Lock Rankings';
+          lockBtn.classList.remove('locked');
+        }
+        renderResults();
+        if (!wasLocked && rankingsLocked && allResults.length > 0) showCelebration();
+      });
   });
 </script>
 </body>
