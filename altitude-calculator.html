@@ -638,6 +638,8 @@
       unit:      lastResult.unit,
       userEmail: user ? user.email : '',
       savedAt:   firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function(docRef) {
+      lastResult.id = docRef.id;
     }).catch(function(err) { console.error('Save failed:', err); });
 
     resultCount++;
@@ -679,14 +681,21 @@
   }
   function checkPassword() {
     if (document.getElementById('modal-pw').value === TEACHER_PASSWORD) {
-      resultCount = 0;
-      allResults = [];
-      activePeriodFilter = 'all';
-      document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-      document.querySelector('.period-tab').classList.add('active');
-      document.getElementById('results-body').innerHTML = '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
-      document.getElementById('results-card').style.display = 'none';
       closeModal();
+      const db = firebase.firestore();
+      db.collection('results').get().then(function(snap) {
+        const batch = db.batch();
+        snap.docs.forEach(function(doc) { batch.delete(doc.ref); });
+        return batch.commit();
+      }).then(function() {
+        resultCount = 0;
+        allResults = [];
+        activePeriodFilter = 'all';
+        document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+        document.querySelector('.period-tab').classList.add('active');
+        document.getElementById('results-body').innerHTML = '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
+        document.getElementById('results-card').style.display = 'none';
+      }).catch(function(err) { console.error('Clear failed:', err); });
     } else {
       document.getElementById('pw-error').textContent = 'Incorrect password. Try again.';
       document.getElementById('modal-pw').value = '';
@@ -735,10 +744,24 @@
 <script src="auth.js"></script>
 <script>
   firebase.auth().onAuthStateChanged(function(user) {
-    if (user && user.email === 'ncapellini@hhh.k12.ny.us') {
+    if (!user) return;
+    if (user.email === 'ncapellini@hhh.k12.ny.us') {
       var btn = document.getElementById('clear-all-btn');
       if (btn) btn.style.display = '';
     }
+    // Load all saved results from Firestore on page load
+    firebase.firestore().collection('results').orderBy('savedAt', 'desc').get().then(function(snap) {
+      snap.docs.forEach(function(doc) {
+        var r = doc.data();
+        r.id = doc.id;
+        allResults.push(r);
+        resultCount++;
+      });
+      if (allResults.length > 0) {
+        document.getElementById('results-card').style.display = 'block';
+        renderResults();
+      }
+    }).catch(function(err) { console.error('Load failed:', err); });
   });
 </script>
 </body>
