@@ -641,7 +641,7 @@
     lastResult = { name: document.getElementById('student-name').value.trim() || 'Anonymous',
                    period: document.getElementById('student-period').value || '—',
                    distance: distInput, angle: angleInput, altitude, unit: distUnit };
-    document.getElementById('save-btn').style.display = 'block';
+    if (!rankingsLocked) document.getElementById('save-btn').style.display = 'block';
   }
 
   var allResults = [];
@@ -683,8 +683,9 @@
   }
 
   function lockRankings() {
+    var locked = !rankingsLocked;
     firebase.firestore().collection('settings').doc('altitude-rankings')
-      .set({ locked: true });
+      .set({ locked: locked });
   }
 
   function showCelebration() {
@@ -850,8 +851,9 @@
         rankingsLocked = doc.exists && doc.data().locked === true;
         var lockBtn = document.getElementById('lock-btn');
         if (rankingsLocked) {
-          lockBtn.textContent = '🔒 Rankings Locked';
+          lockBtn.textContent = '🔓 Unlock Rankings';
           lockBtn.classList.add('locked');
+          document.getElementById('save-btn').style.display = 'none';
         } else {
           lockBtn.textContent = '🏆 Lock Rankings';
           lockBtn.classList.remove('locked');
