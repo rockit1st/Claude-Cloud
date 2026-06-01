@@ -687,9 +687,21 @@
       const rankCell = rankingsLocked && i < 3
         ? `<span class="medal-emoji">${medals[i]}</span>`
         : `<span class="rank-badge">${i + 1}</span>`;
-      tr.innerHTML = `<td>${rankCell}</td><td>${r.name}</td><td>${r.period}</td><td>${r.distance} ${r.unit}</td><td>${r.angle}°</td><td><strong>${r.altitude.toFixed(1)} ${r.unit}</strong></td>`;
+      const deleteCell = isTeacher
+        ? `<td><button onclick="deleteResult('${r.id}')" style="background:none;border:none;color:#ff6060;cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:4px;opacity:0.6;transition:opacity 0.2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6" title="Delete this result">✕</button></td>`
+        : '';
+      tr.innerHTML = `<td>${rankCell}</td><td>${r.name}</td><td>${r.period}</td><td>${r.distance} ${r.unit}</td><td>${r.angle}°</td><td><strong>${r.altitude.toFixed(1)} ${r.unit}</strong></td>${deleteCell}`;
       tbody.appendChild(tr);
     });
+  }
+
+  function deleteResult(id) {
+    if (!id) return;
+    firebase.firestore().collection('results').doc(id).delete().then(function() {
+      allResults = allResults.filter(function(r) { return r.id !== id; });
+      if (allResults.length === 0) document.getElementById('results-card').style.display = 'none';
+      else renderResults();
+    }).catch(function(err) { console.error('Delete failed:', err); });
   }
 
   function lockRankings() {
