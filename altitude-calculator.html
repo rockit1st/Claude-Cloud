@@ -576,7 +576,7 @@
 </div>
 
 <script>
-  let distUnit = 'ft', lastResult = null, resultCount = 0, activePeriodFilter = 'all', rankingsLocked = false;
+  let distUnit = 'ft', lastResult = null, resultCount = 0, activePeriodFilter = 'all', rankingsLocked = false, isTeacher = false;
 
   function setDistUnit(unit, btn) {
     distUnit = unit;
@@ -656,9 +656,19 @@
   function renderResults() {
     const tbody = document.getElementById('results-body');
     tbody.innerHTML = '';
-    const filtered = activePeriodFilter === 'all'
-      ? allResults
-      : allResults.filter(r => r.period === activePeriodFilter);
+    let filtered;
+    if (isTeacher) {
+      filtered = activePeriodFilter === 'all'
+        ? allResults
+        : allResults.filter(r => r.period === activePeriodFilter);
+    } else {
+      const studentPeriod = document.getElementById('student-period').value;
+      if (!studentPeriod) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Select your period above to view class results.</td></tr>';
+        return;
+      }
+      filtered = allResults.filter(r => String(r.period) === String(studentPeriod));
+    }
     if (filtered.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No results yet.</td></tr>';
       return;
@@ -816,6 +826,12 @@
 
   document.getElementById('distance').addEventListener('input', resetDiagram);
   document.getElementById('angle').addEventListener('input', resetDiagram);
+  document.getElementById('student-period').addEventListener('change', function() {
+    if (!isTeacher && allResults.length > 0) {
+      document.getElementById('results-card').style.display = 'block';
+      renderResults();
+    }
+  });
   document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
 </script>
 
@@ -827,8 +843,11 @@
   firebase.auth().onAuthStateChanged(function(user) {
     if (!user) return;
     if (user.email === 'ncapellini@hhh.k12.ny.us') {
+      isTeacher = true;
       document.getElementById('clear-all-btn').style.display = '';
       document.getElementById('lock-btn').style.display = '';
+    } else {
+      document.getElementById('period-tabs').style.display = 'none';
     }
     // Load all saved results from Firestore on page load
     firebase.firestore().collection('results').orderBy('savedAt', 'desc').get().then(function(snap) {
