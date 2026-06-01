@@ -466,6 +466,7 @@
     </div>
 
     <button class="save-btn" id="save-btn" onclick="saveResult()">Save Result</button>
+    <div id="save-error" style="color:#ff8080;font-size:0.82rem;margin-top:6px;display:none"></div>
     <div id="work-shown"></div>
 
     <div class="compare-section" id="compare-section" style="display:none">
@@ -730,6 +731,20 @@
 
   function saveResult() {
     if (!lastResult) return;
+    const name = document.getElementById('student-name').value.trim();
+    const period = document.getElementById('student-period').value;
+    const errEl = document.getElementById('save-error');
+    const missing = [];
+    if (!name) missing.push('name');
+    if (!period) missing.push('period');
+    if (missing.length) {
+      errEl.textContent = 'Please enter your ' + missing.join(' and ') + ' before saving.';
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    lastResult.name = name;
+    lastResult.period = period;
     const db = firebase.firestore();
     const user = firebase.auth().currentUser;
     db.collection('results').add({
