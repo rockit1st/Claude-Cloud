@@ -2,9 +2,8 @@
 
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
 
-const { getDb } = require('../db');
+const { query } = require('../db');
 const { generateToken, authenticate } = require('../auth');
 
 const router = express.Router();
@@ -20,28 +19,29 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
   }
 
-  const db = getDb();
+  const normalizedEmail = email.toLowerCase().trim();
 
   try {
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase().trim());
-    if (existing) {
+    const existing = await query('SELECT id FROM users WHERE email = $1', [normalizedEmail]);
+    if (existing.rows.length > 0) {
       return res.status(409).json({ success: false, error: 'Email already registered' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const userId = uuidv4();
 
-    db.prepare(`
-      INSERT INTO users (id, email, password_hash)
-      VALUES (?, ?, ?)
-    `).run(userId, email.toLowerCase().trim(), passwordHash);
+    const insertResult = await query(
+      `INSERT INTO users (email, password_hash)
+       VALUES ($1, $2)
+       RETURNING id, email`,
+      [normalizedEmail, passwordHash],
+    );
 
-    const user = { id: userId, email: email.toLowerCase().trim() };
-    const token = generateToken(user);
+    const user = insertResult.rows[0];
+    const token = generateToken({ id: user.id, email: user.email });
 
     return res.status(201).json({
       success: true,
-      data: { token, user },
+      data: { token, user: { id: user.id, email: user.email } },
     });
   } catch (err) {
     console.error('[auth/register] Error:', err.message);
@@ -57,13 +57,13 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ success: false, error: 'Email and password are required' });
   }
 
-  const db = getDb();
-
   try {
-    const row = db
-      .prepare('SELECT id, email, password_hash, fcm_token, notifications_enabled, created_at FROM users WHERE email = ?')
-      .get(email.toLowerCase().trim());
+    const result = await query(
+      'SELECT id, email, password_hash, fcm_token, notifications_enabled, created_at FROM users WHERE email = $1',
+      [email.toLowerCase().trim()],
+    );
 
+    const row = result.rows[0];
     if (!row) {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
@@ -77,7 +77,7 @@ router.post('/login', async (req, res) => {
       id: row.id,
       email: row.email,
       fcm_token: row.fcm_token,
-      notifications_enabled: row.notifications_enabled === 1,
+      notifications_enabled: row.notifications_enabled,
       created_at: row.created_at,
     };
 
@@ -94,17 +94,15 @@ router.post('/login', async (req, res) => {
 });
 
 // ─── PUT /api/auth/fcm-token  (auth required) ─────────────────────────────────
-router.put('/fcm-token', authenticate, (req, res) => {
+router.put('/fcm-token', authenticate, async (req, res) => {
   const { fcm_token } = req.body;
 
   if (!fcm_token || typeof fcm_token !== 'string') {
     return res.status(400).json({ success: false, error: 'fcm_token is required' });
   }
 
-  const db = getDb();
-
   try {
-    db.prepare('UPDATE users SET fcm_token = ? WHERE id = ?').run(fcm_token, req.user.id);
+    await query('UPDATE users SET fcm_token = $1 WHERE id = $2', [fcm_token, req.user.id]);
     return res.json({ success: true, data: { fcm_token } });
   } catch (err) {
     console.error('[auth/fcm-token] Error:', err.message);
@@ -113,19 +111,18 @@ router.put('/fcm-token', authenticate, (req, res) => {
 });
 
 // ─── PUT /api/auth/notification-settings  (auth required) ─────────────────────
-router.put('/notification-settings', authenticate, (req, res) => {
+router.put('/notification-settings', authenticate, async (req, res) => {
   const { notifications_enabled } = req.body;
 
   if (typeof notifications_enabled !== 'boolean') {
     return res.status(400).json({ success: false, error: 'notifications_enabled (boolean) is required' });
   }
 
-  const db = getDb();
-
   try {
-    db.prepare('UPDATE users SET notifications_enabled = ? WHERE id = ?')
-      .run(notifications_enabled ? 1 : 0, req.user.id);
-
+    await query(
+      'UPDATE users SET notifications_enabled = $1 WHERE id = $2',
+      [notifications_enabled, req.user.id],
+    );
     return res.json({ success: true, data: { notifications_enabled } });
   } catch (err) {
     console.error('[auth/notification-settings] Error:', err.message);

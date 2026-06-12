@@ -4,8 +4,11 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+const { initDb } = require('./db');
 const { authenticate } = require('./auth');
 const { startScheduler } = require('./scheduler');
+const { apiLimiter } = require('./middleware/rateLimiter');
+const { scoutCreateLimiter } = require('./middleware/rateLimiter');
 
 const authRoutes = require('./routes/auth');
 const scoutRoutes = require('./routes/scouts');
@@ -17,6 +20,7 @@ const PORT = process.env.PORT || 3000;
 // ─── Global middleware ─────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
+app.use(apiLimiter);
 
 // ─── Public routes ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
@@ -42,9 +46,19 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Start server ─────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`[server] Scout backend listening on port ${PORT}`);
-  startScheduler();
+async function main() {
+  await initDb();
+  app.listen(PORT, () => {
+    console.log(`[server] Scout backend listening on port ${PORT}`);
+    startScheduler().catch((err) => {
+      console.error('[server] Scheduler startup error:', err.message);
+    });
+  });
+}
+
+main().catch((err) => {
+  console.error('[server] Fatal startup error:', err);
+  process.exit(1);
 });
 
 module.exports = app;
