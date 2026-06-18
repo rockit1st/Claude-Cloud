@@ -37,6 +37,8 @@
     .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
     .signout-btn:hover { background: rgba(255,45,120,0.1); }
+    .signin-btn { text-decoration: none; background: rgba(0,245,255,0.1); border: 1px solid rgba(0,245,255,0.4); color: #00f5ff; padding: 7px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signin-btn:hover { background: rgba(0,245,255,0.2); }
     @media (max-width: 600px) {
       .topnav { padding: 12px 16px; }
       .nav-link { padding: 6px 10px; font-size: 0.75rem; }
@@ -143,7 +145,7 @@
     }
   </style>
 </head>
-<body style="visibility:hidden">
+<body>
 
 <nav class="topnav">
   <a href="index.html" class="nav-brand">⚡ TECH CLASS</a>
@@ -158,6 +160,7 @@
     <span class="nav-user-name" id="nav-user-name"></span>
     <button class="signout-btn" onclick="signOut()">Sign Out</button>
   </div>
+  <a class="signin-btn" id="signin-link" href="login.html" style="display:none">Sign In</a>
 </nav>
 
 <section class="hero">
@@ -245,8 +248,34 @@
 </script>
 
 
+<!-- Public landing page: no login required. Show the user if signed in, otherwise show Sign In. -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="auth.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBKGSWItkS0HkZcYCTc30C_fTugw1SoymI",
+    authDomain:        "techno-teacher-6d631.firebaseapp.com",
+    projectId:         "techno-teacher-6d631",
+    storageBucket:     "techno-teacher-6d631.firebasestorage.app",
+    messagingSenderId: "270196601225",
+    appId:             "1:270196601225:web:07efb1169c2b0492313158"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+  firebase.auth().onAuthStateChanged(function (user) {
+    var area   = document.getElementById('nav-user-area');
+    var signin = document.getElementById('signin-link');
+    if (user) {
+      document.getElementById('nav-user-name').textContent = user.displayName || user.email;
+      area.style.display = 'flex';
+      signin.style.display = 'none';
+    } else {
+      area.style.display = 'none';
+      signin.style.display = 'inline-block';
+    }
+  });
+
+  function signOut() { firebase.auth().signOut(); }
+</script>
 </body>
 </html>
