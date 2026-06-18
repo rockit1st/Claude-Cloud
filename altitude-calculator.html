@@ -703,11 +703,8 @@
 
   function deleteResult(id) {
     if (!id) return;
-    firebase.firestore().collection('results').doc(id).delete().then(function() {
-      allResults = allResults.filter(function(r) { return r.id !== id; });
-      if (allResults.length === 0) document.getElementById('results-card').style.display = 'none';
-      else renderResults();
-    }).catch(function(err) { console.error('Delete failed:', err); });
+    firebase.firestore().collection('results').doc(id).delete()
+      .catch(function(err) { console.error('Delete failed:', err); });
   }
 
   function lockRankings() {
@@ -756,17 +753,14 @@
       unit:      lastResult.unit,
       userEmail: user ? user.email : '',
       savedAt:   firebase.firestore.FieldValue.serverTimestamp()
-    }).then(function(docRef) {
-      lastResult.id = docRef.id;
     }).catch(function(err) { console.error('Save failed:', err); });
 
-    resultCount++;
-    allResults.push(lastResult);
-    document.getElementById('results-card').style.display = 'block';
-    renderResults();
     document.getElementById('save-btn').style.display = 'none';
     lastResult = null;
-    document.getElementById('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('results-card').style.display = 'block';
+    setTimeout(function() {
+      document.getElementById('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 300);
   }
 
   function fullReset() {
@@ -809,13 +803,9 @@
         }),
         db.collection('settings').doc('altitude-rankings').set({ locked: false })
       ]).then(function() {
-        resultCount = 0;
-        allResults = [];
         activePeriodFilter = 'all';
         document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
         document.querySelector('.period-tab').classList.add('active');
-        document.getElementById('results-body').innerHTML = '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
-        document.getElementById('results-card').style.display = 'none';
       }).catch(function(err) { console.error('Clear failed:', err); });
     } else {
       document.getElementById('pw-error').textContent = 'Incorrect password. Try again.';
@@ -881,19 +871,24 @@
     } else {
       document.getElementById('period-tabs').style.display = 'none';
     }
-    // Load all saved results from Firestore on page load
-    firebase.firestore().collection('results').orderBy('savedAt', 'desc').get().then(function(snap) {
-      snap.docs.forEach(function(doc) {
-        var r = doc.data();
-        r.id = doc.id;
-        allResults.push(r);
-        resultCount++;
-      });
-      if (allResults.length > 0) {
-        document.getElementById('results-card').style.display = 'block';
-        renderResults();
-      }
-    }).catch(function(err) { console.error('Load failed:', err); });
+    // Real-time listener — leaderboard updates live for all students
+    firebase.firestore().collection('results').orderBy('savedAt', 'desc')
+      .onSnapshot(function(snap) {
+        allResults = [];
+        snap.docs.forEach(function(doc) {
+          var r = doc.data();
+          r.id = doc.id;
+          allResults.push(r);
+        });
+        resultCount = allResults.length;
+        if (allResults.length > 0) {
+          document.getElementById('results-card').style.display = 'block';
+          renderResults();
+        } else {
+          document.getElementById('results-card').style.display = 'none';
+          document.getElementById('results-body').innerHTML = '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
+        }
+      }, function(err) { console.error('Load failed:', err); });
 
     // Listen for rankings lock/unlock in real time
     firebase.firestore().collection('settings').doc('altitude-rankings')
