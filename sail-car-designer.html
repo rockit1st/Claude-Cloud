@@ -3,275 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sail Car Designer | Tech Class Hub</title>
+  <title>Sail Car Builder | Tech Class Hub</title>
+  <meta name="description" content="Build a sail car by dragging parts onto the chassis, then see how your design affects drag, friction, center of gravity, and speed." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
 
-    /* ── Nav ── */
-    .topnav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 32px;
-      background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(180,79,255,0.3);
-    }
+    .topnav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 14px 32px; background: rgba(10,0,15,0.88); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(180,79,255,0.3); }
     .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
     .nav-links { display: flex; gap: 6px; }
     .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
     .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
     .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
-    .nav-user { display: flex; align-items: center; gap: 10px; }
+    .nav-user { align-items: center; gap: 10px; }
     .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
     .signout-btn:hover { background: rgba(255,45,120,0.1); }
     @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
 
-    /* ── Banner ── */
-    .banner {
-      margin-top: 60px;
-      background: linear-gradient(135deg, #0a000f 0%, #1a0030 50%, #0d001a 100%);
-      padding: 48px 20px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-      border-bottom: 2px solid rgba(180,79,255,0.3);
-    }
-    .banner::after {
-      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, transparent, #b44fff, transparent);
-      box-shadow: 0 0 20px #b44fff;
-    }
+    .banner { margin-top: 60px; background: linear-gradient(135deg, #0a000f 0%, #1a0030 50%, #0d001a 100%); padding: 48px 20px; text-align: center; position: relative; overflow: hidden; border-bottom: 2px solid rgba(180,79,255,0.3); }
+    .banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #b44fff, transparent); box-shadow: 0 0 20px #b44fff; }
     .banner-icon { font-size: 3.5rem; margin-bottom: 12px; }
-    .banner-title {
-      font-family: 'Orbitron', sans-serif; font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900;
-      color: #b44fff; letter-spacing: 4px;
-      text-shadow: 0 0 20px rgba(180,79,255,0.7), 0 0 40px rgba(180,79,255,0.3);
-    }
-    .banner-sub { color: #9080b0; font-size: 0.95rem; margin-top: 8px; letter-spacing: 2px; }
+    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 900; color: #b44fff; letter-spacing: 4px; text-shadow: 0 0 20px rgba(180,79,255,0.7), 0 0 40px rgba(180,79,255,0.3); }
+    .banner-sub { color: #9080b0; font-size: 1rem; margin-top: 10px; letter-spacing: 2px; }
 
-    /* ── Layout ── */
-    .page-wrap { max-width: 1400px; margin: 0 auto; padding: 40px 20px 60px; }
-
-    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 28px; }
+    .content { max-width: 1100px; margin: 0 auto; padding: 36px 20px 80px; }
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 22px; }
     .breadcrumb a { color: #9080b0; text-decoration: none; }
     .breadcrumb a:hover { color: #b44fff; }
-    .breadcrumb span { color: #b44fff; }
 
-    .two-col {
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 28px;
-      align-items: start;
-    }
-    @media (max-width: 900px) {
-      .two-col { grid-template-columns: 1fr; }
-    }
+    .intro { background: rgba(180,79,255,0.06); border: 1px solid rgba(180,79,255,0.22); border-radius: 14px; padding: 18px 22px; margin-bottom: 26px; color: #d0c0e8; line-height: 1.7; font-size: 0.95rem; }
+    .intro strong { color: #b44fff; }
 
-    /* ── Cards ── */
-    .card {
-      background: rgba(180,79,255,0.05);
-      border: 1px solid rgba(180,79,255,0.2);
-      border-radius: 16px;
-      padding: 22px 20px;
-      margin-bottom: 18px;
-    }
-    .card-heading {
-      font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700;
-      color: #b44fff; letter-spacing: 2px; text-transform: uppercase;
-      margin-bottom: 16px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .card-heading .ch-icon { font-size: 1rem; }
+    .builder { display: grid; grid-template-columns: 230px 1fr 280px; gap: 20px; align-items: start; }
+    @media (max-width: 940px) { .builder { grid-template-columns: 1fr; } }
 
-    /* ── Inventory ── */
-    .inv-row { margin-bottom: 12px; }
-    .inv-label { font-size: 0.82rem; color: #c8b8e8; margin-bottom: 5px; display: flex; justify-content: space-between; }
-    .inv-label .inv-count { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; }
-    .inv-label .inv-count.over { color: #ff4466; }
-    .progress-track {
-      height: 8px; border-radius: 4px;
-      background: rgba(180,79,255,0.12);
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%; border-radius: 4px;
-      background: linear-gradient(90deg, #b44fff, #00f5ff);
-      transition: width 0.25s ease, background 0.25s ease;
-    }
-    .progress-fill.over { background: linear-gradient(90deg, #ff4466, #ff8800); }
+    .panel { background: rgba(255,255,255,0.04); border: 1px solid rgba(180,79,255,0.2); border-radius: 16px; padding: 18px; }
+    .panel h3 { font-family: 'Orbitron', sans-serif; font-size: 0.78rem; letter-spacing: 2px; color: #b44fff; text-transform: uppercase; margin-bottom: 14px; }
 
-    .paper-status {
-      font-size: 0.82rem; color: #c8b8e8;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .paper-badge {
-      font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 1px;
-      padding: 3px 10px; border-radius: 20px;
-      border: 1px solid rgba(180,79,255,0.4); color: #b44fff; background: rgba(180,79,255,0.1);
-    }
-    .paper-badge.cut { border-color: rgba(240,192,64,0.5); color: #f0c040; background: rgba(240,192,64,0.08); }
+    .part-group { margin-bottom: 16px; }
+    .part-group-label { font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: #8070a0; margin-bottom: 7px; }
+    .part { display: flex; align-items: center; gap: 10px; background: rgba(180,79,255,0.08); border: 1px solid rgba(180,79,255,0.25); border-radius: 10px; padding: 9px 11px; margin-bottom: 7px; cursor: grab; touch-action: none; transition: background 0.15s, border-color 0.15s, transform 0.05s; user-select: none; }
+    .part:hover { background: rgba(180,79,255,0.18); border-color: rgba(180,79,255,0.5); }
+    .part:active { cursor: grabbing; }
+    .part.dragging { opacity: 0.35; }
+    .part-emoji { font-size: 1.4rem; }
+    .part-info { line-height: 1.2; }
+    .part-name { font-size: 0.82rem; font-weight: 600; color: #f0e6ff; }
+    .part-stat { font-size: 0.68rem; color: #9080b0; }
 
-    /* ── Form Controls ── */
-    .field { margin-bottom: 16px; }
-    .field-label {
-      font-size: 0.8rem; color: #9080b0; letter-spacing: 0.5px;
-      margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;
-    }
-    .field-label .val { color: #b44fff; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; }
+    .drag-ghost { position: fixed; z-index: 999; pointer-events: none; display: flex; align-items: center; gap: 8px; background: rgba(40,0,70,0.95); border: 1px solid #b44fff; border-radius: 10px; padding: 8px 12px; box-shadow: 0 8px 30px rgba(180,79,255,0.5); font-size: 0.82rem; font-weight: 600; transform: translate(-50%, -50%); }
+    .drag-ghost .part-emoji { font-size: 1.3rem; }
 
-    input[type="range"] {
-      -webkit-appearance: none; appearance: none;
-      width: 100%; height: 6px;
-      background: rgba(180,79,255,0.2); border-radius: 3px; outline: none;
-      cursor: pointer;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 16px; height: 16px;
-      border-radius: 50%; background: #b44fff;
-      box-shadow: 0 0 8px rgba(180,79,255,0.8);
-      cursor: pointer;
-    }
-    input[type="range"]::-moz-range-thumb {
-      width: 16px; height: 16px; border-radius: 50%; background: #b44fff;
-      box-shadow: 0 0 8px rgba(180,79,255,0.8); cursor: pointer; border: none;
-    }
+    .stage-wrap { background: rgba(255,255,255,0.04); border: 1px solid rgba(180,79,255,0.2); border-radius: 16px; padding: 14px; }
+    .car-stage { position: relative; width: 100%; aspect-ratio: 520 / 320; }
+    .car-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .slot { position: absolute; border: 2px dashed rgba(180,79,255,0.35); border-radius: 10px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.62rem; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(180,79,255,0.7); background: rgba(180,79,255,0.04); transition: background 0.15s, border-color 0.15s; }
+    .slot.filled { border-color: transparent; background: transparent; color: transparent; }
+    .slot.highlight { border-color: #00f5ff; background: rgba(0,245,255,0.12); color: #00f5ff; box-shadow: 0 0 16px rgba(0,245,255,0.3); }
 
-    .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
-    .btn-opt {
-      flex: 1; min-width: 36px;
-      padding: 8px 6px; border-radius: 8px;
-      font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px;
-      background: rgba(180,79,255,0.06);
-      border: 1px solid rgba(180,79,255,0.2);
-      color: #9080b0; cursor: pointer; text-align: center;
-      transition: all 0.15s;
-    }
-    .btn-opt:hover { background: rgba(180,79,255,0.15); color: #d0b8f8; }
-    .btn-opt.active {
-      background: rgba(180,79,255,0.25); border-color: #b44fff;
-      color: #f0e6ff; box-shadow: 0 0 10px rgba(180,79,255,0.4);
-    }
+    .stage-btns { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .stage-btn { flex: 1; min-width: 120px; border: none; border-radius: 10px; padding: 12px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 1.5px; cursor: pointer; transition: box-shadow 0.2s, transform 0.05s; }
+    .stage-btn:active { transform: scale(0.98); }
+    .test-btn { background: linear-gradient(135deg, #b44fff, #6a1fb0); color: #fff; box-shadow: 0 4px 16px rgba(180,79,255,0.35); }
+    .test-btn:hover { box-shadow: 0 6px 26px rgba(180,79,255,0.6); }
+    .reset-btn2 { background: transparent; border: 2px solid rgba(180,79,255,0.35); color: #b48fff; }
+    .reset-btn2:hover { border-color: #b44fff; color: #fff; }
 
-    .checkbox-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .checkbox-row input[type="checkbox"] { display: none; }
-    .checkbox-box {
-      width: 20px; height: 20px; border-radius: 5px;
-      border: 1px solid rgba(180,79,255,0.4); background: rgba(180,79,255,0.06);
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s; flex-shrink: 0;
-    }
-    .checkbox-box.checked { background: rgba(180,79,255,0.3); border-color: #b44fff; }
-    .checkbox-box.checked::after { content: '✓'; font-size: 0.75rem; color: #f0e6ff; }
-    .checkbox-label { font-size: 0.82rem; color: #c8b8e8; }
+    .stat-block { margin-bottom: 16px; }
+    .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+    .stat-label { font-size: 0.78rem; color: #b8a8d0; }
+    .stat-value { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; }
+    .meter { background: rgba(255,255,255,0.08); border-radius: 99px; height: 8px; overflow: hidden; }
+    .meter-fill { height: 100%; border-radius: 99px; width: 0%; transition: width 0.5s ease; }
+    .fill-thrust { background: linear-gradient(90deg, #40e080, #20a060); }
+    .fill-drag { background: linear-gradient(90deg, #ff9f40, #e0601a); }
+    .fill-friction { background: linear-gradient(90deg, #ff5080, #c01050); }
 
-    /* ── Save section ── */
-    .save-input {
-      width: 100%; padding: 10px 14px;
-      background: rgba(180,79,255,0.06); border: 1px solid rgba(180,79,255,0.25);
-      border-radius: 8px; color: #f0e6ff; font-family: 'Exo 2', sans-serif; font-size: 0.9rem;
-      outline: none; transition: border-color 0.2s;
-    }
-    .save-input:focus { border-color: #b44fff; box-shadow: 0 0 10px rgba(180,79,255,0.2); }
+    .score-box { text-align: center; background: rgba(180,79,255,0.08); border: 1px solid rgba(180,79,255,0.3); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+    .score-num { font-family: 'Orbitron', sans-serif; font-size: 2.6rem; font-weight: 900; color: #b44fff; line-height: 1; text-shadow: 0 0 18px rgba(180,79,255,0.6); }
+    .score-label { font-size: 0.72rem; letter-spacing: 1.5px; text-transform: uppercase; color: #9080b0; margin-top: 4px; }
+    .stars { font-size: 1.1rem; letter-spacing: 3px; margin-top: 8px; color: #f0c040; }
 
-    .save-row { display: flex; gap: 10px; margin-top: 10px; }
-    .save-row .save-input { flex: 1; }
+    .feedback-box { font-size: 0.82rem; line-height: 1.6; color: #d0c0e8; min-height: 20px; }
+    .feedback-box .tip { display: flex; gap: 8px; margin-bottom: 6px; }
+    .feedback-box .tip-icon { flex-shrink: 0; }
+    .feedback-box b { color: #b44fff; }
 
-    .save-btn {
-      display: block; width: 100%; padding: 12px;
-      background: linear-gradient(135deg, #b44fff, #7722cc);
-      border: none; border-radius: 10px;
-      font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
-      color: #fff; cursor: pointer; margin-top: 14px;
-      box-shadow: 0 0 20px rgba(180,79,255,0.4);
-      transition: box-shadow 0.2s, transform 0.1s;
-    }
-    .save-btn:hover { box-shadow: 0 0 35px rgba(180,79,255,0.7); }
-    .save-btn:active { transform: scale(0.98); }
-    .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .cg-legend { font-size: 0.7rem; color: #8070a0; margin-top: 8px; display: flex; align-items: center; gap: 6px; }
 
-    .save-status {
-      font-size: 0.8rem; text-align: center; margin-top: 10px; min-height: 20px;
-      letter-spacing: 0.5px; transition: color 0.3s;
-    }
-    .save-status.ok { color: #00f5ff; }
-    .save-status.err { color: #ff4466; }
-
-    /* ── Right column ── */
-    .right-col { display: flex; flex-direction: column; gap: 18px; }
-
-    .canvas-pair {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    @media (max-width: 700px) {
-      .canvas-pair { grid-template-columns: 1fr; }
-    }
-
-    .canvas-card {
-      background: rgba(180,79,255,0.05);
-      border: 1px solid rgba(180,79,255,0.2);
-      border-radius: 16px;
-      overflow: hidden;
-    }
-    .canvas-title {
-      font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 2px;
-      color: #9080b0; padding: 10px 14px 0;
-      text-transform: uppercase;
-    }
-    .canvas-card canvas {
-      display: block; width: 100%; height: auto;
-    }
-
-    /* ── Analysis grid ── */
-    .analysis-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    @media (max-width: 500px) { .analysis-grid { grid-template-columns: 1fr; } }
-
-    .metric-card {
-      background: rgba(180,79,255,0.05);
-      border: 1px solid rgba(180,79,255,0.15);
-      border-radius: 12px; padding: 14px 16px;
-    }
-    .metric-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-    .metric-icon { font-size: 1.2rem; }
-    .metric-name { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: #9080b0; letter-spacing: 1px; text-transform: uppercase; }
-    .metric-value { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; color: #b44fff; margin-bottom: 3px; }
-    .metric-msg { font-size: 0.75rem; color: #9080b0; line-height: 1.4; }
-
-    .metric-card.good .metric-value { color: #00f5ff; }
-    .metric-card.warn .metric-value { color: #f0c040; }
-    .metric-card.bad .metric-value { color: #ff4466; }
-
-    /* ── Performance bar ── */
-    .perf-card {
-      background: rgba(180,79,255,0.05);
-      border: 1px solid rgba(180,79,255,0.2);
-      border-radius: 16px; padding: 20px;
-    }
-    .perf-heading {
-      font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #b44fff;
-      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .perf-score { font-size: 1.2rem; color: #f0e6ff; }
-    .perf-track {
-      height: 14px; border-radius: 7px;
-      background: rgba(180,79,255,0.1);
-      overflow: hidden; margin-bottom: 14px;
-      border: 1px solid rgba(180,79,255,0.15);
-    }
-    .perf-fill {
-      height: 100%; border-radius: 7px;
-      transition: width 0.35s ease, background 0.35s ease;
-    }
-    .perf-tips { font-size: 0.78rem; color: #9080b0; line-height: 1.7; }
-    .perf-tips li { margin-left: 16px; margin-bottom: 2px; }
+    .leaderboard { margin-top: 34px; }
+    .lb-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(180,79,255,0.2); border-radius: 16px; padding: 22px; }
+    .lb-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+    .lb-header h2 { font-family: 'Orbitron', sans-serif; font-size: 1rem; letter-spacing: 2px; color: #b44fff; }
+    .submit-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .submit-row input, .submit-row select { background: rgba(255,255,255,0.08); border: 1px solid rgba(180,79,255,0.3); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 0.9rem; outline: none; font-family: 'Exo 2', sans-serif; }
+    .submit-row input { flex: 1; min-width: 130px; }
+    .submit-row input::placeholder { color: rgba(255,255,255,0.4); }
+    .submit-row select option { background: #1a0030; }
+    .submit-btn { background: linear-gradient(135deg, #40c07a, #208050); border: none; border-radius: 8px; padding: 10px 18px; color: #fff; font-weight: 800; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+    .submit-btn:disabled { opacity: 0.5; cursor: default; }
+    .submit-status { font-size: 0.82rem; min-height: 18px; margin-bottom: 12px; }
+    .period-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .period-tab { background: rgba(255,255,255,0.06); border: 1px solid rgba(180,79,255,0.2); border-radius: 20px; padding: 6px 14px; font-size: 0.76rem; font-weight: 700; color: #b8a8d0; cursor: pointer; transition: all 0.2s; }
+    .period-tab.active { background: #b44fff; color: #fff; border-color: #b44fff; }
+    .period-tab:hover:not(.active) { background: rgba(180,79,255,0.15); }
+    .lb-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .lb-table th { text-align: left; padding: 9px 12px; color: #b44fff; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .lb-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .lb-table tr:last-child td { border-bottom: none; }
+    .rank-badge { display: inline-block; background: rgba(180,79,255,0.15); color: #b44fff; border-radius: 4px; padding: 2px 8px; font-weight: 700; font-size: 0.8rem; }
+    .empty-msg { text-align: center; color: rgba(255,255,255,0.3); padding: 20px; font-size: 0.9rem; }
 
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
   </style>
@@ -284,8 +128,8 @@
     <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
     <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
     <a href="sailboat.html" class="nav-link active">&#9973; Sail Cars</a>
-    <a href="dashboard.html" class="nav-link">&#128202; Dashboard</a>
-    <a href="scoreboard.html" class="nav-link">&#127942; Scoreboard</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -294,786 +138,437 @@
 </nav>
 
 <div class="banner">
-  <div class="banner-icon">&#9973;</div>
-  <div class="banner-title">SAIL CAR DESIGNER</div>
-  <div class="banner-sub">Design &bull; Analyze &bull; Optimize</div>
+  <div class="banner-icon">⛵</div>
+  <div class="banner-title">SAIL CAR BUILDER</div>
+  <div class="banner-sub">Design &bull; Build &bull; Race</div>
 </div>
 
-<div class="page-wrap">
-  <div class="breadcrumb">
-    <a href="index.html">&#8592; Hub</a> /
-    <a href="sailboat.html">Sail Cars</a> /
-    <span>Designer</span>
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="sailboat.html">Sail Cars</a> / Builder</div>
+
+  <div class="intro">
+    <strong>Drag parts onto your car</strong> to build a wind-powered sail car. Every part you add changes the
+    <strong>drag</strong>, <strong>rolling friction</strong>, and <strong>center of gravity</strong> — which decide how fast
+    and how stable your car will be. Aim for lots of thrust, low drag, low friction, and a balanced center of gravity, then
+    press <strong>Test in Wind Tunnel</strong> to see your speed score!
   </div>
 
-  <div class="two-col">
+  <div class="builder">
 
-    <!-- ══════════════ LEFT COLUMN ══════════════ -->
-    <div class="left-col">
-
-      <!-- Material Inventory -->
-      <div class="card">
-        <div class="card-heading"><span class="ch-icon">&#128202;</span>Material Inventory</div>
-
-        <div class="inv-row">
-          <div class="inv-label">
-            <span>&#129323; Popsicle Sticks</span>
-            <span class="inv-count" id="stick-count">0 / 10</span>
-          </div>
-          <div class="progress-track"><div class="progress-fill" id="stick-bar" style="width:0%"></div></div>
-        </div>
-
-        <div class="inv-row">
-          <div class="inv-label">
-            <span>&#129360; Straws</span>
-            <span class="inv-count" id="straw-count">1 / 3</span>
-          </div>
-          <div class="progress-track"><div class="progress-fill" id="straw-bar" style="width:33%"></div></div>
-        </div>
-
-        <div class="inv-row">
-          <div class="paper-status">
-            <span>&#128196; Paper: 1 sheet (8.5" × 11")</span>
-            <span class="paper-badge" id="paper-badge">Full Sheet</span>
-          </div>
-        </div>
+    <div class="panel" id="palette">
+      <h3>🧰 Parts Bin</h3>
+      <div class="part-group">
+        <div class="part-group-label">Sails (thrust + drag)</div>
+        <div class="part" data-id="sail-s"></div>
+        <div class="part" data-id="sail-m"></div>
+        <div class="part" data-id="sail-l"></div>
       </div>
-
-      <!-- Frame -->
-      <div class="card">
-        <div class="card-heading"><span class="ch-icon">&#9726;</span>Frame</div>
-
-        <div class="field">
-          <div class="field-label">Frame Length <span class="val" id="len-val">9.0"</span></div>
-          <input type="range" id="frameLen" min="4.5" max="18" step="0.5" value="9">
-        </div>
-
-        <div class="field">
-          <div class="field-label">Frame Width <span class="val" id="wid-val">3.0"</span></div>
-          <input type="range" id="frameWid" min="1" max="8" step="0.5" value="3">
-        </div>
-
-        <div class="field">
-          <div class="field-label">Cross Braces</div>
-          <div class="btn-group" id="braces-group">
-            <button class="btn-opt active" data-val="0">0</button>
-            <button class="btn-opt" data-val="1">1</button>
-            <button class="btn-opt" data-val="2">2</button>
-            <button class="btn-opt" data-val="3">3</button>
-            <button class="btn-opt" data-val="4">4</button>
-          </div>
-        </div>
-
-        <div class="field">
-          <div class="field-label">Extra Bottom Sticks <span style="font-size:0.72rem;color:#6050a0">(adds friction + stability)</span></div>
-          <div class="btn-group" id="extra-group">
-            <button class="btn-opt active" data-val="0">0</button>
-            <button class="btn-opt" data-val="1">1</button>
-            <button class="btn-opt" data-val="2">2</button>
-            <button class="btn-opt" data-val="3">3</button>
-          </div>
-        </div>
+      <div class="part-group">
+        <div class="part-group-label">Body</div>
+        <div class="part" data-id="body-light"></div>
+        <div class="part" data-id="body-aero"></div>
+        <div class="part" data-id="body-box"></div>
       </div>
-
-      <!-- Mast & Supports -->
-      <div class="card">
-        <div class="card-heading"><span class="ch-icon">&#8739;</span>Mast &amp; Supports</div>
-
-        <div class="field">
-          <div class="field-label">Straws for Mast <span style="font-size:0.72rem;color:#6050a0">(taped end-to-end)</span></div>
-          <div class="btn-group" id="mast-group">
-            <button class="btn-opt active" data-val="1">1</button>
-            <button class="btn-opt" data-val="2">2</button>
-            <button class="btn-opt" data-val="3">3</button>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="checkbox-row" id="brace-toggle">
-            <input type="checkbox" id="lateral-brace">
-            <div class="checkbox-box" id="brace-box"></div>
-            <span class="checkbox-label">Lateral Brace Straw (+1 straw, adds horizontal support)</span>
-          </label>
-        </div>
-
-        <div class="field">
-          <div class="field-label">Mast Position</div>
-          <div class="btn-group" id="mast-pos-group">
-            <button class="btn-opt" data-val="0.25">Front</button>
-            <button class="btn-opt active" data-val="0.5">Center</button>
-            <button class="btn-opt" data-val="0.75">Back</button>
-          </div>
-        </div>
+      <div class="part-group">
+        <div class="part-group-label">Wheels (front + rear)</div>
+        <div class="part" data-id="wheel-narrow"></div>
+        <div class="part" data-id="wheel-wide"></div>
+        <div class="part" data-id="wheel-big"></div>
       </div>
-
-      <!-- Sail -->
-      <div class="card">
-        <div class="card-heading"><span class="ch-icon">&#9651;</span>Sail</div>
-
-        <div class="field">
-          <div class="field-label">Sail Shape</div>
-          <div class="btn-group" id="sail-shape-group">
-            <button class="btn-opt active" data-val="rect">Rectangle</button>
-            <button class="btn-opt" data-val="rtri">Right Triangle</button>
-            <button class="btn-opt" data-val="itri">Isosceles Tri.</button>
-          </div>
-        </div>
-
-        <div class="field">
-          <div class="field-label">Sail Width <span class="val" id="sw-val">5.0"</span></div>
-          <input type="range" id="sailW" min="1" max="8.5" step="0.25" value="5">
-        </div>
-
-        <div class="field">
-          <div class="field-label">Sail Height <span class="val" id="sh-val">7.0"</span></div>
-          <input type="range" id="sailH" min="1" max="11" step="0.25" value="7">
-        </div>
+      <div class="part-group">
+        <div class="part-group-label">Add-ons</div>
+        <div class="part" data-id="nose-cone"></div>
+        <div class="part" data-id="ballast"></div>
       </div>
+    </div>
 
-      <!-- Save Design -->
-      <div class="card">
-        <div class="card-heading"><span class="ch-icon">&#128190;</span>Save Design</div>
-
-        <div class="field">
-          <div class="field-label">Student Name</div>
-          <input type="text" class="save-input" id="student-name" placeholder="Your full name">
-        </div>
-
-        <div class="field">
-          <div class="field-label">Period</div>
-          <select class="save-input" id="period-sel">
-            <option value="">— Select Period —</option>
-            <option value="1">Period 1</option>
-            <option value="2">Period 2</option>
-            <option value="3">Period 3</option>
-            <option value="4">Period 4</option>
-            <option value="5">Period 5</option>
-            <option value="6">Period 6</option>
-            <option value="7">Period 7</option>
-            <option value="8">Period 8</option>
-          </select>
-        </div>
-
-        <button class="save-btn" id="save-btn" onclick="saveDesign()">&#128190; Save Design</button>
-        <div class="save-status" id="save-status"></div>
+    <div class="stage-wrap">
+      <div class="car-stage" id="stage">
+        <svg id="car-svg" viewBox="0 0 520 320" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="slot" data-slot="sail"        data-accepts="sail"    style="left:38%;top:8%;width:26%;height:36%">Sail</div>
+        <div class="slot" data-slot="body"        data-accepts="body"    style="left:30%;top:46%;width:42%;height:24%">Body</div>
+        <div class="slot" data-slot="rearWheels"  data-accepts="wheels"  style="left:31%;top:73%;width:16%;height:23%">Rear<br>Wheels</div>
+        <div class="slot" data-slot="frontWheels" data-accepts="wheels"  style="left:62%;top:73%;width:16%;height:23%">Front<br>Wheels</div>
+        <div class="slot" data-slot="nose"        data-accepts="nose"    style="left:79%;top:48%;width:15%;height:20%">Nose</div>
+        <div class="slot" data-slot="ballast"     data-accepts="ballast" style="left:42%;top:62%;width:18%;height:13%">Ballast</div>
       </div>
-
-    </div><!-- /left-col -->
-
-    <!-- ══════════════ RIGHT COLUMN ══════════════ -->
-    <div class="right-col">
-
-      <!-- Canvas pair -->
-      <div class="canvas-pair">
-        <div class="canvas-card">
-          <div class="canvas-title">&#128065; Side View &nbsp;(wind &#8594;)</div>
-          <canvas id="side-canvas" width="400" height="280"></canvas>
-        </div>
-        <div class="canvas-card">
-          <div class="canvas-title">&#128065; Top-Down View &nbsp;(wind &#8595;)</div>
-          <canvas id="top-canvas" width="400" height="280"></canvas>
-        </div>
+      <div class="stage-btns">
+        <button class="stage-btn test-btn" id="test-btn">🌬️ Test in Wind Tunnel</button>
+        <button class="stage-btn reset-btn2" id="reset-btn">↺ Clear Car</button>
       </div>
+    </div>
 
-      <!-- Analysis metrics -->
-      <div class="card" style="margin-bottom:0">
-        <div class="card-heading"><span class="ch-icon">&#9878;</span>Design Analysis</div>
-        <div class="analysis-grid">
-          <div class="metric-card" id="mc-wind">
-            <div class="metric-top"><span class="metric-icon">&#127774;</span><span class="metric-name">Wind Catch</span></div>
-            <div class="metric-value" id="mv-wind">—</div>
-            <div class="metric-msg" id="mm-wind"></div>
-          </div>
-          <div class="metric-card" id="mc-stab">
-            <div class="metric-top"><span class="metric-icon">&#9878;</span><span class="metric-name">Stability</span></div>
-            <div class="metric-value" id="mv-stab">—</div>
-            <div class="metric-msg" id="mm-stab"></div>
-          </div>
-          <div class="metric-card" id="mc-fric">
-            <div class="metric-top"><span class="metric-icon">&#129521;</span><span class="metric-name">Friction</span></div>
-            <div class="metric-value" id="mv-fric">—</div>
-            <div class="metric-msg" id="mm-fric"></div>
-          </div>
-          <div class="metric-card" id="mc-drag">
-            <div class="metric-top"><span class="metric-icon">&#128168;</span><span class="metric-name">Mast Drag</span></div>
-            <div class="metric-value" id="mv-drag">—</div>
-            <div class="metric-msg" id="mm-drag"></div>
-          </div>
-        </div>
+    <div class="panel">
+      <h3>📊 Performance</h3>
+      <div class="score-box">
+        <div class="score-num" id="score-num">—</div>
+        <div class="score-label">Speed Score</div>
+        <div class="stars" id="stars"></div>
       </div>
-
-      <!-- Performance estimate -->
-      <div class="perf-card">
-        <div class="perf-heading">
-          <span>&#9889; Performance Estimate</span>
-          <span class="perf-score" id="perf-score">0%</span>
-        </div>
-        <div class="perf-track"><div class="perf-fill" id="perf-fill" style="width:0%"></div></div>
-        <ul class="perf-tips" id="perf-tips"></ul>
+      <div class="stat-block">
+        <div class="stat-row"><span class="stat-label">Thrust (wind push)</span><span class="stat-value" id="thrust-val" style="color:#40e080">0</span></div>
+        <div class="meter"><div class="meter-fill fill-thrust" id="thrust-bar"></div></div>
       </div>
+      <div class="stat-block">
+        <div class="stat-row"><span class="stat-label">Air Drag</span><span class="stat-value" id="drag-val" style="color:#ff9f40">0</span></div>
+        <div class="meter"><div class="meter-fill fill-drag" id="drag-bar"></div></div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-row"><span class="stat-label">Rolling Friction</span><span class="stat-value" id="friction-val" style="color:#ff5080">0</span></div>
+        <div class="meter"><div class="meter-fill fill-friction" id="friction-bar"></div></div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-row"><span class="stat-label">Total Weight</span><span class="stat-value" id="weight-val">0 g</span></div>
+        <div class="stat-row"><span class="stat-label">Center of Gravity</span><span class="stat-value" id="cg-val" style="color:#00f5ff">—</span></div>
+      </div>
+      <div class="feedback-box" id="feedback"></div>
+      <div class="cg-legend"><span style="color:#00f5ff;font-size:1.1rem">⊕</span> = center of gravity (should sit between the wheels)</div>
+    </div>
 
-    </div><!-- /right-col -->
-  </div><!-- /two-col -->
+  </div>
+
+  <div class="leaderboard">
+    <div class="lb-card">
+      <div class="lb-header"><h2>🏁 Class Race Results</h2></div>
+      <div class="submit-row">
+        <input type="text" id="student-name" placeholder="Your name" />
+        <select id="student-period">
+          <option value="" disabled selected>Period</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+        </select>
+        <button class="submit-btn" id="submit-btn">Submit Design</button>
+      </div>
+      <div class="submit-status" id="submit-status"></div>
+      <div class="period-tabs">
+        <button class="period-tab active" data-period="all">All Periods</button>
+        <button class="period-tab" data-period="1">Period 1</button>
+        <button class="period-tab" data-period="2">Period 2</button>
+        <button class="period-tab" data-period="3">Period 3</button>
+        <button class="period-tab" data-period="4">Period 4</button>
+        <button class="period-tab" data-period="5">Period 5</button>
+      </div>
+      <table class="lb-table">
+        <thead><tr><th>#</th><th>Name</th><th>Period</th><th>Build</th><th>Score</th></tr></thead>
+        <tbody id="lb-body"><tr><td colspan="5" class="empty-msg">Loading results…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
-<footer>Technology Class &copy; 2026</footer>
+<footer>Technology Class &copy; 2025</footer>
 
-<!-- Firebase -->
+<!-- Firebase (compat) + shared auth gate -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 
 <script>
-// ── Pre-fill name from auth ──────────────────────────────────────────────────
-firebase.auth().onAuthStateChanged(function(user) {
-  if (user && user.displayName) {
-    var nameEl = document.getElementById('student-name');
-    if (nameEl && !nameEl.value) nameEl.value = user.displayName;
-  }
-});
-
-// ── Physics constants ────────────────────────────────────────────────────────
-var STICK_LEN = 4.5, STICK_W = 0.375;
-var STRAW_LEN = 7.75, STRAW_DIA = 0.25;
-var PAPER_W = 8.5, PAPER_H = 11;
-var FRAME_THICKNESS = 0.5;
-
-// ── State ────────────────────────────────────────────────────────────────────
-var D = {
-  frameLen: 9, frameWid: 3,
-  braces: 0, extraBottom: 0,
-  mastStraws: 1, lateralBrace: false, mastPos: 0.5,
-  sailShape: 'rect', sailW: 5, sailH: 7
+/* PART DATA — x = position along car (0 back … 520 front); y = height (smaller = higher) */
+const PARTS = {
+  'sail-s':       { type:'sail',   name:'Small Sail',   emoji:'⛵', stat:'thrust 3 · light',  mass:15, thrust:3, drag:1.2, x:260, y:120 },
+  'sail-m':       { type:'sail',   name:'Medium Sail',  emoji:'⛵', stat:'thrust 6 · medium', mass:25, thrust:6, drag:2.6, x:260, y:95  },
+  'sail-l':       { type:'sail',   name:'Large Sail',   emoji:'⛵', stat:'thrust 9 · heavy',  mass:40, thrust:9, drag:4.5, x:260, y:70  },
+  'body-light':   { type:'body',   name:'Light Frame',  emoji:'🛹', stat:'30g · some drag',   mass:30, dragCoef:2.0, x:260, y:190 },
+  'body-aero':    { type:'body',   name:'Aero Body',    emoji:'🏎️', stat:'50g · low drag',    mass:50, dragCoef:1.0, x:260, y:190 },
+  'body-box':     { type:'body',   name:'Box Body',     emoji:'📦', stat:'45g · high drag',   mass:45, dragCoef:3.4, x:260, y:185 },
+  'wheel-narrow': { type:'wheels', name:'Narrow Wheels',emoji:'🛞', stat:'light · med grip',  mass:10, resistance:0.65 },
+  'wheel-wide':   { type:'wheels', name:'Wide Wheels',  emoji:'🛞', stat:'heavy · high grip', mass:20, resistance:1.15 },
+  'wheel-big':    { type:'wheels', name:'Big Wheels',   emoji:'🛞', stat:'roll easily',       mass:16, resistance:0.40 },
+  'nose-cone':    { type:'nose',   name:'Nose Cone',    emoji:'🔺', stat:'cuts drag −1.5',    mass:8,  dragReduce:1.5, x:405, y:190 },
+  'ballast':      { type:'ballast',name:'Ballast',      emoji:'🔩', stat:'+35g · lowers CG',  mass:35, x:260, y:225 },
 };
+const SLOT_POS = { frontWheels: { x:345, y:265 }, rearWheels: { x:190, y:265 } };
+const state = { sail:null, body:null, frontWheels:null, rearWheels:null, nose:null, ballast:null };
 
-// ── Derived helpers ──────────────────────────────────────────────────────────
-function sticksUsed() {
-  return Math.ceil(D.frameLen / 4.5) * 2 + 2 + D.braces + D.extraBottom;
-}
-function strawsUsed() {
-  return D.mastStraws + (D.lateralBrace ? 1 : 0);
-}
-function mastHeight() { return D.mastStraws * STRAW_LEN; }
-function sailArea() {
-  if (D.sailShape === 'rect') return D.sailW * D.sailH;
-  return 0.5 * D.sailW * D.sailH;
-}
-function contactArea() {
-  return D.frameLen * D.frameWid + D.extraBottom * STICK_LEN * STRAW_DIA * 2;
-}
-function stabilityRatio() {
-  var mh = mastHeight();
-  var frameCG  = FRAME_THICKNESS / 2;
-  var mastCG   = FRAME_THICKNESS + mh / 2;
-  var sailCG   = FRAME_THICKNESS + mh - D.sailH / 2;
-  var fw = sticksUsed() * 0.15;
-  var mw = strawsUsed() * 0.05;
-  var sw = 0.15;
-  var totalW = fw + mw + sw;
-  var cg = (frameCG * fw + mastCG * mw + sailCG * sw) / totalW;
-  return cg / (D.frameWid / 2);
-}
-function performanceScore() {
-  var sa = sailArea();
-  var ca = contactArea();
-  var sr = stabilityRatio();
-  var over = (sticksUsed() > 10 || strawsUsed() > 3);
-  var score = 50 + (sa / 93.5) * 25 - (ca / 144) * 20 - Math.max(0, (sr - 1) * 15) - (over ? 20 : 0);
-  return Math.max(0, Math.min(100, score));
-}
-
-// ── Update all UI ────────────────────────────────────────────────────────────
-function update() {
-  updateInventory();
-  updateAnalysis();
-  drawSide();
-  drawTop();
-}
-
-function updateInventory() {
-  var sticks = sticksUsed();
-  var straws = strawsUsed();
-
-  var sc = document.getElementById('stick-count');
-  sc.textContent = sticks + ' / 10';
-  sc.classList.toggle('over', sticks > 10);
-  var sb = document.getElementById('stick-bar');
-  sb.style.width = Math.min(100, (sticks / 10) * 100) + '%';
-  sb.classList.toggle('over', sticks > 10);
-
-  var tc = document.getElementById('straw-count');
-  tc.textContent = straws + ' / 3';
-  tc.classList.toggle('over', straws > 3);
-  var tb = document.getElementById('straw-bar');
-  tb.style.width = Math.min(100, (straws / 3) * 100) + '%';
-  tb.classList.toggle('over', straws > 3);
-
-  var badge = document.getElementById('paper-badge');
-  var isFull = (D.sailW >= PAPER_W - 0.01 && D.sailH >= PAPER_H - 0.01);
-  badge.textContent = isFull ? 'Full Sheet' : 'Cut';
-  badge.className = 'paper-badge' + (isFull ? '' : ' cut');
-}
-
-function updateAnalysis() {
-  var sa  = sailArea();
-  var ca  = contactArea();
-  var sr  = stabilityRatio();
-  var mh  = mastHeight();
-  var mda = D.mastStraws * STRAW_DIA * 2 * mh; // mast cross-section area
-  var over = sticksUsed() > 10 || strawsUsed() > 3;
-  var score = performanceScore();
-
-  // Wind Catch
-  setMetric('wind', sa.toFixed(1) + ' sq in',
-    sa < 20  ? { cls:'bad',  msg:'Low — try a bigger sail to catch more wind.' } :
-    sa < 50  ? { cls:'good', msg:'Good sail coverage for this car.' } :
-               { cls:'good', msg:'Great! Large sail to catch maximum wind.' });
-
-  // Stability
-  setMetric('stab', 'Ratio ' + sr.toFixed(2),
-    sr < 1.2 ? { cls:'good', msg:'Stable — center of gravity is low.' } :
-    sr < 2.0 ? { cls:'warn', msg:'Risky — try widening frame or lowering sail.' } :
-               { cls:'bad',  msg:'Unstable — widen frame or reduce mast height.' });
-
-  // Friction
-  setMetric('fric', ca.toFixed(1) + ' sq in',
-    ca < 20  ? { cls:'good', msg:'Low friction — car will slide easily.' } :
-    ca < 50  ? { cls:'warn', msg:'Moderate friction — some resistance on floor.' } :
-               { cls:'bad',  msg:'High friction — may slow the car significantly.' });
-
-  // Drag
-  setMetric('drag', mda.toFixed(1) + ' sq in',
-    mda < 4  ? { cls:'good', msg:'Minimal mast drag — streamlined profile.' } :
-    mda < 10 ? { cls:'warn', msg:'Some drag from tall mast — consider shorter mast.' } :
-               { cls:'bad',  msg:'High mast drag — tall masts create extra resistance.' });
-
-  // Performance bar
-  var fill = document.getElementById('perf-fill');
-  fill.style.width = score.toFixed(0) + '%';
-  var r, g;
-  if (score <= 50) { r = 255; g = Math.round(score * 3.6); }
-  else { r = Math.round(255 - (score - 50) * 5.1); g = 255; }
-  fill.style.background = 'linear-gradient(90deg, rgb(' + r + ',' + g + ',0), rgb(' + Math.min(255,r+40) + ',' + Math.min(255,g+40) + ',40))';
-  document.getElementById('perf-score').textContent = score.toFixed(0) + '%';
-
-  // Tips
-  var tips = [];
-  if (sa < 20)  tips.push('Increase sail size to catch more wind.');
-  if (sa < 30)  tips.push('A larger sail area (aim for 40+ sq in) improves wind catch.');
-  if (sr > 1.5) tips.push('Widen the frame or lower the sail to improve stability.');
-  if (sr > 2.0) tips.push('This design may tip over — reduce mast height or widen the base.');
-  if (ca > 50)  tips.push('Reduce extra bottom sticks to lower friction.');
-  if (ca > 30 && D.extraBottom > 0) tips.push('Extra bottom sticks increase friction — use only if needed for stability.');
-  if (D.frameLen < 5) tips.push('A longer frame distributes weight and reduces tipping risk.');
-  if (mda > 8)  tips.push('Fewer mast straws reduce drag — 1 straw is often enough.');
-  if (over)     tips.push('You are over the material limit! Remove sticks or straws.');
-  if (tips.length === 0) tips.push('Looking solid! Fine-tune sail size vs stability for best performance.');
-
-  var ul = document.getElementById('perf-tips');
-  ul.innerHTML = tips.map(function(t){ return '<li>' + t + '</li>'; }).join('');
-}
-
-function setMetric(id, value, info) {
-  document.getElementById('mc-'  + id).className = 'metric-card ' + info.cls;
-  document.getElementById('mv-'  + id).textContent = value;
-  document.getElementById('mm-'  + id).textContent = info.msg;
-}
-
-// ── Canvas helpers ───────────────────────────────────────────────────────────
-function drawArrow(ctx, x1, y1, x2, y2, color) {
-  ctx.save();
-  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-  var ang = Math.atan2(y2 - y1, x2 - x1);
-  ctx.beginPath();
-  ctx.moveTo(x2, y2);
-  ctx.lineTo(x2 - 10 * Math.cos(ang - 0.4), y2 - 10 * Math.sin(ang - 0.4));
-  ctx.lineTo(x2 - 10 * Math.cos(ang + 0.4), y2 - 10 * Math.sin(ang + 0.4));
-  ctx.closePath(); ctx.fill();
-  ctx.restore();
-}
-
-function setupCanvas(canvas) {
-  var dpr = window.devicePixelRatio || 1;
-  var w = canvas.width, h = canvas.height;
-  canvas.style.width  = w + 'px';
-  canvas.style.height = h + 'px';
-  canvas.width  = w * dpr;
-  canvas.height = h * dpr;
-  var ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  return ctx;
-}
-
-function drawGrid(ctx, w, h, colMajor, colMinor) {
-  ctx.save();
-  ctx.strokeStyle = colMinor; ctx.lineWidth = 0.5;
-  var step = 20;
-  for (var x = 0; x <= w; x += step) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-  }
-  for (var y = 0; y <= h; y += step) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-  }
-  ctx.strokeStyle = colMajor; ctx.lineWidth = 0.5;
-  step = 80;
-  for (var x2 = 0; x2 <= w; x2 += step) {
-    ctx.beginPath(); ctx.moveTo(x2, 0); ctx.lineTo(x2, h); ctx.stroke();
-  }
-  for (var y2 = 0; y2 <= h; y2 += step) {
-    ctx.beginPath(); ctx.moveTo(0, y2); ctx.lineTo(w, y2); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-// ── Side View ────────────────────────────────────────────────────────────────
-function drawSide() {
-  var canvas = document.getElementById('side-canvas');
-  var ctx = canvas.getContext('2d');
-  var W = 400, H = 280;
-
-  ctx.clearRect(0, 0, W, H);
-
-  // Background
-  ctx.fillStyle = '#08000d';
-  ctx.fillRect(0, 0, W, H);
-  drawGrid(ctx, W, H, 'rgba(180,79,255,0.15)', 'rgba(180,79,255,0.06)');
-
-  // Ground/horizon line
-  var groundY = H - 40;
-  var grd = ctx.createLinearGradient(0, groundY - 2, 0, groundY + 4);
-  grd.addColorStop(0, '#ff2d78');
-  grd.addColorStop(0.5, '#f0c040');
-  grd.addColorStop(1, '#ff2d78');
-  ctx.save();
-  ctx.strokeStyle = grd; ctx.lineWidth = 2;
-  ctx.shadowColor = '#ff2d78'; ctx.shadowBlur = 12;
-  ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
-  ctx.restore();
-
-  // Scale: px per inch
-  var maxFrameLen = 18; // full range
-  var scale = Math.min((W - 80) / D.frameLen, (H - 80) / (FRAME_THICKNESS + mastHeight() + 10));
-  scale = Math.min(scale, 12); // cap so it doesn't get too large
-
-  // Frame position
-  var frameW_px = D.frameLen * scale;
-  var frameH_px = FRAME_THICKNESS * scale;
-  var fx = (W - frameW_px) / 2;
-  var fy = groundY - frameH_px;
-
-  // Frame glow
-  ctx.save();
-  ctx.shadowColor = '#00f5ff'; ctx.shadowBlur = 14;
-  ctx.strokeStyle = '#00f5ff'; ctx.lineWidth = 2.5;
-  ctx.strokeRect(fx, fy, frameW_px, frameH_px);
-  ctx.fillStyle = 'rgba(0,245,255,0.06)';
-  ctx.fillRect(fx, fy, frameW_px, frameH_px);
-  ctx.restore();
-
-  // Mast
-  var mh = mastHeight();
-  var mast_x = fx + D.mastPos * frameW_px;
-  var mast_top_y = fy - mh * scale;
-  ctx.save();
-  ctx.shadowColor = '#f0c040'; ctx.shadowBlur = 12;
-  ctx.strokeStyle = '#f0c040'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(mast_x, fy); ctx.lineTo(mast_x, mast_top_y); ctx.stroke();
-  ctx.restore();
-
-  // Lateral brace (horizontal at 60% mast height)
-  if (D.lateralBrace) {
-    var braceY = fy - mh * 0.6 * scale;
-    var braceHalf = 20;
-    ctx.save();
-    ctx.strokeStyle = '#f0c040'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
-    ctx.shadowColor = '#f0c040'; ctx.shadowBlur = 8;
-    ctx.beginPath(); ctx.moveTo(mast_x - braceHalf, braceY); ctx.lineTo(mast_x + braceHalf, braceY); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
-  }
-
-  // Sail
-  var sailW_px = D.sailW * scale;
-  var sailH_px = D.sailH * scale;
-  ctx.save();
-  ctx.shadowColor = '#b44fff'; ctx.shadowBlur = 16;
-  ctx.fillStyle = 'rgba(180,79,255,0.45)';
-  ctx.strokeStyle = '#b44fff'; ctx.lineWidth = 2;
-  ctx.beginPath();
-  if (D.sailShape === 'rect') {
-    ctx.rect(mast_x, mast_top_y, sailW_px, sailH_px);
-  } else if (D.sailShape === 'rtri') {
-    ctx.moveTo(mast_x, mast_top_y);
-    ctx.lineTo(mast_x + sailW_px, mast_top_y + sailH_px);
-    ctx.lineTo(mast_x, mast_top_y + sailH_px);
-    ctx.closePath();
-  } else { // isosceles
-    ctx.moveTo(mast_x, mast_top_y);
-    ctx.lineTo(mast_x + sailW_px / 2, mast_top_y + sailH_px);
-    ctx.lineTo(mast_x - sailW_px / 2, mast_top_y + sailH_px);
-    ctx.closePath();
-  }
-  ctx.fill(); ctx.stroke();
-  ctx.restore();
-
-  // Wind arrow (left side pointing right)
-  drawArrow(ctx, 22, H / 2 - 40, 60, H / 2 - 40, '#00f5ff');
-  ctx.save();
-  ctx.font = '600 10px "Exo 2", sans-serif';
-  ctx.fillStyle = '#00f5ff'; ctx.textAlign = 'center';
-  ctx.fillText('WIND', 35, H / 2 - 52);
-  ctx.restore();
-
-  // Dimension labels
-  ctx.save();
-  ctx.fillStyle = '#9080b0'; ctx.font = '10px "Exo 2", sans-serif'; ctx.textAlign = 'center';
-  // Frame length along bottom
-  ctx.fillText(D.frameLen + '"', fx + frameW_px / 2, groundY + 18);
-  // Mast height on right
-  ctx.save();
-  ctx.translate(W - 12, (fy + mast_top_y) / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText(mh.toFixed(2) + '"', 0, 0);
-  ctx.restore();
-  ctx.restore();
-}
-
-// ── Top-Down View ────────────────────────────────────────────────────────────
-function drawTop() {
-  var canvas = document.getElementById('top-canvas');
-  var ctx = canvas.getContext('2d');
-  var W = 400, H = 280;
-
-  ctx.clearRect(0, 0, W, H);
-
-  ctx.fillStyle = '#08000d';
-  ctx.fillRect(0, 0, W, H);
-  drawGrid(ctx, W, H, 'rgba(180,79,255,0.15)', 'rgba(180,79,255,0.06)');
-
-  var scale = Math.min((W - 100) / D.frameLen, (H - 80) / D.frameWid);
-  scale = Math.min(scale, 18);
-
-  var frameW_px = D.frameLen * scale;
-  var frameH_px = D.frameWid * scale;
-  var fx = (W - frameW_px) / 2;
-  var fy = (H - frameH_px) / 2;
-
-  // Frame outline
-  ctx.save();
-  ctx.shadowColor = '#00f5ff'; ctx.shadowBlur = 14;
-  ctx.strokeStyle = '#00f5ff'; ctx.lineWidth = 2.5;
-  ctx.strokeRect(fx, fy, frameW_px, frameH_px);
-  ctx.fillStyle = 'rgba(0,245,255,0.04)';
-  ctx.fillRect(fx, fy, frameW_px, frameH_px);
-  ctx.restore();
-
-  // Cross braces (dashed)
-  if (D.braces > 0) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(0,245,255,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
-    var spacing = frameW_px / (D.braces + 1);
-    for (var i = 1; i <= D.braces; i++) {
-      var bx = fx + spacing * i;
-      ctx.beginPath(); ctx.moveTo(bx, fy); ctx.lineTo(bx, fy + frameH_px); ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    ctx.restore();
-  }
-
-  // Extra bottom sticks (shown as dashed lines on outside)
-  if (D.extraBottom > 0) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(240,192,64,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([3, 5]);
-    for (var j = 1; j <= D.extraBottom; j++) {
-      var ey = fy + frameH_px + j * 5;
-      var len_px = Math.min(STICK_LEN * scale, frameW_px);
-      ctx.beginPath(); ctx.moveTo(fx, ey); ctx.lineTo(fx + len_px, ey); ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    ctx.restore();
-  }
-
-  // Mast dot
-  var mast_x = fx + D.mastPos * frameW_px;
-  var mast_y = fy + frameH_px / 2;
-  ctx.save();
-  ctx.shadowColor = '#f0c040'; ctx.shadowBlur = 12;
-  ctx.fillStyle = '#f0c040';
-  ctx.beginPath(); ctx.arc(mast_x, mast_y, 5, 0, Math.PI * 2); ctx.fill();
-  // Mast outline
-  ctx.strokeStyle = '#f0c040'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(mast_x, mast_y, 9, 0, Math.PI * 2); ctx.stroke();
-  ctx.restore();
-
-  // Lateral brace
-  if (D.lateralBrace) {
-    ctx.save();
-    ctx.strokeStyle = '#f0c040'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
-    var bl = 22;
-    ctx.beginPath(); ctx.moveTo(mast_x - bl, mast_y); ctx.lineTo(mast_x + bl, mast_y); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
-  }
-
-  // Sail footprint (from mast, extending "up" = wind direction = toward top of canvas)
-  var sailW_px = D.sailW * scale;
-  var sailH_px = D.sailH * scale; // projected up
-  ctx.save();
-  ctx.shadowColor = '#b44fff'; ctx.shadowBlur = 14;
-  ctx.fillStyle = 'rgba(180,79,255,0.25)';
-  ctx.strokeStyle = '#b44fff'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
-  ctx.beginPath();
-  if (D.sailShape === 'rect') {
-    ctx.rect(mast_x - sailW_px / 2, mast_y - sailH_px, sailW_px, sailH_px);
-  } else if (D.sailShape === 'rtri') {
-    ctx.moveTo(mast_x, mast_y);
-    ctx.lineTo(mast_x + sailW_px, mast_y - sailH_px);
-    ctx.lineTo(mast_x, mast_y - sailH_px);
-    ctx.closePath();
-  } else { // isosceles
-    ctx.moveTo(mast_x, mast_y);
-    ctx.lineTo(mast_x + sailW_px / 2, mast_y - sailH_px);
-    ctx.lineTo(mast_x - sailW_px / 2, mast_y - sailH_px);
-    ctx.closePath();
-  }
-  ctx.fill(); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-
-  // Wind arrow (top pointing down)
-  drawArrow(ctx, W / 2 + 60, 16, W / 2 + 60, 54, '#00f5ff');
-  ctx.save();
-  ctx.font = '600 10px "Exo 2", sans-serif';
-  ctx.fillStyle = '#00f5ff'; ctx.textAlign = 'center';
-  ctx.fillText('WIND', W / 2 + 60, 12);
-  ctx.restore();
-
-  // Dimension labels
-  ctx.save();
-  ctx.fillStyle = '#9080b0'; ctx.font = '10px "Exo 2", sans-serif'; ctx.textAlign = 'center';
-  // Length above frame
-  ctx.fillText(D.frameLen + '"', fx + frameW_px / 2, fy - 10);
-  // Width to left
-  ctx.save();
-  ctx.translate(fx - 14, fy + frameH_px / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText(D.frameWid + '"', 0, 0);
-  ctx.restore();
-  ctx.restore();
-}
-
-// ── Button group helper ──────────────────────────────────────────────────────
-function bindBtnGroup(groupId, stateKey, callback) {
-  var grp = document.getElementById(groupId);
-  grp.querySelectorAll('.btn-opt').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      grp.querySelectorAll('.btn-opt').forEach(function(b){ b.classList.remove('active'); });
-      btn.classList.add('active');
-      var v = btn.getAttribute('data-val');
-      D[stateKey] = isNaN(v) ? v : parseFloat(v);
-      if (callback) callback();
-      update();
-    });
-  });
-}
-
-// ── Bind controls ────────────────────────────────────────────────────────────
-document.getElementById('frameLen').addEventListener('input', function() {
-  D.frameLen = parseFloat(this.value);
-  document.getElementById('len-val').textContent = D.frameLen.toFixed(1) + '"';
-  update();
-});
-document.getElementById('frameWid').addEventListener('input', function() {
-  D.frameWid = parseFloat(this.value);
-  document.getElementById('wid-val').textContent = D.frameWid.toFixed(1) + '"';
-  update();
-});
-document.getElementById('sailW').addEventListener('input', function() {
-  D.sailW = parseFloat(this.value);
-  document.getElementById('sw-val').textContent = D.sailW.toFixed(1) + '"';
-  update();
-});
-document.getElementById('sailH').addEventListener('input', function() {
-  D.sailH = parseFloat(this.value);
-  document.getElementById('sh-val').textContent = D.sailH.toFixed(1) + '"';
-  update();
+document.querySelectorAll('#palette .part').forEach(el => {
+  const p = PARTS[el.dataset.id];
+  el.innerHTML = `<span class="part-emoji">${p.emoji}</span><span class="part-info"><span class="part-name">${p.name}</span><br><span class="part-stat">${p.stat}</span></span>`;
 });
 
-bindBtnGroup('braces-group',     'braces');
-bindBtnGroup('extra-group',      'extraBottom');
-bindBtnGroup('mast-group',       'mastStraws');
-bindBtnGroup('mast-pos-group',   'mastPos');
-bindBtnGroup('sail-shape-group', 'sailShape');
-
-// Lateral brace checkbox
-document.getElementById('brace-toggle').addEventListener('click', function(e) {
+/* ── Pointer drag and drop (mouse + touch) ── */
+let drag = null;
+document.querySelectorAll('#palette .part').forEach(el => {
+  el.addEventListener('pointerdown', e => startDrag(e, el.dataset.id, el));
+});
+function startDrag(e, partId, sourceEl) {
   e.preventDefault();
-  D.lateralBrace = !D.lateralBrace;
-  document.getElementById('lateral-brace').checked = D.lateralBrace;
-  document.getElementById('brace-box').className = 'checkbox-box' + (D.lateralBrace ? ' checked' : '');
-  update();
-});
-
-// ── Save Design ──────────────────────────────────────────────────────────────
-function saveDesign() {
-  var name   = document.getElementById('student-name').value.trim();
-  var period = document.getElementById('period-sel').value;
-  var btn    = document.getElementById('save-btn');
-  var status = document.getElementById('save-status');
-
-  if (!name) {
-    status.textContent = 'Please enter your name.'; status.className = 'save-status err'; return;
-  }
-  if (!period) {
-    status.textContent = 'Please select your period.'; status.className = 'save-status err'; return;
-  }
-
-  var user = firebase.auth().currentUser;
-  if (!user) {
-    status.textContent = 'Not signed in.'; status.className = 'save-status err'; return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Saving…';
-  status.textContent = ''; status.className = 'save-status';
-
-  firebase.firestore().collection('sail-car-designs').add({
-    name: name,
-    period: period,
-    email: user.email,
-    design: {
-      frameLen:     D.frameLen,
-      frameWid:     D.frameWid,
-      braces:       D.braces,
-      extraBottom:  D.extraBottom,
-      mastStraws:   D.mastStraws,
-      lateralBrace: D.lateralBrace,
-      mastPos:      D.mastPos,
-      sailShape:    D.sailShape,
-      sailW:        D.sailW,
-      sailH:        D.sailH
-    },
-    frameLength:  D.frameLen,
-    sailArea:     sailArea(),
-    savedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function() {
-    btn.disabled = false;
-    btn.textContent = '💾 Save Design';
-    status.textContent = 'Design saved successfully!';
-    status.className = 'save-status ok';
-    setTimeout(function(){ status.textContent = ''; }, 4000);
-  }).catch(function(err) {
-    btn.disabled = false;
-    btn.textContent = '💾 Save Design';
-    status.textContent = 'Error: ' + err.message;
-    status.className = 'save-status err';
-  });
+  const p = PARTS[partId];
+  const ghost = document.createElement('div');
+  ghost.className = 'drag-ghost';
+  ghost.innerHTML = `<span class="part-emoji">${p.emoji}</span> ${p.name}`;
+  document.body.appendChild(ghost);
+  drag = { partId, type: p.type, ghost, sourceEl };
+  if (sourceEl) sourceEl.classList.add('dragging');
+  moveGhost(e);
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+}
+function moveGhost(e) { drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px'; }
+function onMove(e) {
+  if (!drag) return;
+  moveGhost(e);
+  const slot = slotUnder(e);
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('highlight'));
+  if (slot) slot.classList.add('highlight');
+}
+function slotUnder(e) {
+  drag.ghost.style.display = 'none';
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  drag.ghost.style.display = '';
+  if (!el) return null;
+  const slot = el.closest('.slot');
+  if (!slot) return null;
+  return slot.dataset.accepts === drag.type ? slot : null;
+}
+function onUp(e) {
+  if (!drag) return;
+  const slot = slotUnder(e);
+  if (slot) { state[slot.dataset.slot] = drag.partId; render(); }
+  cleanupDrag();
+}
+function cleanupDrag() {
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('highlight'));
+  if (drag.sourceEl) drag.sourceEl.classList.remove('dragging');
+  drag.ghost.remove();
+  drag = null;
+  window.removeEventListener('pointermove', onMove);
+  window.removeEventListener('pointerup', onUp);
 }
 
-// ── Initial render ───────────────────────────────────────────────────────────
-update();
+/* ── Physics ── */
+const REAR_X = 190, FRONT_X = 345, WHEEL_CENTER = (REAR_X + FRONT_X) / 2;
+function computePhysics() {
+  const sail = state.sail ? PARTS[state.sail] : null;
+  const body = state.body ? PARTS[state.body] : null;
+  const fw   = state.frontWheels ? PARTS[state.frontWheels] : null;
+  const rw   = state.rearWheels  ? PARTS[state.rearWheels]  : null;
+  const nose = state.nose ? PARTS[state.nose] : null;
+  const ball = state.ballast ? PARTS[state.ballast] : null;
+  const placed = [];
+  if (sail) placed.push({ m:sail.mass, x:sail.x, y:sail.y });
+  if (body) placed.push({ m:body.mass, x:body.x, y:body.y });
+  if (fw)   placed.push({ m:fw.mass, x:SLOT_POS.frontWheels.x, y:SLOT_POS.frontWheels.y });
+  if (rw)   placed.push({ m:rw.mass, x:SLOT_POS.rearWheels.x,  y:SLOT_POS.rearWheels.y });
+  if (nose) placed.push({ m:nose.mass, x:nose.x, y:nose.y });
+  if (ball) placed.push({ m:ball.mass, x:ball.x, y:ball.y });
+  const totalMass = placed.reduce((s,p)=>s+p.m, 0);
+  let cgx = null, cgy = null;
+  if (totalMass > 0) {
+    cgx = placed.reduce((s,p)=>s+p.m*p.x, 0) / totalMass;
+    cgy = placed.reduce((s,p)=>s+p.m*p.y, 0) / totalMass;
+  }
+  const thrust = sail ? sail.thrust : 0;
+  let dragF = (sail ? sail.drag : 0) + (body ? body.dragCoef : 0) - (nose ? nose.dragReduce : 0);
+  dragF = Math.max(0.2, dragF);
+  const hasWheels = fw && rw;
+  const avgRes = hasWheels ? (fw.resistance + rw.resistance) / 2 : 0;
+  const friction = hasWheels ? totalMass * avgRes * 0.02 : 0;
+  const complete = sail && body && hasWheels;
+  const net = thrust - dragF - friction;
+  let score = complete ? Math.round(net * 12 + 30) : 0;
+  score = Math.max(0, Math.min(100, score));
+  return { sail, body, fw, rw, nose, ball, totalMass, cgx, cgy, thrust, drag: dragF, friction, hasWheels, complete, net, score };
+}
+
+function buildFeedback(ph) {
+  const tips = [];
+  if (!ph.body) tips.push(['🛹','Add a <b>body</b> — it\'s the base of your car.']);
+  if (!ph.sail) tips.push(['⛵','Add a <b>sail</b> to catch the wind and create thrust.']);
+  if (!ph.hasWheels) tips.push(['🛞','Add <b>front and rear wheels</b> so it can roll.']);
+  if (!ph.complete) return tips;
+  if (ph.drag >= 3.5) tips.push(['💨','High air drag. Try a <b>nose cone</b> or a more aerodynamic body.']);
+  if (ph.friction >= 1.4) tips.push(['🔩','Lots of rolling friction. Lighter wheels or removing ballast helps it roll.']);
+  if (ph.cgx !== null && Math.abs(ph.cgx - WHEEL_CENTER) > 55) {
+    tips.push(['⚖️', ph.cgx > WHEEL_CENTER ? 'Center of gravity is too far <b>forward</b> — the car may nose-dive.' : 'Center of gravity is too far <b>back</b> — the front may lift up.']);
+  }
+  if (ph.sail && ph.sail.thrust >= 9 && !ph.ball && ph.cgy !== null && ph.cgy < 150) {
+    tips.push(['🗼','Tall sail makes it tippy. Add <b>ballast</b> to lower the center of gravity.']);
+  }
+  if (ph.score >= 80) tips.push(['🏆','Excellent! Fast <i>and</i> balanced — race-ready.']);
+  else if (ph.score >= 55 && tips.length === 0) tips.push(['👍','Solid design. Tweak parts to push the score higher.']);
+  if (tips.length === 0) tips.push(['🔧','It runs! Experiment with parts to go faster.']);
+  return tips;
+}
+
+function render() {
+  const ph = computePhysics();
+  drawCar(ph);
+  document.querySelectorAll('.slot').forEach(s => s.classList.toggle('filled', !!state[s.dataset.slot]));
+  updateStats(ph);
+  return ph;
+}
+function svgEl(tag, attrs, text) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function drawCar(ph) {
+  const svg = document.getElementById('car-svg');
+  svg.innerHTML = '';
+  svg.appendChild(svgEl('line', { x1:20, y1:292, x2:500, y2:292, stroke:'#3a2a5a', 'stroke-width':3 }));
+  if (ph.body) {
+    svg.appendChild(svgEl('rect', { x:165, y:170, width:190, height:42, rx:14, fill:'rgba(180,79,255,0.25)', stroke:'#b44fff', 'stroke-width':2.5 }));
+    svg.appendChild(svgEl('line', { x1:260, y1:175, x2:260, y2:(ph.sail? ph.sail.y-6 : 130), stroke:'#b48fff', 'stroke-width':3 }));
+  }
+  function wheel(cx, part) {
+    if (!part) return;
+    const r = part.name === 'Big Wheels' ? 26 : (part.name === 'Wide Wheels' ? 22 : 18);
+    svg.appendChild(svgEl('circle', { cx, cy:265, r, fill:'#1a0030', stroke:'#b44fff', 'stroke-width': part.name==='Wide Wheels'?6:3 }));
+    svg.appendChild(svgEl('circle', { cx, cy:265, r:4, fill:'#b44fff' }));
+  }
+  wheel(REAR_X, ph.rw);
+  wheel(FRONT_X, ph.fw);
+  if (ph.sail) {
+    const w = ph.sail.thrust * 7;
+    svg.appendChild(svgEl('path', { d:`M260,${ph.sail.y} L${260 - w},170 L260,170 Z`, fill:'rgba(0,245,255,0.18)', stroke:'#00f5ff', 'stroke-width':2.5 }));
+  }
+  if (ph.nose) svg.appendChild(svgEl('path', { d:'M355,176 L408,191 L355,206 Z', fill:'rgba(255,159,64,0.3)', stroke:'#ff9f40', 'stroke-width':2.5 }));
+  if (ph.ball) svg.appendChild(svgEl('rect', { x:244, y:196, width:32, height:14, rx:3, fill:'#ff5080', stroke:'#ff7da0', 'stroke-width':1.5 }));
+  if (ph.complete && ph.cgx !== null) {
+    const g = svgEl('g', {});
+    g.appendChild(svgEl('circle', { cx:ph.cgx, cy:ph.cgy, r:9, fill:'none', stroke:'#00f5ff', 'stroke-width':2.5 }));
+    g.appendChild(svgEl('line', { x1:ph.cgx-9, y1:ph.cgy, x2:ph.cgx+9, y2:ph.cgy, stroke:'#00f5ff', 'stroke-width':2.5 }));
+    g.appendChild(svgEl('line', { x1:ph.cgx, y1:ph.cgy-9, x2:ph.cgx, y2:ph.cgy+9, stroke:'#00f5ff', 'stroke-width':2.5 }));
+    g.appendChild(svgEl('line', { x1:ph.cgx, y1:ph.cgy+9, x2:ph.cgx, y2:292, stroke:'rgba(0,245,255,0.4)', 'stroke-width':1.5, 'stroke-dasharray':'4,3' }));
+    svg.appendChild(g);
+  }
+}
+function updateStats(ph) {
+  document.getElementById('thrust-val').textContent   = ph.thrust.toFixed(1);
+  document.getElementById('drag-val').textContent     = ph.drag.toFixed(1);
+  document.getElementById('friction-val').textContent = ph.friction.toFixed(1);
+  document.getElementById('weight-val').textContent   = ph.totalMass + ' g';
+  document.getElementById('thrust-bar').style.width   = Math.min(100, ph.thrust/9*100) + '%';
+  document.getElementById('drag-bar').style.width     = Math.min(100, ph.drag/8*100) + '%';
+  document.getElementById('friction-bar').style.width = Math.min(100, ph.friction/3*100) + '%';
+  let cgText = '—';
+  if (ph.complete && ph.cgx !== null) {
+    if (ph.cgx < REAR_X) cgText = 'Behind wheels ⚠';
+    else if (ph.cgx > FRONT_X) cgText = 'Ahead of wheels ⚠';
+    else if (Math.abs(ph.cgx - WHEEL_CENTER) <= 30) cgText = 'Balanced ✓';
+    else cgText = ph.cgx > WHEEL_CENTER ? 'Front-leaning' : 'Rear-leaning';
+  }
+  document.getElementById('cg-val').textContent = cgText;
+  document.getElementById('score-num').textContent = ph.complete ? ph.score : '—';
+  const starCount = ph.complete ? Math.round(ph.score / 20) : 0;
+  document.getElementById('stars').textContent = '★★★★★'.slice(0, starCount) + '☆☆☆☆☆'.slice(0, 5 - starCount);
+  document.getElementById('feedback').innerHTML = buildFeedback(ph)
+    .map(t => `<div class="tip"><span class="tip-icon">${t[0]}</span><span>${t[1]}</span></div>`).join('');
+}
+
+/* ── Wind tunnel test ── */
+let testing = false;
+document.getElementById('test-btn').addEventListener('click', () => {
+  const ph = computePhysics();
+  if (!ph.complete) { render(); return; }
+  if (testing) return;
+  testing = true;
+  const svg = document.getElementById('car-svg');
+  const streaks = [];
+  for (let i = 0; i < 7; i++) {
+    const y = 90 + Math.random() * 170;
+    const ln = svgEl('line', { x1:-40, y1:y, x2:10, y2:y, stroke:'rgba(0,245,255,0.7)', 'stroke-width':2, 'stroke-linecap':'round' });
+    svg.appendChild(ln); streaks.push({ ln, speed: 4 + Math.random()*4 + ph.thrust });
+  }
+  let t = 0;
+  function anim() {
+    t++;
+    streaks.forEach(s => {
+      let x = parseFloat(s.ln.getAttribute('x1')) + s.speed;
+      if (x > 520) x = -40;
+      s.ln.setAttribute('x1', x); s.ln.setAttribute('x2', x + 50);
+    });
+    const bob = Math.sin(t/3) * (ph.score/100) * 1.5;
+    svg.style.transform = `translateX(${Math.min(t*0.6, 14)}px) translateY(${bob}px)`;
+    if (t < 90) requestAnimationFrame(anim);
+    else {
+      streaks.forEach(s => s.ln.remove());
+      svg.style.transition = 'transform 0.4s ease';
+      svg.style.transform = 'translateX(0) translateY(0)';
+      setTimeout(() => { svg.style.transition = ''; }, 400);
+      testing = false;
+      if (ph.score >= 80) confetti();
+      document.getElementById('score-num').animate([{transform:'scale(1)'},{transform:'scale(1.35)'},{transform:'scale(1)'}], {duration:450});
+    }
+  }
+  requestAnimationFrame(anim);
+});
+function confetti() {
+  const colors = ['#00f5ff','#ff2d78','#b44fff','#f0c040','#40e080'];
+  for (let i = 0; i < 40; i++) {
+    const d = document.createElement('div');
+    const size = 6 + Math.random()*8;
+    d.style.cssText = `position:fixed;top:-20px;left:${Math.random()*100}vw;width:${size}px;height:${size}px;background:${colors[i%colors.length]};z-index:9999;pointer-events:none;border-radius:2px;`;
+    document.body.appendChild(d);
+    const dur = 1400 + Math.random()*1200;
+    d.animate([{ transform:'translateY(0) rotate(0deg)', opacity:1 },{ transform:`translateY(110vh) rotate(${720*(Math.random()>.5?1:-1)}deg)`, opacity:0.9 }], { duration:dur, easing:'cubic-bezier(0.3,0.7,0.5,1)' }).onfinish = () => d.remove();
+  }
+}
+document.getElementById('reset-btn').addEventListener('click', () => {
+  for (const k in state) state[k] = null;
+  render();
+  document.getElementById('submit-status').textContent = '';
+});
+
+/* ── Leaderboard (compat Firestore) ── */
+let currentPeriod = 'all';
+document.querySelectorAll('.period-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    currentPeriod = tab.dataset.period;
+    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    renderLeaderboard();
+  });
+});
+function buildSummary() {
+  const s = state.sail ? PARTS[state.sail] : null, b = state.body ? PARTS[state.body] : null;
+  return `${b ? b.name.split(' ')[0] : '?'} + ${s ? s.name.split(' ')[0] : '?'} sail`;
+}
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function renderLeaderboard() {
+  const all = window._sailResults || [];
+  const list = currentPeriod === 'all' ? all : all.filter(r => String(r.period) === currentPeriod);
+  const sorted = [...list].sort((a,b) => b.score - a.score);
+  const tbody = document.getElementById('lb-body');
+  if (!sorted.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">${currentPeriod==='all'?'No designs submitted yet — be the first!':'No designs yet for this period.'}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = sorted.map((r,i) =>
+    `<tr><td><span class="rank-badge">${i+1}</span></td><td>${escapeHtml(r.name)}</td><td>P${escapeHtml(r.period)}</td><td>${escapeHtml(r.build||'')}</td><td><strong>${r.score}</strong></td></tr>`
+  ).join('');
+}
+document.getElementById('submit-btn').addEventListener('click', function() {
+  const ph = computePhysics();
+  const name = document.getElementById('student-name').value.trim();
+  const period = document.getElementById('student-period').value;
+  const status = document.getElementById('submit-status');
+  if (!ph.complete) { status.style.color = '#ff7070'; status.textContent = 'Finish your car (body, sail, and both wheels) before submitting.'; return; }
+  if (!name || !period) { status.style.color = '#ff7070'; status.textContent = 'Enter your name and pick a period first.'; return; }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; status.style.color = '#b8a8d0'; status.textContent = 'Submitting…';
+  firebase.firestore().collection('sailcar_results').add({
+    name: name, period: period, score: ph.score, build: buildSummary(),
+    ts: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
+    status.style.color = '#40e080'; status.textContent = '✓ Your design is on the board!';
+  }).catch(function(e) {
+    console.error('submit sailcar failed', e);
+    status.style.color = '#ff7070'; status.textContent = 'Could not save — try again.';
+  }).finally(function() {
+    setTimeout(function(){ btn.disabled = false; }, 1500);
+  });
+});
+
+firebase.firestore().collection('sailcar_results').orderBy('ts','desc').onSnapshot(function(snap) {
+  window._sailResults = snap.docs.map(function(d){ return d.data(); });
+  renderLeaderboard();
+}, function(err) { console.error('sailcar snapshot error', err); });
+
+render();
 </script>
 </body>
 </html>
