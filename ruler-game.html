@@ -214,6 +214,12 @@
     .check-btn:hover:not(:disabled) { box-shadow: 0 6px 30px rgba(0,245,255,0.55); }
     .check-btn:disabled { opacity: 0.5; cursor: default; }
 
+    /* Log my streak (offered after a miss in Classic) */
+    .log-streak-btn { display: none; margin: 14px auto 0; padding: 11px 28px; border-radius: 10px; background: transparent; border: 2px solid rgba(255,138,61,0.55); color: #ff8a3d; font-family: 'Orbitron', sans-serif; font-size: 0.74rem; font-weight: 900; letter-spacing: 1.5px; cursor: pointer; transition: all 0.2s; }
+    .log-streak-btn:hover { background: rgba(255,138,61,0.12); border-color: #ff8a3d; box-shadow: 0 4px 18px rgba(255,138,61,0.3); }
+    .log-streak-btn.show { display: block; }
+    .log-streak-btn.logged { border-color: rgba(64,224,128,0.6); color: #40e080; cursor: default; box-shadow: none; }
+
     /* Finish / cash-out (Classic) */
     .finish-btn { display: none; margin: 22px auto 0; padding: 13px 34px; border-radius: 10px; background: transparent; border: 2px solid rgba(240,192,64,0.5); color: #f0c040; font-family: 'Orbitron', sans-serif; font-size: 0.78rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
     .finish-btn:hover { background: rgba(240,192,64,0.12); border-color: #f0c040; box-shadow: 0 4px 22px rgba(240,192,64,0.35); }
@@ -337,6 +343,7 @@
     <div class="feedback" id="feedback"></div>
     <button class="next-btn" id="next-btn" onclick="nextQuestion()">NEXT →</button>
     <button class="hint-btn" id="hint-btn" onclick="showHint()">Show Answer</button>
+    <button class="log-streak-btn" id="log-streak-btn" onclick="logStreak()">📊 Log my streak?</button>
 
     <div class="hint-box">
       <strong>How to read a ruler:</strong> Find the number to the left of the arrow, then count the small tick marks to the right. Each small tick = 1/16". Two ticks = 1/8", four ticks = 1/4", eight ticks = 1/2".
@@ -528,6 +535,7 @@
     stopTimer();
     score = total = streak = strikes = 0;
     bestStreak = 0;
+    window.lastSavedDocRef = null;
     timeLeft = TIMED_SECS;
     updateHUD();
     applyModeUI();
@@ -611,6 +619,7 @@
     document.getElementById('feedback').textContent = '';
     document.getElementById('feedback').className = 'feedback';
     document.getElementById('next-btn').classList.remove('visible');
+    document.getElementById('log-streak-btn').classList.remove('show');
 
     if (inputMode === 'slider') {
       document.getElementById('choices').style.display = 'none';
@@ -671,6 +680,12 @@
           if (score === 50 && strikes === 0) { fb.textContent = '🎉 NICE RUN! 50 points, no misses!'; fireLasers(); }
           else if (score === 100) { fb.textContent = '🔥 KEEP COOKING! 100 points!'; fireLasers(); }
           else if (score % 25 === 0) { fireLasers(); }
+        } else if (bestStreak >= 1) {
+          // Missed one, but the run continues — offer to bank the best streak.
+          const lb = document.getElementById('log-streak-btn');
+          lb.textContent = '📊 Log my streak?';
+          lb.classList.remove('logged');
+          lb.classList.add('show');
         }
       }
     }
@@ -822,22 +837,39 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 <script>
-  let lastSavedDocRef = null;
-  window.saveScore = function(game, data) {
+  // One Firestore doc per run: the first save creates it, later saves in the
+  // same run (end-of-game, or "Log my streak?") update that same doc, so a
+  // student never appears twice on the scoreboard for one run.
+  window.lastSavedDocRef = window.lastSavedDocRef || null;
+  window.saveScore = function(game, data, optIn) {
     if (typeof firebase === 'undefined') return;
     const user = firebase.auth().currentUser;
-    firebase.firestore().collection('game-results').add(Object.assign({
-      game:             game,
-      name:             document.getElementById('player-name').value.trim() || 'Anonymous',
-      period:           document.getElementById('player-period').value || '—',
-      userEmail:        user ? user.email : '',
-      showOnScoreboard: false,
-      savedAt:          firebase.firestore.FieldValue.serverTimestamp()
-    }, data)).then(function(ref) { lastSavedDocRef = ref; }).catch(function(e) { console.error(e); });
+    const payload = Object.assign({
+      game:      game,
+      name:      document.getElementById('player-name').value.trim() || 'Anonymous',
+      period:    document.getElementById('player-period').value || '—',
+      userEmail: user ? user.email : '',
+      savedAt:   firebase.firestore.FieldValue.serverTimestamp()
+    }, data);
+    if (optIn === true) payload.showOnScoreboard = true;
+    if (window.lastSavedDocRef) {
+      window.lastSavedDocRef.update(payload).catch(function(e) { console.error(e); });
+    } else {
+      if (payload.showOnScoreboard === undefined) payload.showOnScoreboard = false;
+      firebase.firestore().collection('game-results').add(payload)
+        .then(function(ref) { window.lastSavedDocRef = ref; })
+        .catch(function(e) { console.error(e); });
+    }
   };
   function toggleScoreboard(checked) {
-    if (!lastSavedDocRef) return;
-    lastSavedDocRef.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
+    if (!window.lastSavedDocRef) return;
+    window.lastSavedDocRef.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
+  }
+  function logStreak() {
+    const btn = document.getElementById('log-streak-btn');
+    if (btn && btn.classList.contains('logged')) return;
+    window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, result: 'logged' }, true);
+    if (btn) { btn.textContent = '✓ Streak logged! 🔥 ' + bestStreak; btn.classList.add('logged'); }
   }
 </script>
 </body>
