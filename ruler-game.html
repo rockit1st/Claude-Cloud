@@ -80,14 +80,14 @@
     }
 
     .question-text {
-      text-align: center; font-size: 1rem; color: #c0d8e0;
+      text-align: center; font-size: 1.2rem; color: #c0d8e0;
       margin-bottom: 24px; line-height: 1.6;
     }
     .question-text strong { color: #00f5ff; }
 
     /* Ruler SVG container */
     .ruler-wrap { width: 100%; overflow-x: auto; margin-bottom: 10px; }
-    #ruler-svg { display: block; width: 100%; min-width: 340px; }
+    #ruler-svg { display: block; width: 100%; min-width: 440px; }
 
     /* Choices */
     .choices {
@@ -97,11 +97,11 @@
     @media (max-width: 500px) { .choices { grid-template-columns: 1fr 1fr; } }
 
     .choice-btn {
-      padding: 16px 10px; border-radius: 12px;
+      padding: 20px 12px; border-radius: 12px;
       border: 2px solid rgba(0,245,255,0.3);
       background: rgba(0,245,255,0.05);
       color: #e0f8ff;
-      font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700;
+      font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 700;
       letter-spacing: 1px; cursor: pointer;
       transition: all 0.15s;
     }
@@ -276,8 +276,8 @@
   </div>
 
   <div class="score-bar">
-    <div class="score-pill" id="pill-score">Score: <span id="score-val">0</span><span id="score-denom"> / 50</span></div>
-    <div class="strikes-pill" id="pill-strikes"><span class="hearts" id="hearts-val">❤️❤️❤️❤️❤️</span></div>
+    <div class="score-pill" id="pill-score">Score: <span id="score-val">0</span><span id="score-denom"></span></div>
+    <div class="strikes-pill" id="pill-strikes"><span class="hearts" id="hearts-val">❤️❤️❤️❤️</span></div>
     <div class="streak-pill" id="pill-streak">🔥 Streak: <span id="streak-val">0</span></div>
     <div class="timer-pill" id="pill-timer" style="display:none">⏱️ <span class="timer-num" id="timer-val">60</span>s</div>
   </div>
@@ -286,7 +286,7 @@
     <div class="question-text" id="question-text">Where is the <strong>red arrow</strong> pointing on the ruler?</div>
 
     <div class="ruler-wrap">
-      <svg id="ruler-svg" viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="ruler-svg" viewBox="0 0 640 165" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
     <div class="choices" id="choices"></div>
@@ -315,7 +315,7 @@
   <div class="gameover-modal">
     <div class="congrats-emoji">💀</div>
     <div class="gameover-title">GAME OVER</div>
-    <div class="gameover-sub">You used all 5 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
+    <div class="gameover-sub">You used all 4 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
     <label class="scoreboard-toggle"><input type="checkbox" id="gameover-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="gameover-btn" onclick="closeModal('gameover-modal');resetGame()">TRY AGAIN</button>
   </div>
@@ -338,7 +338,7 @@
   let correct16 = 0;
   let score = 0, total = 0, streak = 0, strikes = 0;
   let timerInterval = null, timeLeft = 60;
-  const WIN_SCORE = 50, MAX_STRIKES = 5, TIMED_SECS = 60;
+  const MAX_STRIKES = 4, TIMED_SECS = 60;
 
   function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 
@@ -350,17 +350,17 @@
     return whole === 0 ? `${num}/${den}"` : `${whole} ${num}/${den}"`;
   }
 
-  const RX = 20, RY = 48, RW = 600, RH = 50;
+  const RX = 20, RY = 55, RW = 600, RH = 72;
   const INCH_PX = RW / 6;
 
   function x16(n) { return RX + (n / 16) * INCH_PX; }
 
   function tickH(n) {
     if (n % 16 === 0) return RH;
-    if (n %  8 === 0) return 32;
-    if (n %  4 === 0) return 22;
-    if (n %  2 === 0) return 16;
-    return 11;
+    if (n %  8 === 0) return 46;
+    if (n %  4 === 0) return 32;
+    if (n %  2 === 0) return 23;
+    return 15;
   }
 
   function drawRuler(markerN) {
@@ -389,9 +389,9 @@
 
       if (n % 16 === 0) {
         svg.appendChild(el('text', {
-          x: tx, y: RY + RH + 18,
+          x: tx, y: RY + RH + 24,
           'text-anchor': 'middle', fill: '#ffffff',
-          'font-size': '13', 'font-family': 'Exo 2, sans-serif', 'font-weight': '600'
+          'font-size': '19', 'font-family': 'Exo 2, sans-serif', 'font-weight': '700'
         }, String(n / 16)));
       }
     }
@@ -401,11 +401,11 @@
     const arrowBase = 6;
 
     svg.appendChild(el('line', {
-      x1: mx, y1: arrowBase, x2: mx, y2: arrowTip - 11,
-      stroke: '#ff2d78', 'stroke-width': '2.5', 'stroke-linecap': 'round'
+      x1: mx, y1: arrowBase, x2: mx, y2: arrowTip - 14,
+      stroke: '#ff2d78', 'stroke-width': '3.5', 'stroke-linecap': 'round'
     }));
     svg.appendChild(el('polygon', {
-      points: `${mx},${arrowTip} ${mx - 8},${arrowTip - 14} ${mx + 8},${arrowTip - 14}`,
+      points: `${mx},${arrowTip} ${mx - 11},${arrowTip - 18} ${mx + 11},${arrowTip - 18}`,
       fill: '#ff2d78'
     }));
   }
@@ -441,7 +441,7 @@
     document.getElementById('pill-strikes').style.display = isClassic ? '' : 'none';
     document.getElementById('pill-streak').style.display  = isClassic ? '' : 'none';
     document.getElementById('pill-timer').style.display   = isTimed   ? '' : 'none';
-    document.getElementById('score-denom').textContent    = isClassic ? ' / 50' : '';
+    document.getElementById('score-denom').textContent    = '';
     document.getElementById('hint-btn').classList.toggle('show', isPractice);
     document.getElementById('question-text').innerHTML = isPractice
       ? 'Where is the <strong>red arrow</strong> pointing? (No pressure — take your time!)'
@@ -542,8 +542,8 @@
     } else {
       document.getElementById('next-btn').classList.add('visible');
       if (mode === 'classic') {
-        if (score === WIN_SCORE) setTimeout(() => { stopTimer(); showCongrats(); }, 400);
-        else if (strikes >= MAX_STRIKES) setTimeout(showGameOver, 400);
+        if (strikes >= MAX_STRIKES) setTimeout(showGameOver, 400);
+        else if (correct && score % 25 === 0) fireLasers();
       }
     }
   }
