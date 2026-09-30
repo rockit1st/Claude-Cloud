@@ -120,6 +120,31 @@
     .period-btn:hover { color: #f0c040; border-color: rgba(240,192,64,0.5); }
     .period-btn.active { color: #f0c040; background: rgba(240,192,64,0.1); border-color: #f0c040; }
 
+    /* Teacher edit panel */
+    .teacher-panel { background: rgba(240,192,64,0.06); border: 1px solid rgba(240,192,64,0.3); border-radius: 16px; padding: 22px 20px; margin-bottom: 34px; }
+    .tp-title { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #f0c040; letter-spacing: 2px; margin-bottom: 16px; }
+    .tp-title-mode { font-family: 'Exo 2', sans-serif; font-size: 0.8rem; color: #ff8a3d; margin-left: 10px; letter-spacing: 0; font-weight: 600; }
+    .tp-grid { display: grid; grid-template-columns: 1.5fr 0.8fr 1.3fr 0.8fr 1fr; gap: 10px; margin-bottom: 14px; }
+    @media (max-width: 640px) { .tp-grid { grid-template-columns: 1fr 1fr; } }
+    .teacher-panel input, .teacher-panel select { background: rgba(255,255,255,0.07); border: 1px solid rgba(240,192,64,0.3); border-radius: 8px; padding: 10px 12px; color: #f0e6ff; font-family: 'Exo 2', sans-serif; font-size: 0.9rem; outline: none; width: 100%; }
+    .teacher-panel input:focus, .teacher-panel select:focus { border-color: #f0c040; }
+    .teacher-panel select option { background: #0f0a1e; color: #f0e6ff; }
+    .tp-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .tp-save { background: linear-gradient(135deg,#f0c040,#c89010); border: none; color: #0a000f; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.72rem; letter-spacing: 1.5px; padding: 12px 24px; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s; }
+    .tp-save:hover { box-shadow: 0 4px 18px rgba(240,192,64,0.4); }
+    .tp-cancel { background: transparent; border: 1px solid rgba(255,80,80,0.4); color: #ff8080; font-family: 'Exo 2', sans-serif; font-size: 0.8rem; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
+    .tp-msg { font-size: 0.82rem; font-weight: 600; }
+    .tp-msg.ok { color: #40e080; }
+    .tp-msg.err { color: #ff7070; }
+    .row-edit, .row-del { background: none; border: 1px solid rgba(240,192,64,0.3); border-radius: 6px; padding: 3px 9px; cursor: pointer; font-size: 0.85rem; margin-left: 4px; font-family: 'Exo 2', sans-serif; }
+    .row-edit { color: #f0c040; }
+    .row-del { color: #ff6060; border-color: rgba(255,96,96,0.35); }
+    .row-edit:hover { background: rgba(240,192,64,0.12); }
+    .row-del:hover { background: rgba(255,96,96,0.12); }
+    .score-row td.actions-col { white-space: nowrap; text-align: right; }
+    body.light-mode .teacher-panel input, body.light-mode .teacher-panel select { background: rgba(255,255,255,0.92); color: #1a0030; }
+    body.light-mode .teacher-panel select option { background: #ffffff; color: #1a0030; }
+
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
 
     /* Light mode */
@@ -175,6 +200,29 @@
     <button class="period-btn" onclick="filterPeriod('6', this)">6</button>
     <button class="period-btn" onclick="filterPeriod('7', this)">7</button>
     <button class="period-btn" onclick="filterPeriod('8', this)">8</button>
+  </div>
+
+  <div id="teacher-panel" class="teacher-panel" style="display:none">
+    <div class="tp-title">✏️ TEACHER — ADD / EDIT ENTRY<span class="tp-title-mode" id="tp-title-mode"></span></div>
+    <div class="tp-grid">
+      <input type="text" id="tp-name" placeholder="Name" />
+      <select id="tp-period">
+        <option value="">Period…</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option>
+        <option>5</option><option>6</option><option>7</option><option>8</option>
+      </select>
+      <select id="tp-game">
+        <option value="ruler-game">Ruler Reading Game</option>
+        <option value="inclinometer">Inclinometer</option>
+      </select>
+      <input type="number" id="tp-score" placeholder="Score" />
+      <input type="number" id="tp-streak" placeholder="Best streak" />
+    </div>
+    <div class="tp-actions">
+      <button class="tp-save" id="tp-save" onclick="saveEntry()">Add to Scoreboard</button>
+      <button class="tp-cancel" id="tp-cancel" onclick="cancelEdit()" style="display:none">Cancel Edit</button>
+      <span class="tp-msg" id="tp-msg"></span>
+    </div>
   </div>
 
   <div id="scoreboard-content">
@@ -240,7 +288,8 @@
       if (rows.length === 0) {
         html.push(`<div class="empty-state"><div class="empty-icon">🎮</div>No scores yet for this game${currentPeriod !== 'all' ? ' in Period ' + currentPeriod : ''}.<br>Play a game and opt in to appear here!</div>`);
       } else {
-        html.push(`<table class="score-table"><thead><tr><th>#</th><th>Name</th><th>Period</th><th class="right">Best Streak</th><th class="right">Score</th></tr></thead><tbody>`);
+        const actionsTh = isTeacher ? '<th class="right">Edit</th>' : '';
+        html.push(`<table class="score-table"><thead><tr><th>#</th><th>Name</th><th>Period</th><th class="right">Best Streak</th><th class="right">Score</th>${actionsTh}</tr></thead><tbody>`);
         rows.forEach((row, i) => {
           const rank = i + 1;
           let rankClass = '';
@@ -251,7 +300,10 @@
           const modePart = row.mode ? `<span class="mode-badge">${modeLabel(row.mode)}</span>` : '';
           const diffPart = row.difficulty ? ` · ${diffLabel(row.difficulty)}` : '';
           const streakPart = (row.streak != null) ? `🔥 ${row.streak}` : '—';
-          html.push(`<tr class="score-row"><td><span class="rank-num ${rankClass}">${medal || rank}</span></td><td><div class="player-name">${escHtml(row.name || 'Anonymous')}</div><div class="score-meta">${modePart}${diffPart}</div></td><td><div class="player-period">Period ${escHtml(String(row.period || '—'))}</div></td><td class="streak-col"><span class="streak-val">${streakPart}</span></td><td><div class="score-val">${row.score != null ? row.score : '—'}</div></td></tr>`);
+          const actionsTd = isTeacher
+            ? `<td class="actions-col"><button class="row-edit" onclick="editEntry('${row.id}')" title="Edit">✎</button><button class="row-del" onclick="deleteEntry('${row.id}')" title="Delete">✕</button></td>`
+            : '';
+          html.push(`<tr class="score-row"><td><span class="rank-num ${rankClass}">${medal || rank}</span></td><td><div class="player-name">${escHtml(row.name || 'Anonymous')}</div><div class="score-meta">${modePart}${diffPart}</div></td><td><div class="player-period">Period ${escHtml(String(row.period || '—'))}</div></td><td class="streak-col"><span class="streak-val">${streakPart}</span></td><td><div class="score-val">${row.score != null ? row.score : '—'}</div></td>${actionsTd}</tr>`);
         });
         html.push(`</tbody></table>`);
       }
@@ -265,23 +317,103 @@
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  function loadScores() {
+  const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
+  let isTeacher = false;
+  let editingId = null;
+
+  function subscribeScores() {
     firebase.firestore().collection('game-results')
       .where('showOnScoreboard', '==', true)
-      .get()
-      .then(function(snap) {
-        allScores = snap.docs.map(function(doc) { return doc.data(); });
+      .onSnapshot(function(snap) {
+        allScores = snap.docs.map(function(doc) {
+          var d = doc.data(); d.id = doc.id; return d;
+        });
         renderScoreboard();
-      })
-      .catch(function(err) {
+      }, function(err) {
         document.getElementById('scoreboard-content').innerHTML =
           '<div class="empty-state"><div class="empty-icon">⚠️</div>Could not load scores. Please try refreshing.</div>';
         console.error(err);
       });
   }
 
+  function saveEntry() {
+    const name = document.getElementById('tp-name').value.trim();
+    const period = document.getElementById('tp-period').value;
+    const game = document.getElementById('tp-game').value;
+    const scoreRaw = document.getElementById('tp-score').value;
+    const streakRaw = document.getElementById('tp-streak').value;
+    const msg = document.getElementById('tp-msg');
+    if (!name) { msg.textContent = 'Enter a name.'; msg.className = 'tp-msg err'; return; }
+    if (scoreRaw === '' || isNaN(Number(scoreRaw))) { msg.textContent = 'Enter a score.'; msg.className = 'tp-msg err'; return; }
+    const data = {
+      game:             game,
+      name:             name,
+      period:           period || '—',
+      score:            Number(scoreRaw),
+      streak:           (streakRaw !== '' && !isNaN(Number(streakRaw))) ? Number(streakRaw) : null,
+      showOnScoreboard: true,
+      savedAt:          firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const col = firebase.firestore().collection('game-results');
+    const wasEditing = !!editingId;
+    let op;
+    if (wasEditing) {
+      op = col.doc(editingId).update(data);
+    } else {
+      data.result = 'manual';
+      data.userEmail = (firebase.auth().currentUser || {}).email || '';
+      op = col.add(data);
+    }
+    op.then(function() {
+      cancelEdit();
+      msg.textContent = wasEditing ? 'Saved ✓' : 'Added ✓';
+      msg.className = 'tp-msg ok';
+    }).catch(function(e) {
+      console.error(e);
+      msg.textContent = 'Error: ' + e.message;
+      msg.className = 'tp-msg err';
+    });
+  }
+
+  function editEntry(id) {
+    const row = allScores.find(function(s) { return s.id === id; });
+    if (!row) return;
+    editingId = id;
+    document.getElementById('tp-name').value   = row.name || '';
+    document.getElementById('tp-period').value = (row.period != null) ? String(row.period) : '';
+    document.getElementById('tp-game').value   = row.game || 'ruler-game';
+    document.getElementById('tp-score').value  = (row.score != null) ? row.score : '';
+    document.getElementById('tp-streak').value = (row.streak != null) ? row.streak : '';
+    document.getElementById('tp-save').textContent = 'Save Changes';
+    document.getElementById('tp-cancel').style.display = '';
+    document.getElementById('tp-title-mode').textContent = '— editing ' + (row.name || 'entry');
+    const msg = document.getElementById('tp-msg'); msg.textContent = ''; msg.className = 'tp-msg';
+    document.getElementById('teacher-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function deleteEntry(id) {
+    const row = allScores.find(function(s) { return s.id === id; });
+    const who = row ? (row.name || 'this entry') : 'this entry';
+    if (!confirm('Remove ' + who + ' from the scoreboard? This cannot be undone.')) return;
+    firebase.firestore().collection('game-results').doc(id).delete()
+      .catch(function(e) { console.error(e); alert('Delete failed: ' + e.message); });
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    document.getElementById('tp-name').value = '';
+    document.getElementById('tp-score').value = '';
+    document.getElementById('tp-streak').value = '';
+    document.getElementById('tp-save').textContent = 'Add to Scoreboard';
+    document.getElementById('tp-cancel').style.display = 'none';
+    document.getElementById('tp-title-mode').textContent = '';
+  }
+
   firebase.auth().onAuthStateChanged(function(user) {
-    if (user) loadScores();
+    if (!user) return;
+    isTeacher = (user.email === TEACHER_EMAIL);
+    if (isTeacher) document.getElementById('teacher-panel').style.display = 'block';
+    subscribeScores();
   });
 </script>
 </body>
