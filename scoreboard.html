@@ -91,6 +91,8 @@
     .player-name { font-weight: 700; color: #f0e6ff; }
     .player-period { font-size: 0.78rem; color: #9080b0; margin-top: 2px; }
     .score-val { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 900; color: #f0c040; }
+    .streak-val { font-family: 'Orbitron', sans-serif; font-size: 0.95rem; font-weight: 700; color: #ff8a3d; white-space: nowrap; }
+    .score-row td.streak-col { text-align: right; }
     .score-meta { font-size: 0.72rem; color: #6050a0; margin-top: 2px; }
     .mode-badge {
       display: inline-block; font-size: 0.65rem; font-family: 'Orbitron', sans-serif;
@@ -238,7 +240,7 @@
       if (rows.length === 0) {
         html.push(`<div class="empty-state"><div class="empty-icon">🎮</div>No scores yet for this game${currentPeriod !== 'all' ? ' in Period ' + currentPeriod : ''}.<br>Play a game and opt in to appear here!</div>`);
       } else {
-        html.push(`<table class="score-table"><thead><tr><th>#</th><th>Name</th><th>Period</th><th class="right">Score</th></tr></thead><tbody>`);
+        html.push(`<table class="score-table"><thead><tr><th>#</th><th>Name</th><th>Period</th><th class="right">Best Streak</th><th class="right">Score</th></tr></thead><tbody>`);
         rows.forEach((row, i) => {
           const rank = i + 1;
           let rankClass = '';
@@ -248,7 +250,8 @@
           const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
           const modePart = row.mode ? `<span class="mode-badge">${modeLabel(row.mode)}</span>` : '';
           const diffPart = row.difficulty ? ` · ${diffLabel(row.difficulty)}` : '';
-          html.push(`<tr class="score-row"><td><span class="rank-num ${rankClass}">${medal || rank}</span></td><td><div class="player-name">${escHtml(row.name || 'Anonymous')}</div><div class="score-meta">${modePart}${diffPart}</div></td><td><div class="player-period">Period ${escHtml(String(row.period || '—'))}</div></td><td><div class="score-val">${row.score != null ? row.score : '—'}</div></td></tr>`);
+          const streakPart = (row.streak != null) ? `🔥 ${row.streak}` : '—';
+          html.push(`<tr class="score-row"><td><span class="rank-num ${rankClass}">${medal || rank}</span></td><td><div class="player-name">${escHtml(row.name || 'Anonymous')}</div><div class="score-meta">${modePart}${diffPart}</div></td><td><div class="player-period">Period ${escHtml(String(row.period || '—'))}</div></td><td class="streak-col"><span class="streak-val">${streakPart}</span></td><td><div class="score-val">${row.score != null ? row.score : '—'}</div></td></tr>`);
         });
         html.push(`</tbody></table>`);
       }

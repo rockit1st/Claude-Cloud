@@ -394,6 +394,7 @@
   let score = 0, total = 0, streak = 0, strikes = 0;
   let timerInterval = null, timeLeft = 60;
   let sliderPos = 0, sliderLocked = false, dragging = false;
+  let bestStreak = 0;
   const MAX_STRIKES = 4, TIMED_SECS = 60;
   const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -526,6 +527,7 @@
   function resetGame() {
     stopTimer();
     score = total = streak = strikes = 0;
+    bestStreak = 0;
     timeLeft = TIMED_SECS;
     updateHUD();
     applyModeUI();
@@ -581,7 +583,7 @@
     document.getElementById('timedend-modal').classList.add('open');
     document.getElementById('timedend-scoreboard-cb').checked = false;
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-    if (window.saveScore) window.saveScore('ruler-game', { score, mode, difficulty, result: 'timed-end' });
+    if (window.saveScore) window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, result: 'timed-end' });
   }
 
   function randomChallenge() {
@@ -646,6 +648,7 @@
     const fb = document.getElementById('feedback');
     if (correct) {
       score++; streak++;
+      if (streak > bestStreak) bestStreak = streak;
       fb.textContent = streak >= 3 ? `🔥 ${streak} in a row! Keep going!` : 'Correct! Nice work!';
       fb.className = 'feedback correct';
     } else {
@@ -745,7 +748,7 @@
   }
 
   function _saveScore(extra) {
-    if (window.saveScore) window.saveScore('ruler-game', { score, mode, difficulty, ...extra });
+    if (window.saveScore) window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, ...extra });
   }
 
   function showCongrats() {
