@@ -477,7 +477,7 @@
   let score = 0, strikes = 0, streak = 0, bestStreak = 0, timeLeft = TIMED_SECS, timerInterval = null;
   let currentReading = 0, questionType = 'reading';
   let mode = 'classic', difficulty = 'easy';
-  let lastSavedDocRef = null;
+  let lastSavedDocRef = null, lastSavePromise = null;
 
   function toRad(d) { return d * Math.PI / 180; }
 
@@ -652,7 +652,7 @@
   function saveGameScore(result) {
     if (typeof firebase === 'undefined') return;
     const user = firebase.auth().currentUser;
-    firebase.firestore().collection('game-results').add({
+    lastSavePromise = firebase.firestore().collection('game-results').add({
       game:             'inclinometer',
       name:             document.getElementById('player-name').value.trim() || 'Anonymous',
       period:           document.getElementById('player-period').value || '—',
@@ -665,12 +665,21 @@
       userEmail:        user ? user.email : '',
       showOnScoreboard: false,
       savedAt:          firebase.firestore.FieldValue.serverTimestamp()
-    }).then(function(ref) { lastSavedDocRef = ref; }).catch(function(e) { console.error(e); });
+    }).then(function(ref) { lastSavedDocRef = ref; return ref; })
+      .catch(function(e) { console.error(e); return null; });
   }
 
+  // Flip "show on scoreboard" for the current run. Captures the in-flight save
+  // so a slow network — or the student hitting Play Again — can't drop the choice.
   function toggleScoreboard(checked) {
-    if (!lastSavedDocRef) return;
-    lastSavedDocRef.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
+    const ref  = lastSavedDocRef;
+    const prom = lastSavePromise;
+    if (ref) {
+      ref.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
+    } else if (prom) {
+      prom.then(function(r) { if (r) r.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); }); })
+          .catch(function() {});
+    }
   }
 
   function showWin() {
@@ -692,6 +701,7 @@
   function restartGame() {
     score = strikes = streak = 0;
     bestStreak = 0;
+    lastSavedDocRef = null; lastSavePromise = null;
     stopTimer();
     applyModeUI();
     updateHUD();
