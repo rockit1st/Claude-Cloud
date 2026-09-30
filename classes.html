@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classes | Tech Class Hub</title>
+  <meta name="description" content="Create classes, share join codes, and manage rosters for Mr. Capellini's technology class." />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px; background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #b44fff; background: rgba(180,79,255,0.1); border-color: rgba(180,79,255,0.4); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    .banner {
+      margin-top: 60px;
+      background: linear-gradient(135deg, #0a000f 0%, #1a0030 50%, #0d001a 100%);
+      padding: 56px 20px; text-align: center; position: relative; overflow: hidden;
+      border-bottom: 2px solid rgba(180,79,255,0.3);
+    }
+    .banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #b44fff, transparent); box-shadow: 0 0 20px #b44fff; }
+    .banner-icon { font-size: 3.5rem; margin-bottom: 12px; }
+    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 6vw, 3.2rem); font-weight: 900; color: #b44fff; letter-spacing: 4px; text-shadow: 0 0 20px rgba(180,79,255,0.7), 0 0 40px rgba(180,79,255,0.3); }
+    .banner-sub { color: #9080b0; font-size: 1rem; margin-top: 10px; letter-spacing: 2px; }
+
+    .content { max-width: 820px; margin: 0 auto; padding: 50px 20px 80px; }
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 34px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #b44fff; }
+
+    .section-label { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #b44fff; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 18px; }
+
+    .panel { background: rgba(180,79,255,0.06); border: 1px solid rgba(180,79,255,0.3); border-radius: 16px; padding: 22px 20px; margin-bottom: 34px; }
+    .panel-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .panel input {
+      flex: 1; min-width: 180px; background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(180,79,255,0.3); border-radius: 8px; padding: 12px 14px;
+      color: #f0e6ff; font-family: 'Exo 2', sans-serif; font-size: 0.95rem; outline: none;
+    }
+    .panel input:focus { border-color: #b44fff; }
+    #join-code { text-transform: uppercase; letter-spacing: 3px; font-family: 'Orbitron', sans-serif; }
+    .btn {
+      background: linear-gradient(135deg, #b44fff, #6d1fb0); border: none; color: #fff;
+      font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.75rem; letter-spacing: 1.5px;
+      padding: 13px 24px; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s; white-space: nowrap;
+    }
+    .btn:hover { box-shadow: 0 4px 20px rgba(180,79,255,0.45); }
+    .msg { font-size: 0.85rem; font-weight: 600; margin-top: 12px; min-height: 18px; }
+    .msg.ok { color: #40e080; }
+    .msg.err { color: #ff7070; }
+    .hint { color: #9080b0; font-size: 0.85rem; margin-top: 10px; line-height: 1.6; }
+
+    .class-list { display: grid; gap: 16px; }
+    .class-card { background: rgba(180,79,255,0.05); border: 1px solid rgba(180,79,255,0.25); border-radius: 14px; padding: 18px 20px; }
+    .cc-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .cc-name { font-family: 'Orbitron', sans-serif; font-size: 1.05rem; font-weight: 900; color: #f0e6ff; letter-spacing: 1px; }
+    .cc-code { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .code-chip { font-family: 'Orbitron', sans-serif; font-size: 1.15rem; font-weight: 900; letter-spacing: 3px; color: #b44fff; background: rgba(180,79,255,0.12); border: 1px solid rgba(180,79,255,0.4); border-radius: 8px; padding: 6px 14px; }
+    .code-label { font-size: 0.65rem; color: #9080b0; letter-spacing: 1px; text-transform: uppercase; }
+    .mini-btn { background: none; border: 1px solid rgba(180,79,255,0.35); color: #b44fff; border-radius: 6px; padding: 5px 10px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; transition: background 0.2s; }
+    .mini-btn:hover { background: rgba(180,79,255,0.12); }
+    .del-btn { border-color: rgba(255,96,96,0.35); color: #ff6060; }
+    .del-btn:hover { background: rgba(255,96,96,0.12); }
+    .cc-meta { margin-top: 10px; font-size: 0.82rem; color: #9080b0; }
+    .roster { list-style: none; margin-top: 12px; display: none; flex-direction: column; gap: 6px; }
+    .roster.open { display: flex; }
+    .roster li { background: rgba(255,255,255,0.04); border: 1px solid rgba(180,79,255,0.15); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; display: flex; align-items: center; }
+    .roster li .rm { margin-left: auto; color: #ff6060; cursor: pointer; font-size: 0.85rem; opacity: 0.6; padding: 0 4px; }
+    .roster li .rm:hover { opacity: 1; }
+    .roster li.none { color: #6050a0; justify-content: center; }
+    .cc-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .leave-btn { background: none; border: 1px solid rgba(255,96,96,0.35); color: #ff8080; border-radius: 6px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; font-family: 'Exo 2', sans-serif; margin-top: 12px; }
+    .leave-btn:hover { background: rgba(255,96,96,0.1); }
+
+    .empty { text-align: center; padding: 32px 20px; background: rgba(180,79,255,0.03); border: 1px dashed rgba(180,79,255,0.25); border-radius: 14px; color: #6050a0; font-size: 0.9rem; line-height: 1.7; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
+
+    body.light-mode { background: #f4eeff; color: #1a0030; }
+    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
+    body.light-mode .nav-link { color: #5a4a8a; }
+    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
+    body.light-mode .breadcrumb, body.light-mode .breadcrumb a { color: #5a4a8a; }
+    body.light-mode .panel input { background: rgba(255,255,255,0.92); color: #1a0030; }
+    body.light-mode .cc-name { color: #1a0030; }
+    body.light-mode .roster li { color: #1a0030; }
+    body.light-mode footer { color: rgba(90,74,130,0.55); background: #f4eeff; }
+
+    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
+    .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
+    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
+  </style>
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
+    <a href="classes.html" class="nav-link active">👥 Classes</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">👥</div>
+  <div class="banner-title">CLASSES</div>
+  <div class="banner-sub">Create &bull; Share a Code &bull; Build Your Roster</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / Classes</div>
+
+  <!-- TEACHER VIEW -->
+  <div id="teacher-view" style="display:none">
+    <div class="section-label">Create a Class</div>
+    <div class="panel">
+      <div class="panel-row">
+        <input type="text" id="new-class-name" placeholder="Class name (e.g. Period 3 – Tech 7)" maxlength="60" />
+        <button class="btn" onclick="createClass()">Create Class</button>
+      </div>
+      <div class="msg" id="create-msg"></div>
+      <div class="hint">A join code is generated automatically. Share it with your students so they can join.</div>
+    </div>
+
+    <div class="section-label">Your Classes</div>
+    <div class="class-list" id="class-list">
+      <div class="empty">Loading…</div>
+    </div>
+  </div>
+
+  <!-- STUDENT VIEW -->
+  <div id="student-view" style="display:none">
+    <div class="section-label">Join a Class</div>
+    <div class="panel">
+      <div class="panel-row">
+        <input type="text" id="join-code" placeholder="ENTER CODE" maxlength="6" />
+        <button class="btn" onclick="joinClass()">Join</button>
+      </div>
+      <div class="msg" id="join-msg"></div>
+      <div class="hint">Ask your teacher for your class join code, then type it above.</div>
+    </div>
+
+    <div class="section-label">My Classes</div>
+    <div class="class-list" id="my-classes">
+      <div class="empty">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<footer>Technology Class &copy; 2025</footer>
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
+  let me = null, isTeacher = false;
+  let rosterUnsubs = [];
+
+  function db() { return firebase.firestore(); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  // Safe to embed as a single-quoted JS string inside a double-quoted HTML attribute.
+  function attrJs(s) {
+    return String(s == null ? '' : s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")
+      .replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function code6() {
+    const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    let s = '';
+    for (let i = 0; i < 6; i++) s += A[Math.floor(Math.random() * A.length)];
+    return s;
+  }
+
+  // ── Teacher ──────────────────────────────────────────────
+  function initTeacher() {
+    db().collection('classes').where('teacherEmail', '==', me.email)
+      .onSnapshot(renderClasses, function(e) {
+        console.error(e);
+        document.getElementById('class-list').innerHTML = '<div class="empty">Could not load classes. (A Firestore rule for "classes" may be needed.)</div>';
+      });
+  }
+
+  function createClass() {
+    const nameEl = document.getElementById('new-class-name');
+    const name = nameEl.value.trim();
+    const msg = document.getElementById('create-msg');
+    if (!name) { msg.textContent = 'Enter a class name.'; msg.className = 'msg err'; return; }
+    db().collection('classes').add({
+      name: name, code: code6(), teacherEmail: me.email,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function() {
+      nameEl.value = ''; msg.textContent = 'Class created ✓'; msg.className = 'msg ok';
+    }).catch(function(e) { msg.textContent = 'Error: ' + e.message; msg.className = 'msg err'; });
+  }
+
+  function renderClasses(snap) {
+    rosterUnsubs.forEach(function(u) { u(); });
+    rosterUnsubs = [];
+    const wrap = document.getElementById('class-list');
+    if (snap.empty) { wrap.innerHTML = '<div class="empty">No classes yet. Create one above.</div>'; return; }
+    wrap.innerHTML = '';
+    const docs = snap.docs.slice().sort(function(a, b) { return (a.data().name || '').localeCompare(b.data().name || ''); });
+    docs.forEach(function(doc) {
+      const c = doc.data(), id = doc.id;
+      const card = document.createElement('div');
+      card.className = 'class-card';
+      card.innerHTML =
+        '<div class="cc-top">' +
+          '<span class="cc-name">' + esc(c.name) + '</span>' +
+          '<span class="cc-code"><span><span class="code-label">Join code</span><br><span class="code-chip">' + esc(c.code) + '</span></span>' +
+          '<button class="mini-btn" onclick="copyCode(\'' + esc(c.code) + '\', this)">Copy</button></span>' +
+        '</div>' +
+        '<div class="cc-meta" id="count-' + id + '">…</div>' +
+        '<ul class="roster" id="roster-' + id + '"></ul>' +
+        '<div class="cc-actions">' +
+          '<button class="mini-btn" onclick="toggleRoster(\'' + id + '\', this)">View roster</button>' +
+          '<button class="mini-btn del-btn" onclick="deleteClass(\'' + id + '\', \'' + attrJs(c.name) + '\')">Delete class</button>' +
+        '</div>';
+      wrap.appendChild(card);
+      const u = db().collection('enrollments').where('classId', '==', id)
+        .onSnapshot(function(rs) {
+          const names = rs.docs.map(function(d) { return d.data(); })
+            .sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+          const countEl = document.getElementById('count-' + id);
+          const rosterEl = document.getElementById('roster-' + id);
+          if (countEl) countEl.textContent = names.length + ' student' + (names.length === 1 ? '' : 's');
+          if (rosterEl) rosterEl.innerHTML = names.length
+            ? names.map(function(n) { return '<li>' + esc(n.name || n.email) + '<span class="rm" title="Remove" onclick="removeStudent(\'' + esc(n.classId) + '\', \'' + esc(n.uid) + '\')">✕</span></li>'; }).join('')
+            : '<li class="none">No students have joined yet.</li>';
+        }, console.error);
+      rosterUnsubs.push(u);
+    });
+  }
+
+  function toggleRoster(id, btn) {
+    const el = document.getElementById('roster-' + id);
+    const open = el.classList.toggle('open');
+    btn.textContent = open ? 'Hide roster' : 'View roster';
+  }
+
+  function copyCode(code, btn) {
+    if (navigator.clipboard) navigator.clipboard.writeText(code).catch(function(){});
+    const t = btn.textContent; btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = t; }, 1200);
+  }
+
+  function deleteClass(id, name) {
+    if (!confirm('Delete class "' + name + '" and its roster? This cannot be undone.')) return;
+    db().collection('enrollments').where('classId', '==', id).get().then(function(rs) {
+      const batch = db().batch();
+      rs.forEach(function(d) { batch.delete(d.ref); });
+      batch.delete(db().collection('classes').doc(id));
+      return batch.commit();
+    }).catch(function(e) { alert('Delete failed: ' + e.message); });
+  }
+
+  function removeStudent(classId, uid) {
+    if (!confirm('Remove this student from the class?')) return;
+    db().collection('enrollments').doc(classId + '_' + uid).delete()
+      .catch(function(e) { alert('Remove failed: ' + e.message); });
+  }
+
+  // ── Student ──────────────────────────────────────────────
+  function initStudent() {
+    db().collection('enrollments').where('uid', '==', me.uid)
+      .onSnapshot(renderMyClasses, function(e) {
+        console.error(e);
+        document.getElementById('my-classes').innerHTML = '<div class="empty">Could not load your classes.</div>';
+      });
+  }
+
+  function joinClass() {
+    const el = document.getElementById('join-code');
+    const code = el.value.trim().toUpperCase();
+    const msg = document.getElementById('join-msg');
+    if (!code) { msg.textContent = 'Enter a join code.'; msg.className = 'msg err'; return; }
+    db().collection('classes').where('code', '==', code).limit(1).get().then(function(rs) {
+      if (rs.empty) { msg.textContent = 'No class found with that code. Double-check with your teacher.'; msg.className = 'msg err'; return; }
+      const cdoc = rs.docs[0], c = cdoc.data();
+      return db().collection('enrollments').doc(cdoc.id + '_' + me.uid).set({
+        classId: cdoc.id, className: c.name, code: c.code,
+        uid: me.uid, email: me.email, name: me.displayName || me.email,
+        joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() { el.value = ''; msg.textContent = 'Joined ' + c.name + ' ✓'; msg.className = 'msg ok'; });
+    }).catch(function(e) { msg.textContent = 'Error: ' + e.message; msg.className = 'msg err'; });
+  }
+
+  function renderMyClasses(snap) {
+    const wrap = document.getElementById('my-classes');
+    if (snap.empty) { wrap.innerHTML = '<div class="empty">You haven\'t joined any classes yet. Enter a join code above.</div>'; return; }
+    wrap.innerHTML = '';
+    snap.forEach(function(doc) {
+      const e = doc.data();
+      const card = document.createElement('div');
+      card.className = 'class-card';
+      card.innerHTML =
+        '<div class="cc-name">' + esc(e.className || 'Class') + '</div>' +
+        '<div class="cc-meta">Joined &bull; code <strong>' + esc(e.code || '') + '</strong></div>' +
+        '<button class="leave-btn" onclick="leaveClass(\'' + doc.id + '\', \'' + attrJs(e.className || '') + '\')">Leave class</button>';
+      wrap.appendChild(card);
+    });
+  }
+
+  function leaveClass(enrId, name) {
+    if (!confirm('Leave ' + (name || 'this class') + '?')) return;
+    db().collection('enrollments').doc(enrId).delete()
+      .catch(function(e) { alert('Error: ' + e.message); });
+  }
+
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (!user) return;
+    me = user;
+    isTeacher = (user.email === TEACHER_EMAIL);
+    document.getElementById(isTeacher ? 'teacher-view' : 'student-view').style.display = 'block';
+    if (isTeacher) initTeacher(); else initStudent();
+  });
+</script>
+</body>
+</html>
