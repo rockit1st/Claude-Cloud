@@ -80,14 +80,14 @@
     }
 
     .question-text {
-      text-align: center; font-size: 1rem; color: #c0d8e0;
+      text-align: center; font-size: 1.2rem; color: #c0d8e0;
       margin-bottom: 24px; line-height: 1.6;
     }
     .question-text strong { color: #00f5ff; }
 
     /* Ruler SVG container */
     .ruler-wrap { width: 100%; overflow-x: auto; margin-bottom: 10px; }
-    #ruler-svg { display: block; width: 100%; min-width: 340px; }
+    #ruler-svg { display: block; width: 100%; min-width: 440px; }
 
     /* Choices */
     .choices {
@@ -97,11 +97,11 @@
     @media (max-width: 500px) { .choices { grid-template-columns: 1fr 1fr; } }
 
     .choice-btn {
-      padding: 16px 10px; border-radius: 12px;
+      padding: 20px 12px; border-radius: 12px;
       border: 2px solid rgba(0,245,255,0.3);
       background: rgba(0,245,255,0.05);
       color: #e0f8ff;
-      font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700;
+      font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 700;
       letter-spacing: 1px; cursor: pointer;
       transition: all 0.15s;
     }
@@ -197,6 +197,36 @@
     .timedend-sub strong { color:#f0c040; font-size:1.1rem; }
     .timedend-btn { padding:14px 40px; border-radius:10px; background:linear-gradient(135deg,#b44fff,#6010a0); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:900; letter-spacing:2px; cursor:pointer; box-shadow:0 4px 20px rgba(180,79,255,0.4); transition:box-shadow 0.2s; }
     .timedend-btn:hover { box-shadow:0 6px 30px rgba(180,79,255,0.7); }
+    /* Input-mode toggle */
+    .input-btn { padding: 7px 16px; border-radius: 6px; border: 1px solid rgba(0,245,255,0.3); background: transparent; color: #9080b0; font-family: 'Exo 2', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .input-btn:hover { color: #fff; border-color: rgba(0,245,255,0.6); }
+    .input-btn.active { color: #00f5ff; background: rgba(0,245,255,0.1); border-color: #00f5ff; }
+    body.light-mode .input-btn { color: #5a4a8a; border-color: rgba(0,180,220,0.25); }
+    body.light-mode .input-btn.active { color: #007a90; background: rgba(0,180,220,0.1); border-color: #0090b0; }
+
+    /* Slider controls */
+    .slider-controls { text-align: center; margin: 28px 0 20px; }
+    .slider-readout { font-family: 'Orbitron', sans-serif; font-size: 1.15rem; color: #00f5ff; margin-bottom: 18px; letter-spacing: 1px; }
+    .slider-readout strong { color: #fff; }
+    body.light-mode .slider-readout { color: #007a90; }
+    body.light-mode .slider-readout strong { color: #1a0030; }
+    .check-btn { padding: 15px 46px; border-radius: 10px; background: linear-gradient(135deg,#00c8d4,#008090); border: none; color: #0a000f; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,245,255,0.3); transition: box-shadow 0.2s; }
+    .check-btn:hover:not(:disabled) { box-shadow: 0 6px 30px rgba(0,245,255,0.55); }
+    .check-btn:disabled { opacity: 0.5; cursor: default; }
+
+    /* Finish / cash-out (Classic) */
+    .finish-btn { display: none; margin: 22px auto 0; padding: 13px 34px; border-radius: 10px; background: transparent; border: 2px solid rgba(240,192,64,0.5); color: #f0c040; font-family: 'Orbitron', sans-serif; font-size: 0.78rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
+    .finish-btn:hover { background: rgba(240,192,64,0.12); border-color: #f0c040; box-shadow: 0 4px 22px rgba(240,192,64,0.35); }
+    .finish-btn.show { display: block; }
+    .finish-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 500; }
+    .finish-overlay.open { display: block; }
+    .finish-modal-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); background: #060010; border: 2px solid #f0c040; border-radius: 24px; padding: 48px 40px; width: 90%; max-width: 420px; text-align: center; box-shadow: 0 0 40px rgba(240,192,64,0.4); animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    .finish-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.4rem,4vw,2rem); font-weight: 900; color: #f0c040; letter-spacing: 3px; text-shadow: 0 0 20px rgba(240,192,64,0.8); margin-bottom: 12px; }
+    .finish-sub { color: #9080b0; font-size: 0.95rem; line-height: 1.7; margin-bottom: 28px; }
+    .finish-sub strong { color: #f0c040; font-size: 1.2rem; }
+    .finish-modal-btn { padding: 14px 40px; border-radius: 10px; background: linear-gradient(135deg,#f0c040,#c89010); border: none; color: #0a000f; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; box-shadow: 0 4px 20px rgba(240,192,64,0.4); transition: box-shadow 0.2s; }
+    .finish-modal-btn:hover { box-shadow: 0 6px 30px rgba(240,192,64,0.7); }
+
     .scoreboard-toggle { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0 4px; font-size:0.82rem; color:#9080b0; cursor:pointer; }
     .scoreboard-toggle input { accent-color:#00f5ff; width:16px; height:16px; cursor:pointer; }
     /* ── Light Mode ── */
@@ -275,9 +305,17 @@
     </div>
   </div>
 
+  <div class="diff-bar">
+    <span class="diff-label">Answer with:</span>
+    <div class="diff-btns">
+      <button class="input-btn active" onclick="setInput('choice',this)">🔘 Multiple Choice</button>
+      <button class="input-btn" onclick="setInput('slider',this)">🎚️ Slider</button>
+    </div>
+  </div>
+
   <div class="score-bar">
-    <div class="score-pill" id="pill-score">Score: <span id="score-val">0</span><span id="score-denom"> / 50</span></div>
-    <div class="strikes-pill" id="pill-strikes"><span class="hearts" id="hearts-val">❤️❤️❤️❤️❤️</span></div>
+    <div class="score-pill" id="pill-score">Score: <span id="score-val">0</span><span id="score-denom"></span></div>
+    <div class="strikes-pill" id="pill-strikes"><span class="hearts" id="hearts-val">❤️❤️❤️❤️</span></div>
     <div class="streak-pill" id="pill-streak">🔥 Streak: <span id="streak-val">0</span></div>
     <div class="timer-pill" id="pill-timer" style="display:none">⏱️ <span class="timer-num" id="timer-val">60</span>s</div>
   </div>
@@ -286,10 +324,15 @@
     <div class="question-text" id="question-text">Where is the <strong>red arrow</strong> pointing on the ruler?</div>
 
     <div class="ruler-wrap">
-      <svg id="ruler-svg" viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="ruler-svg" viewBox="0 0 640 165" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
     <div class="choices" id="choices"></div>
+
+    <div class="slider-controls" id="slider-controls" style="display:none">
+      <div class="slider-readout">Your marker: <strong id="slider-readout-val">0"</strong></div>
+      <button class="check-btn" id="check-btn" onclick="checkSlider()">CHECK ANSWER</button>
+    </div>
 
     <div class="feedback" id="feedback"></div>
     <button class="next-btn" id="next-btn" onclick="nextQuestion()">NEXT →</button>
@@ -299,6 +342,8 @@
       <strong>How to read a ruler:</strong> Find the number to the left of the arrow, then count the small tick marks to the right. Each small tick = 1/16". Two ticks = 1/8", four ticks = 1/4", eight ticks = 1/2".
     </div>
   </div>
+
+  <button class="finish-btn" id="finish-btn" onclick="finishRun()">🏁 I'M DONE — POST MY SCORE</button>
 </div>
 
 <div class="congrats-overlay" id="congrats-modal">
@@ -315,7 +360,7 @@
   <div class="gameover-modal">
     <div class="congrats-emoji">💀</div>
     <div class="gameover-title">GAME OVER</div>
-    <div class="gameover-sub">You used all 5 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
+    <div class="gameover-sub">You used all 4 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
     <label class="scoreboard-toggle"><input type="checkbox" id="gameover-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="gameover-btn" onclick="closeModal('gameover-modal');resetGame()">TRY AGAIN</button>
   </div>
@@ -331,14 +376,26 @@
   </div>
 </div>
 
+<div class="finish-overlay" id="finish-modal">
+  <div class="finish-modal-box">
+    <div class="congrats-emoji">🏁</div>
+    <div class="finish-title">GREAT RUN!</div>
+    <div class="finish-sub">You finished with <strong><span id="finish-score">0</span> points</strong>!</div>
+    <label class="scoreboard-toggle"><input type="checkbox" id="finish-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
+    <button class="finish-modal-btn" onclick="closeModal('finish-modal');resetGame()">PLAY AGAIN</button>
+  </div>
+</div>
+
 <footer>Technology Class &copy; 2025</footer>
 
 <script>
-  let difficulty = 4, mode = 'classic';
+  let difficulty = 4, mode = 'classic', inputMode = 'choice';
   let correct16 = 0;
   let score = 0, total = 0, streak = 0, strikes = 0;
   let timerInterval = null, timeLeft = 60;
-  const WIN_SCORE = 50, MAX_STRIKES = 5, TIMED_SECS = 60;
+  let sliderPos = 0, sliderLocked = false, dragging = false;
+  const MAX_STRIKES = 4, TIMED_SECS = 60;
+  const SVGNS = 'http://www.w3.org/2000/svg';
 
   function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 
@@ -350,64 +407,106 @@
     return whole === 0 ? `${num}/${den}"` : `${whole} ${num}/${den}"`;
   }
 
-  const RX = 20, RY = 48, RW = 600, RH = 50;
+  const RX = 20, RY = 55, RW = 600, RH = 72;
   const INCH_PX = RW / 6;
 
   function x16(n) { return RX + (n / 16) * INCH_PX; }
 
-  function tickH(n) {
-    if (n % 16 === 0) return RH;
-    if (n %  8 === 0) return 32;
-    if (n %  4 === 0) return 22;
-    if (n %  2 === 0) return 16;
-    return 11;
+  function svgEl(tag, attrs, text) {
+    const e = document.createElementNS(SVGNS, tag);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    if (text !== undefined) e.textContent = text;
+    return e;
   }
 
-  function drawRuler(markerN) {
+  function tickH(n) {
+    if (n % 16 === 0) return RH;
+    if (n %  8 === 0) return 46;
+    if (n %  4 === 0) return 32;
+    if (n %  2 === 0) return 23;
+    return 15;
+  }
+
+  function drawArrow(svg, n, color) {
+    const mx = x16(n), tip = RY;
+    svg.appendChild(svgEl('line', {
+      x1: mx, y1: 6, x2: mx, y2: tip - 14,
+      stroke: color, 'stroke-width': '3.5', 'stroke-linecap': 'round'
+    }));
+    svg.appendChild(svgEl('polygon', {
+      points: `${mx},${tip} ${mx - 11},${tip - 18} ${mx + 11},${tip - 18}`,
+      fill: color
+    }));
+  }
+
+  function drawRuler(markerN, markerColor, showMarker) {
+    if (markerColor === undefined) markerColor = '#ff2d78';
+    if (showMarker === undefined) showMarker = true;
     const svg = document.getElementById('ruler-svg');
     svg.innerHTML = '';
 
-    function el(tag, attrs, text) {
-      const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
-      Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
-      if (text !== undefined) e.textContent = text;
-      return e;
-    }
-
-    svg.appendChild(el('rect', { x: RX, y: RY, width: RW, height: RH, rx: 3,
+    svg.appendChild(svgEl('rect', { x: RX, y: RY, width: RW, height: RH, rx: 3,
       fill: '#060010', stroke: '#00f5ff', 'stroke-width': '2' }));
 
     for (let n = 0; n <= 96; n++) {
       if (n % difficulty !== 0) continue;
       const tx = x16(n);
       const h  = tickH(n);
-      svg.appendChild(el('line', {
+      svg.appendChild(svgEl('line', {
         x1: tx, y1: RY, x2: tx, y2: RY + h,
         stroke: n % 16 === 0 ? '#ffffff' : n % 8 === 0 ? '#00f5ff' : 'rgba(0,245,255,0.55)',
         'stroke-width': n % 16 === 0 ? '2' : '1'
       }));
 
       if (n % 16 === 0) {
-        svg.appendChild(el('text', {
-          x: tx, y: RY + RH + 18,
+        svg.appendChild(svgEl('text', {
+          x: tx, y: RY + RH + 24,
           'text-anchor': 'middle', fill: '#ffffff',
-          'font-size': '13', 'font-family': 'Exo 2, sans-serif', 'font-weight': '600'
+          'font-size': '19', 'font-family': 'Exo 2, sans-serif', 'font-weight': '700'
         }, String(n / 16)));
       }
     }
 
-    const mx      = x16(markerN);
-    const arrowTip  = RY;
-    const arrowBase = 6;
+    if (showMarker) drawArrow(svg, markerN, markerColor);
+  }
 
-    svg.appendChild(el('line', {
-      x1: mx, y1: arrowBase, x2: mx, y2: arrowTip - 11,
-      stroke: '#ff2d78', 'stroke-width': '2.5', 'stroke-linecap': 'round'
-    }));
-    svg.appendChild(el('polygon', {
-      points: `${mx},${arrowTip} ${mx - 8},${arrowTip - 14} ${mx + 8},${arrowTip - 14}`,
-      fill: '#ff2d78'
-    }));
+  /* ── Slider input ── */
+  function svgXToN(clientX) {
+    const svg = document.getElementById('ruler-svg');
+    const rect = svg.getBoundingClientRect();
+    const vbX = (clientX - rect.left) / rect.width * 640;
+    let n = Math.round((vbX - RX) / INCH_PX * 16 / difficulty) * difficulty;
+    return Math.max(0, Math.min(96, n));
+  }
+
+  function updateSliderReadout() {
+    document.getElementById('slider-readout-val').textContent = toLabel(sliderPos);
+  }
+
+  function sliderPointerDown(e) {
+    if (inputMode !== 'slider' || sliderLocked) return;
+    dragging = true;
+    sliderPos = svgXToN(e.clientX);
+    drawRuler(sliderPos, '#f0c040');
+    updateSliderReadout();
+    e.preventDefault();
+  }
+
+  function sliderPointerMove(e) {
+    if (!dragging || inputMode !== 'slider' || sliderLocked) return;
+    sliderPos = svgXToN(e.clientX);
+    drawRuler(sliderPos, '#f0c040');
+    updateSliderReadout();
+    e.preventDefault();
+  }
+
+  function sliderPointerUp() { dragging = false; }
+
+  function setInput(m, btn) {
+    inputMode = m;
+    document.querySelectorAll('.input-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    resetGame();
   }
 
   function setMode(m, btn) {
@@ -441,11 +540,21 @@
     document.getElementById('pill-strikes').style.display = isClassic ? '' : 'none';
     document.getElementById('pill-streak').style.display  = isClassic ? '' : 'none';
     document.getElementById('pill-timer').style.display   = isTimed   ? '' : 'none';
-    document.getElementById('score-denom').textContent    = isClassic ? ' / 50' : '';
+    document.getElementById('score-denom').textContent    = '';
     document.getElementById('hint-btn').classList.toggle('show', isPractice);
-    document.getElementById('question-text').innerHTML = isPractice
-      ? 'Where is the <strong>red arrow</strong> pointing? (No pressure — take your time!)'
-      : 'Where is the <strong>red arrow</strong> pointing on the ruler?';
+    updateQuestionText();
+  }
+
+  function updateQuestionText() {
+    const q = document.getElementById('question-text');
+    if (inputMode === 'slider') {
+      q.innerHTML = `Slide the marker to <strong>${toLabel(correct16)}</strong>`
+        + (mode === 'practice' ? ' &mdash; take your time!' : '');
+    } else {
+      q.innerHTML = mode === 'practice'
+        ? 'Where is the <strong>red arrow</strong> pointing? (No pressure — take your time!)'
+        : 'Where is the <strong>red arrow</strong> pointing on the ruler?';
+    }
   }
 
   function startTimer() {
@@ -495,44 +604,55 @@
 
   function nextQuestion() {
     correct16 = randomChallenge();
-    drawRuler(correct16);
-    const choices = generateChoices(correct16);
-    const container = document.getElementById('choices');
-    container.innerHTML = '';
-    choices.forEach(c => {
-      const btn = document.createElement('button');
-      btn.className = 'choice-btn';
-      btn.textContent = toLabel(c);
-      btn.onclick = () => checkAnswer(c, btn);
-      container.appendChild(btn);
-    });
+    sliderLocked = false;
+    const svg = document.getElementById('ruler-svg');
     document.getElementById('feedback').textContent = '';
     document.getElementById('feedback').className = 'feedback';
     document.getElementById('next-btn').classList.remove('visible');
+
+    if (inputMode === 'slider') {
+      document.getElementById('choices').style.display = 'none';
+      document.getElementById('choices').innerHTML = '';
+      document.getElementById('slider-controls').style.display = 'block';
+      document.getElementById('check-btn').disabled = false;
+      svg.style.touchAction = 'none';
+      svg.style.cursor = 'ew-resize';
+      sliderPos = 0;
+      drawRuler(sliderPos, '#f0c040');
+      updateSliderReadout();
+    } else {
+      document.getElementById('slider-controls').style.display = 'none';
+      document.getElementById('choices').style.display = '';
+      svg.style.touchAction = '';
+      svg.style.cursor = '';
+      drawRuler(correct16);
+      const choices = generateChoices(correct16);
+      const container = document.getElementById('choices');
+      container.innerHTML = '';
+      choices.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = toLabel(c);
+        btn.onclick = () => checkAnswer(c, btn);
+        container.appendChild(btn);
+      });
+    }
+    updateQuestionText();
     if (mode === 'practice') document.getElementById('hint-btn').classList.add('show');
   }
 
-  function checkAnswer(chosen, btn) {
-    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-    document.getElementById('hint-btn').classList.remove('show');
+  function scoreAnswer(correct) {
     total++;
     const fb = document.getElementById('feedback');
-    const correct = chosen === correct16;
-
     if (correct) {
-      btn.classList.add('correct');
       score++; streak++;
       fb.textContent = streak >= 3 ? `🔥 ${streak} in a row! Keep going!` : 'Correct! Nice work!';
       fb.className = 'feedback correct';
     } else {
-      btn.classList.add('wrong');
-      document.querySelectorAll('.choice-btn').forEach(b => {
-        if (b.textContent === toLabel(correct16)) b.classList.add('correct');
-      });
       if (mode !== 'practice') streak = 0;
       fb.textContent = `Not quite — the answer was ${toLabel(correct16)}.`;
       fb.className = 'feedback wrong';
-      if (mode === 'classic') { strikes++; }
+      if (mode === 'classic') strikes++;
     }
 
     updateHUD();
@@ -542,17 +662,56 @@
     } else {
       document.getElementById('next-btn').classList.add('visible');
       if (mode === 'classic') {
-        if (score === WIN_SCORE) setTimeout(() => { stopTimer(); showCongrats(); }, 400);
-        else if (strikes >= MAX_STRIKES) setTimeout(showGameOver, 400);
+        if (strikes >= MAX_STRIKES) {
+          setTimeout(showGameOver, 400);
+        } else if (correct) {
+          if (score === 50 && strikes === 0) { fb.textContent = '🎉 NICE RUN! 50 points, no misses!'; fireLasers(); }
+          else if (score === 100) { fb.textContent = '🔥 KEEP COOKING! 100 points!'; fireLasers(); }
+          else if (score % 25 === 0) { fireLasers(); }
+        }
       }
     }
   }
 
+  function checkAnswer(chosen, btn) {
+    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+    document.getElementById('hint-btn').classList.remove('show');
+    const correct = chosen === correct16;
+    if (correct) {
+      btn.classList.add('correct');
+    } else {
+      btn.classList.add('wrong');
+      document.querySelectorAll('.choice-btn').forEach(b => {
+        if (b.textContent === toLabel(correct16)) b.classList.add('correct');
+      });
+    }
+    scoreAnswer(correct);
+  }
+
+  function checkSlider() {
+    if (sliderLocked) return;
+    sliderLocked = true;
+    document.getElementById('check-btn').disabled = true;
+    document.getElementById('hint-btn').classList.remove('show');
+    const correct = sliderPos === correct16;
+    drawRuler(sliderPos, correct ? '#40e080' : '#ff5050');
+    if (!correct) drawArrow(document.getElementById('ruler-svg'), correct16, '#40e080');
+    scoreAnswer(correct);
+  }
+
   function showHint() {
-    document.querySelectorAll('.choice-btn').forEach(b => {
-      b.disabled = true;
-      if (b.textContent === toLabel(correct16)) b.classList.add('correct');
-    });
+    if (inputMode === 'slider') {
+      sliderLocked = true;
+      sliderPos = correct16;
+      drawRuler(correct16, '#40e080');
+      updateSliderReadout();
+      document.getElementById('check-btn').disabled = true;
+    } else {
+      document.querySelectorAll('.choice-btn').forEach(b => {
+        b.disabled = true;
+        if (b.textContent === toLabel(correct16)) b.classList.add('correct');
+      });
+    }
     document.getElementById('hint-btn').classList.remove('show');
     document.getElementById('feedback').textContent = `The answer is ${toLabel(correct16)}.`;
     document.getElementById('feedback').className = 'feedback correct';
@@ -565,6 +724,24 @@
     let h = '';
     for (let i = 0; i < MAX_STRIKES; i++) h += i < (MAX_STRIKES - strikes) ? '❤️' : '🖤';
     document.getElementById('hearts-val').textContent = h;
+    const fbtn = document.getElementById('finish-btn');
+    if (fbtn) fbtn.classList.toggle('show', mode === 'classic' && total > 0);
+  }
+
+  function finishRun() {
+    if (mode !== 'classic' || total === 0) return;
+    if (document.getElementById('gameover-modal').classList.contains('open') ||
+        document.getElementById('finish-modal').classList.contains('open')) return;
+    stopTimer();
+    sliderLocked = true;
+    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+    const cb = document.getElementById('check-btn');
+    if (cb) cb.disabled = true;
+    document.getElementById('next-btn').classList.remove('visible');
+    document.getElementById('finish-score').textContent = score;
+    document.getElementById('finish-scoreboard-cb').checked = false;
+    document.getElementById('finish-modal').classList.add('open');
+    _saveScore({ result: 'finished' });
   }
 
   function _saveScore(extra) {
@@ -623,6 +800,12 @@
       }, i * 80);
     }
   }
+
+  // Slider drag wiring
+  const rulerSvgEl = document.getElementById('ruler-svg');
+  rulerSvgEl.addEventListener('pointerdown', sliderPointerDown);
+  window.addEventListener('pointermove', sliderPointerMove);
+  window.addEventListener('pointerup', sliderPointerUp);
 
   // Start
   resetGame();
