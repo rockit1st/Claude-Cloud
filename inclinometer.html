@@ -474,7 +474,7 @@
   };
   const WIN_SCORE = 20, MAX_STRIKES = 5, TIMED_SECS = 60;
 
-  let score = 0, strikes = 0, streak = 0, timeLeft = TIMED_SECS, timerInterval = null;
+  let score = 0, strikes = 0, streak = 0, bestStreak = 0, timeLeft = TIMED_SECS, timerInterval = null;
   let currentReading = 0, questionType = 'reading';
   let mode = 'classic', difficulty = 'easy';
   let lastSavedDocRef = null;
@@ -620,6 +620,7 @@
     if (isRight) {
       btn.classList.add('correct');
       score++; streak++;
+      if (streak > bestStreak) bestStreak = streak;
       const msg = questionType === 'reading'
         ? `Correct! The string reads ${correct}°, so elevation = 90° − ${correct}° = ${90 - correct}°`
         : `Correct! ${correct}° is the elevation angle.`;
@@ -656,6 +657,7 @@
       name:             document.getElementById('player-name').value.trim() || 'Anonymous',
       period:           document.getElementById('player-period').value || '—',
       score:            score,
+      streak:           bestStreak,
       maxScore:         WIN_SCORE,
       result:           result,
       mode:             mode,
@@ -689,6 +691,7 @@
 
   function restartGame() {
     score = strikes = streak = 0;
+    bestStreak = 0;
     stopTimer();
     applyModeUI();
     updateHUD();
