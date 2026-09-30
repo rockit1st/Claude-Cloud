@@ -536,6 +536,7 @@
     score = total = streak = strikes = 0;
     bestStreak = 0;
     window.lastSavedDocRef = null;
+    window.lastSavePromise = null;
     timeLeft = TIMED_SECS;
     updateHUD();
     applyModeUI();
@@ -840,7 +841,9 @@
   // One Firestore doc per run: the first save creates it, later saves in the
   // same run (end-of-game, or "Log my streak?") update that same doc, so a
   // student never appears twice on the scoreboard for one run.
-  window.lastSavedDocRef = window.lastSavedDocRef || null;
+  window.lastSavedDocRef = null;
+  window.lastSavePromise = null;
+
   window.saveScore = function(game, data, optIn) {
     if (typeof firebase === 'undefined') return;
     const user = firebase.auth().currentUser;
@@ -853,18 +856,31 @@
     }, data);
     if (optIn === true) payload.showOnScoreboard = true;
     if (window.lastSavedDocRef) {
-      window.lastSavedDocRef.update(payload).catch(function(e) { console.error(e); });
+      const ref = window.lastSavedDocRef;
+      window.lastSavePromise = ref.update(payload)
+        .then(function() { return ref; })
+        .catch(function(e) { console.error(e); return ref; });
     } else {
       if (payload.showOnScoreboard === undefined) payload.showOnScoreboard = false;
-      firebase.firestore().collection('game-results').add(payload)
-        .then(function(ref) { window.lastSavedDocRef = ref; })
-        .catch(function(e) { console.error(e); });
+      window.lastSavePromise = firebase.firestore().collection('game-results').add(payload)
+        .then(function(ref) { window.lastSavedDocRef = ref; return ref; })
+        .catch(function(e) { console.error(e); return null; });
     }
   };
+
+  // Flip "show on scoreboard" for the current run. Captures the in-flight save
+  // so a slow network — or the student hitting Play Again — can't drop the choice.
   function toggleScoreboard(checked) {
-    if (!window.lastSavedDocRef) return;
-    window.lastSavedDocRef.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
+    const ref  = window.lastSavedDocRef;
+    const prom = window.lastSavePromise;
+    if (ref) {
+      ref.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); });
+    } else if (prom) {
+      prom.then(function(r) { if (r) r.update({ showOnScoreboard: checked }).catch(function(e) { console.error(e); }); })
+          .catch(function() {});
+    }
   }
+
   function logStreak() {
     const btn = document.getElementById('log-streak-btn');
     if (btn && btn.classList.contains('logged')) return;
