@@ -190,27 +190,17 @@
 <div class="content">
   <div class="breadcrumb"><a href="index.html">← Hub</a> / Scoreboard</div>
 
-  <div class="period-filter">
-    <span class="period-label">Period:</span>
-    <button class="period-btn active" onclick="filterPeriod('all', this)">All</button>
-    <button class="period-btn" onclick="filterPeriod('1', this)">1</button>
-    <button class="period-btn" onclick="filterPeriod('2', this)">2</button>
-    <button class="period-btn" onclick="filterPeriod('3', this)">3</button>
-    <button class="period-btn" onclick="filterPeriod('4', this)">4</button>
-    <button class="period-btn" onclick="filterPeriod('5', this)">5</button>
-    <button class="period-btn" onclick="filterPeriod('6', this)">6</button>
-    <button class="period-btn" onclick="filterPeriod('7', this)">7</button>
-    <button class="period-btn" onclick="filterPeriod('8', this)">8</button>
+  <div class="period-filter" id="class-filter">
+    <span class="period-label">Class:</span>
+    <button class="period-btn active" onclick="filterClass('all', this)">All</button>
   </div>
 
   <div id="teacher-panel" class="teacher-panel" style="display:none">
     <div class="tp-title">✏️ TEACHER — ADD / EDIT ENTRY<span class="tp-title-mode" id="tp-title-mode"></span></div>
     <div class="tp-grid">
       <input type="text" id="tp-name" placeholder="Name" />
-      <select id="tp-period">
-        <option value="">Period…</option>
-        <option>1</option><option>2</option><option>3</option><option>4</option>
-        <option>5</option><option>6</option><option>7</option><option>8</option>
+      <select id="tp-class">
+        <option value="">Class…</option>
       </select>
       <select id="tp-game">
         <option value="ruler-game">Ruler Reading Game</option>
@@ -247,13 +237,61 @@
   ];
 
   let allScores = [];
-  let currentPeriod = 'all';
+  let allClasses = [];
+  let currentClass = 'all';
 
-  function filterPeriod(period, btn) {
-    currentPeriod = period;
-    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  function filterClass(key, btn) {
+    currentClass = key;
+    document.querySelectorAll('#class-filter .period-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
     renderScoreboard();
+  }
+
+  function renderClassFilter() {
+    const bar = document.getElementById('class-filter');
+    bar.innerHTML = '<span class="period-label">Class:</span>';
+    function addBtn(key, label) {
+      const b = document.createElement('button');
+      b.className = 'period-btn' + (currentClass === key ? ' active' : '');
+      b.textContent = label;
+      b.onclick = function() { filterClass(key, b); };
+      bar.appendChild(b);
+    }
+    addBtn('all', 'All');
+    allClasses.forEach(function(c) { addBtn(c.id, c.name); });
+    addBtn('unassigned', 'Unassigned');
+    if (currentClass !== 'all' && currentClass !== 'unassigned'
+        && !allClasses.some(function(c) { return c.id === currentClass; })) {
+      currentClass = 'all';
+      renderClassFilter();
+    }
+  }
+
+  function populateClassDropdown() {
+    const sel = document.getElementById('tp-class');
+    if (!sel) return;
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Class…</option>';
+    allClasses.forEach(function(c) {
+      const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o);
+    });
+    sel.value = keep;
+  }
+
+  function subscribeClasses() {
+    firebase.firestore().collection('classes').where('teacherEmail', '==', TEACHER_EMAIL)
+      .onSnapshot(function(snap) {
+        allClasses = snap.docs.map(function(d) { var x = d.data(); return { id: d.id, name: x.name || 'Class' }; })
+          .sort(function(a, b) { return String(a.name).localeCompare(String(b.name)); });
+        renderClassFilter();
+        populateClassDropdown();
+      }, function(e) { console.error(e); });
+  }
+
+  function groupLabel(row) {
+    if (row.className) return escHtml(row.className);
+    if (row.period != null && String(row.period) !== '—' && String(row.period) !== '') return 'Period ' + escHtml(String(row.period));
+    return '—';
   }
 
   function modeLabel(mode) {
@@ -277,9 +315,10 @@
   }
 
   function renderScoreboard() {
-    const filtered = currentPeriod === 'all'
-      ? allScores
-      : allScores.filter(s => String(s.period) === currentPeriod);
+    const filtered =
+      currentClass === 'all' ? allScores :
+      currentClass === 'unassigned' ? allScores.filter(s => !s.classId) :
+      allScores.filter(s => s.classId === currentClass);
 
     const content = document.getElementById('scoreboard-content');
     const html = [];
@@ -300,10 +339,10 @@
       html.push(`<div class="game-header"><span class="game-icon">${game.icon}</span><span class="game-title">${game.label}</span><span class="game-count">${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}</span></div>`);
 
       if (rows.length === 0) {
-        html.push(`<div class="empty-state"><div class="empty-icon">🎮</div>No scores yet for this game${currentPeriod !== 'all' ? ' in Period ' + currentPeriod : ''}.<br>Play a game and opt in to appear here!</div>`);
+        html.push(`<div class="empty-state"><div class="empty-icon">🎮</div>No scores yet for this game.<br>Play a game and opt in to appear here!</div>`);
       } else {
         const actionsTh = isTeacher ? '<th class="right">Edit</th>' : '';
-        html.push(`<table class="score-table"><thead><tr><th>#</th><th>Name</th><th>Period</th><th class="right">Best Streak</th><th class="right">Score</th>${actionsTh}</tr></thead><tbody>`);
+        html.push(`<table class="score-table"><thead><tr><th>#</th><th>Name</th><th>Class</th><th class="right">Best Streak</th><th class="right">Score</th>${actionsTh}</tr></thead><tbody>`);
         rows.forEach((row, i) => {
           const rank = i + 1;
           let rankClass = '';
@@ -317,7 +356,7 @@
           const actionsTd = isTeacher
             ? `<td class="actions-col"><button class="row-edit" onclick="editEntry('${row.id}')" title="Edit">✎</button><button class="row-del" onclick="deleteEntry('${row.id}')" title="Delete">✕</button></td>`
             : '';
-          html.push(`<tr class="score-row"><td><span class="rank-num ${rankClass}">${medal || rank}</span></td><td><div class="player-name">${escHtml(row.name || 'Anonymous')}</div><div class="score-meta">${modePart}${diffPart}</div></td><td><div class="player-period">Period ${escHtml(String(row.period || '—'))}</div></td><td class="streak-col"><span class="streak-val">${streakPart}</span></td><td><div class="score-val">${row.score != null ? row.score : '—'}</div></td>${actionsTd}</tr>`);
+          html.push(`<tr class="score-row"><td><span class="rank-num ${rankClass}">${medal || rank}</span></td><td><div class="player-name">${escHtml(row.name || 'Anonymous')}</div><div class="score-meta">${modePart}${diffPart}</div></td><td><div class="player-period">${groupLabel(row)}</div></td><td class="streak-col"><span class="streak-val">${streakPart}</span></td><td><div class="score-val">${row.score != null ? row.score : '—'}</div></td>${actionsTd}</tr>`);
         });
         html.push(`</tbody></table>`);
       }
@@ -352,7 +391,9 @@
 
   function saveEntry() {
     const name = document.getElementById('tp-name').value.trim();
-    const period = document.getElementById('tp-period').value;
+    const classSel = document.getElementById('tp-class');
+    const classId = classSel.value;
+    const className = classId ? classSel.options[classSel.selectedIndex].textContent : '';
     const game = document.getElementById('tp-game').value;
     const scoreRaw = document.getElementById('tp-score').value;
     const streakRaw = document.getElementById('tp-streak').value;
@@ -362,7 +403,8 @@
     const data = {
       game:             game,
       name:             name,
-      period:           period || '—',
+      classId:          classId,
+      className:        className,
       score:            Number(scoreRaw),
       streak:           (streakRaw !== '' && !isNaN(Number(streakRaw))) ? Number(streakRaw) : null,
       showOnScoreboard: true,
@@ -394,7 +436,7 @@
     if (!row) return;
     editingId = id;
     document.getElementById('tp-name').value   = row.name || '';
-    document.getElementById('tp-period').value = (row.period != null) ? String(row.period) : '';
+    document.getElementById('tp-class').value  = row.classId || '';
     document.getElementById('tp-game').value   = row.game || 'ruler-game';
     document.getElementById('tp-score').value  = (row.score != null) ? row.score : '';
     document.getElementById('tp-streak').value = (row.streak != null) ? row.streak : '';
@@ -416,6 +458,7 @@
   function cancelEdit() {
     editingId = null;
     document.getElementById('tp-name').value = '';
+    document.getElementById('tp-class').value = '';
     document.getElementById('tp-score').value = '';
     document.getElementById('tp-streak').value = '';
     document.getElementById('tp-save').textContent = 'Add to Scoreboard';
@@ -428,6 +471,7 @@
     isTeacher = (user.email === TEACHER_EMAIL);
     if (isTeacher) document.getElementById('teacher-panel').style.display = 'block';
     subscribeScores();
+    subscribeClasses();
   });
 </script>
 </body>

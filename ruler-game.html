@@ -290,6 +290,9 @@
 
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
     <input type="text" id="player-name" placeholder="Your name" style="flex:1;min-width:140px;max-width:200px;padding:9px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none" />
+    <select id="player-class" style="display:none;padding:9px 14px;background:rgba(0,10,30,0.9);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none">
+      <option value="" disabled selected>Your class</option>
+    </select>
     <select id="player-period" style="padding:9px 14px;background:rgba(0,10,30,0.9);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none">
       <option value="" disabled selected>Period</option>
       <option>1</option><option>2</option><option>3</option><option>4</option>
@@ -838,6 +841,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script src="student-classes.js"></script>
 <script>
   // One Firestore doc per run: the first save creates it, later saves in the
   // same run (end-of-game, or "Log my streak?") update that same doc, so a
@@ -867,13 +871,21 @@
     }
   });
 
+  // Swap the Period picker for the student's joined classes.
+  if (typeof setupClassPicker === 'function') setupClassPicker('player-class', 'player-period');
+
   window.saveScore = function(game, data, optIn) {
     if (typeof firebase === 'undefined') return;
     const user = firebase.auth().currentUser;
+    const grp = (typeof getGroupSelection === 'function')
+      ? getGroupSelection('player-class', 'player-period')
+      : { classId: '', className: '', period: (document.getElementById('player-period').value || '—') };
     const payload = Object.assign({
       game:      game,
       name:      scoreboardName(),
-      period:    document.getElementById('player-period').value || '—',
+      classId:   grp.classId || '',
+      className: grp.className || '',
+      period:    grp.period || '',
       userEmail: user ? user.email : '',
       savedAt:   firebase.firestore.FieldValue.serverTimestamp()
     }, data);
