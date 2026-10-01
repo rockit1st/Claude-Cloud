@@ -650,12 +650,22 @@
     document.getElementById('hearts-val').textContent = h;
   }
 
+  // Prefer a real first+last name; fall back to the signed-in Google name so a
+  // logged-in student never shows up as "Anonymous".
+  function scoreboardName() {
+    const typed = (document.getElementById('player-name').value || '').trim();
+    const u = firebase.auth().currentUser;
+    const gname = (u && u.displayName) ? u.displayName.trim() : '';
+    if (typed.split(/\s+/).filter(Boolean).length >= 2) return typed;
+    return gname || typed || 'Anonymous';
+  }
+
   function saveGameScore(result) {
     if (typeof firebase === 'undefined') return;
     const user = firebase.auth().currentUser;
     lastSavePromise = firebase.firestore().collection('game-results').add({
       game:             'inclinometer',
-      name:             document.getElementById('player-name').value.trim() || 'Anonymous',
+      name:             scoreboardName(),
       period:           document.getElementById('player-period').value || '—',
       score:            score,
       streak:           bestStreak,
@@ -745,5 +755,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script>
+  // Auto-fill the name from the student's school Google account and lock it,
+  // so scores are never "Anonymous" and always show a real first + last name.
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (!user) return;
+    var nm = document.getElementById('player-name');
+    if (nm && user.displayName) {
+      nm.value = user.displayName;
+      nm.readOnly = true;
+      nm.title = 'From your school account';
+      nm.style.opacity = '0.85';
+    }
+  });
+</script>
 </body>
 </html>
