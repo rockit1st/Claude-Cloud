@@ -214,6 +214,17 @@
     for (let i = 0; i < 6; i++) s += A[Math.floor(Math.random() * A.length)];
     return s;
   }
+  // Generate a join code that isn't already in use (so two classes can't share
+  // a code and send a student to the wrong class).
+  function makeUniqueCode(attempt) {
+    attempt = attempt || 0;
+    const code = code6();
+    return db().collection('classes').where('code', '==', code).limit(1).get()
+      .then(function(rs) {
+        if (rs.empty || attempt >= 6) return code;
+        return makeUniqueCode(attempt + 1);
+      });
+  }
 
   // ── Teacher ──────────────────────────────────────────────
   function initTeacher() {
@@ -229,9 +240,12 @@
     const name = nameEl.value.trim();
     const msg = document.getElementById('create-msg');
     if (!name) { msg.textContent = 'Enter a class name.'; msg.className = 'msg err'; return; }
-    db().collection('classes').add({
-      name: name, code: code6(), teacherEmail: me.email,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    msg.textContent = 'Creating…'; msg.className = 'msg';
+    makeUniqueCode().then(function(code) {
+      return db().collection('classes').add({
+        name: name, code: code, teacherEmail: me.email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
     }).then(function() {
       nameEl.value = ''; msg.textContent = 'Class created ✓'; msg.className = 'msg ok';
     }).catch(function(e) { msg.textContent = 'Error: ' + e.message; msg.className = 'msg err'; });
