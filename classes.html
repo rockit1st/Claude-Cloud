@@ -89,6 +89,16 @@
 
     .empty { text-align: center; padding: 32px 20px; background: rgba(180,79,255,0.03); border: 1px dashed rgba(180,79,255,0.25); border-radius: 14px; color: #6050a0; font-size: 0.9rem; line-height: 1.7; }
 
+    /* Full-screen "Present" code display (for projecting one class's code) */
+    .present-overlay { position: fixed; inset: 0; z-index: 600; background: #0a000f; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; cursor: pointer; }
+    .present-overlay.open { display: flex; }
+    .present-label { font-family: 'Orbitron', sans-serif; color: #6050a0; font-size: clamp(0.8rem, 2vw, 1.1rem); letter-spacing: 6px; }
+    .present-name { font-family: 'Orbitron', sans-serif; color: #f0e6ff; font-size: clamp(1.1rem, 3.5vw, 2rem); letter-spacing: 2px; margin: 14px 0 28px; }
+    .present-code { font-family: 'Orbitron', sans-serif; font-weight: 900; color: #b44fff; font-size: clamp(3rem, 15vw, 10rem); letter-spacing: clamp(4px, 2vw, 18px); line-height: 1; text-shadow: 0 0 50px rgba(180,79,255,0.7); max-width: 95vw; word-break: break-all; }
+    .present-hint { margin-top: 48px; color: #6050a0; font-size: 0.9rem; letter-spacing: 1px; }
+    body.light-mode .present-overlay { background: #f4eeff; }
+    body.light-mode .present-name { color: #1a0030; }
+
     footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
 
     body.light-mode { background: #f4eeff; color: #1a0030; }
@@ -170,6 +180,13 @@
   </div>
 </div>
 
+<div class="present-overlay" id="present-overlay" onclick="closePresent()">
+  <div class="present-label">JOIN CODE</div>
+  <div class="present-name" id="present-name"></div>
+  <div class="present-code" id="present-code"></div>
+  <div class="present-hint">Tap anywhere to close</div>
+</div>
+
 <footer>Technology Class &copy; 2025</footer>
 <button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
 <script>
@@ -234,8 +251,14 @@
       card.innerHTML =
         '<div class="cc-top">' +
           '<span class="cc-name">' + esc(c.name) + '</span>' +
-          '<span class="cc-code"><span><span class="code-label">Join code</span><br><span class="code-chip">' + esc(c.code) + '</span></span>' +
-          '<button class="mini-btn" onclick="copyCode(\'' + esc(c.code) + '\', this)">Copy</button></span>' +
+          '<span class="cc-code">' +
+            '<span class="code-wrap" id="codewrap-' + id + '" style="display:none">' +
+              '<span class="code-label">Join code</span><br><span class="code-chip">' + esc(c.code) + '</span>' +
+            '</span>' +
+            '<button class="mini-btn" id="codetoggle-' + id + '" onclick="toggleCode(\'' + id + '\', this)">👁 Show code</button>' +
+            '<button class="mini-btn" id="present-' + id + '" style="display:none" onclick="presentCode(\'' + attrJs(c.name) + '\', \'' + esc(c.code) + '\')">📺 Present</button>' +
+            '<button class="mini-btn" id="copy-' + id + '" style="display:none" onclick="copyCode(\'' + esc(c.code) + '\', this)">Copy</button>' +
+          '</span>' +
         '</div>' +
         '<div class="cc-meta" id="count-' + id + '">…</div>' +
         '<ul class="roster" id="roster-' + id + '"></ul>' +
@@ -263,6 +286,24 @@
     const el = document.getElementById('roster-' + id);
     const open = el.classList.toggle('open');
     btn.textContent = open ? 'Hide roster' : 'View roster';
+  }
+
+  function toggleCode(id, btn) {
+    const shown = document.getElementById('codewrap-' + id).style.display !== 'none';
+    const next = !shown;
+    document.getElementById('codewrap-' + id).style.display = next ? '' : 'none';
+    document.getElementById('present-' + id).style.display = next ? '' : 'none';
+    document.getElementById('copy-' + id).style.display = next ? '' : 'none';
+    btn.textContent = next ? '🙈 Hide code' : '👁 Show code';
+  }
+
+  function presentCode(name, code) {
+    document.getElementById('present-name').textContent = name;
+    document.getElementById('present-code').textContent = code;
+    document.getElementById('present-overlay').classList.add('open');
+  }
+  function closePresent() {
+    document.getElementById('present-overlay').classList.remove('open');
   }
 
   function copyCode(code, btn) {
