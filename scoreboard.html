@@ -269,6 +269,13 @@
     return map[diff] || diff;
   }
 
+  function studentKey(s) {
+    if (s.userEmail && String(s.userEmail).trim()) return 'e:' + String(s.userEmail).trim().toLowerCase();
+    const nm = String(s.name || '').trim().toLowerCase();
+    if (nm && nm !== 'anonymous') return 'n:' + nm;
+    return 'id:' + s.id; // un-attributable (e.g. old Anonymous) — keep separate
+  }
+
   function renderScoreboard() {
     const filtered = currentPeriod === 'all'
       ? allScores
@@ -278,8 +285,14 @@
     const html = [];
 
     GAMES.forEach(game => {
-      const rows = filtered
-        .filter(s => s.game === game.key)
+      // Keep only each student's best score for this game (a better score wins;
+      // a later, lower score does not replace it).
+      const best = {};
+      filtered.filter(s => s.game === game.key).forEach(function(s) {
+        const k = studentKey(s);
+        if (!best[k] || (s.score || 0) > (best[k].score || 0)) best[k] = s;
+      });
+      const rows = Object.keys(best).map(function(k) { return best[k]; })
         .sort((a, b) => (b.score || 0) - (a.score || 0))
         .slice(0, 20);
 

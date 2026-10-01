@@ -845,12 +845,34 @@
   window.lastSavedDocRef = null;
   window.lastSavePromise = null;
 
+  // Prefer a real first+last name; fall back to the signed-in Google name so a
+  // logged-in student never shows up as "Anonymous".
+  function scoreboardName() {
+    const typed = (document.getElementById('player-name').value || '').trim();
+    const u = firebase.auth().currentUser;
+    const gname = (u && u.displayName) ? u.displayName.trim() : '';
+    if (typed.split(/\s+/).filter(Boolean).length >= 2) return typed;
+    return gname || typed || 'Anonymous';
+  }
+
+  // Auto-fill the name from the student's school Google account and lock it.
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (!user) return;
+    const nm = document.getElementById('player-name');
+    if (nm && user.displayName) {
+      nm.value = user.displayName;
+      nm.readOnly = true;
+      nm.title = 'From your school account';
+      nm.style.opacity = '0.85';
+    }
+  });
+
   window.saveScore = function(game, data, optIn) {
     if (typeof firebase === 'undefined') return;
     const user = firebase.auth().currentUser;
     const payload = Object.assign({
       game:      game,
-      name:      document.getElementById('player-name').value.trim() || 'Anonymous',
+      name:      scoreboardName(),
       period:    document.getElementById('player-period').value || '—',
       userEmail: user ? user.email : '',
       savedAt:   firebase.firestore.FieldValue.serverTimestamp()
