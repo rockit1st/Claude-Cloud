@@ -403,6 +403,9 @@
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(255,45,120,0.15)">
         <input type="text" id="player-name" placeholder="Your name" style="flex:1;min-width:140px;max-width:200px;padding:9px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,45,120,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none" />
+        <select id="player-class" style="display:none;padding:9px 14px;background:rgba(20,0,40,0.9);border:1px solid rgba(255,45,120,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none">
+          <option value="" disabled selected>Your class</option>
+        </select>
         <select id="player-period" style="padding:9px 14px;background:rgba(20,0,40,0.9);border:1px solid rgba(255,45,120,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none">
           <option value="" disabled selected>Period</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
@@ -663,10 +666,15 @@
   function saveGameScore(result) {
     if (typeof firebase === 'undefined') return;
     const user = firebase.auth().currentUser;
+    const grp = (typeof getGroupSelection === 'function')
+      ? getGroupSelection('player-class', 'player-period')
+      : { classId: '', className: '', period: (document.getElementById('player-period').value || '—') };
     lastSavePromise = firebase.firestore().collection('game-results').add({
       game:             'inclinometer',
       name:             scoreboardName(),
-      period:           document.getElementById('player-period').value || '—',
+      classId:          grp.classId || '',
+      className:        grp.className || '',
+      period:           grp.period || '',
       score:            score,
       streak:           bestStreak,
       maxScore:         WIN_SCORE,
@@ -755,6 +763,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script src="student-classes.js"></script>
 <script>
   // Auto-fill the name from the student's school Google account and lock it,
   // so scores are never "Anonymous" and always show a real first + last name.
@@ -768,6 +777,8 @@
       nm.style.opacity = '0.85';
     }
   });
+  // Swap the Period picker for the student's joined classes.
+  if (typeof setupClassPicker === 'function') setupClassPicker('player-class', 'player-period');
 </script>
 </body>
 </html>
