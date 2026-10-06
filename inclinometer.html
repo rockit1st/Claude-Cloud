@@ -518,7 +518,6 @@
     svg.appendChild(el('circle', { cx, cy, r:'5', fill:'#ff2d78' }));
     const sp = arcPoint(reading);
     svg.appendChild(el('line', { x1:cx, y1:cy, x2:sp.x, y2:sp.y, stroke:'#f0c040', 'stroke-width':'2.5', 'stroke-linecap':'round' }));
-    svg.appendChild(el('circle', { cx:sp.x, cy:sp.y, r:'7', fill:'#f0c040' }));
     svg.appendChild(el('rect', { x:cx-R-10, y:cy-7, width:R*2+20, height:7, rx:'3', fill:'rgba(255,45,120,0.12)', stroke:'rgba(255,45,120,0.4)', 'stroke-width':'1' }));
     svg.appendChild(el('text', { x:cx-R-6, y:cy-10, fill:'rgba(255,45,120,0.5)', 'font-size':'9', 'font-family':'Orbitron, sans-serif', 'letter-spacing':'2' }, 'STRAW →'));
   }
