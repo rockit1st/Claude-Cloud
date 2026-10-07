@@ -206,10 +206,8 @@
 
     /* Slider controls */
     .slider-controls { text-align: center; margin: 28px 0 20px; }
-    .slider-readout { font-family: 'Orbitron', sans-serif; font-size: 1.15rem; color: #00f5ff; margin-bottom: 18px; letter-spacing: 1px; }
-    .slider-readout strong { color: #fff; }
-    body.light-mode .slider-readout { color: #007a90; }
-    body.light-mode .slider-readout strong { color: #1a0030; }
+    .slider-hint { font-family: 'Exo 2', sans-serif; font-size: 0.9rem; color: #9080b0; margin-bottom: 18px; }
+    body.light-mode .slider-hint { color: #5a4a8a; }
     .check-btn { padding: 15px 46px; border-radius: 10px; background: linear-gradient(135deg,#00c8d4,#008090); border: none; color: #0a000f; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,245,255,0.3); transition: box-shadow 0.2s; }
     .check-btn:hover:not(:disabled) { box-shadow: 0 6px 30px rgba(0,245,255,0.55); }
     .check-btn:disabled { opacity: 0.5; cursor: default; }
@@ -340,7 +338,7 @@
     <div class="choices" id="choices"></div>
 
     <div class="slider-controls" id="slider-controls" style="display:none">
-      <div class="slider-readout">Your marker: <strong id="slider-readout-val">0"</strong></div>
+      <div class="slider-hint">Drag the marker to where you think it is, then press Check.</div>
       <button class="check-btn" id="check-btn" onclick="checkSlider()">CHECK ANSWER</button>
     </div>
 
@@ -492,7 +490,8 @@
   }
 
   function updateSliderReadout() {
-    document.getElementById('slider-readout-val').textContent = toLabel(sliderPos);
+    var el = document.getElementById('slider-readout-val');
+    if (el) el.textContent = toLabel(sliderPos);
   }
 
   function sliderPointerDown(e) {
