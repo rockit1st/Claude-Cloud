@@ -595,7 +595,7 @@
     document.getElementById('timedend-modal').classList.add('open');
     document.getElementById('timedend-scoreboard-cb').checked = false;
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-    if (window.saveScore) window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, result: 'timed-end' });
+    if (window.saveScore) window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, inputMode, result: 'timed-end' });
   }
 
   function randomChallenge() {
@@ -767,7 +767,7 @@
   }
 
   function _saveScore(extra) {
-    if (window.saveScore) window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, ...extra });
+    if (window.saveScore) window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, inputMode, ...extra });
   }
 
   function showCongrats() {
@@ -918,7 +918,7 @@
   function logStreak() {
     const btn = document.getElementById('log-streak-btn');
     if (btn && btn.classList.contains('logged')) return;
-    window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, result: 'logged' }, true);
+    window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, inputMode, result: 'logged' }, true);
     if (btn) { btn.textContent = '✓ Streak logged! 🔥 ' + bestStreak; btn.classList.add('logged'); }
   }
 </script>

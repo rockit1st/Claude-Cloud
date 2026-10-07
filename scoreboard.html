@@ -100,6 +100,7 @@
       background: rgba(240,192,64,0.08); border: 1px solid rgba(240,192,64,0.2);
       color: #a09030; text-transform: uppercase; margin-left: 6px;
     }
+    .input-badge { background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.25); color: #4fc3d0; }
 
     .empty-state {
       text-align: center; padding: 48px 20px;
@@ -294,6 +295,13 @@
     return '—';
   }
 
+  function inputLabel(row) {
+    if (row.inputMode === 'slider') return '🎚️ Slider';
+    if (row.inputMode === 'choice' || row.inputMode === 'multiple-choice') return '🔘 Multiple Choice';
+    if (row.game === 'inclinometer') return '🔘 Multiple Choice';
+    return '';
+  }
+
   function modeLabel(mode) {
     if (!mode) return '';
     const map = { classic: 'Classic', practice: 'Practice', timed: 'Timed' };
@@ -351,12 +359,13 @@
           else if (rank === 3) rankClass = 'bronze';
           const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
           const modePart = row.mode ? `<span class="mode-badge">${modeLabel(row.mode)}</span>` : '';
+          const inputPart = inputLabel(row) ? `<span class="mode-badge input-badge">${inputLabel(row)}</span>` : '';
           const diffPart = row.difficulty ? ` · ${diffLabel(row.difficulty)}` : '';
           const streakPart = (row.streak != null) ? `🔥 ${row.streak}` : '—';
           const actionsTd = isTeacher
             ? `<td class="actions-col"><button class="row-edit" onclick="editEntry('${row.id}')" title="Edit">✎</button><button class="row-del" onclick="deleteEntry('${row.id}')" title="Delete">✕</button></td>`
             : '';
-          html.push(`<tr class="score-row"><td><span class="rank-num ${rankClass}">${medal || rank}</span></td><td><div class="player-name">${escHtml(row.name || 'Anonymous')}</div><div class="score-meta">${modePart}${diffPart}</div></td><td><div class="player-period">${groupLabel(row)}</div></td><td class="streak-col"><span class="streak-val">${streakPart}</span></td><td><div class="score-val">${row.score != null ? row.score : '—'}</div></td>${actionsTd}</tr>`);
+          html.push(`<tr class="score-row"><td><span class="rank-num ${rankClass}">${medal || rank}</span></td><td><div class="player-name">${escHtml(row.name || 'Anonymous')}</div><div class="score-meta">${modePart}${inputPart}${diffPart}</div></td><td><div class="player-period">${groupLabel(row)}</div></td><td class="streak-col"><span class="streak-val">${streakPart}</span></td><td><div class="score-val">${row.score != null ? row.score : '—'}</div></td>${actionsTd}</tr>`);
         });
         html.push(`</tbody></table>`);
       }
