@@ -432,7 +432,7 @@
       <div class="pp-streak" id="pp-streak"></div>
       <div class="pp-sub" id="pp-sub">Add your score to the class scoreboard?</div>
       <button class="pp-post" id="pp-post" onclick="postFromPopup()">📊 POST MY SCORE</button>
-      <button class="pp-keep" onclick="closePostPopup()">Keep playing →</button>
+      <button class="pp-keep" id="pp-keep" onclick="closePostPopup()">Keep playing →</button>
     </div>
 
     <div class="hint-box">
@@ -505,7 +505,6 @@
   let timerInterval = null, timeLeft = 60;
   let sliderPos = 0, sliderLocked = false, dragging = false;
   let bestStreak = 0;
-  let postPopupShown = false;
   const MAX_STRIKES = 4, TIMED_SECS = 60;
   const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -640,7 +639,6 @@
     stopTimer();
     score = total = streak = strikes = 0;
     bestStreak = 0;
-    postPopupShown = false;
     window.lastSavedDocRef = null;
     window.lastSavePromise = null;
     timeLeft = TIMED_SECS;
@@ -790,40 +788,38 @@
           else if (score === 100) { fb.textContent = '🔥 KEEP COOKING! 100 points!'; fireLasers(); }
           else if (score % 25 === 0) { fireLasers(); }
         } else if (bestStreak >= 1) {
-          // Missed one, but the run continues — prominently offer to post the score.
-          if (!postPopupShown) {
-            postPopupShown = true;
-            showPostPopup();
-          } else {
-            const lb = document.getElementById('log-streak-btn');
-            lb.textContent = '📊 Log my streak?';
-            lb.classList.remove('logged');
-            lb.classList.add('show');
-          }
+          // Missed one, but the run continues — offer to bank the best streak.
+          const lb = document.getElementById('log-streak-btn');
+          lb.textContent = '📊 Log my streak?';
+          lb.classList.remove('logged');
+          lb.classList.add('show');
         }
       }
     }
   }
 
-  function showPostPopup() {
-    document.getElementById('pp-answer').textContent = 'The answer was ' + toLabel(correct16) + '.';
-    document.getElementById('pp-streak').textContent = '🔥 Best streak: ' + bestStreak + '  •  Score: ' + score;
+  function showPostPopup(context) {
+    document.getElementById('pp-answer').textContent = context === 'gameover' ? '💔 Out of hearts!' : '🏁 Nice run!';
+    document.getElementById('pp-streak').textContent = 'You scored ' + score + '  •  🔥 Best streak: ' + bestStreak;
     document.getElementById('pp-sub').textContent = 'Add your score to the class scoreboard?';
     const pb = document.getElementById('pp-post');
-    pb.style.display = ''; pb.disabled = false;
+    pb.style.display = ''; pb.disabled = false; pb.textContent = '📊 POST MY SCORE';
+    document.getElementById('pp-keep').textContent = 'Play Again';
+    const fin = document.getElementById('finish-btn'); if (fin) fin.classList.remove('show');
     document.getElementById('post-popup').classList.add('show');
   }
 
   function postFromPopup() {
-    if (typeof logStreak === 'function') logStreak();
+    if (window.saveScore) window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, inputMode, result: 'posted' }, true);
+    document.getElementById('pp-answer').textContent = '';
     document.getElementById('pp-streak').textContent = '✓ Posted to the scoreboard!';
-    document.getElementById('pp-sub').textContent = 'Nice — keep going for an even higher score.';
+    document.getElementById('pp-sub').textContent = 'Your score is on the class leaderboard.';
     document.getElementById('pp-post').style.display = 'none';
   }
 
   function closePostPopup() {
     document.getElementById('post-popup').classList.remove('show');
-    nextQuestion();
+    resetGame();
   }
 
   function checkAnswer(chosen, btn) {
@@ -883,18 +879,15 @@
 
   function finishRun() {
     if (mode !== 'classic' || total === 0) return;
-    if (document.getElementById('gameover-modal').classList.contains('open') ||
-        document.getElementById('finish-modal').classList.contains('open')) return;
+    if (document.getElementById('post-popup').classList.contains('show')) return;
     stopTimer();
     sliderLocked = true;
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
     const cb = document.getElementById('check-btn');
     if (cb) cb.disabled = true;
     document.getElementById('next-btn').classList.remove('visible');
-    document.getElementById('finish-score').textContent = score;
-    document.getElementById('finish-scoreboard-cb').checked = false;
-    document.getElementById('finish-modal').classList.add('open');
     _saveScore({ result: 'finished' });
+    showPostPopup('done');
   }
 
   function _saveScore(extra) {
@@ -909,10 +902,8 @@
   }
 
   function showGameOver() {
-    document.getElementById('gameover-score').textContent = score;
-    document.getElementById('gameover-modal').classList.add('open');
-    document.getElementById('gameover-scoreboard-cb').checked = false;
     _saveScore({ result: 'game-over' });
+    showPostPopup('gameover');
   }
 
   function closeModal(id) {
