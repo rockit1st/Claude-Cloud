@@ -403,7 +403,7 @@
 
   <div class="score-bar">
     <div class="score-pill" id="pill-score">Score: <span id="score-val">0</span><span id="score-denom"></span></div>
-    <div class="strikes-pill" id="pill-strikes"><span class="hearts" id="hearts-val">❤️❤️❤️❤️</span></div>
+    <div class="strikes-pill" id="pill-strikes"><span class="hearts" id="hearts-val">❤️❤️❤️</span></div>
     <div class="streak-pill" id="pill-streak">🔥 Streak: <span id="streak-val">0</span></div>
     <div class="timer-pill" id="pill-timer" style="display:none">⏱️ <span class="timer-num" id="timer-val">60</span>s</div>
   </div>
@@ -462,7 +462,7 @@
   <div class="gameover-modal">
     <div class="congrats-emoji">💀</div>
     <div class="gameover-title">GAME OVER</div>
-    <div class="gameover-sub">You used all 4 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
+    <div class="gameover-sub">You used all 3 strikes.<br>You made it to <strong><span id="gameover-score">0</span> points</strong>!</div>
     <label class="scoreboard-toggle"><input type="checkbox" id="gameover-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="gameover-btn" onclick="closeModal('gameover-modal');resetGame()">TRY AGAIN</button>
   </div>
@@ -505,7 +505,7 @@
   let timerInterval = null, timeLeft = 60;
   let sliderPos = 0, sliderLocked = false, dragging = false;
   let bestStreak = 0;
-  const MAX_STRIKES = 4, TIMED_SECS = 60;
+  const MAX_STRIKES = 3, TIMED_SECS = 60;
   const SVGNS = 'http://www.w3.org/2000/svg';
 
   function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
