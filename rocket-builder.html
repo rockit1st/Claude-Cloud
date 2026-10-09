@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rocket Lab | Tech Class Hub</title>
+  <meta name="description" content="Build a water bottle rocket — tune water, pressure, nose cone and fins, check stability, and launch for max altitude or to hit a target." />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 14px 32px; background: rgba(10,0,15,0.88); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(180,79,255,0.3); }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #ff2d78; background: rgba(255,45,120,0.08); border-color: rgba(255,45,120,0.35); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    .banner { margin-top: 60px; background: linear-gradient(135deg, #0a000f 0%, #2a0020 50%, #1a000f 100%); padding: 44px 20px; text-align: center; position: relative; overflow: hidden; border-bottom: 2px solid rgba(255,45,120,0.3); }
+    .banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #ff2d78, transparent); box-shadow: 0 0 20px #ff2d78; }
+    .banner-icon { font-size: 3.2rem; margin-bottom: 10px; }
+    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 6vw, 3.2rem); font-weight: 900; color: #ff2d78; letter-spacing: 4px; text-shadow: 0 0 20px rgba(255,45,120,0.7); }
+    .banner-sub { color: #9080b0; font-size: 1rem; margin-top: 8px; letter-spacing: 2px; }
+
+    .content { max-width: 980px; margin: 0 auto; padding: 36px 20px 80px; }
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 20px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #ff2d78; }
+
+    .setup-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+    .setup-row input, .setup-row select { padding:9px 14px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,45,120,0.3); border-radius:8px; color:#f0e6ff; font-family:'Exo 2',sans-serif; font-size:0.9rem; outline:none; }
+    .setup-row input[type=text] { flex:1; min-width:140px; max-width:220px; }
+    .setup-row select option { background:#1a0010; }
+
+    .mode-tabs { display:flex; border-radius:10px; overflow:hidden; border:1px solid rgba(255,45,120,0.3); margin-bottom:20px; max-width:420px; }
+    .mode-tab { flex:1; padding:10px 6px; border:none; background:transparent; color:#9080b0; font-family:'Exo 2',sans-serif; font-size:0.85rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+    .mode-tab:hover { background:rgba(255,45,120,0.08); color:#fff; }
+    .mode-tab.active { background:rgba(255,45,120,0.15); color:#ff2d78; }
+
+    .target-banner { display:none; background:rgba(0,245,255,0.07); border:1px solid rgba(0,245,255,0.3); border-radius:12px; padding:14px 18px; margin-bottom:20px; text-align:center; }
+    .target-banner.show { display:block; }
+    .target-banner strong { font-family:'Orbitron',sans-serif; color:#00f5ff; font-size:1.4rem; }
+
+    .lab-grid { display:grid; grid-template-columns: 300px 1fr; gap:24px; }
+    @media (max-width: 760px) { .lab-grid { grid-template-columns: 1fr; } }
+
+    .rocket-card { background:rgba(255,45,120,0.04); border:1px solid rgba(255,45,120,0.2); border-radius:18px; padding:18px; text-align:center; }
+    #rocket-svg { width:100%; max-width:220px; height:auto; display:block; margin:0 auto; }
+    .stab { margin-top:14px; }
+    .stab-label { font-family:'Orbitron',sans-serif; font-size:0.72rem; letter-spacing:1px; color:#9080b0; margin-bottom:6px; }
+    .stab-bar { height:10px; border-radius:6px; background:rgba(255,255,255,0.08); position:relative; overflow:hidden; }
+    .stab-fill { position:absolute; left:0; top:0; bottom:0; border-radius:6px; transition:width 0.25s, background 0.25s; }
+    .stab-verdict { margin-top:8px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:0.9rem; letter-spacing:1px; }
+    .stab-verdict.stable { color:#40e080; } .stab-verdict.marginal { color:#f0c040; } .stab-verdict.unstable { color:#ff5050; }
+    .legend { display:flex; justify-content:center; gap:16px; margin-top:8px; font-size:0.72rem; color:#9080b0; }
+    .legend b { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+
+    .controls-card { background:rgba(180,79,255,0.04); border:1px solid rgba(180,79,255,0.2); border-radius:18px; padding:20px 22px; }
+    .ctrl { margin-bottom:18px; }
+    .ctrl-label { display:flex; justify-content:space-between; font-size:0.82rem; color:#c0b0e0; margin-bottom:8px; font-weight:600; }
+    .ctrl-label .val { font-family:'Orbitron',sans-serif; color:#ff2d78; }
+    input[type=range] { width:100%; accent-color:#ff2d78; height:6px; cursor:pointer; }
+    .chip-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .chip { padding:8px 14px; border-radius:8px; border:1px solid rgba(180,79,255,0.3); background:transparent; color:#9080b0; font-family:'Exo 2',sans-serif; font-size:0.82rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+    .chip:hover { color:#fff; border-color:rgba(180,79,255,0.6); }
+    .chip.active { color:#ff2d78; background:rgba(255,45,120,0.1); border-color:#ff2d78; }
+
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-top:6px; }
+    .stat { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; text-align:center; }
+    .stat .s-label { font-size:0.66rem; color:#9080b0; letter-spacing:1px; text-transform:uppercase; }
+    .stat .s-val { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:900; color:#00f5ff; margin-top:2px; }
+
+    .launch-btn { display:block; width:100%; max-width:420px; margin:26px auto 0; padding:18px; border-radius:12px; background:linear-gradient(135deg,#ff2d78,#a01040); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.1rem; letter-spacing:3px; cursor:pointer; box-shadow:0 4px 24px rgba(255,45,120,0.4); transition:box-shadow 0.2s, transform 0.1s; }
+    .launch-btn:hover { box-shadow:0 6px 34px rgba(255,45,120,0.7); }
+    .launch-btn:active { transform:scale(0.98); }
+    .launch-btn:disabled { opacity:0.5; cursor:default; }
+
+    /* Launch sky */
+    .sky { position:relative; height:380px; margin:26px 0 0; border-radius:16px; overflow:hidden; background:linear-gradient(180deg, #0a0030 0%, #1a0040 40%, #2a0a30 75%, #1a0010 100%); border:1px solid rgba(255,45,120,0.2); }
+    .sky .ground { position:absolute; left:0; right:0; bottom:0; height:30px; background:linear-gradient(180deg, rgba(255,45,120,0.15), rgba(255,45,120,0.05)); border-top:2px solid rgba(255,45,120,0.5); }
+    .sky .star { position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:0.5; }
+    .fly-rocket { position:absolute; left:50%; bottom:30px; transform:translateX(-50%); font-size:2rem; transition:none; }
+    .alt-readout { position:absolute; top:12px; right:16px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.6rem; color:#00f5ff; text-shadow:0 0 14px rgba(0,245,255,0.6); }
+    .apogee-line { position:absolute; left:0; right:0; height:0; border-top:2px dashed rgba(240,192,64,0.7); opacity:0; }
+    .apogee-tag { position:absolute; right:10px; transform:translateY(-100%); color:#f0c040; font-size:0.75rem; font-family:'Orbitron',sans-serif; }
+    .countdown { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:5rem; font-weight:900; color:#ff2d78; text-shadow:0 0 30px rgba(255,45,120,0.8); opacity:0; }
+
+    .result-box { margin-top:18px; text-align:center; min-height:40px; }
+    .result-apogee { font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:900; color:#00f5ff; }
+    .result-sub { color:#c0b0e0; font-size:0.95rem; margin-top:4px; }
+    .result-sub.good { color:#40e080; } .result-sub.bad { color:#ff8080; }
+    .submit-btn { margin-top:14px; padding:12px 28px; border-radius:10px; background:linear-gradient(135deg,#f0c040,#c89010); border:none; color:#0a000f; font-family:'Orbitron',sans-serif; font-weight:900; font-size:0.8rem; letter-spacing:1px; cursor:pointer; display:none; }
+    .submit-btn.show { display:inline-block; }
+    .submit-btn.done { background:none; border:1px solid rgba(64,224,128,0.5); color:#40e080; cursor:default; }
+
+    /* Leaderboard */
+    .board { margin-top:48px; }
+    .board-title { font-family:'Orbitron',sans-serif; font-size:0.9rem; color:#ff2d78; letter-spacing:2px; margin-bottom:14px; }
+    .board-filter { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .board-filter button { background:transparent; border:1px solid rgba(255,45,120,0.25); border-radius:20px; padding:5px 14px; font-size:0.78rem; font-weight:600; color:#9080b0; cursor:pointer; font-family:'Exo 2',sans-serif; }
+    .board-filter button.active { color:#ff2d78; background:rgba(255,45,120,0.1); border-color:#ff2d78; }
+    .board ol { list-style:none; display:flex; flex-direction:column; gap:6px; }
+    .board li { display:flex; align-items:center; gap:12px; padding:11px 16px; background:rgba(255,45,120,0.04); border:1px solid rgba(255,45,120,0.12); border-radius:10px; font-size:0.92rem; }
+    .board li .rk { font-family:'Orbitron',sans-serif; color:#9080b0; min-width:30px; }
+    .board li.me { border-color:rgba(0,245,255,0.5); background:rgba(0,245,255,0.06); }
+    .board li .pname { font-weight:700; }
+    .board li .pclass { color:#9080b0; font-size:0.78rem; margin-left:4px; }
+    .board li .apo { margin-left:auto; font-family:'Orbitron',sans-serif; font-weight:900; color:#00f5ff; }
+    .board .empty { text-align:center; color:#6050a0; padding:24px; border:1px dashed rgba(255,45,120,0.2); border-radius:12px; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top:30px; }
+
+    /* Light mode */
+    body.light-mode { background:#f4eeff; color:#1a0030; }
+    body.light-mode .topnav { background:rgba(244,238,255,0.95); border-bottom-color:rgba(180,79,255,0.2); }
+    body.light-mode .nav-link { color:#5a4a8a; }
+    body.light-mode .breadcrumb, body.light-mode .breadcrumb a { color:#5a4a8a; }
+    body.light-mode .setup-row input, body.light-mode .setup-row select { background:rgba(255,255,255,0.9); color:#1a0030; }
+    body.light-mode .controls-card { background:rgba(255,255,255,0.85); }
+    body.light-mode .rocket-card { background:rgba(255,255,255,0.85); }
+    body.light-mode .ctrl-label { color:#5a4a8a; }
+    body.light-mode .chip { color:#5a4a8a; }
+    body.light-mode .stat { background:rgba(0,0,0,0.03); }
+    body.light-mode footer { color:rgba(90,74,130,0.55); background:#f4eeff; }
+    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; }
+    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); }
+  </style>
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link active">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
+    <a href="classes.html" class="nav-link">👥 Classes</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">🚀</div>
+  <div class="banner-title">ROCKET LAB</div>
+  <div class="banner-sub">Build &bull; Check Stability &bull; Launch</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="rockets.html">Rockets</a> / Rocket Lab</div>
+
+  <div class="setup-row">
+    <input type="text" id="player-name" placeholder="Your name" />
+    <select id="player-class" style="display:none"><option value="" disabled selected>Your class</option></select>
+    <select id="player-period">
+      <option value="" disabled selected>Period</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option>
+      <option>5</option><option>6</option><option>7</option><option>8</option>
+    </select>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-max" onclick="setMode('max')">🏆 Max Altitude</button>
+    <button class="mode-tab" id="tab-target" onclick="setMode('target')">🎯 Hit the Target</button>
+  </div>
+
+  <div class="target-banner" id="target-banner">🎯 Target altitude: <strong id="target-val">0</strong> m — build a rocket to get as close as you can!</div>
+
+  <div class="lab-grid">
+    <div class="rocket-card">
+      <svg id="rocket-svg" viewBox="0 0 120 300" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="stab">
+        <div class="stab-label">STABILITY</div>
+        <div class="stab-bar"><div class="stab-fill" id="stab-fill"></div></div>
+        <div class="stab-verdict" id="stab-verdict">—</div>
+        <div class="legend"><span><b style="background:#00a8ff"></b>Center of gravity</span><span><b style="background:#ff5050"></b>Center of pressure</span></div>
+      </div>
+    </div>
+
+    <div class="controls-card">
+      <div class="ctrl">
+        <div class="ctrl-label">Bottle size</div>
+        <div class="chip-row" id="bottle-chips">
+          <button class="chip" data-v="1" onclick="setBottle('1',this)">1 L</button>
+          <button class="chip active" data-v="2" onclick="setBottle('2',this)">2 L</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">Water fill <span class="val" id="water-val">33%</span></div>
+        <input type="range" id="water-range" min="0" max="90" value="33" oninput="setWater(this.value)" />
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">Air pressure <span class="val" id="psi-val">50 psi</span></div>
+        <input type="range" id="psi-range" min="20" max="90" value="50" oninput="setPsi(this.value)" />
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">Nose cone</div>
+        <div class="chip-row" id="nose-chips">
+          <button class="chip" data-v="pointed" onclick="setNose('pointed',this)">▲ Pointed</button>
+          <button class="chip active" data-v="rounded" onclick="setNose('rounded',this)">◗ Rounded</button>
+          <button class="chip" data-v="flat" onclick="setNose('flat',this)">▬ Flat</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">Fins</div>
+        <div class="chip-row" id="fincount-chips">
+          <button class="chip" data-v="0" onclick="setFinCount(0,this)">None</button>
+          <button class="chip" data-v="2" onclick="setFinCount(2,this)">2</button>
+          <button class="chip active" data-v="3" onclick="setFinCount(3,this)">3</button>
+          <button class="chip" data-v="4" onclick="setFinCount(4,this)">4</button>
+        </div>
+        <div class="chip-row" id="finsize-chips" style="margin-top:8px">
+          <button class="chip" data-v="small" onclick="setFinSize('small',this)">Small</button>
+          <button class="chip active" data-v="medium" onclick="setFinSize('medium',this)">Medium</button>
+          <button class="chip" data-v="large" onclick="setFinSize('large',this)">Large</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">Nose weight (ballast) <span class="val" id="ballast-val">0 g</span></div>
+        <input type="range" id="ballast-range" min="0" max="120" value="0" oninput="setBallast(this.value)" />
+      </div>
+
+      <div class="stats-row">
+        <div class="stat"><div class="s-label">Launch speed</div><div class="s-val" id="stat-speed">0</div></div>
+        <div class="stat"><div class="s-label">Total mass</div><div class="s-val" id="stat-mass">0</div></div>
+        <div class="stat"><div class="s-label">Drag</div><div class="s-val" id="stat-drag">0</div></div>
+        <div class="stat"><div class="s-label">Predicted</div><div class="s-val" id="stat-predict">0</div></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="launch-btn" id="launch-btn" onclick="launch()">🚀 LAUNCH</button>
+
+  <div class="sky" id="sky">
+    <div class="ground"></div>
+    <div class="apogee-line" id="apogee-line"><span class="apogee-tag" id="apogee-tag"></span></div>
+    <div class="fly-rocket" id="fly-rocket">🚀</div>
+    <div class="alt-readout" id="alt-readout">0 m</div>
+    <div class="countdown" id="countdown"></div>
+  </div>
+
+  <div class="result-box" id="result-box"></div>
+
+  <div class="board">
+    <div class="board-title">🏆 CLASS LEADERBOARD — HIGHEST FLIGHTS</div>
+    <div class="board-filter" id="board-filter"><button class="active" onclick="filterBoard('all',this)">All</button></div>
+    <ol id="board-list"><li class="empty">No launches yet — be the first!</li></ol>
+  </div>
+</div>
+
+<footer>Technology Class &copy; 2025</footer>
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';}apply(localStorage.getItem('theme')==='light');btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);localStorage.setItem('theme',light?'light':'dark');});})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="student-classes.js"></script>
+<script>
+  // ── Parts ──
+  const BOTTLES = { '1': { Vb: 1, base: 0.09 }, '2': { Vb: 2, base: 0.13 } };
+  const NOSES = {
+    pointed: { Cd: 0.12, mass: 0.030 },
+    rounded: { Cd: 0.20, mass: 0.025 },
+    flat:    { Cd: 0.35, mass: 0.000 }
+  };
+  const FINSIZE = { small: 0.10, medium: 0.20, large: 0.32 };
+
+  let state = { bottle:'2', waterPct:33, psi:50, nose:'rounded', finCount:3, finSize:'medium', ballast:0, mode:'max', target:0, lastApogee:null };
+
+  function compute() {
+    const b = BOTTLES[state.bottle];
+    const Vb = b.Vb, f = state.waterPct/100, nose = NOSES[state.nose];
+    const finArea = state.finCount * FINSIZE[state.finSize];
+    const ballastKg = state.ballast/1000;
+    const finMass = state.finCount * 0.01;
+    const mDry = b.base + nose.mass + ballastKg + finMass;
+    const mWater = Vb * f;
+    const Cd = Math.min(0.5, nose.Cd + state.finCount*0.02);
+    // Stability (positions from nose tip, 0..1)
+    const CP = 0.5 + Math.min(0.35, finArea * 0.6);
+    const noseWeight = nose.mass + ballastKg;
+    const CG = 0.52 - Math.min(0.30, (noseWeight/0.15) * 0.30);
+    const margin = CP - CG;
+    const stab = margin >= 0.15 ? 'stable' : margin >= 0.08 ? 'marginal' : 'unstable';
+    // Apogee
+    const Pa = state.psi * 6895;
+    const ve = Math.sqrt(2*Pa/1000);
+    const massRatio = (mDry + mWater) / mDry;
+    const wEff = Math.max(0.1, 1 - Math.pow((f-0.33)/0.45, 2));
+    const vLaunch = 0.7 * ve * Math.log(massRatio) * Math.sqrt(wEff);
+    let apogee = (vLaunch*vLaunch)/(2*9.81) * (1 - Cd);
+    if (stab === 'unstable') apogee *= 0.25;
+    else if (stab === 'marginal') apogee *= 0.75;
+    apogee = Math.max(0, Math.round(apogee));
+    return { mDry, mWater, Cd, CP, CG, margin, stab, vLaunch, apogee };
+  }
+
+  function drawRocket(c) {
+    const svg = document.getElementById('rocket-svg');
+    const cx = 60;
+    function el(t, a) { const e = document.createElementNS('http://www.w3.org/2000/svg', t); for (const k in a) e.setAttribute(k, a[k]); return e; }
+    svg.innerHTML = '';
+    // nose cone (top)
+    if (state.nose === 'pointed') svg.appendChild(el('polygon', { points:`${cx},30 ${cx-20},90 ${cx+20},90`, fill:'#ff2d78' }));
+    else if (state.nose === 'rounded') svg.appendChild(el('path', { d:`M ${cx-20},92 Q ${cx},40 ${cx+20},92 Z`, fill:'#ff2d78' }));
+    else svg.appendChild(el('rect', { x:cx-20, y:74, width:40, height:18, rx:3, fill:'#ff2d78' }));
+    // body (bottle)
+    svg.appendChild(el('rect', { x:cx-20, y:90, width:40, height:150, rx:8, fill:'rgba(0,245,255,0.12)', stroke:'#00f5ff', 'stroke-width':'2' }));
+    // water level (fills from bottom up)
+    const bodyTop = 90, bodyH = 150, waterH = bodyH * (state.waterPct/100);
+    svg.appendChild(el('rect', { x:cx-18, y:bodyTop + bodyH - waterH, width:36, height:waterH, rx:4, fill:'rgba(0,160,255,0.5)' }));
+    // nozzle (bottom)
+    svg.appendChild(el('polygon', { points:`${cx-10},240 ${cx+10},240 ${cx+6},252 ${cx-6},252`, fill:'#9080b0' }));
+    // fins
+    const finH = 30 + FINSIZE[state.finSize]*60;
+    if (state.finCount >= 2) {
+      svg.appendChild(el('polygon', { points:`${cx-20},210 ${cx-20-18},240 ${cx-20},240`, fill:'#b44fff' }));
+      svg.appendChild(el('polygon', { points:`${cx+20},210 ${cx+20+18},240 ${cx+20},240`, fill:'#b44fff' }));
+    }
+    if (state.finCount >= 3) svg.appendChild(el('polygon', { points:`${cx},214 ${cx-6},240 ${cx+6},240`, fill:'rgba(180,79,255,0.6)' }));
+    if (state.finCount >= 4) { svg.appendChild(el('polygon', { points:`${cx-20},200 ${cx-20-12},232 ${cx-20},232`, fill:'rgba(180,79,255,0.5)' })); svg.appendChild(el('polygon', { points:`${cx+20},200 ${cx+20+12},232 ${cx+20},232`, fill:'rgba(180,79,255,0.5)' })); }
+    // CG (blue) and CP (red) markers — map position 0..1 to y 30..252
+    const yAt = p => 30 + p * (252 - 30);
+    svg.appendChild(el('circle', { cx:cx-30, cy:yAt(c.CG), r:5, fill:'#00a8ff' }));
+    svg.appendChild(el('circle', { cx:cx+30, cy:yAt(c.CP), r:5, fill:'#ff5050' }));
+  }
+
+  function render() {
+    const c = compute();
+    document.getElementById('water-val').textContent = state.waterPct + '%';
+    document.getElementById('psi-val').textContent = state.psi + ' psi';
+    document.getElementById('ballast-val').textContent = state.ballast + ' g';
+    document.getElementById('stat-speed').textContent = Math.round(c.vLaunch) + ' m/s';
+    document.getElementById('stat-mass').textContent = Math.round((c.mDry + c.mWater)*1000) + ' g';
+    document.getElementById('stat-drag').textContent = c.Cd.toFixed(2);
+    document.getElementById('stat-predict').textContent = c.apogee + ' m';
+    // stability bar
+    const pct = Math.max(4, Math.min(100, (c.margin / 0.35) * 100));
+    const fill = document.getElementById('stab-fill');
+    fill.style.width = pct + '%';
+    fill.style.background = c.stab === 'stable' ? '#40e080' : c.stab === 'marginal' ? '#f0c040' : '#ff5050';
+    const v = document.getElementById('stab-verdict');
+    v.textContent = c.stab === 'stable' ? '✓ STABLE — flies straight' : c.stab === 'marginal' ? '⚠ MARGINAL — may wobble' : '✗ UNSTABLE — will tumble!';
+    v.className = 'stab-verdict ' + c.stab;
+    drawRocket(c);
+  }
+
+  // ── Controls ──
+  function activate(container, el) { document.querySelectorAll('#'+container+' .chip').forEach(b=>b.classList.remove('active')); el.classList.add('active'); }
+  function setBottle(v, el){ state.bottle=v; activate('bottle-chips', el); render(); }
+  function setWater(v){ state.waterPct=+v; render(); }
+  function setPsi(v){ state.psi=+v; render(); }
+  function setNose(v, el){ state.nose=v; activate('nose-chips', el); render(); }
+  function setFinCount(v, el){ state.finCount=+v; activate('fincount-chips', el); render(); }
+  function setFinSize(v, el){ state.finSize=v; activate('finsize-chips', el); render(); }
+  function setBallast(v){ state.ballast=+v; render(); }
+
+  function setMode(m) {
+    state.mode = m;
+    document.getElementById('tab-max').classList.toggle('active', m==='max');
+    document.getElementById('tab-target').classList.toggle('active', m==='target');
+    const tb = document.getElementById('target-banner');
+    if (m==='target') {
+      state.target = 20 + Math.floor(Math.random()*50); // 20–69 m
+      document.getElementById('target-val').textContent = state.target;
+      tb.classList.add('show');
+    } else {
+      tb.classList.remove('show');
+    }
+    document.querySelector('.board-title').textContent = m==='target'
+      ? '🎯 Target mode — see how close you can get!'
+      : '🏆 CLASS LEADERBOARD — HIGHEST FLIGHTS';
+    document.getElementById('board-filter').style.display = m==='target' ? 'none' : '';
+    document.getElementById('board-list').style.display = m==='target' ? 'none' : '';
+  }
+
+  // ── Launch animation ──
+  let launching = false;
+  function launch() {
+    if (launching) return;
+    const c = compute();
+    launching = true;
+    document.getElementById('launch-btn').disabled = true;
+    document.getElementById('result-box').innerHTML = '';
+    const sky = document.getElementById('sky');
+    const rocket = document.getElementById('fly-rocket');
+    const alt = document.getElementById('alt-readout');
+    const apoLine = document.getElementById('apogee-line');
+    const cd = document.getElementById('countdown');
+    rocket.textContent = '🚀'; rocket.style.transform = 'translateX(-50%) rotate(0deg)';
+    rocket.style.bottom = '30px';
+    alt.textContent = '0 m';
+    apoLine.style.opacity = '0';
+    const skyH = sky.clientHeight - 40;       // usable height above ground
+    const VISUAL_MAX = 100;                    // metres mapped to full sky
+    const tumbles = c.stab === 'unstable';
+
+    // countdown 3-2-1
+    let n = 3;
+    cd.textContent = n; cd.style.transition='none'; cd.style.opacity='1';
+    const cdTimer = setInterval(() => {
+      n--;
+      if (n > 0) { cd.textContent = n; }
+      else { cd.textContent = 'GO!'; clearInterval(cdTimer); setTimeout(()=>{ cd.style.transition='opacity 0.4s'; cd.style.opacity='0'; flight(c, skyH, VISUAL_MAX, tumbles); }, 400); }
+    }, 650);
+  }
+
+  function flight(c, skyH, VISUAL_MAX, tumbles) {
+    const rocket = document.getElementById('fly-rocket');
+    const alt = document.getElementById('alt-readout');
+    const apoLine = document.getElementById('apogee-line');
+    const apoTag = document.getElementById('apogee-tag');
+    const apogee = c.apogee;
+    const g = 9.81;
+    const v0 = Math.sqrt(2 * g * Math.max(apogee,0.5));
+    const tUp = v0 / g;
+    const start = performance.now();
+    let reachedApogee = false;
+    function frame(now) {
+      let t = (now - start) / 1000 * 1.0;   // real-ish seconds
+      let altM, ascending;
+      if (t <= tUp) { altM = v0*t - 0.5*g*t*t; ascending = true; }
+      else {
+        reachedApogee = true;
+        const td = t - tUp;
+        altM = tumbles ? Math.max(0, apogee - 0.5*g*td*td*0.6)   // tumble: faster fall
+                       : Math.max(0, apogee - (apogee/2.2)*td);  // parachute: gentle
+        ascending = false;
+      }
+      altM = Math.max(0, altM);
+      const px = Math.min(skyH, (altM / VISUAL_MAX) * skyH);
+      rocket.style.bottom = (30 + px) + 'px';
+      alt.textContent = Math.round(altM) + ' m';
+      if (reachedApogee) {
+        apoLine.style.bottom = (30 + Math.min(skyH, (apogee/VISUAL_MAX)*skyH)) + 'px';
+        apoLine.style.opacity = '1';
+        apoTag.textContent = apogee + ' m';
+        if (tumbles) { rocket.textContent='🚀'; rocket.style.transform = 'translateX(-50%) rotate(' + ((now-start)/2) + 'deg)'; }
+        else { rocket.textContent='🪂'; rocket.style.transform = 'translateX(-50%) rotate(0deg)'; }
+      } else {
+        rocket.style.transform = 'translateX(-50%) rotate(0deg)';
+      }
+      if (altM <= 0 && reachedApogee) { landed(c); return; }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function landed(c) {
+    launching = false;
+    document.getElementById('launch-btn').disabled = false;
+    state.lastApogee = c.apogee;
+    const rb = document.getElementById('result-box');
+    if (state.mode === 'target') {
+      const off = Math.abs(c.apogee - state.target);
+      const pct = state.target ? off/state.target : 1;
+      const rating = pct<=0.05 ? '🎯 BULLSEYE!' : pct<=0.15 ? '🔥 So close!' : pct<=0.30 ? '👍 Not bad' : 'Keep adjusting!';
+      rb.innerHTML = '<div class="result-apogee">' + c.apogee + ' m</div>' +
+        '<div class="result-sub ' + (pct<=0.15?'good':'') + '">Target was ' + state.target + ' m — off by ' + off + ' m. ' + rating + '</div>';
+    } else {
+      const unstable = c.stab === 'unstable';
+      rb.innerHTML = '<div class="result-apogee">' + c.apogee + ' m</div>' +
+        '<div class="result-sub ' + (unstable?'bad':'') + '">' + (unstable ? 'It tumbled! Add more/bigger fins for a straight flight.' : 'Nice flight! Submit it to the class leaderboard.') + '</div>' +
+        '<button class="submit-btn ' + (unstable?'':'show') + '" id="submit-btn" onclick="submitFlight()">🏆 Submit to Leaderboard</button>';
+      if (c.apogee >= 50) fireConfetti();
+    }
+  }
+
+  function fireConfetti() {
+    const colors = ['#00f5ff','#ff2d78','#b44fff','#f0c040','#40e080'];
+    for (let i=0;i<24;i++) setTimeout(()=>{
+      const d = document.createElement('div');
+      d.style.cssText = `position:fixed;top:-10px;left:${Math.random()*100}%;width:8px;height:8px;background:${colors[i%5]};z-index:9999;pointer-events:none;border-radius:2px;transition:transform 1.4s linear,opacity 1.4s`;
+      document.body.appendChild(d);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ d.style.transform=`translateY(${window.innerHeight+20}px) rotate(${Math.random()*720}deg)`; d.style.opacity='0'; }));
+      setTimeout(()=>d.remove(),1500);
+    }, i*40);
+  }
+
+  // stars in the sky
+  (function(){ const sky=document.getElementById('sky'); for(let i=0;i<40;i++){ const s=document.createElement('div'); s.className='star'; s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*80+'%'; s.style.opacity=(0.2+Math.random()*0.6); sky.appendChild(s);} })();
+
+  render();
+  setMode('max');
+</script>
+<script>
+  // ── Name auto-fill, class picker, Firestore leaderboard ──
+  const RB_TEACHER = 'ncapellini@hhh.k12.ny.us';
+  let allRockets = [], allClasses = [], currentClass = 'all', myUid = null;
+
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (!user) return;
+    myUid = user.uid;
+    const nm = document.getElementById('player-name');
+    if (nm && user.displayName) { nm.value = user.displayName; nm.readOnly = true; nm.style.opacity='0.85'; nm.title='From your school account'; }
+    subscribeRockets();
+    subscribeClasses();
+    try { if (typeof setupClassPicker === 'function') setupClassPicker('player-class','player-period'); } catch (e) { console.error(e); }
+  });
+
+  function rName() {
+    const typed = (document.getElementById('player-name').value||'').trim();
+    const u = firebase.auth().currentUser;
+    const g = (u && u.displayName) ? u.displayName.trim() : '';
+    if (typed.split(/\s+/).filter(Boolean).length >= 2) return typed;
+    return g || typed || 'Anonymous';
+  }
+  function rEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function submitFlight() {
+    if (state.lastApogee == null || typeof firebase === 'undefined') return;
+    const u = firebase.auth().currentUser; if (!u) return;
+    const grp = (typeof getGroupSelection === 'function') ? getGroupSelection('player-class','player-period') : { classId:'', className:'', period:'' };
+    const ref = firebase.firestore().collection('rocket_results').doc(u.uid);
+    ref.get().then(function(doc) {
+      const prev = doc.exists ? (doc.data().apogee || 0) : 0;
+      if (state.lastApogee <= prev) return; // keep best
+      return ref.set({
+        uid: u.uid, name: rName(), classId: grp.classId||'', className: grp.className||'',
+        period: grp.period||'', apogee: state.lastApogee, bottle: state.bottle,
+        waterPct: state.waterPct, psi: state.psi, userEmail: u.email,
+        savedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }).then(function(){
+      const sb = document.getElementById('submit-btn');
+      if (sb) { sb.textContent = '✓ Submitted — best: ' + state.lastApogee + ' m'; sb.classList.remove('show'); sb.classList.add('done','show'); }
+    }).catch(function(e){ console.error(e); });
+  }
+
+  function subscribeRockets() {
+    firebase.firestore().collection('rocket_results')
+      .onSnapshot(function(snap) {
+        allRockets = snap.docs.map(function(d){ var x=d.data(); x.id=d.id; return x; });
+        renderBoard();
+      }, function(e){ console.error(e); document.getElementById('board-list').innerHTML='<li class="empty">Could not load the leaderboard. (A Firestore rule for "rocket_results" may be needed.)</li>'; });
+  }
+
+  function subscribeClasses() {
+    firebase.firestore().collection('classes').where('teacherEmail','==',RB_TEACHER)
+      .onSnapshot(function(snap) {
+        allClasses = snap.docs.map(function(d){ return { id:d.id, name:(d.data().name||'Class') }; })
+          .sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
+        renderFilter();
+      }, function(e){ console.error(e); });
+  }
+
+  function renderFilter() {
+    const bar = document.getElementById('board-filter');
+    bar.innerHTML = '';
+    function add(key,label){ const b=document.createElement('button'); b.className=(currentClass===key?'active':''); b.textContent=label; b.onclick=function(){ filterBoard(key,b); }; bar.appendChild(b); }
+    add('all','All');
+    allClasses.forEach(function(c){ add(c.id, c.name); });
+    if (currentClass!=='all' && !allClasses.some(function(c){return c.id===currentClass;})) { currentClass='all'; renderFilter(); }
+  }
+
+  function filterBoard(key, btn) {
+    currentClass = key;
+    document.querySelectorAll('#board-filter button').forEach(b=>b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderBoard();
+  }
+
+  function renderBoard() {
+    const rows = (currentClass==='all' ? allRockets : allRockets.filter(r=>r.classId===currentClass))
+      .slice().sort(function(a,b){ return (b.apogee||0)-(a.apogee||0); }).slice(0,25);
+    const el = document.getElementById('board-list');
+    const medals = ['🥇','🥈','🥉'];
+    el.innerHTML = rows.length ? rows.map(function(r,i){
+      const cls = (myUid && r.uid===myUid) ? ' me' : '';
+      const classPart = r.className ? '<span class="pclass">· '+rEsc(r.className)+'</span>' : (r.period&&r.period!=='—'?'<span class="pclass">· Per '+rEsc(r.period)+'</span>':'');
+      return '<li class="'+cls+'"><span class="rk">'+(medals[i]||(i+1))+'</span><span class="pname">'+rEsc(r.name||'Anon')+'</span>'+classPart+'<span class="apo">'+(r.apogee||0)+' m</span></li>';
+    }).join('') : '<li class="empty">No launches yet — be the first!</li>';
+  }
+</script>
+</body>
+</html>
