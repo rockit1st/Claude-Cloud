@@ -257,6 +257,43 @@
     .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
     .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
     body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
+
+    /* ── Race Mode ── */
+    .race-panel { display:none; margin-bottom:20px; border-radius:14px; padding:16px 18px; background:rgba(255,45,120,0.07); border:1px solid rgba(255,45,120,0.35); }
+    .race-panel.show { display:block; }
+    .race-title { font-family:'Orbitron',sans-serif; font-size:0.85rem; color:#ff2d78; letter-spacing:2px; margin-bottom:12px; }
+    .race-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .race-row select { padding:9px 12px; background:rgba(20,0,10,0.9); border:1px solid rgba(255,45,120,0.3); border-radius:8px; color:#f0e6ff; font-family:'Exo 2',sans-serif; font-size:0.88rem; outline:none; }
+    .race-row select option { background:#1a0010; }
+    .race-btn { background:linear-gradient(135deg,#ff2d78,#a01040); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-weight:900; font-size:0.75rem; letter-spacing:1.5px; padding:11px 22px; border-radius:8px; cursor:pointer; transition:box-shadow 0.2s; }
+    .race-btn:hover { box-shadow:0 4px 18px rgba(255,45,120,0.5); }
+    .race-end-btn { background:transparent; border:1px solid rgba(255,45,120,0.5); color:#ff2d78; margin-left:auto; }
+    .race-live { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    .race-live-dot { width:10px; height:10px; border-radius:50%; background:#ff2d78; box-shadow:0 0 10px #ff2d78; animation:racepulse 1s infinite; }
+    @keyframes racepulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    .race-timer { font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.6rem; color:#ff2d78; min-width:40px; }
+    .race-timer.warn { color:#f0c040; } .race-timer.danger { color:#ff2d78; animation:racepulse 0.5s infinite; }
+    .race-join-text { font-family:'Orbitron',sans-serif; font-size:1rem; color:#ff2d78; letter-spacing:1px; }
+    .race-board { display:none; margin-top:22px; background:rgba(255,45,120,0.05); border:1px solid rgba(255,45,120,0.25); border-radius:14px; padding:16px 18px; }
+    .race-board.show { display:block; }
+    .race-board h3 { font-family:'Orbitron',sans-serif; font-size:0.8rem; color:#ff2d78; letter-spacing:2px; margin-bottom:12px; }
+    .race-board ol { list-style:none; display:flex; flex-direction:column; gap:6px; }
+    .race-board li { display:flex; align-items:center; gap:10px; padding:8px 12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,45,120,0.12); border-radius:8px; font-size:0.92rem; }
+    .race-board li .rk { font-family:'Orbitron',sans-serif; color:#9080b0; min-width:28px; }
+    .race-board li.me { border-color:rgba(0,245,255,0.5); background:rgba(0,245,255,0.06); }
+    .race-board li .sc { margin-left:auto; font-family:'Orbitron',sans-serif; font-weight:900; color:#ff2d78; }
+    .race-board li.p1 .rk { color:#f0c040; } .race-board li.p2 .rk { color:#c0c8d0; } .race-board li.p3 .rk { color:#c07840; }
+    .raceend-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:600; }
+    .raceend-overlay.open { display:block; }
+    .raceend-modal { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#060010; border:2px solid #ff2d78; border-radius:24px; padding:40px 36px; width:90%; max-width:440px; text-align:center; box-shadow:0 0 50px rgba(255,45,120,0.4); }
+    .raceend-title { font-family:'Orbitron',sans-serif; font-size:1.5rem; font-weight:900; color:#ff2d78; letter-spacing:3px; text-shadow:0 0 20px rgba(255,45,120,0.7); margin-bottom:20px; }
+    .raceend-list { list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+    .raceend-list li { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; background:rgba(255,255,255,0.04); }
+    .raceend-list li.me { background:rgba(0,245,255,0.08); border:1px solid rgba(0,245,255,0.4); }
+    .raceend-medal { font-size:1.4rem; min-width:30px; }
+    .raceend-name { font-weight:700; }
+    .raceend-score { margin-left:auto; font-family:'Orbitron',sans-serif; font-weight:900; color:#ff2d78; }
+    .raceend-btn { padding:13px 34px; border-radius:10px; background:linear-gradient(135deg,#ff2d78,#a01040); border:none; color:#fff; font-family:'Orbitron',sans-serif; font-weight:900; letter-spacing:2px; font-size:0.8rem; cursor:pointer; }
   </style>
 </head>
 <body style="visibility:hidden">
@@ -286,7 +323,7 @@
 <div class="content">
   <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="measuring.html">Measuring</a> / Ruler Reading Game</div>
 
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+  <div id="setup-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
     <input type="text" id="player-name" placeholder="Your name" style="flex:1;min-width:140px;max-width:200px;padding:9px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none" />
     <select id="player-class" style="display:none;padding:9px 14px;background:rgba(0,10,30,0.9);border:1px solid rgba(0,245,255,0.3);border-radius:8px;color:#f0e6ff;font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none">
       <option value="" disabled selected>Your class</option>
@@ -296,6 +333,35 @@
       <option>1</option><option>2</option><option>3</option><option>4</option>
       <option>5</option><option>6</option><option>7</option><option>8</option>
     </select>
+  </div>
+
+  <div class="race-panel" id="race-panel">
+    <div id="race-start" style="display:none">
+      <div class="race-title">🏁 START A CLASS RACE</div>
+      <div class="race-row">
+        <select id="race-class"><option value="">Class…</option></select>
+        <select id="race-duration"><option value="60">60 sec</option><option value="90" selected>90 sec</option><option value="120">2 min</option></select>
+        <select id="race-diff"><option value="4">¼ inch</option><option value="2">⅛ inch</option><option value="1">1/16 inch</option></select>
+        <select id="race-input"><option value="choice">Multiple Choice</option><option value="slider">Slider</option></select>
+        <button class="race-btn" onclick="startRace()">Start Race</button>
+      </div>
+      <div id="race-start-msg" style="color:#ff7070;font-size:0.82rem;margin-top:8px"></div>
+    </div>
+    <div id="race-join" style="display:none">
+      <div class="race-live">
+        <span class="race-live-dot"></span>
+        <span class="race-join-text" id="race-join-text">A race is live!</span>
+        <button class="race-btn" onclick="joinCurrentRace()">⚡ Join Race</button>
+      </div>
+    </div>
+    <div id="race-running" style="display:none">
+      <div class="race-live">
+        <span class="race-live-dot"></span>
+        <span class="race-timer" id="race-timer">0</span>
+        <span style="color:#9080b0;font-size:0.85rem" id="race-running-label"></span>
+        <button class="race-btn race-end-btn" id="race-end-btn" style="display:none" onclick="endRaceByTeacher()">End Race</button>
+      </div>
+    </div>
   </div>
 
   <div class="mode-tabs">
@@ -353,6 +419,11 @@
   </div>
 
   <button class="finish-btn" id="finish-btn" onclick="finishRun()">🏁 I'M DONE — POST MY SCORE</button>
+
+  <div class="race-board" id="race-board">
+    <h3>⚡ LIVE LEADERBOARD</h3>
+    <ol id="race-board-list"></ol>
+  </div>
 </div>
 
 <div class="congrats-overlay" id="congrats-modal">
@@ -392,6 +463,14 @@
     <div class="finish-sub">You finished with <strong><span id="finish-score">0</span> points</strong>!</div>
     <label class="scoreboard-toggle"><input type="checkbox" id="finish-scoreboard-cb" onchange="toggleScoreboard(this.checked)"> Add my score to the class scoreboard</label>
     <button class="finish-modal-btn" onclick="closeModal('finish-modal');resetGame()">PLAY AGAIN</button>
+  </div>
+</div>
+
+<div class="raceend-overlay" id="raceend-modal">
+  <div class="raceend-modal">
+    <div class="raceend-title" id="raceend-title">🏁 RACE OVER!</div>
+    <ol class="raceend-list" id="raceend-list"></ol>
+    <button class="raceend-btn" onclick="location.reload()">DONE</button>
   </div>
 </div>
 
@@ -657,6 +736,7 @@
   }
 
   function scoreAnswer(correct) {
+    if (window.raceIsActive && window.raceIsActive()) { window.raceOnAnswer(correct); return; }
     total++;
     const fb = document.getElementById('feedback');
     if (correct) {
@@ -921,6 +1001,225 @@
     window.saveScore('ruler-game', { score, streak: bestStreak, mode, difficulty, inputMode, result: 'logged' }, true);
     if (btn) { btn.textContent = '✓ Streak logged! 🔥 ' + bestStreak; btn.classList.add('logged'); }
   }
+
+  // ── Race Mode ──────────────────────────────────────────────
+  var RACE_TEACHER = 'ncapellini@hhh.k12.ny.us';
+  var race = { on:false, isTeacher:false, id:null, ref:null, endsAt:0, score:0,
+               timer:null, unsubPlayers:null, unsubRace:null, lastPlayers:[], pending:null };
+
+  function rEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function rUser(){ return firebase.auth().currentUser; }
+
+  window.raceIsActive = function(){ return race.on; };
+
+  window.raceOnAnswer = function(correct){
+    if (race.isTeacher) return;            // teacher watches, doesn't score
+    var fb = document.getElementById('feedback');
+    if (correct){
+      race.score++;
+      document.getElementById('score-val').textContent = race.score;
+      fb.textContent = 'Correct! +1'; fb.className = 'feedback correct';
+      if (race.ref && rUser()){
+        race.ref.collection('players').doc(rUser().uid).set({
+          uid: rUser().uid, name: (rUser().displayName || rUser().email),
+          score: race.score, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(function(e){ console.error(e); });
+      }
+    } else {
+      fb.textContent = 'Nope — it was ' + toLabel(correct16); fb.className = 'feedback wrong';
+    }
+    setTimeout(function(){ if (race.on) nextQuestion(); }, 600);
+  };
+
+  firebase.auth().onAuthStateChanged(function(user){
+    if (!user) return;
+    race.isTeacher = (user.email === RACE_TEACHER);
+    if (race.isTeacher) initRaceTeacher();
+    else initRaceStudent(user);
+  });
+
+  function initRaceTeacher(){
+    var sel = document.getElementById('race-class');
+    firebase.firestore().collection('classes').where('teacherEmail','==',RACE_TEACHER).get()
+      .then(function(snap){
+        if (!sel) return;
+        sel.innerHTML = '<option value="">Class…</option>';
+        snap.docs.map(function(d){ return { id:d.id, name:(d.data().name||'Class') }; })
+          .sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); })
+          .forEach(function(c){ var o=document.createElement('option'); o.value=c.id; o.textContent=c.name; sel.appendChild(o); });
+      }).catch(function(e){ console.error(e); });
+    document.getElementById('race-panel').classList.add('show');
+    document.getElementById('race-start').style.display = 'block';
+  }
+
+  function initRaceStudent(user){
+    firebase.firestore().collection('enrollments').where('uid','==',user.uid).get()
+      .then(function(snap){
+        var ids = snap.docs.map(function(d){ return d.data().classId; }).filter(Boolean);
+        if (!ids.length) return;
+        firebase.firestore().collection('races').where('classId','in', ids.slice(0,10))
+          .onSnapshot(function(rs){ handleStudentRaces(rs); }, function(e){ console.error(e); });
+      }).catch(function(e){ console.error(e); });
+  }
+
+  function handleStudentRaces(rs){
+    if (race.on) return;                   // ignore while playing
+    var now = Date.now(), live = null;
+    rs.docs.forEach(function(d){
+      var r = d.data();
+      var endsAt = (r.startAtMs||0) + (r.durationSec||0)*1000;
+      if (r.status === 'running' && now < endsAt) live = { id:d.id, data:r, endsAt:endsAt };
+    });
+    var panel = document.getElementById('race-panel');
+    if (live){
+      race.pending = live;
+      document.getElementById('race-join-text').textContent = (live.data.className||'Your class') + ' race is LIVE!';
+      document.getElementById('race-join').style.display = 'block';
+      panel.classList.add('show');
+    } else {
+      race.pending = null;
+      document.getElementById('race-join').style.display = 'none';
+      panel.classList.remove('show');
+    }
+  }
+
+  window.joinCurrentRace = function(){
+    if (!race.pending || race.on) return;
+    var live = race.pending, user = rUser();
+    race.on = true; race.id = live.id; race.ref = firebase.firestore().collection('races').doc(live.id);
+    race.endsAt = live.endsAt; race.score = 0;
+    difficulty = Number(live.data.difficulty) || 4;
+    inputMode  = live.data.inputMode === 'slider' ? 'slider' : 'choice';
+    mode = 'race';
+    race.ref.collection('players').doc(user.uid).set({
+      uid:user.uid, name:(user.displayName||user.email), score:0,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(e){ console.error(e); });
+    race.unsubPlayers = race.ref.collection('players').onSnapshot(function(ps){
+      race.lastPlayers = ps.docs.map(function(d){ return d.data(); });
+      renderLeaderboard(race.lastPlayers, user.uid);
+    }, function(e){ console.error(e); });
+    race.unsubRace = race.ref.onSnapshot(function(doc){
+      if (!doc.exists || doc.data().status === 'ended') endRaceLocal();
+    });
+    setRaceUI(false);
+    document.getElementById('score-val').textContent = '0';
+    document.getElementById('race-join').style.display = 'none';
+    document.getElementById('race-running').style.display = 'block';
+    document.getElementById('race-running-label').textContent = 'Answer fast!';
+    startRaceTimer();
+    nextQuestion();
+  };
+
+  window.startRace = function(){
+    var classSel = document.getElementById('race-class');
+    var classId = classSel.value;
+    var className = classId ? classSel.options[classSel.selectedIndex].textContent : '';
+    var msg = document.getElementById('race-start-msg');
+    if (!classId){ msg.textContent = 'Pick a class first.'; return; }
+    var dur = Number(document.getElementById('race-duration').value) || 90;
+    var diff = Number(document.getElementById('race-diff').value) || 4;
+    var inp = document.getElementById('race-input').value === 'slider' ? 'slider' : 'choice';
+    msg.textContent = 'Starting…';
+    var col = firebase.firestore().collection('races');
+    col.where('classId','==',classId).get().then(function(snap){
+      var batch = firebase.firestore().batch();
+      snap.docs.forEach(function(d){ if (d.data().status === 'running') batch.update(d.ref, { status:'ended' }); });
+      return batch.commit();
+    }).catch(function(){}).then(function(){
+      return col.add({
+        classId:classId, className:className, durationSec:dur, difficulty:diff, inputMode:inp,
+        status:'running', startAtMs:Date.now(), createdBy:rUser().email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }).then(function(ref){
+      msg.textContent = '';
+      enterTeacherWatch(ref, className, dur);
+    }).catch(function(e){ msg.textContent = 'Error: ' + e.message; });
+  };
+
+  function enterTeacherWatch(ref, className, dur){
+    race.on = true; race.isTeacher = true; race.id = ref.id; race.ref = ref;
+    race.endsAt = Date.now() + dur*1000;
+    document.getElementById('race-start').style.display = 'none';
+    document.getElementById('race-running').style.display = 'block';
+    document.getElementById('race-running-label').textContent = className + ' • watching live';
+    document.getElementById('race-end-btn').style.display = '';
+    document.getElementById('race-panel').classList.add('show');
+    setRaceUI(true);
+    race.unsubPlayers = ref.collection('players').onSnapshot(function(ps){
+      race.lastPlayers = ps.docs.map(function(d){ return d.data(); });
+      renderLeaderboard(race.lastPlayers, null);
+    }, function(e){ console.error(e); });
+    startRaceTimer();
+  }
+
+  window.endRaceByTeacher = function(){
+    if (race.ref) race.ref.update({ status:'ended' }).catch(function(e){ console.error(e); });
+    endRaceLocal();
+  };
+
+  function setRaceUI(teacher){
+    ['setup-row','pill-strikes','pill-streak','pill-timer','next-btn','hint-btn','log-streak-btn','finish-btn']
+      .forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; });
+    var mt=document.querySelector('.mode-tabs'); if(mt) mt.style.display='none';
+    document.querySelectorAll('.diff-bar').forEach(function(el){ el.style.display='none'; });
+    var hb=document.querySelector('.hint-box'); if(hb) hb.style.display='none';
+    if (teacher){
+      var gc=document.querySelector('.game-card'); if(gc) gc.style.display='none';
+      var sb=document.querySelector('.score-bar'); if(sb) sb.style.display='none';
+    }
+    document.getElementById('race-board').classList.add('show');
+  }
+
+  function startRaceTimer(){
+    if (race.timer) clearInterval(race.timer);
+    updateRaceTimer();
+    race.timer = setInterval(function(){
+      updateRaceTimer();
+      if (Date.now() >= race.endsAt){
+        clearInterval(race.timer); race.timer = null;
+        if (race.isTeacher && race.ref) race.ref.update({ status:'ended' }).catch(function(){});
+        endRaceLocal();
+      }
+    }, 250);
+  }
+
+  function updateRaceTimer(){
+    var rem = Math.max(0, Math.ceil((race.endsAt - Date.now())/1000));
+    var el = document.getElementById('race-timer');
+    if (el){ el.textContent = rem; el.className = 'race-timer' + (rem<=5?' danger':rem<=15?' warn':''); }
+  }
+
+  function endRaceLocal(){
+    if (!race.on) return;
+    race.on = false;
+    if (race.timer){ clearInterval(race.timer); race.timer = null; }
+    document.querySelectorAll('.choice-btn').forEach(function(b){ b.disabled = true; });
+    var cb = document.getElementById('check-btn'); if (cb) cb.disabled = true;
+    showRaceEnd(race.lastPlayers);
+    if (race.unsubPlayers){ race.unsubPlayers(); race.unsubPlayers = null; }
+    if (race.unsubRace){ race.unsubRace(); race.unsubRace = null; }
+  }
+
+  function renderLeaderboard(players, myUid){
+    var sorted = (players||[]).slice().sort(function(a,b){ return (b.score||0)-(a.score||0); }).slice(0,10);
+    var el = document.getElementById('race-board-list'); if (!el) return;
+    el.innerHTML = sorted.length ? sorted.map(function(p,i){
+      var cls = (i<3?('p'+(i+1)):'') + (myUid && p.uid===myUid ? ' me' : '');
+      return '<li class="'+cls+'"><span class="rk">'+(i+1)+'</span><span>'+rEsc(p.name||'Anon')+'</span><span class="sc">'+(p.score||0)+'</span></li>';
+    }).join('') : '<li>No one has scored yet…</li>';
+  }
+
+  function showRaceEnd(players){
+    var sorted = (players||[]).slice().sort(function(a,b){ return (b.score||0)-(a.score||0); }).slice(0,8);
+    var myUid = (rUser()||{}).uid, medals=['🥇','🥈','🥉'];
+    document.getElementById('raceend-list').innerHTML = sorted.length ? sorted.map(function(p,i){
+      return '<li class="'+(p.uid===myUid?'me':'')+'"><span class="raceend-medal">'+(medals[i]||('#'+(i+1)))+'</span><span class="raceend-name">'+rEsc(p.name||'Anon')+'</span><span class="raceend-score">'+(p.score||0)+'</span></li>';
+    }).join('') : '<li>No one joined the race.</li>';
+    document.getElementById('raceend-modal').classList.add('open');
+  }
+
 </script>
 </body>
 </html>
