@@ -208,6 +208,8 @@
     .slider-controls { text-align: center; margin: 28px 0 20px; }
     .slider-hint { font-family: 'Exo 2', sans-serif; font-size: 0.9rem; color: #9080b0; margin-bottom: 18px; }
     body.light-mode .slider-hint { color: #5a4a8a; }
+    .ruler-num { fill: #ffffff; }
+    body.light-mode .ruler-num { fill: #1a0030; }
     .check-btn { padding: 15px 46px; border-radius: 10px; background: linear-gradient(135deg,#00c8d4,#008090); border: none; color: #0a000f; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,245,255,0.3); transition: box-shadow 0.2s; }
     .check-btn:hover:not(:disabled) { box-shadow: 0 6px 30px rgba(0,245,255,0.55); }
     .check-btn:disabled { opacity: 0.5; cursor: default; }
@@ -550,7 +552,7 @@
       if (n % 16 === 0) {
         svg.appendChild(svgEl('text', {
           x: tx, y: RY + RH + 24,
-          'text-anchor': 'middle', fill: '#ffffff',
+          'text-anchor': 'middle', class: 'ruler-num',
           'font-size': '19', 'font-family': 'Exo 2, sans-serif', 'font-weight': '700'
         }, String(n / 16)));
       }
