@@ -76,8 +76,20 @@
     /* Game card */
     .game-card {
       background: rgba(0,245,255,0.03); border: 1px solid rgba(0,245,255,0.2);
-      border-radius: 20px; padding: 36px 28px;
+      border-radius: 20px; padding: 36px 28px; position: relative;
     }
+    /* Prominent "post your score" pop-up over the ruler */
+    .post-popup { display:none; position:absolute; inset:0; z-index:30; background:rgba(6,0,16,0.94); border-radius:20px; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px; }
+    .post-popup.show { display:flex; }
+    .pp-answer { color:#c0d8e0; font-size:1rem; margin-bottom:10px; }
+    .pp-streak { font-family:'Orbitron',sans-serif; font-size:1.5rem; font-weight:900; color:#f0c040; text-shadow:0 0 20px rgba(240,192,64,0.6); margin-bottom:8px; }
+    .pp-sub { color:#9fe0ff; font-size:1.05rem; margin-bottom:24px; }
+    .pp-post { background:linear-gradient(135deg,#00c8d4,#008090); border:none; color:#0a000f; font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.05rem; letter-spacing:1px; padding:18px 44px; border-radius:12px; cursor:pointer; box-shadow:0 4px 26px rgba(0,245,255,0.45); }
+    .pp-post:hover { box-shadow:0 6px 34px rgba(0,245,255,0.7); }
+    .pp-keep { margin-top:18px; background:none; border:1px solid rgba(255,255,255,0.3); color:#c0d8e0; font-family:'Exo 2',sans-serif; font-size:0.95rem; padding:11px 26px; border-radius:10px; cursor:pointer; }
+    .pp-keep:hover { border-color:#fff; color:#fff; }
+    body.light-mode .post-popup { background:rgba(248,244,255,0.96); }
+    body.light-mode .pp-answer, body.light-mode .pp-sub { color:#1a0030; }
 
     .question-text {
       text-align: center; font-size: 1.2rem; color: #c0d8e0;
@@ -221,8 +233,8 @@
     .log-streak-btn.logged { border-color: rgba(64,224,128,0.6); color: #40e080; cursor: default; box-shadow: none; }
 
     /* Finish / cash-out (Classic) */
-    .finish-btn { display: none; margin: 22px auto 0; padding: 13px 34px; border-radius: 10px; background: transparent; border: 2px solid rgba(240,192,64,0.5); color: #f0c040; font-family: 'Orbitron', sans-serif; font-size: 0.78rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
-    .finish-btn:hover { background: rgba(240,192,64,0.12); border-color: #f0c040; box-shadow: 0 4px 22px rgba(240,192,64,0.35); }
+    .finish-btn { display: none; margin: 22px auto 0; padding: 18px 48px; border-radius: 12px; background: linear-gradient(135deg,#f0c040,#c89010); border: none; color: #0a000f; font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(240,192,64,0.35); }
+    .finish-btn:hover { box-shadow: 0 6px 28px rgba(240,192,64,0.6); transform: translateY(-2px); }
     .finish-btn.show { display: block; }
     .finish-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 500; }
     .finish-overlay.open { display: block; }
@@ -415,6 +427,14 @@
     <button class="hint-btn" id="hint-btn" onclick="showHint()">Show Answer</button>
     <button class="log-streak-btn" id="log-streak-btn" onclick="logStreak()">📊 Log my streak?</button>
 
+    <div class="post-popup" id="post-popup">
+      <div class="pp-answer" id="pp-answer"></div>
+      <div class="pp-streak" id="pp-streak"></div>
+      <div class="pp-sub" id="pp-sub">Add your score to the class scoreboard?</div>
+      <button class="pp-post" id="pp-post" onclick="postFromPopup()">📊 POST MY SCORE</button>
+      <button class="pp-keep" onclick="closePostPopup()">Keep playing →</button>
+    </div>
+
     <div class="hint-box">
       <strong>How to read a ruler:</strong> Find the number to the left of the arrow, then count the small tick marks to the right. Each small tick = 1/16". Two ticks = 1/8", four ticks = 1/4", eight ticks = 1/2".
     </div>
@@ -485,6 +505,7 @@
   let timerInterval = null, timeLeft = 60;
   let sliderPos = 0, sliderLocked = false, dragging = false;
   let bestStreak = 0;
+  let postPopupShown = false;
   const MAX_STRIKES = 4, TIMED_SECS = 60;
   const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -619,6 +640,7 @@
     stopTimer();
     score = total = streak = strikes = 0;
     bestStreak = 0;
+    postPopupShown = false;
     window.lastSavedDocRef = null;
     window.lastSavePromise = null;
     timeLeft = TIMED_SECS;
@@ -705,6 +727,7 @@
     document.getElementById('feedback').className = 'feedback';
     document.getElementById('next-btn').classList.remove('visible');
     document.getElementById('log-streak-btn').classList.remove('show');
+    document.getElementById('post-popup').classList.remove('show');
 
     if (inputMode === 'slider') {
       document.getElementById('choices').style.display = 'none';
@@ -767,14 +790,40 @@
           else if (score === 100) { fb.textContent = '🔥 KEEP COOKING! 100 points!'; fireLasers(); }
           else if (score % 25 === 0) { fireLasers(); }
         } else if (bestStreak >= 1) {
-          // Missed one, but the run continues — offer to bank the best streak.
-          const lb = document.getElementById('log-streak-btn');
-          lb.textContent = '📊 Log my streak?';
-          lb.classList.remove('logged');
-          lb.classList.add('show');
+          // Missed one, but the run continues — prominently offer to post the score.
+          if (!postPopupShown) {
+            postPopupShown = true;
+            showPostPopup();
+          } else {
+            const lb = document.getElementById('log-streak-btn');
+            lb.textContent = '📊 Log my streak?';
+            lb.classList.remove('logged');
+            lb.classList.add('show');
+          }
         }
       }
     }
+  }
+
+  function showPostPopup() {
+    document.getElementById('pp-answer').textContent = 'The answer was ' + toLabel(correct16) + '.';
+    document.getElementById('pp-streak').textContent = '🔥 Best streak: ' + bestStreak + '  •  Score: ' + score;
+    document.getElementById('pp-sub').textContent = 'Add your score to the class scoreboard?';
+    const pb = document.getElementById('pp-post');
+    pb.style.display = ''; pb.disabled = false;
+    document.getElementById('post-popup').classList.add('show');
+  }
+
+  function postFromPopup() {
+    if (typeof logStreak === 'function') logStreak();
+    document.getElementById('pp-streak').textContent = '✓ Posted to the scoreboard!';
+    document.getElementById('pp-sub').textContent = 'Nice — keep going for an even higher score.';
+    document.getElementById('pp-post').style.display = 'none';
+  }
+
+  function closePostPopup() {
+    document.getElementById('post-popup').classList.remove('show');
+    nextQuestion();
   }
 
   function checkAnswer(chosen, btn) {
