@@ -80,25 +80,38 @@
     .launch-btn:active { transform:scale(0.98); }
     .launch-btn:disabled { opacity:0.5; cursor:default; }
 
-    /* Launch sky */
-    .sky { position:relative; height:380px; margin:26px 0 0; border-radius:16px; overflow:hidden; background:linear-gradient(180deg, #0a0030 0%, #1a0040 40%, #2a0a30 75%, #1a0010 100%); border:1px solid rgba(255,45,120,0.2); }
-    .sky .ground { position:absolute; left:0; right:0; bottom:0; height:30px; background:linear-gradient(180deg, rgba(255,45,120,0.15), rgba(255,45,120,0.05)); border-top:2px solid rgba(255,45,120,0.5); }
-    .sky .star { position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:0.5; }
+    /* Launch sky (follow-camera world) */
+    .sky { position:relative; height:440px; margin:26px 0 0; border-radius:16px; overflow:hidden; background:linear-gradient(180deg, #2a3a7a 0%, #3a2a74 32%, #46205c 60%, #2a0a30 85%, #1a0010 100%); border:1px solid rgba(255,45,120,0.2); }
     .sky.shake { animation:skyShake 0.5s ease-out; }
     @keyframes skyShake { 0%,100%{transform:translate(0,0);} 15%{transform:translate(-4px,1px);} 30%{transform:translate(4px,-1px);} 45%{transform:translate(-3px,0);} 60%{transform:translate(3px,1px);} 80%{transform:translate(-2px,0);} }
-    .launch-pad { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); width:46px; height:8px; border-radius:3px; background:linear-gradient(90deg,transparent,#6a5a8a,transparent); }
-    .fx-layer { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
-    .rocket-stack { position:absolute; left:50%; bottom:30px; transform:translateX(-50%); will-change:bottom,transform; }
-    .fly-rocket { font-size:2.3rem; line-height:1; transform:rotate(-45deg); transition:none; filter:drop-shadow(0 0 7px rgba(255,140,50,0.35)); }
-    .flame { position:absolute; left:50%; top:88%; width:18px; height:40px; transform:translateX(-50%) scaleY(0); transform-origin:50% 0%; border-radius:50% 50% 48% 48% / 30% 30% 70% 70%; background:radial-gradient(ellipse at 50% 0%, #fff 0%, #ffe07a 22%, #ff9a1a 50%, #ff3d5a 78%, rgba(255,45,120,0) 100%); filter:blur(1px); opacity:0; }
-    .flame.on { opacity:1; animation:flicker 0.09s infinite alternate; }
-    @keyframes flicker { from{transform:translateX(-50%) scaleY(0.82) scaleX(0.9);} to{transform:translateX(-50%) scaleY(1.18) scaleX(1.08);} }
+    /* space layer fades in as the rocket climbs high */
+    .space-layer { position:absolute; inset:0; background:linear-gradient(180deg,#000008 0%, #04001a 55%, #0a0030 100%); opacity:0; pointer-events:none; }
+    .sky .star { position:absolute; background:#fff; border-radius:50%; }
+    /* scrolling world: ground, trees, clouds, altitude markers, smoke trail */
+    .world { position:absolute; left:0; right:0; bottom:0; height:1500px; will-change:transform; }
+    .world .ground { position:absolute; left:0; right:0; bottom:0; height:36px; background:linear-gradient(180deg,#2f7d3a,#163f1e); border-top:3px solid #4bb55e; }
+    .world .ground::before { content:''; position:absolute; left:0; right:0; top:-6px; height:7px; background:repeating-linear-gradient(90deg,#4bb55e 0 5px, transparent 5px 12px); }
+    .launch-pad { position:absolute; left:50%; bottom:32px; transform:translateX(-50%); width:54px; height:9px; border-radius:3px; background:linear-gradient(90deg,transparent,#8a7aa0 20%,#b0a0c8 50%,#8a7aa0 80%,transparent); }
+    .pad-leg { position:absolute; bottom:22px; width:4px; height:14px; background:#8a7aa0; }
+    .tree { position:absolute; bottom:30px; line-height:1; filter:drop-shadow(0 2px 2px rgba(0,0,0,0.4)); }
+    .cloud { position:absolute; width:72px; height:26px; border-radius:20px; background:radial-gradient(circle at 32% 45%, rgba(255,255,255,0.85), rgba(255,255,255,0.4) 55%, rgba(255,255,255,0)); filter:blur(2px); }
+    .alt-mark { position:absolute; left:0; right:0; border-top:1px dashed rgba(255,255,255,0.16); }
+    .alt-mark span { position:absolute; left:10px; top:-10px; font-size:0.6rem; font-family:'Orbitron',sans-serif; color:rgba(255,255,255,0.38); letter-spacing:1px; }
+    .apogee-mark { position:absolute; left:0; right:0; border-top:2px dashed rgba(240,192,64,0.85); opacity:0; }
+    .apogee-mark span { position:absolute; right:10px; top:-15px; color:#f0c040; font-size:0.72rem; font-family:'Orbitron',sans-serif; text-shadow:0 0 8px rgba(240,192,64,0.5); }
+    .fx-screen { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
     .particle { position:absolute; border-radius:50%; pointer-events:none; will-change:transform,opacity; }
     .puff { position:absolute; border-radius:50%; pointer-events:none; background:radial-gradient(circle at 40% 35%, rgba(240,240,255,0.9), rgba(200,200,230,0.15) 65%, rgba(200,200,230,0)); will-change:transform,opacity; }
-    .alt-readout { position:absolute; top:12px; right:16px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.6rem; color:#00f5ff; text-shadow:0 0 14px rgba(0,245,255,0.6); }
-    .apogee-line { position:absolute; left:0; right:0; height:0; border-top:2px dashed rgba(240,192,64,0.7); opacity:0; transition:opacity 0.3s; }
-    .apogee-tag { position:absolute; right:10px; transform:translateY(-100%); color:#f0c040; font-size:0.75rem; font-family:'Orbitron',sans-serif; }
-    .countdown { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:5rem; font-weight:900; color:#ff2d78; text-shadow:0 0 30px rgba(255,45,120,0.8); opacity:0; pointer-events:none; }
+    .rocket-stack { position:absolute; left:50%; bottom:32px; transform:translateX(-50%); will-change:bottom,transform; z-index:5; }
+    .fly-rocket { width:30px; margin:0 auto; transition:none; filter:drop-shadow(0 0 7px rgba(255,140,50,0.4)); }
+    .fly-rocket svg { width:100%; height:auto; display:block; }
+    .flame { position:absolute; left:50%; top:98%; width:15px; height:42px; transform:translateX(-50%) scaleY(0); transform-origin:50% 0%; border-radius:50% 50% 48% 48% / 28% 28% 72% 72%; background:radial-gradient(ellipse at 50% 0%, #fff 0%, #ffe07a 20%, #ff9a1a 48%, #ff3d5a 76%, rgba(255,45,120,0) 100%); filter:blur(1px); opacity:0; }
+    .flame.on { opacity:1; animation:flicker 0.08s infinite alternate; }
+    @keyframes flicker { from{transform:translateX(-50%) scaleY(0.82) scaleX(0.88);} to{transform:translateX(-50%) scaleY(1.2) scaleX(1.1);} }
+    .chute { position:absolute; left:50%; bottom:92%; width:52px; transform:translateX(-50%); opacity:0; transition:opacity 0.25s; }
+    .chute svg { width:100%; height:auto; display:block; }
+    .alt-readout { position:absolute; top:12px; right:16px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.6rem; color:#00f5ff; text-shadow:0 0 14px rgba(0,245,255,0.6); z-index:6; }
+    .countdown { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:5rem; font-weight:900; color:#ff2d78; text-shadow:0 0 30px rgba(255,45,120,0.8); opacity:0; pointer-events:none; z-index:7; }
     .countdown.pop { animation:cdPop 0.6s ease-out; }
     @keyframes cdPop { 0%{opacity:0;transform:scale(2.2);} 25%{opacity:1;transform:scale(1);} 75%{opacity:1;transform:scale(1);} 100%{opacity:0;transform:scale(0.7);} }
 
@@ -254,13 +267,16 @@
   <button class="launch-btn" id="launch-btn" onclick="launch()">🚀 LAUNCH</button>
 
   <div class="sky" id="sky">
-    <div class="ground"></div>
-    <div class="launch-pad"></div>
-    <div class="fx-layer" id="fx-layer"></div>
-    <div class="apogee-line" id="apogee-line"><span class="apogee-tag" id="apogee-tag"></span></div>
+    <div class="space-layer" id="space-layer"></div>
+    <div class="world" id="world">
+      <div class="ground"></div>
+      <div class="launch-pad"></div>
+    </div>
+    <div class="fx-screen" id="fx-screen"></div>
     <div class="rocket-stack" id="rocket-stack">
+      <div class="chute" id="chute"></div>
       <div class="flame" id="flame"></div>
-      <div class="fly-rocket" id="fly-rocket">🚀</div>
+      <div class="fly-rocket" id="fly-rocket"></div>
     </div>
     <div class="alt-readout" id="alt-readout">0 m</div>
     <div class="countdown" id="countdown"></div>
@@ -328,58 +344,50 @@
     return { mDry, mWater, Cd, CP, CG, margin, stab, vLaunch, apogee };
   }
 
-  function drawRocket(c) {
-    const svg = document.getElementById('rocket-svg');
-    const cx = 60;
-    function el(t, a) { const e = document.createElementNS('http://www.w3.org/2000/svg', t); for (const k in a) e.setAttribute(k, a[k]); return e; }
-    svg.innerHTML = '';
+  function svgEl(t, a) { const e = document.createElementNS('http://www.w3.org/2000/svg', t); for (const k in a) e.setAttribute(k, a[k]); return e; }
 
-    // ── Real water-bottle rocket: inverted 2L bottle ──
-    // nose cone (top) → narrow neck → transition cone → wide body (propellant) → fins → nozzle/guidance tube (bottom)
+  // Builds the rocket shape (nose→neck→transition→body→fins→nozzle) into any SVG; shared by the
+  // builder preview and the flying rocket so the launch shows the rocket the student actually built.
+  function buildRocketShapes(svg) {
+    const cx = 60, el = svgEl;
     const neckHalf = 9, bodyHalf = 22;
-    const noseBaseY = 36;   // where nose cone meets the neck
-    const neckBot = 74;     // bottom of narrow neck / top of transition cone
-    const bodyTop = 104;    // top of wide body
-    const bodyBot = 250;    // bottom of wide body (above nozzle)
-
-    // nose cone (shape varies with choice) sits on the narrow neck
+    const noseBaseY = 36, neckBot = 74, bodyTop = 104, bodyBot = 250;
     if (state.nose === 'pointed') svg.appendChild(el('polygon', { points:`${cx},14 ${cx-neckHalf},${noseBaseY} ${cx+neckHalf},${noseBaseY}`, fill:'#ff2d78' }));
     else if (state.nose === 'rounded') svg.appendChild(el('path', { d:`M ${cx-neckHalf},${noseBaseY} Q ${cx},10 ${cx+neckHalf},${noseBaseY} Z`, fill:'#ff2d78' }));
     else svg.appendChild(el('rect', { x:cx-neckHalf, y:24, width:neckHalf*2, height:12, rx:2, fill:'#ff2d78' }));
-
-    // narrow neck
     svg.appendChild(el('rect', { x:cx-neckHalf, y:noseBaseY, width:neckHalf*2, height:neckBot-noseBaseY, fill:'rgba(0,245,255,0.10)', stroke:'#00f5ff', 'stroke-width':'2' }));
-
-    // transition cone (funnel shoulder: neck → body)
     svg.appendChild(el('polygon', { points:`${cx-neckHalf},${neckBot} ${cx+neckHalf},${neckBot} ${cx+bodyHalf},${bodyTop} ${cx-bodyHalf},${bodyTop}`, fill:'rgba(0,245,255,0.10)', stroke:'#00f5ff', 'stroke-width':'2' }));
-
-    // body (the bottle) — rounded at the bottom
     const bodyH = bodyBot - bodyTop;
     svg.appendChild(el('path', { d:`M ${cx-bodyHalf},${bodyTop} L ${cx+bodyHalf},${bodyTop} L ${cx+bodyHalf},${bodyBot-10} Q ${cx+bodyHalf},${bodyBot} ${cx+bodyHalf-10},${bodyBot} L ${cx-bodyHalf+10},${bodyBot} Q ${cx-bodyHalf},${bodyBot} ${cx-bodyHalf},${bodyBot-10} Z`, fill:'rgba(0,245,255,0.12)', stroke:'#00f5ff', 'stroke-width':'2' }));
-
-    // propellant: water fills the body from the bottom up
     const waterH = bodyH * (state.waterPct/100);
     const wTop = bodyBot - waterH;
     svg.appendChild(el('path', { d:`M ${cx-bodyHalf+1},${Math.max(bodyTop+1, wTop)} L ${cx+bodyHalf-1},${Math.max(bodyTop+1, wTop)} L ${cx+bodyHalf-1},${bodyBot-10} Q ${cx+bodyHalf-1},${bodyBot-1} ${cx+bodyHalf-10},${bodyBot-1} L ${cx-bodyHalf+10},${bodyBot-1} Q ${cx-bodyHalf+1},${bodyBot-1} ${cx-bodyHalf+1},${bodyBot-10} Z`, fill:'rgba(0,160,255,0.5)' }));
-
-    // fins (attached to the lower body; root edge against the body)
-    const finLen = 14 + FINSIZE[state.finSize]*40;   // how far the fin sticks out
-    const finRootTop = bodyBot - 70, finRootBot = bodyBot - 6; // root edge span
-    function fin(sign) {
-      const xb = cx + sign*bodyHalf;                 // body edge (root)
-      svg.appendChild(el('polygon', { points:`${xb},${finRootTop} ${xb},${finRootBot} ${xb + sign*finLen},${finRootBot+6}`, fill:'#b44fff', stroke:'#8a2fd0', 'stroke-width':'1' }));
-    }
+    const finLen = 14 + FINSIZE[state.finSize]*40;
+    const finRootTop = bodyBot - 70, finRootBot = bodyBot - 6;
+    function fin(sign) { const xb = cx + sign*bodyHalf; svg.appendChild(el('polygon', { points:`${xb},${finRootTop} ${xb},${finRootBot} ${xb + sign*finLen},${finRootBot+6}`, fill:'#b44fff', stroke:'#8a2fd0', 'stroke-width':'1' })); }
     if (state.finCount >= 2) { fin(-1); fin(1); }
     if (state.finCount >= 3) svg.appendChild(el('polygon', { points:`${cx-6},${bodyBot-6} ${cx+6},${bodyBot-6} ${cx},${bodyBot+14}`, fill:'rgba(180,79,255,0.55)' }));
     if (state.finCount >= 4) {
       svg.appendChild(el('polygon', { points:`${cx-bodyHalf},${finRootTop+18} ${cx-bodyHalf},${finRootBot} ${cx-bodyHalf-finLen*0.7},${finRootBot+4}`, fill:'rgba(180,79,255,0.45)' }));
       svg.appendChild(el('polygon', { points:`${cx+bodyHalf},${finRootTop+18} ${cx+bodyHalf},${finRootBot} ${cx+bodyHalf+finLen*0.7},${finRootBot+4}`, fill:'rgba(180,79,255,0.45)' }));
     }
-
-    // nozzle / cap (bottle opening points down) + guidance tube
     svg.appendChild(el('polygon', { points:`${cx-7},${bodyBot} ${cx+7},${bodyBot} ${cx+4},${bodyBot+12} ${cx-4},${bodyBot+12}`, fill:'#9080b0' }));
     svg.appendChild(el('line', { x1:cx, y1:bodyBot+12, x2:cx, y2:bodyBot+26, stroke:'#9080b0', 'stroke-width':'2' }));
+    return { bodyBot };
+  }
 
+  // a small SVG of the current rocket, for the flight scene
+  function makeFlightRocket() {
+    const svg = svgEl('svg', { viewBox:'0 0 120 300', xmlns:'http://www.w3.org/2000/svg' });
+    buildRocketShapes(svg);
+    return svg;
+  }
+
+  function drawRocket(c) {
+    const svg = document.getElementById('rocket-svg');
+    const cx = 60, el = svgEl;
+    svg.innerHTML = '';
+    const { bodyBot } = buildRocketShapes(svg);
     // CG (blue) and CP (red) markers — map position 0..1 (nose tip → nozzle) to y
     const yAt = p => 14 + p * ((bodyBot+12) - 14);
     svg.appendChild(el('circle', { cx:cx-34, cy:yAt(c.CG), r:5, fill:'#00a8ff' }));
@@ -439,54 +447,90 @@
     document.getElementById('board-list').style.display = m==='target' ? 'none' : '';
   }
 
-  // ── Launch animation ──
+  // ── Launch animation (follow-camera world) ──
   let launching = false;
+  const PPM = 8;          // pixels per metre in the scrolling world
+  const PAD_Y = 32;       // scene-px of the launch pad above the sky floor
+  const scenePos = m => PAD_Y + m * PPM;   // scene-px for an altitude (m)
+  function skyW() { return document.getElementById('sky').clientWidth; }
 
-  function fxCenter() { return document.getElementById('sky').clientWidth / 2; }
+  // Build the world scenery once: trees, clouds and altitude markers.
+  function buildScenery() {
+    const world = document.getElementById('world');
+    // launch-pad legs
+    [-1,1].forEach(s => { const l=document.createElement('div'); l.className='pad-leg'; l.style.left='calc(50% '+(s<0?'- 20px':'+ 16px')+')'; world.appendChild(l); });
+    // trees along the ground
+    [['🌲',9,22],['🌳',20,18],['🌲',74,20],['🌳',86,24],['🌴',33,16],['🌲',63,16]].forEach(([e,x,sz])=>{
+      const t=document.createElement('div'); t.className='tree'; t.textContent=e; t.style.left=x+'%'; t.style.fontSize=sz+'px'; world.appendChild(t);
+    });
+    // clouds at various altitudes
+    [[15,16],[28,70],[42,26],[55,72],[66,40]].forEach(([alt,x])=>{
+      const cl=document.createElement('div'); cl.className='cloud'; cl.style.left=x+'%'; cl.style.bottom=scenePos(alt)+'px'; world.appendChild(cl);
+    });
+    // altitude markers every 10 m
+    for (let a=10; a<=80; a+=10) {
+      const m=document.createElement('div'); m.className='alt-mark'; m.style.bottom=scenePos(a)+'px';
+      const s=document.createElement('span'); s.textContent=a+' m'; m.appendChild(s); world.appendChild(m);
+    }
+    // apogee marker (reused)
+    const ap=document.createElement('div'); ap.className='apogee-mark'; ap.id='apogee-mark';
+    const aps=document.createElement('span'); aps.id='apogee-mark-tag'; ap.appendChild(aps); world.appendChild(ap);
+  }
 
-  // a spray droplet (water) or spark shooting out of the nozzle
-  function emitDroplet(bottomPx, water) {
-    const fx = document.getElementById('fx-layer');
+  // build the parachute SVG once (into #chute)
+  function buildChute() {
+    document.getElementById('chute').innerHTML =
+      '<svg viewBox="0 0 60 50" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M3,26 Q30,-8 57,26 Z" fill="#ff2d78"/>' +
+      '<path d="M15,21 Q30,-3 30,26 Z" fill="#00f5ff" opacity="0.85"/>' +
+      '<path d="M45,21 Q30,-3 30,26 Z" fill="#b44fff" opacity="0.85"/>' +
+      '<path d="M3,26 Q30,-8 57,26" fill="none" stroke="#a01a48" stroke-width="1.5"/>' +
+      '<line x1="6" y1="26" x2="26" y2="48" stroke="#d8c8ef" stroke-width="1"/>' +
+      '<line x1="30" y1="26" x2="30" y2="48" stroke="#d8c8ef" stroke-width="1"/>' +
+      '<line x1="54" y1="26" x2="34" y2="48" stroke="#d8c8ef" stroke-width="1"/>' +
+      '</svg>';
+  }
+
+  // water droplet / spark from the nozzle (screen space, near the rocket)
+  function emitSpray(screenBottom, water) {
+    const fx = document.getElementById('fx-screen');
     const d = document.createElement('div');
     d.className = 'particle';
     const size = water ? (3 + Math.random()*3) : (2 + Math.random()*2);
-    const x = fxCenter() + (Math.random()-0.5)*16;
     d.style.width = d.style.height = size + 'px';
-    d.style.left = x + 'px';
-    d.style.bottom = bottomPx + 'px';
-    d.style.background = water ? 'rgba(120,210,255,0.9)' : 'rgba(255,200,90,0.95)';
+    d.style.left = (skyW()/2 + (Math.random()-0.5)*14) + 'px';
+    d.style.bottom = screenBottom + 'px';
+    d.style.background = water ? 'rgba(120,210,255,0.9)' : 'rgba(255,205,90,0.95)';
     if (!water) d.style.boxShadow = '0 0 6px rgba(255,160,40,0.9)';
     fx.appendChild(d);
-    const dx = (Math.random()-0.5)*70;
-    const dy = -(30 + Math.random()*90);   // shoots downward (opposite thrust)
-    d.animate([{transform:'translate(0,0)',opacity:0.95},{transform:`translate(${dx}px,${-dy}px)`,opacity:0}],
+    const dx = (Math.random()-0.5)*70, dy = 30 + Math.random()*90;
+    d.animate([{transform:'translate(0,0)',opacity:0.95},{transform:`translate(${dx}px,${dy}px)`,opacity:0}],
       {duration:420+Math.random()*260, easing:'cubic-bezier(.3,.7,.5,1)'}).onfinish = () => d.remove();
   }
 
-  // a soft smoke puff
-  function emitPuff(bottomPx, opts) {
+  // smoke puff left in the WORLD (scrolls with the camera, so it forms a trail column)
+  function emitTrail(sceneBottom, opts) {
     opts = opts || {};
-    const fx = document.getElementById('fx-layer');
+    const world = document.getElementById('world');
     const p = document.createElement('div');
-    p.className = 'puff';
-    const size = opts.size || (10 + Math.random()*16);
-    const x = (opts.x != null ? opts.x : fxCenter()) + (Math.random()-0.5)*(opts.spread||18);
+    p.className = 'puff trail';
+    const size = opts.size || (10 + Math.random()*14);
+    const x = (opts.xPct != null ? opts.xPct : 50);
     p.style.width = p.style.height = size + 'px';
-    p.style.left = (x - size/2) + 'px';
-    p.style.bottom = bottomPx + 'px';
-    fx.appendChild(p);
-    const dx = (opts.dx != null ? opts.dx : (Math.random()-0.5)*40);
-    const dy = (opts.dy != null ? opts.dy : -(8 + Math.random()*18)); // drift down a touch
-    const grow = 1.8 + Math.random()*1.2;
-    p.animate([{transform:'translate(0,0) scale(0.6)',opacity:0.8},{transform:`translate(${dx}px,${-dy}px) scale(${grow})`,opacity:0}],
-      {duration:700+Math.random()*500, easing:'ease-out'}).onfinish = () => p.remove();
+    p.style.left = `calc(${x}% - ${size/2}px + ${(Math.random()-0.5)*16}px)`;
+    p.style.bottom = sceneBottom + 'px';
+    world.appendChild(p);
+    const dx = (opts.dx != null ? opts.dx : (Math.random()-0.5)*36);
+    const dy = (opts.dy != null ? opts.dy : (Math.random()*14));
+    const grow = 1.8 + Math.random()*1.4;
+    p.animate([{transform:'translate(0,0) scale(0.6)',opacity:0.8},{transform:`translate(${dx}px,${dy}px) scale(${grow})`,opacity:0}],
+      {duration:900+Math.random()*700, easing:'ease-out'}).onfinish = () => p.remove();
   }
 
-  function burstSmoke(bottomPx) {
-    const cx = fxCenter();
-    for (let i=0;i<14;i++) {
+  function burstSmoke(sceneBottom) {
+    for (let i=0;i<16;i++) {
       const side = i%2 ? 1 : -1;
-      emitPuff(bottomPx, { x: cx, size: 16+Math.random()*20, dx: side*(20+Math.random()*60), dy: 4+Math.random()*10, spread: 10 });
+      emitTrail(sceneBottom, { size: 16+Math.random()*22, dx: side*(24+Math.random()*70), dy: 4+Math.random()*10 });
     }
   }
 
@@ -497,20 +541,25 @@
     document.getElementById('launch-btn').disabled = true;
     document.getElementById('result-box').innerHTML = '';
     const sky = document.getElementById('sky');
+    const world = document.getElementById('world');
+    const space = document.getElementById('space-layer');
     const stack = document.getElementById('rocket-stack');
     const glyph = document.getElementById('fly-rocket');
     const flame = document.getElementById('flame');
+    const chute = document.getElementById('chute');
     const alt = document.getElementById('alt-readout');
-    const apoLine = document.getElementById('apogee-line');
     const cd = document.getElementById('countdown');
-    document.getElementById('fx-layer').innerHTML = '';
-    glyph.textContent = '🚀'; glyph.style.transform = 'rotate(-45deg)';
-    stack.style.bottom = '30px'; stack.style.transform = 'translateX(-50%)';
-    flame.classList.remove('on');
+    // reset scene
+    document.getElementById('fx-screen').innerHTML = '';
+    world.querySelectorAll('.trail').forEach(e=>e.remove());
+    world.style.transform = 'translateY(0)';
+    space.style.opacity = '0';
+    glyph.innerHTML = ''; glyph.appendChild(makeFlightRocket()); glyph.style.transform = 'rotate(0deg)';
+    chute.style.opacity = '0';
+    stack.style.bottom = PAD_Y + 'px'; stack.style.transform = 'translateX(-50%)';
+    flame.classList.remove('on'); flame.style.height = '42px';
     alt.textContent = '0 m';
-    apoLine.style.opacity = '0';
-    const skyH = sky.clientHeight - 40;       // usable height above ground
-    const VISUAL_MAX = 70;                      // metres mapped to full sky (realistic bottle-rocket ceiling)
+    const apo = document.getElementById('apogee-mark'); if (apo) apo.style.opacity = '0';
     const tumbles = c.stab === 'unstable';
 
     // countdown 3-2-1-GO with a pop each tick
@@ -525,20 +574,24 @@
         showCd('GO!');
         // ignition: shake, smoke burst, flame on, then fly
         sky.classList.remove('shake'); void sky.offsetWidth; sky.classList.add('shake');
-        burstSmoke(30);
+        burstSmoke(PAD_Y);
         flame.classList.add('on');
-        setTimeout(() => flight(c, skyH, VISUAL_MAX, tumbles), 260);
+        setTimeout(() => flight(c, tumbles), 280);
       }
     }, 700);
   }
 
-  function flight(c, skyH, VISUAL_MAX, tumbles) {
+  function flight(c, tumbles) {
+    const sky = document.getElementById('sky');
+    const world = document.getElementById('world');
+    const space = document.getElementById('space-layer');
     const stack = document.getElementById('rocket-stack');
     const glyph = document.getElementById('fly-rocket');
     const flame = document.getElementById('flame');
+    const chute = document.getElementById('chute');
     const alt = document.getElementById('alt-readout');
-    const apoLine = document.getElementById('apogee-line');
-    const apoTag = document.getElementById('apogee-tag');
+    const apoMark = document.getElementById('apogee-mark');
+    const apoTag = document.getElementById('apogee-mark-tag');
     const apogee = c.apogee;
     const g = 9.81;
     const v0 = Math.sqrt(2 * g * Math.max(apogee,0.5));
@@ -546,53 +599,59 @@
     const start = performance.now();
     const wobbly = c.stab === 'marginal';
     let reachedApogee = false, chuteOpened = false, frameN = 0;
+
     function frame(now) {
       frameN++;
-      let t = (now - start) / 1000 * 1.12;   // slightly peppy real-ish seconds
+      const skyH = sky.clientHeight;
+      const followTop = skyH * 0.52;          // rocket pins here; world scrolls past
+      let t = (now - start) / 1000 * 1.12;    // slightly peppy real-ish seconds
       let altM, ascending;
       if (t <= tUp) { altM = v0*t - 0.5*g*t*t; ascending = true; }
       else {
         reachedApogee = true;
         const td = t - tUp;
-        altM = tumbles ? Math.max(0, apogee - 0.5*g*td*td*0.7)   // tumble: faster fall
-                       : Math.max(0, apogee - (apogee/2.6)*td);  // parachute: gentle
+        altM = tumbles ? Math.max(0, apogee - 0.5*g*td*td*0.7)
+                       : Math.max(0, apogee - (apogee/2.6)*td);
         ascending = false;
       }
       altM = Math.max(0, altM);
-      const px = Math.min(skyH, (altM / VISUAL_MAX) * skyH);
-      stack.style.bottom = (30 + px) + 'px';
+
+      // camera: keep the rocket at followTop once it climbs past it; scroll the world instead
+      const rocketScene = scenePos(altM);
+      const cameraPx = Math.max(0, rocketScene - followTop);
+      world.style.transform = 'translateY(' + cameraPx + 'px)';
+      const screenBottom = rocketScene - cameraPx;   // = min(rocketScene, followTop)
+      stack.style.bottom = screenBottom + 'px';      // rocket rises to followTop, then the world scrolls
       alt.textContent = Math.round(altM) + ' m';
 
+      // sky fades toward space as we climb
+      space.style.opacity = Math.min(0.92, altM / 62).toFixed(3);
+
       if (ascending) {
-        // exhaust: water spray + sparks + wispy smoke from the nozzle
-        if (frameN % 1 === 0) emitDroplet(30 + px, true);
-        if (frameN % 2 === 0) emitDroplet(30 + px, false);
-        if (frameN % 3 === 0) emitPuff(30 + px, { size: 8+Math.random()*8, dy: 6 });
-        // flame shrinks as it climbs (thrust tapering)
+        emitSpray(screenBottom, true);
+        if (frameN % 2 === 0) emitSpray(screenBottom, false);
+        if (frameN % 2 === 0) emitTrail(rocketScene, { size: 9+Math.random()*9, dy: 6 });
         const climb = Math.min(1, t / tUp);
-        flame.style.height = (40 * (1 - climb*0.6)) + 'px';
-        const lean = wobbly ? Math.sin(t*14)*10 : 0;
-        glyph.style.transform = 'rotate(' + (-45 + lean) + 'deg)';
+        flame.style.height = (42 * (1 - climb*0.6)) + 'px';
+        const lean = wobbly ? Math.sin(t*14)*9 : 0;
+        glyph.style.transform = 'rotate(' + lean + 'deg)';
         stack.style.transform = 'translateX(-50%)';
       } else {
         flame.classList.remove('on');
-        // show apogee marker
-        apoLine.style.bottom = (30 + Math.min(skyH, (apogee/VISUAL_MAX)*skyH)) + 'px';
-        apoLine.style.opacity = '1';
-        apoTag.textContent = apogee + ' m';
+        if (apoMark) { apoMark.style.bottom = scenePos(apogee) + 'px'; apoMark.style.opacity = '1'; apoTag.textContent = apogee + ' m'; }
         if (tumbles) {
-          glyph.textContent = '🚀';
-          glyph.style.transform = 'rotate(' + ((now-start)/1.6 % 360) + 'deg)';
+          chute.style.opacity = '0';
+          glyph.style.transform = 'rotate(' + ((now-start)/1.5 % 360) + 'deg)';
           stack.style.transform = 'translateX(-50%)';
-          if (frameN % 4 === 0) emitPuff(30 + px, { size: 6+Math.random()*6, dy: -4 });
+          if (frameN % 3 === 0) emitTrail(rocketScene, { size: 6+Math.random()*7, dy: -4 });
         } else {
-          if (!chuteOpened) { chuteOpened = true; glyph.textContent='🪂'; emitPuff(30 + px, {size:26, dy:-6}); }
-          const sway = Math.sin((now-start)/420) * 16;   // gentle drift under canopy
+          if (!chuteOpened) { chuteOpened = true; chute.style.opacity = '1'; emitTrail(rocketScene, {size:24, dy:-6}); }
+          const sway = Math.sin((now-start)/440) * 16;   // gentle drift under canopy
           stack.style.transform = 'translateX(calc(-50% + ' + sway + 'px))';
           glyph.style.transform = 'rotate(' + (sway/3) + 'deg)';
         }
       }
-      if (altM <= 0 && reachedApogee) { burstSmoke(30); landed(c); return; }
+      if (altM <= 0 && reachedApogee) { burstSmoke(PAD_Y); chute.style.opacity='0'; landed(c); return; }
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
@@ -629,9 +688,15 @@
     }, i*40);
   }
 
-  // stars in the sky
-  (function(){ const sky=document.getElementById('sky'); for(let i=0;i<40;i++){ const s=document.createElement('div'); s.className='star'; s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*80+'%'; s.style.opacity=(0.2+Math.random()*0.6); sky.appendChild(s);} })();
+  // stars: faint ones always in the sky, brighter ones inside the space layer (revealed up high)
+  (function(){
+    const sky=document.getElementById('sky'), space=document.getElementById('space-layer');
+    for(let i=0;i<34;i++){ const s=document.createElement('div'); s.className='star'; const sz=1+Math.random()*1.5; s.style.width=s.style.height=sz+'px'; s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*70+'%'; s.style.opacity=(0.15+Math.random()*0.4); sky.appendChild(s); }
+    for(let i=0;i<60;i++){ const s=document.createElement('div'); s.className='star'; const sz=1+Math.random()*2; s.style.width=s.style.height=sz+'px'; s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*85+'%'; s.style.opacity=(0.4+Math.random()*0.6); space.appendChild(s); }
+  })();
 
+  buildScenery();
+  buildChute();
   render();
   setMode('max');
 </script>
