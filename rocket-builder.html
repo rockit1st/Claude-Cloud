@@ -84,11 +84,23 @@
     .sky { position:relative; height:380px; margin:26px 0 0; border-radius:16px; overflow:hidden; background:linear-gradient(180deg, #0a0030 0%, #1a0040 40%, #2a0a30 75%, #1a0010 100%); border:1px solid rgba(255,45,120,0.2); }
     .sky .ground { position:absolute; left:0; right:0; bottom:0; height:30px; background:linear-gradient(180deg, rgba(255,45,120,0.15), rgba(255,45,120,0.05)); border-top:2px solid rgba(255,45,120,0.5); }
     .sky .star { position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:0.5; }
-    .fly-rocket { position:absolute; left:50%; bottom:30px; transform:translateX(-50%); font-size:2rem; transition:none; }
+    .sky.shake { animation:skyShake 0.5s ease-out; }
+    @keyframes skyShake { 0%,100%{transform:translate(0,0);} 15%{transform:translate(-4px,1px);} 30%{transform:translate(4px,-1px);} 45%{transform:translate(-3px,0);} 60%{transform:translate(3px,1px);} 80%{transform:translate(-2px,0);} }
+    .launch-pad { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); width:46px; height:8px; border-radius:3px; background:linear-gradient(90deg,transparent,#6a5a8a,transparent); }
+    .fx-layer { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+    .rocket-stack { position:absolute; left:50%; bottom:30px; transform:translateX(-50%); will-change:bottom,transform; }
+    .fly-rocket { font-size:2.3rem; line-height:1; transform:rotate(-45deg); transition:none; filter:drop-shadow(0 0 7px rgba(255,140,50,0.35)); }
+    .flame { position:absolute; left:50%; top:88%; width:18px; height:40px; transform:translateX(-50%) scaleY(0); transform-origin:50% 0%; border-radius:50% 50% 48% 48% / 30% 30% 70% 70%; background:radial-gradient(ellipse at 50% 0%, #fff 0%, #ffe07a 22%, #ff9a1a 50%, #ff3d5a 78%, rgba(255,45,120,0) 100%); filter:blur(1px); opacity:0; }
+    .flame.on { opacity:1; animation:flicker 0.09s infinite alternate; }
+    @keyframes flicker { from{transform:translateX(-50%) scaleY(0.82) scaleX(0.9);} to{transform:translateX(-50%) scaleY(1.18) scaleX(1.08);} }
+    .particle { position:absolute; border-radius:50%; pointer-events:none; will-change:transform,opacity; }
+    .puff { position:absolute; border-radius:50%; pointer-events:none; background:radial-gradient(circle at 40% 35%, rgba(240,240,255,0.9), rgba(200,200,230,0.15) 65%, rgba(200,200,230,0)); will-change:transform,opacity; }
     .alt-readout { position:absolute; top:12px; right:16px; font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.6rem; color:#00f5ff; text-shadow:0 0 14px rgba(0,245,255,0.6); }
-    .apogee-line { position:absolute; left:0; right:0; height:0; border-top:2px dashed rgba(240,192,64,0.7); opacity:0; }
+    .apogee-line { position:absolute; left:0; right:0; height:0; border-top:2px dashed rgba(240,192,64,0.7); opacity:0; transition:opacity 0.3s; }
     .apogee-tag { position:absolute; right:10px; transform:translateY(-100%); color:#f0c040; font-size:0.75rem; font-family:'Orbitron',sans-serif; }
-    .countdown { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:5rem; font-weight:900; color:#ff2d78; text-shadow:0 0 30px rgba(255,45,120,0.8); opacity:0; }
+    .countdown { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:5rem; font-weight:900; color:#ff2d78; text-shadow:0 0 30px rgba(255,45,120,0.8); opacity:0; pointer-events:none; }
+    .countdown.pop { animation:cdPop 0.6s ease-out; }
+    @keyframes cdPop { 0%{opacity:0;transform:scale(2.2);} 25%{opacity:1;transform:scale(1);} 75%{opacity:1;transform:scale(1);} 100%{opacity:0;transform:scale(0.7);} }
 
     .result-box { margin-top:18px; text-align:center; min-height:40px; }
     .result-apogee { font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:900; color:#00f5ff; }
@@ -190,17 +202,18 @@
       <div class="ctrl">
         <div class="ctrl-label">Bottle size</div>
         <div class="chip-row" id="bottle-chips">
-          <button class="chip" data-v="1" onclick="setBottle('1',this)">1 L</button>
-          <button class="chip active" data-v="2" onclick="setBottle('2',this)">2 L</button>
+          <button class="chip" data-v="16" onclick="setBottle('16',this)">16 oz</button>
+          <button class="chip active" data-v="20" onclick="setBottle('20',this)">20 oz</button>
         </div>
       </div>
       <div class="ctrl">
-        <div class="ctrl-label">Water fill <span class="val" id="water-val">33%</span></div>
-        <input type="range" id="water-range" min="0" max="90" value="33" oninput="setWater(this.value)" />
+        <div class="ctrl-label">Water fill <span class="val" id="water-val">40%</span></div>
+        <input type="range" id="water-range" min="0" max="90" value="40" oninput="setWater(this.value)" />
+        <div style="font-size:0.7rem;color:#9080b0;margin-top:5px">About <b style="color:#00f5ff" id="water-cups">1 cup</b> — around ⅓ to ½ full flies best.</div>
       </div>
       <div class="ctrl">
-        <div class="ctrl-label">Air pressure <span class="val" id="psi-val">50 psi</span></div>
-        <input type="range" id="psi-range" min="20" max="90" value="50" oninput="setPsi(this.value)" />
+        <div class="ctrl-label">Air pressure <span class="val" id="psi-val">60 psi</span></div>
+        <input type="range" id="psi-range" min="20" max="90" value="60" oninput="setPsi(this.value)" />
       </div>
       <div class="ctrl">
         <div class="ctrl-label">Nose cone</div>
@@ -242,8 +255,13 @@
 
   <div class="sky" id="sky">
     <div class="ground"></div>
+    <div class="launch-pad"></div>
+    <div class="fx-layer" id="fx-layer"></div>
     <div class="apogee-line" id="apogee-line"><span class="apogee-tag" id="apogee-tag"></span></div>
-    <div class="fly-rocket" id="fly-rocket">🚀</div>
+    <div class="rocket-stack" id="rocket-stack">
+      <div class="flame" id="flame"></div>
+      <div class="fly-rocket" id="fly-rocket">🚀</div>
+    </div>
     <div class="alt-readout" id="alt-readout">0 m</div>
     <div class="countdown" id="countdown"></div>
   </div>
@@ -269,7 +287,8 @@
 <script src="student-classes.js"></script>
 <script>
   // ── Parts ──
-  const BOTTLES = { '1': { Vb: 1, base: 0.09 }, '2': { Vb: 2, base: 0.13 } };
+  // Vb = bottle volume in litres (water mass in kg = Vb * fill); base = empty bottle mass (kg)
+  const BOTTLES = { '16': { Vb: 0.473, base: 0.022 }, '20': { Vb: 0.591, base: 0.028 } };
   const NOSES = {
     pointed: { Cd: 0.12, mass: 0.030 },
     rounded: { Cd: 0.20, mass: 0.025 },
@@ -277,7 +296,7 @@
   };
   const FINSIZE = { small: 0.10, medium: 0.20, large: 0.32 };
 
-  let state = { bottle:'2', waterPct:33, psi:50, nose:'rounded', finCount:3, finSize:'medium', ballast:0, mode:'max', target:0, lastApogee:null };
+  let state = { bottle:'20', waterPct:40, psi:60, nose:'rounded', finCount:3, finSize:'medium', ballast:0, mode:'max', target:0, lastApogee:null };
 
   function compute() {
     const b = BOTTLES[state.bottle];
@@ -298,8 +317,10 @@
     const Pa = state.psi * 6895;
     const ve = Math.sqrt(2*Pa/1000);
     const massRatio = (mDry + mWater) / mDry;
-    const wEff = Math.max(0.1, 1 - Math.pow((f-0.33)/0.45, 2));
-    const vLaunch = 0.7 * ve * Math.log(massRatio) * Math.sqrt(wEff);
+    // water sweet spot ≈ 40% (about 1 cup in a 16/20 oz bottle)
+    const wEff = Math.max(0.1, 1 - Math.pow((f-0.40)/0.45, 2));
+    // 0.9 efficiency: a stable ~1-cup build at 80 psi reaches ~150–200 ft (46–61 m), matching real launches
+    const vLaunch = 0.9 * ve * Math.log(massRatio) * Math.sqrt(wEff);
     let apogee = (vLaunch*vLaunch)/(2*9.81) * (1 - Cd);
     if (stab === 'unstable') apogee *= 0.25;
     else if (stab === 'marginal') apogee *= 0.75;
@@ -368,6 +389,10 @@
   function render() {
     const c = compute();
     document.getElementById('water-val').textContent = state.waterPct + '%';
+    const mL = BOTTLES[state.bottle].Vb * 1000 * (state.waterPct/100);
+    const cups = mL / 237;
+    const cupsEl = document.getElementById('water-cups');
+    if (cupsEl) cupsEl.textContent = cups < 0.1 ? 'empty' : (Math.round(cups*4)/4) + (cups < 1.5 ? ' cup' : ' cups') + ' (' + Math.round(mL) + ' mL)';
     document.getElementById('psi-val').textContent = state.psi + ' psi';
     document.getElementById('ballast-val').textContent = state.ballast + ' g';
     document.getElementById('stat-speed').textContent = Math.round(c.vLaunch) + ' m/s';
@@ -401,7 +426,7 @@
     document.getElementById('tab-target').classList.toggle('active', m==='target');
     const tb = document.getElementById('target-banner');
     if (m==='target') {
-      state.target = 20 + Math.floor(Math.random()*50); // 20–69 m
+      state.target = 25 + Math.floor(Math.random()*36); // 25–60 m
       document.getElementById('target-val').textContent = state.target;
       tb.classList.add('show');
     } else {
@@ -416,6 +441,55 @@
 
   // ── Launch animation ──
   let launching = false;
+
+  function fxCenter() { return document.getElementById('sky').clientWidth / 2; }
+
+  // a spray droplet (water) or spark shooting out of the nozzle
+  function emitDroplet(bottomPx, water) {
+    const fx = document.getElementById('fx-layer');
+    const d = document.createElement('div');
+    d.className = 'particle';
+    const size = water ? (3 + Math.random()*3) : (2 + Math.random()*2);
+    const x = fxCenter() + (Math.random()-0.5)*16;
+    d.style.width = d.style.height = size + 'px';
+    d.style.left = x + 'px';
+    d.style.bottom = bottomPx + 'px';
+    d.style.background = water ? 'rgba(120,210,255,0.9)' : 'rgba(255,200,90,0.95)';
+    if (!water) d.style.boxShadow = '0 0 6px rgba(255,160,40,0.9)';
+    fx.appendChild(d);
+    const dx = (Math.random()-0.5)*70;
+    const dy = -(30 + Math.random()*90);   // shoots downward (opposite thrust)
+    d.animate([{transform:'translate(0,0)',opacity:0.95},{transform:`translate(${dx}px,${-dy}px)`,opacity:0}],
+      {duration:420+Math.random()*260, easing:'cubic-bezier(.3,.7,.5,1)'}).onfinish = () => d.remove();
+  }
+
+  // a soft smoke puff
+  function emitPuff(bottomPx, opts) {
+    opts = opts || {};
+    const fx = document.getElementById('fx-layer');
+    const p = document.createElement('div');
+    p.className = 'puff';
+    const size = opts.size || (10 + Math.random()*16);
+    const x = (opts.x != null ? opts.x : fxCenter()) + (Math.random()-0.5)*(opts.spread||18);
+    p.style.width = p.style.height = size + 'px';
+    p.style.left = (x - size/2) + 'px';
+    p.style.bottom = bottomPx + 'px';
+    fx.appendChild(p);
+    const dx = (opts.dx != null ? opts.dx : (Math.random()-0.5)*40);
+    const dy = (opts.dy != null ? opts.dy : -(8 + Math.random()*18)); // drift down a touch
+    const grow = 1.8 + Math.random()*1.2;
+    p.animate([{transform:'translate(0,0) scale(0.6)',opacity:0.8},{transform:`translate(${dx}px,${-dy}px) scale(${grow})`,opacity:0}],
+      {duration:700+Math.random()*500, easing:'ease-out'}).onfinish = () => p.remove();
+  }
+
+  function burstSmoke(bottomPx) {
+    const cx = fxCenter();
+    for (let i=0;i<14;i++) {
+      const side = i%2 ? 1 : -1;
+      emitPuff(bottomPx, { x: cx, size: 16+Math.random()*20, dx: side*(20+Math.random()*60), dy: 4+Math.random()*10, spread: 10 });
+    }
+  }
+
   function launch() {
     if (launching) return;
     const c = compute();
@@ -423,30 +497,45 @@
     document.getElementById('launch-btn').disabled = true;
     document.getElementById('result-box').innerHTML = '';
     const sky = document.getElementById('sky');
-    const rocket = document.getElementById('fly-rocket');
+    const stack = document.getElementById('rocket-stack');
+    const glyph = document.getElementById('fly-rocket');
+    const flame = document.getElementById('flame');
     const alt = document.getElementById('alt-readout');
     const apoLine = document.getElementById('apogee-line');
     const cd = document.getElementById('countdown');
-    rocket.textContent = '🚀'; rocket.style.transform = 'translateX(-50%) rotate(0deg)';
-    rocket.style.bottom = '30px';
+    document.getElementById('fx-layer').innerHTML = '';
+    glyph.textContent = '🚀'; glyph.style.transform = 'rotate(-45deg)';
+    stack.style.bottom = '30px'; stack.style.transform = 'translateX(-50%)';
+    flame.classList.remove('on');
     alt.textContent = '0 m';
     apoLine.style.opacity = '0';
     const skyH = sky.clientHeight - 40;       // usable height above ground
-    const VISUAL_MAX = 100;                    // metres mapped to full sky
+    const VISUAL_MAX = 70;                      // metres mapped to full sky (realistic bottle-rocket ceiling)
     const tumbles = c.stab === 'unstable';
 
-    // countdown 3-2-1
+    // countdown 3-2-1-GO with a pop each tick
     let n = 3;
-    cd.textContent = n; cd.style.transition='none'; cd.style.opacity='1';
+    function showCd(txt){ cd.textContent = txt; cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop'); }
+    showCd(n);
     const cdTimer = setInterval(() => {
       n--;
-      if (n > 0) { cd.textContent = n; }
-      else { cd.textContent = 'GO!'; clearInterval(cdTimer); setTimeout(()=>{ cd.style.transition='opacity 0.4s'; cd.style.opacity='0'; flight(c, skyH, VISUAL_MAX, tumbles); }, 400); }
-    }, 650);
+      if (n > 0) showCd(n);
+      else {
+        clearInterval(cdTimer);
+        showCd('GO!');
+        // ignition: shake, smoke burst, flame on, then fly
+        sky.classList.remove('shake'); void sky.offsetWidth; sky.classList.add('shake');
+        burstSmoke(30);
+        flame.classList.add('on');
+        setTimeout(() => flight(c, skyH, VISUAL_MAX, tumbles), 260);
+      }
+    }, 700);
   }
 
   function flight(c, skyH, VISUAL_MAX, tumbles) {
-    const rocket = document.getElementById('fly-rocket');
+    const stack = document.getElementById('rocket-stack');
+    const glyph = document.getElementById('fly-rocket');
+    const flame = document.getElementById('flame');
     const alt = document.getElementById('alt-readout');
     const apoLine = document.getElementById('apogee-line');
     const apoTag = document.getElementById('apogee-tag');
@@ -455,32 +544,55 @@
     const v0 = Math.sqrt(2 * g * Math.max(apogee,0.5));
     const tUp = v0 / g;
     const start = performance.now();
-    let reachedApogee = false;
+    const wobbly = c.stab === 'marginal';
+    let reachedApogee = false, chuteOpened = false, frameN = 0;
     function frame(now) {
-      let t = (now - start) / 1000 * 1.0;   // real-ish seconds
+      frameN++;
+      let t = (now - start) / 1000 * 1.12;   // slightly peppy real-ish seconds
       let altM, ascending;
       if (t <= tUp) { altM = v0*t - 0.5*g*t*t; ascending = true; }
       else {
         reachedApogee = true;
         const td = t - tUp;
-        altM = tumbles ? Math.max(0, apogee - 0.5*g*td*td*0.6)   // tumble: faster fall
-                       : Math.max(0, apogee - (apogee/2.2)*td);  // parachute: gentle
+        altM = tumbles ? Math.max(0, apogee - 0.5*g*td*td*0.7)   // tumble: faster fall
+                       : Math.max(0, apogee - (apogee/2.6)*td);  // parachute: gentle
         ascending = false;
       }
       altM = Math.max(0, altM);
       const px = Math.min(skyH, (altM / VISUAL_MAX) * skyH);
-      rocket.style.bottom = (30 + px) + 'px';
+      stack.style.bottom = (30 + px) + 'px';
       alt.textContent = Math.round(altM) + ' m';
-      if (reachedApogee) {
+
+      if (ascending) {
+        // exhaust: water spray + sparks + wispy smoke from the nozzle
+        if (frameN % 1 === 0) emitDroplet(30 + px, true);
+        if (frameN % 2 === 0) emitDroplet(30 + px, false);
+        if (frameN % 3 === 0) emitPuff(30 + px, { size: 8+Math.random()*8, dy: 6 });
+        // flame shrinks as it climbs (thrust tapering)
+        const climb = Math.min(1, t / tUp);
+        flame.style.height = (40 * (1 - climb*0.6)) + 'px';
+        const lean = wobbly ? Math.sin(t*14)*10 : 0;
+        glyph.style.transform = 'rotate(' + (-45 + lean) + 'deg)';
+        stack.style.transform = 'translateX(-50%)';
+      } else {
+        flame.classList.remove('on');
+        // show apogee marker
         apoLine.style.bottom = (30 + Math.min(skyH, (apogee/VISUAL_MAX)*skyH)) + 'px';
         apoLine.style.opacity = '1';
         apoTag.textContent = apogee + ' m';
-        if (tumbles) { rocket.textContent='🚀'; rocket.style.transform = 'translateX(-50%) rotate(' + ((now-start)/2) + 'deg)'; }
-        else { rocket.textContent='🪂'; rocket.style.transform = 'translateX(-50%) rotate(0deg)'; }
-      } else {
-        rocket.style.transform = 'translateX(-50%) rotate(0deg)';
+        if (tumbles) {
+          glyph.textContent = '🚀';
+          glyph.style.transform = 'rotate(' + ((now-start)/1.6 % 360) + 'deg)';
+          stack.style.transform = 'translateX(-50%)';
+          if (frameN % 4 === 0) emitPuff(30 + px, { size: 6+Math.random()*6, dy: -4 });
+        } else {
+          if (!chuteOpened) { chuteOpened = true; glyph.textContent='🪂'; emitPuff(30 + px, {size:26, dy:-6}); }
+          const sway = Math.sin((now-start)/420) * 16;   // gentle drift under canopy
+          stack.style.transform = 'translateX(calc(-50% + ' + sway + 'px))';
+          glyph.style.transform = 'rotate(' + (sway/3) + 'deg)';
+        }
       }
-      if (altM <= 0 && reachedApogee) { landed(c); return; }
+      if (altM <= 0 && reachedApogee) { burstSmoke(30); landed(c); return; }
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
