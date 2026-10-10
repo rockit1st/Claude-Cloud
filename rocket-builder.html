@@ -312,29 +312,57 @@
     const cx = 60;
     function el(t, a) { const e = document.createElementNS('http://www.w3.org/2000/svg', t); for (const k in a) e.setAttribute(k, a[k]); return e; }
     svg.innerHTML = '';
-    // nose cone (top)
-    if (state.nose === 'pointed') svg.appendChild(el('polygon', { points:`${cx},30 ${cx-20},90 ${cx+20},90`, fill:'#ff2d78' }));
-    else if (state.nose === 'rounded') svg.appendChild(el('path', { d:`M ${cx-20},92 Q ${cx},40 ${cx+20},92 Z`, fill:'#ff2d78' }));
-    else svg.appendChild(el('rect', { x:cx-20, y:74, width:40, height:18, rx:3, fill:'#ff2d78' }));
-    // body (bottle)
-    svg.appendChild(el('rect', { x:cx-20, y:90, width:40, height:150, rx:8, fill:'rgba(0,245,255,0.12)', stroke:'#00f5ff', 'stroke-width':'2' }));
-    // water level (fills from bottom up)
-    const bodyTop = 90, bodyH = 150, waterH = bodyH * (state.waterPct/100);
-    svg.appendChild(el('rect', { x:cx-18, y:bodyTop + bodyH - waterH, width:36, height:waterH, rx:4, fill:'rgba(0,160,255,0.5)' }));
-    // nozzle (bottom)
-    svg.appendChild(el('polygon', { points:`${cx-10},240 ${cx+10},240 ${cx+6},252 ${cx-6},252`, fill:'#9080b0' }));
-    // fins
-    const finH = 30 + FINSIZE[state.finSize]*60;
-    if (state.finCount >= 2) {
-      svg.appendChild(el('polygon', { points:`${cx-20},210 ${cx-20-18},240 ${cx-20},240`, fill:'#b44fff' }));
-      svg.appendChild(el('polygon', { points:`${cx+20},210 ${cx+20+18},240 ${cx+20},240`, fill:'#b44fff' }));
+
+    // ── Real water-bottle rocket: inverted 2L bottle ──
+    // nose cone (top) → narrow neck → transition cone → wide body (propellant) → fins → nozzle/guidance tube (bottom)
+    const neckHalf = 9, bodyHalf = 22;
+    const noseBaseY = 36;   // where nose cone meets the neck
+    const neckBot = 74;     // bottom of narrow neck / top of transition cone
+    const bodyTop = 104;    // top of wide body
+    const bodyBot = 250;    // bottom of wide body (above nozzle)
+
+    // nose cone (shape varies with choice) sits on the narrow neck
+    if (state.nose === 'pointed') svg.appendChild(el('polygon', { points:`${cx},14 ${cx-neckHalf},${noseBaseY} ${cx+neckHalf},${noseBaseY}`, fill:'#ff2d78' }));
+    else if (state.nose === 'rounded') svg.appendChild(el('path', { d:`M ${cx-neckHalf},${noseBaseY} Q ${cx},10 ${cx+neckHalf},${noseBaseY} Z`, fill:'#ff2d78' }));
+    else svg.appendChild(el('rect', { x:cx-neckHalf, y:24, width:neckHalf*2, height:12, rx:2, fill:'#ff2d78' }));
+
+    // narrow neck
+    svg.appendChild(el('rect', { x:cx-neckHalf, y:noseBaseY, width:neckHalf*2, height:neckBot-noseBaseY, fill:'rgba(0,245,255,0.10)', stroke:'#00f5ff', 'stroke-width':'2' }));
+
+    // transition cone (funnel shoulder: neck → body)
+    svg.appendChild(el('polygon', { points:`${cx-neckHalf},${neckBot} ${cx+neckHalf},${neckBot} ${cx+bodyHalf},${bodyTop} ${cx-bodyHalf},${bodyTop}`, fill:'rgba(0,245,255,0.10)', stroke:'#00f5ff', 'stroke-width':'2' }));
+
+    // body (the bottle) — rounded at the bottom
+    const bodyH = bodyBot - bodyTop;
+    svg.appendChild(el('path', { d:`M ${cx-bodyHalf},${bodyTop} L ${cx+bodyHalf},${bodyTop} L ${cx+bodyHalf},${bodyBot-10} Q ${cx+bodyHalf},${bodyBot} ${cx+bodyHalf-10},${bodyBot} L ${cx-bodyHalf+10},${bodyBot} Q ${cx-bodyHalf},${bodyBot} ${cx-bodyHalf},${bodyBot-10} Z`, fill:'rgba(0,245,255,0.12)', stroke:'#00f5ff', 'stroke-width':'2' }));
+
+    // propellant: water fills the body from the bottom up
+    const waterH = bodyH * (state.waterPct/100);
+    const wTop = bodyBot - waterH;
+    svg.appendChild(el('path', { d:`M ${cx-bodyHalf+1},${Math.max(bodyTop+1, wTop)} L ${cx+bodyHalf-1},${Math.max(bodyTop+1, wTop)} L ${cx+bodyHalf-1},${bodyBot-10} Q ${cx+bodyHalf-1},${bodyBot-1} ${cx+bodyHalf-10},${bodyBot-1} L ${cx-bodyHalf+10},${bodyBot-1} Q ${cx-bodyHalf+1},${bodyBot-1} ${cx-bodyHalf+1},${bodyBot-10} Z`, fill:'rgba(0,160,255,0.5)' }));
+
+    // fins (attached to the lower body; root edge against the body)
+    const finLen = 14 + FINSIZE[state.finSize]*40;   // how far the fin sticks out
+    const finRootTop = bodyBot - 70, finRootBot = bodyBot - 6; // root edge span
+    function fin(sign) {
+      const xb = cx + sign*bodyHalf;                 // body edge (root)
+      svg.appendChild(el('polygon', { points:`${xb},${finRootTop} ${xb},${finRootBot} ${xb + sign*finLen},${finRootBot+6}`, fill:'#b44fff', stroke:'#8a2fd0', 'stroke-width':'1' }));
     }
-    if (state.finCount >= 3) svg.appendChild(el('polygon', { points:`${cx},214 ${cx-6},240 ${cx+6},240`, fill:'rgba(180,79,255,0.6)' }));
-    if (state.finCount >= 4) { svg.appendChild(el('polygon', { points:`${cx-20},200 ${cx-20-12},232 ${cx-20},232`, fill:'rgba(180,79,255,0.5)' })); svg.appendChild(el('polygon', { points:`${cx+20},200 ${cx+20+12},232 ${cx+20},232`, fill:'rgba(180,79,255,0.5)' })); }
-    // CG (blue) and CP (red) markers — map position 0..1 to y 30..252
-    const yAt = p => 30 + p * (252 - 30);
-    svg.appendChild(el('circle', { cx:cx-30, cy:yAt(c.CG), r:5, fill:'#00a8ff' }));
-    svg.appendChild(el('circle', { cx:cx+30, cy:yAt(c.CP), r:5, fill:'#ff5050' }));
+    if (state.finCount >= 2) { fin(-1); fin(1); }
+    if (state.finCount >= 3) svg.appendChild(el('polygon', { points:`${cx-6},${bodyBot-6} ${cx+6},${bodyBot-6} ${cx},${bodyBot+14}`, fill:'rgba(180,79,255,0.55)' }));
+    if (state.finCount >= 4) {
+      svg.appendChild(el('polygon', { points:`${cx-bodyHalf},${finRootTop+18} ${cx-bodyHalf},${finRootBot} ${cx-bodyHalf-finLen*0.7},${finRootBot+4}`, fill:'rgba(180,79,255,0.45)' }));
+      svg.appendChild(el('polygon', { points:`${cx+bodyHalf},${finRootTop+18} ${cx+bodyHalf},${finRootBot} ${cx+bodyHalf+finLen*0.7},${finRootBot+4}`, fill:'rgba(180,79,255,0.45)' }));
+    }
+
+    // nozzle / cap (bottle opening points down) + guidance tube
+    svg.appendChild(el('polygon', { points:`${cx-7},${bodyBot} ${cx+7},${bodyBot} ${cx+4},${bodyBot+12} ${cx-4},${bodyBot+12}`, fill:'#9080b0' }));
+    svg.appendChild(el('line', { x1:cx, y1:bodyBot+12, x2:cx, y2:bodyBot+26, stroke:'#9080b0', 'stroke-width':'2' }));
+
+    // CG (blue) and CP (red) markers — map position 0..1 (nose tip → nozzle) to y
+    const yAt = p => 14 + p * ((bodyBot+12) - 14);
+    svg.appendChild(el('circle', { cx:cx-34, cy:yAt(c.CG), r:5, fill:'#00a8ff' }));
+    svg.appendChild(el('circle', { cx:cx+34, cy:yAt(c.CP), r:5, fill:'#ff5050' }));
   }
 
   function render() {

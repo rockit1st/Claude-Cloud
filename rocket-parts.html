@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rocket Parts | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #00f5ff; background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.3); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    .banner {
+      margin-top: 60px;
+      background: linear-gradient(135deg, #0a000f 0%, #2a0020 50%, #1a000f 100%);
+      padding: 44px 20px; text-align: center; position: relative; overflow: hidden;
+      border-bottom: 2px solid rgba(255,45,120,0.3);
+    }
+    .banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #ff2d78, transparent); box-shadow: 0 0 20px #ff2d78; }
+    .banner-icon { font-size: 3rem; margin-bottom: 10px; }
+    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900; color: #ff2d78; letter-spacing: 4px; text-shadow: 0 0 20px rgba(255,45,120,0.7); }
+    .banner-sub { color: #9080b0; font-size: 0.95rem; margin-top: 8px; letter-spacing: 2px; }
+
+    .content { max-width: 1000px; margin: 0 auto; padding: 30px 20px 60px; }
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 24px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #ff2d78; }
+
+    .instructions {
+      background: rgba(0,245,255,0.06); border: 1px solid rgba(0,245,255,0.25);
+      border-radius: 14px; padding: 16px 20px; margin-bottom: 24px;
+      font-size: 0.95rem; color: #c9bce6; line-height: 1.6;
+    }
+    .instructions b { color: #00f5ff; }
+
+    .layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
+
+    /* Label pool */
+    .pool-wrap { }
+    .pool-title { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ff2d78; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+    .pool { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip {
+      font-family: 'Exo 2', sans-serif; font-weight: 600; font-size: 0.92rem;
+      color: #f0e6ff; background: rgba(180,79,255,0.14);
+      border: 1px solid rgba(180,79,255,0.5); border-radius: 10px;
+      padding: 10px 16px; cursor: grab; user-select: none;
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s, opacity 0.2s;
+    }
+    .chip:hover { background: rgba(180,79,255,0.26); }
+    .chip.selected { background: #b44fff; color: #fff; box-shadow: 0 0 16px rgba(180,79,255,0.7); transform: translateY(-2px); }
+    .chip.used { opacity: 0.28; pointer-events: none; }
+    .chip:active { cursor: grabbing; }
+
+    /* Diagram */
+    .diagram-card {
+      background: rgba(255,45,120,0.04); border: 1px solid rgba(255,45,120,0.18);
+      border-radius: 20px; padding: 10px; text-align: center;
+    }
+    #parts-svg { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; touch-action: manipulation; }
+
+    .blank-rect { fill: rgba(10,0,15,0.6); stroke: #6a5a8a; stroke-width: 2; stroke-dasharray: 6 4; rx: 8; cursor: pointer; transition: stroke 0.15s, fill 0.15s; }
+    .blank-rect.target { stroke: #00f5ff; fill: rgba(0,245,255,0.12); }
+    .blank-rect.filled { fill: rgba(180,79,255,0.16); stroke: #b44fff; stroke-dasharray: none; }
+    .blank-rect.correct { fill: rgba(64,224,128,0.18); stroke: #40e080; stroke-dasharray: none; }
+    .blank-rect.wrong { fill: rgba(255,80,80,0.16); stroke: #ff5050; stroke-dasharray: none; }
+    .blank-text { font-family: 'Exo 2', sans-serif; font-weight: 600; font-size: 15px; fill: #f0e6ff; pointer-events: none; }
+    .blank-num { font-family: 'Orbitron', sans-serif; font-size: 13px; fill: #9080b0; pointer-events: none; }
+    .leader { stroke: #6a5a8a; stroke-width: 1.5; fill: none; }
+    .anchor-dot { fill: #ff2d78; }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; margin-top: 22px; }
+    .btn {
+      font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.82rem; letter-spacing: 1.5px;
+      border-radius: 10px; padding: 12px 24px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+      border: none;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-check { background: linear-gradient(135deg,#00f5ff,#00a8ff); color: #061018; box-shadow: 0 6px 20px rgba(0,245,255,0.3); }
+    .btn-reset { background: rgba(255,45,120,0.12); color: #ff2d78; border: 1px solid rgba(255,45,120,0.5); }
+    .result-msg { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.3rem; text-align: center; margin-top: 20px; min-height: 1.6rem; letter-spacing: 1px; }
+    .result-msg.good { color: #40e080; text-shadow: 0 0 16px rgba(64,224,128,0.5); }
+    .result-msg.mid { color: #f0c040; }
+    .result-msg.go { color: #ff2d78; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); margin-top: 20px; }
+  </style>
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link active">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
+    <a href="classes.html" class="nav-link">👥 Classes</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">📋</div>
+  <div class="banner-title">ROCKET PARTS</div>
+  <div class="banner-sub">Label the Water Bottle Rocket</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="rockets.html">← Rockets</a> / Rocket Parts</div>
+
+  <div class="instructions">
+    <b>How to play:</b> Tap a part name below to pick it up, then tap the matching <b>dashed blank</b> on the rocket to place it. (You can also drag a label onto a blank.) Tap a filled blank to clear it. When all 8 are placed, hit <b>CHECK</b>.
+  </div>
+
+  <div class="pool-wrap">
+    <div class="pool-title">Part Names</div>
+    <div class="pool" id="pool"></div>
+  </div>
+
+  <div class="diagram-card" style="margin-top:24px;">
+    <svg id="parts-svg" viewBox="0 0 520 600" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-check" onclick="checkAnswers()">✓ CHECK</button>
+    <button class="btn btn-reset" onclick="resetBoard()">↺ RESET</button>
+  </div>
+
+  <div class="result-msg" id="result"></div>
+</div>
+
+<footer>Technology Class &copy; 2025</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
+
+<script>
+  // ── Part definitions ──
+  // id, display label, blank box (x,y), and leader-line anchor on the rocket (ax,ay)
+  const PARTS = [
+    { id:'nose',       label:'Nose Cone',       bx:16,  by:70,  ax:250, ay:60  },
+    { id:'transition', label:'Transition Cone', bx:16,  by:170, ax:236, ay:184 },
+    { id:'root',       label:'Root Edge',       bx:16,  by:398, ax:210, ay:470 },
+    { id:'lead',       label:'Lead Edge',       bx:16,  by:470, ax:188, ay:506 },
+    { id:'body',       label:'Body',            bx:354, by:238, ax:308, ay:300 },
+    { id:'propellant', label:'Propellant',      bx:354, by:352, ax:276, ay:440 },
+    { id:'fin',        label:'Fin',             bx:354, by:430, ax:312, ay:476 },
+    { id:'guidance',   label:'Guidance Tube',   bx:354, by:520, ax:260, ay:548 },
+  ];
+  const BW = 150, BH = 38;
+
+  // placement model: blankId -> chipId
+  let placed = {};
+  let selected = null;
+
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function el(t, a) { const e = document.createElementNS(SVGNS, t); for (const k in a) e.setAttribute(k, a[k]); return e; }
+
+  // ── Draw the rocket (same inverted-bottle design as the Rocket Lab) ──
+  function drawRocketInto(svg) {
+    const cx = 260;
+    const neckHalf = 22, bodyHalf = 52;
+    const noseBaseY = 96, neckBot = 150, bodyTop = 210, bodyBot = 508;
+    // rounded nose cone on the neck
+    svg.appendChild(el('path', { d:`M ${cx-neckHalf},${noseBaseY} Q ${cx},36 ${cx+neckHalf},${noseBaseY} Z`, fill:'#ff2d78' }));
+    // narrow neck
+    svg.appendChild(el('rect', { x:cx-neckHalf, y:noseBaseY, width:neckHalf*2, height:neckBot-noseBaseY, fill:'rgba(0,245,255,0.10)', stroke:'#00f5ff', 'stroke-width':'2.5' }));
+    // transition cone
+    svg.appendChild(el('polygon', { points:`${cx-neckHalf},${neckBot} ${cx+neckHalf},${neckBot} ${cx+bodyHalf},${bodyTop} ${cx-bodyHalf},${bodyTop}`, fill:'rgba(0,245,255,0.10)', stroke:'#00f5ff', 'stroke-width':'2.5' }));
+    // body with rounded bottom
+    svg.appendChild(el('path', { d:`M ${cx-bodyHalf},${bodyTop} L ${cx+bodyHalf},${bodyTop} L ${cx+bodyHalf},${bodyBot-22} Q ${cx+bodyHalf},${bodyBot} ${cx+bodyHalf-22},${bodyBot} L ${cx-bodyHalf+22},${bodyBot} Q ${cx-bodyHalf},${bodyBot} ${cx-bodyHalf},${bodyBot-22} Z`, fill:'rgba(0,245,255,0.12)', stroke:'#00f5ff', 'stroke-width':'2.5' }));
+    // propellant (water) in lower body
+    const wTop = bodyBot - (bodyBot-bodyTop)*0.42;
+    svg.appendChild(el('path', { d:`M ${cx-bodyHalf+2},${wTop} L ${cx+bodyHalf-2},${wTop} L ${cx+bodyHalf-2},${bodyBot-22} Q ${cx+bodyHalf-2},${bodyBot-2} ${cx+bodyHalf-22},${bodyBot-2} L ${cx-bodyHalf+22},${bodyBot-2} Q ${cx-bodyHalf+2},${bodyBot-2} ${cx-bodyHalf+2},${bodyBot-22} Z`, fill:'rgba(0,160,255,0.5)' }));
+    // fins (lower body). Left fin shows root edge (against body) + lead edge (slanted front)
+    const finTop = bodyBot-78, finBot = bodyBot-14;
+    // left fin
+    svg.appendChild(el('polygon', { points:`${cx-bodyHalf},${finTop} ${cx-bodyHalf},${finBot} ${cx-bodyHalf-46},${finBot+10}`, fill:'#b44fff', stroke:'#8a2fd0', 'stroke-width':'1.5' }));
+    // right fin
+    svg.appendChild(el('polygon', { points:`${cx+bodyHalf},${finTop} ${cx+bodyHalf},${finBot} ${cx+bodyHalf+46},${finBot+10}`, fill:'#b44fff', stroke:'#8a2fd0', 'stroke-width':'1.5' }));
+    // highlight the root edge (vertical edge of left fin against the body)
+    svg.appendChild(el('line', { x1:cx-bodyHalf, y1:finTop, x2:cx-bodyHalf, y2:finBot, stroke:'#00f5ff', 'stroke-width':'3' }));
+    // highlight the lead edge (slanted leading edge of left fin)
+    svg.appendChild(el('line', { x1:cx-bodyHalf, y1:finTop, x2:cx-bodyHalf-46, y2:finBot+10, stroke:'#f0c040', 'stroke-width':'3' }));
+    // nozzle / cap + guidance tube
+    svg.appendChild(el('polygon', { points:`${cx-10},${bodyBot} ${cx+10},${bodyBot} ${cx+6},${bodyBot+18} ${cx-6},${bodyBot+18}`, fill:'#9080b0' }));
+    svg.appendChild(el('line', { x1:cx, y1:bodyBot+18, x2:cx, y2:bodyBot+44, stroke:'#9080b0', 'stroke-width':'3' }));
+  }
+
+  // ── Build the SVG scene ──
+  const svg = document.getElementById('parts-svg');
+  function buildScene() {
+    svg.innerHTML = '';
+    drawRocketInto(svg);
+    PARTS.forEach((p, i) => {
+      // leader line: from blank edge to anchor
+      const startX = p.bx < 260 ? p.bx + BW : p.bx; // right edge of left blanks, left edge of right blanks
+      const startY = p.by + BH/2;
+      svg.appendChild(el('line', { class:'leader', x1:startX, y1:startY, x2:p.ax, y2:p.ay }));
+      svg.appendChild(el('circle', { class:'anchor-dot', cx:p.ax, cy:p.ay, r:4 }));
+      // blank group
+      const g = el('g', { 'data-blank':p.id, style:'cursor:pointer' });
+      g.appendChild(el('rect', { class:'blank-rect', x:p.bx, y:p.by, width:BW, height:BH, rx:8 }));
+      g.appendChild(el('text', { class:'blank-num', x:p.bx+10, y:p.by+BH-9 }));
+      g.appendChild(el('text', { class:'blank-text', x:p.bx+BW/2, y:p.by+BH/2+5, 'text-anchor':'middle' }));
+      g.addEventListener('click', () => onBlankClick(p.id));
+      g.addEventListener('dragover', e => { e.preventDefault(); g.querySelector('rect').classList.add('target'); });
+      g.addEventListener('dragleave', () => { if (!placed[p.id]) g.querySelector('rect').classList.remove('target'); });
+      g.addEventListener('drop', e => { e.preventDefault(); if (draggingChip) placeChip(p.id, draggingChip); });
+      svg.appendChild(g);
+      g._part = p; g._index = i+1;
+    });
+  }
+
+  // ── Build the chip pool ──
+  const pool = document.getElementById('pool');
+  let draggingChip = null;
+  function buildPool() {
+    pool.innerHTML = '';
+    // shuffle a copy for display order
+    const order = PARTS.map(p => p).sort(() => Math.random() - 0.5);
+    order.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'chip'; b.textContent = p.label; b.dataset.chip = p.id;
+      b.setAttribute('draggable', 'true');
+      b.addEventListener('click', () => selectChip(p.id));
+      b.addEventListener('dragstart', () => { draggingChip = p.id; selectChip(p.id); });
+      b.addEventListener('dragend', () => { draggingChip = null; });
+      pool.appendChild(b);
+    });
+  }
+
+  function chipEl(id) { return pool.querySelector(`[data-chip="${id}"]`); }
+  function isUsed(id) { return Object.values(placed).includes(id); }
+
+  function selectChip(id) {
+    if (isUsed(id)) return;
+    selected = (selected === id) ? null : id;
+    refresh();
+  }
+
+  function onBlankClick(blankId) {
+    if (placed[blankId]) { // clear it
+      delete placed[blankId];
+      clearResult();
+      refresh();
+      return;
+    }
+    if (selected) placeChip(blankId, selected);
+  }
+
+  function placeChip(blankId, chipId) {
+    // remove chip from any other blank first
+    for (const b in placed) if (placed[b] === chipId) delete placed[b];
+    placed[blankId] = chipId;
+    selected = null;
+    clearResult();
+    refresh();
+  }
+
+  function labelFor(id) { const p = PARTS.find(x => x.id === id); return p ? p.label : ''; }
+
+  function refresh() {
+    // chips
+    pool.querySelectorAll('.chip').forEach(c => {
+      const id = c.dataset.chip;
+      c.classList.toggle('used', isUsed(id));
+      c.classList.toggle('selected', selected === id && !isUsed(id));
+    });
+    // blanks
+    svg.querySelectorAll('[data-blank]').forEach(g => {
+      const bid = g.getAttribute('data-blank');
+      const rect = g.querySelector('.blank-rect');
+      const txt = g.querySelector('.blank-text');
+      const num = g.querySelector('.blank-num');
+      rect.classList.remove('target','filled','correct','wrong');
+      const idx = PARTS.findIndex(p => p.id === bid) + 1;
+      if (placed[bid]) {
+        txt.textContent = labelFor(placed[bid]);
+        num.textContent = '';
+        rect.classList.add('filled');
+      } else {
+        txt.textContent = '';
+        num.textContent = idx;
+        if (selected) rect.classList.add('target');
+      }
+    });
+  }
+
+  function clearResult() { const r = document.getElementById('result'); r.textContent = ''; r.className = 'result-msg'; }
+
+  function checkAnswers() {
+    let correct = 0;
+    svg.querySelectorAll('[data-blank]').forEach(g => {
+      const bid = g.getAttribute('data-blank');
+      const rect = g.querySelector('.blank-rect');
+      rect.classList.remove('filled','target','correct','wrong');
+      if (!placed[bid]) return;
+      if (placed[bid] === bid) { rect.classList.add('correct'); correct++; }
+      else rect.classList.add('wrong');
+    });
+    const r = document.getElementById('result');
+    if (correct === PARTS.length) { r.textContent = '🚀 PERFECT! 8 / 8 — All parts labeled!'; r.className = 'result-msg good'; launchConfetti(); }
+    else if (correct >= 5) { r.textContent = `Nice! ${correct} / 8 correct — fix the red ones.`; r.className = 'result-msg mid'; }
+    else { r.textContent = `${correct} / 8 correct — keep trying!`; r.className = 'result-msg go'; }
+  }
+
+  function resetBoard() {
+    placed = {}; selected = null; clearResult();
+    buildPool(); refresh();
+  }
+
+  // ── tiny confetti ──
+  function launchConfetti() {
+    const colors = ['#ff2d78','#00f5ff','#b44fff','#f0c040','#40e080'];
+    for (let i = 0; i < 60; i++) {
+      const d = document.createElement('div');
+      d.style.cssText = `position:fixed;top:-10px;left:${Math.random()*100}vw;width:9px;height:9px;z-index:999;border-radius:2px;background:${colors[i%colors.length]};pointer-events:none;`;
+      document.body.appendChild(d);
+      const fall = 1600 + Math.random()*1400, drift = (Math.random()-0.5)*220;
+      d.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:`translate(${drift}px,${window.innerHeight+40}px) rotate(${Math.random()*720}deg)`,opacity:0.9}],{duration:fall,easing:'cubic-bezier(.3,.6,.5,1)'});
+      setTimeout(()=>d.remove(), fall);
+    }
+  }
+
+  // init
+  buildScene();
+  buildPool();
+  refresh();
+</script>
+</body>
+</html>
