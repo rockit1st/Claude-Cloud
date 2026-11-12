@@ -604,6 +604,18 @@
     document.querySelectorAll('.unit-toggle button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('dist-unit-badge').textContent = unit;
+    invalidateResult();
+  }
+
+  // The numbers on screen changed (or were rejected), so the last answer must not be saved any more.
+  function invalidateResult() {
+    if (!lastResult && document.getElementById('work-shown').style.display !== 'block') return;
+    lastResult = null;
+    document.getElementById('save-btn').style.display = 'none';
+    document.getElementById('result-box').innerHTML = '<span class="placeholder-text">Press Calculate to see your new result</span>';
+    document.getElementById('work-shown').style.display = 'none';
+    document.getElementById('compare-section').style.display = 'none';
+    resetDiagram();
   }
 
   function calculate() {
@@ -614,14 +626,16 @@
     const workEl = document.getElementById('work-shown');
     const compareSection = document.getElementById('compare-section');
     errorEl.style.display = 'none';
-    if (!distInput || distInput <= 0 || !angleInput || angleInput <= 0 || angleInput >= 90) {
-      errorEl.style.display = 'block';
-      resultBox.innerHTML = '<span class="placeholder-text">Enter valid measurements to see results.</span>';
-      workEl.style.display = 'none'; compareSection.style.display = 'none'; return;
-    }
     const angleRad = angleInput * Math.PI / 180;
     const tanVal = Math.tan(angleRad);
     const altitude = distInput * tanVal;
+    if (!(distInput > 0) || !(angleInput >= 1) || !(angleInput <= 89) || !isFinite(altitude)) {
+      errorEl.style.display = 'block';
+      lastResult = null;
+      document.getElementById('save-btn').style.display = 'none';
+      resultBox.innerHTML = '<span class="placeholder-text">Enter valid measurements to see results.</span>';
+      workEl.style.display = 'none'; compareSection.style.display = 'none'; resetDiagram(); return;
+    }
     const unitLabel = distUnit;
     const benchmarkFt = distUnit === 'ft' ? 40 : 12;
     const pct = Math.min((altitude / (benchmarkFt * 2)) * 100, 100);
@@ -970,7 +984,8 @@
       const tr = document.createElement('tr');
       const unit = r.unit === 'm' ? 'm' : 'ft';
       rankTd(tr, i);
-      td(tr, String(r.name || '').trim() || 'Anonymous');
+      const nameCell = td(tr, String(r.name || '').trim() || 'Anonymous');
+      if (isTeacher && r.userEmail) nameCell.title = 'Saved from ' + r.userEmail;
       if (noClass) td(tr, r.period && r.period !== '—' ? String(r.period) : '—').className = 'col-extra';
       td(tr, r.distance + ' ' + unit).className = 'col-extra';
       td(tr, r.angle + '°').className = 'col-extra';
@@ -1270,8 +1285,8 @@
     label.textContent = inputAngle + '°';
   }
 
-  document.getElementById('distance').addEventListener('input', resetDiagram);
-  document.getElementById('angle').addEventListener('input', resetDiagram);
+  document.getElementById('distance').addEventListener('input', invalidateResult);
+  document.getElementById('angle').addEventListener('input', invalidateResult);
   // Enter runs the calculation only from the measurement boxes (not from buttons, tabs or the password box)
   ['student-name', 'distance', 'angle'].forEach(function(id) {
     document.getElementById(id).addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
