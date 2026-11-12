@@ -142,14 +142,11 @@
   </div>
 </nav>
 
-<!-- Password gate -->
+<!-- Teacher-only gate: opens automatically for the teacher's school account -->
 <div class="gate" id="gate">
   <div class="gate-card">
     <div class="gate-title">TEACHER ACCESS</div>
-    <div class="gate-sub">Enter your teacher password to view the dashboard</div>
-    <input class="gate-input" type="password" id="gate-pw" placeholder="••••••••" />
-    <button class="gate-btn" onclick="checkGate()">ENTER DASHBOARD</button>
-    <div class="gate-error" id="gate-error"></div>
+    <div class="gate-sub" style="margin-bottom:0">This page is for the teacher. It opens automatically when you are signed in with the teacher account.</div>
   </div>
 </div>
 
@@ -175,7 +172,7 @@
     <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Results</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-avg">—</div><div class="stat-label">Avg Altitude (ft)</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-high">—</div><div class="stat-label">Highest (ft)</div></div>
-    <div class="stat-card"><div class="stat-value" id="stat-periods">—</div><div class="stat-label">Active Periods</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-periods">—</div><div class="stat-label">Classes</div></div>
   </div>
 
   <div class="period-tabs" id="period-tabs"></div>
@@ -190,7 +187,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 <script>
-  const TEACHER_PASSWORD = 'rocket';
   const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
 
   // Auto-unlock for teacher account
@@ -203,23 +199,13 @@
   });
   var allResults = [], allGameResults = [], activeFilter = 'all', activeTab = 'altitude';
 
-  // Enter on password field
-  document.getElementById('gate-pw').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') checkGate();
-  });
-
-  function checkGate() {
-    const pw = document.getElementById('gate-pw').value;
-    if (pw === TEACHER_PASSWORD) {
-      document.getElementById('gate').style.display = 'none';
-      document.getElementById('dashboard-content').style.display = 'block';
-      loadResults();
-    } else {
-      document.getElementById('gate-error').textContent = 'Incorrect password. Try again.';
-      document.getElementById('gate-pw').value = '';
-      document.getElementById('gate-pw').focus();
-    }
+  // Student-typed text is always escaped before it goes into the page
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+  // Which class (or, for older results, which period) a saved altitude belongs to
+  function groupOf(r) { return r.className || (r.period && r.period !== '—' ? 'Period ' + r.period : 'No class'); }
+  function altFt(r) { const a = parseFloat(r.altitude); return r.unit === 'm' ? a * 3.28084 : a; }
 
   function loadResults() {
     document.getElementById('results-area').innerHTML = '<div class="loading-msg">Loading results...</div>';
@@ -289,7 +275,7 @@
           <tbody>${rows.map(function(r, i) {
             const time = r.savedAt ? new Date(r.savedAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—';
             const resultLabel = r.result === 'win' ? '✅ Win' : r.result === 'game-over' ? '❌ Game Over' : '⏱️ Timed End';
-            return `<tr><td>${i+1}</td><td>${r.name||'Anonymous'}</td><td>${r.className||r.period||'—'}</td><td class="altitude-val">${r.score}${r.maxScore ? ' / '+r.maxScore : ''}</td><td style="font-size:0.82rem">${gameInputLabel(r)}</td><td style="font-size:0.82rem">${gameDiffLabel(r)}</td><td>${resultLabel}</td><td style="color:#9080b0;font-size:0.82rem">${time}</td></tr>`;
+            return `<tr><td>${i+1}</td><td>${esc(r.name||'Anonymous')}</td><td>${esc(r.className||r.period||'—')}</td><td class="altitude-val">${esc(r.score)}${r.maxScore ? ' / '+esc(r.maxScore) : ''}</td><td style="font-size:0.82rem">${gameInputLabel(r)}</td><td style="font-size:0.82rem">${gameDiffLabel(r)}</td><td>${resultLabel}</td><td style="color:#9080b0;font-size:0.82rem">${time}</td></tr>`;
           }).join('')}</tbody>
         </table>`;
       area.appendChild(section);
@@ -300,69 +286,70 @@
     if (activeTab === 'games') { renderGameResults(); return; }
     document.getElementById('stats-row').style.display = '';
     document.getElementById('period-tabs').style.display = '';
-    // Stats
-    const ftResults = allResults.filter(r => r.unit === 'ft');
-    const altitudes = ftResults.map(r => r.altitude);
-    const periods = [...new Set(allResults.map(r => r.period).filter(p => p && p !== '—'))].sort();
+    // Stats (metres are converted so every launch counts)
+    const altitudes = allResults.map(altFt).filter(function(a) { return isFinite(a) && a > 0; });
+    const groupNames = [...new Set(allResults.map(groupOf))].sort();
 
     document.getElementById('stat-total').textContent = allResults.length;
     document.getElementById('stat-avg').textContent = altitudes.length ? (altitudes.reduce((a,b)=>a+b,0)/altitudes.length).toFixed(1) : '—';
     document.getElementById('stat-high').textContent = altitudes.length ? Math.max(...altitudes).toFixed(1) : '—';
-    document.getElementById('stat-periods').textContent = periods.length;
-    document.getElementById('dash-sub').textContent = allResults.length + ' result' + (allResults.length !== 1 ? 's' : '') + ' across ' + periods.length + ' period' + (periods.length !== 1 ? 's' : '');
+    document.getElementById('stat-periods').textContent = groupNames.length;
+    document.getElementById('dash-sub').textContent = allResults.length + ' result' + (allResults.length !== 1 ? 's' : '') + ' across ' + groupNames.length + ' class' + (groupNames.length !== 1 ? 'es' : '');
 
-    // Period tabs
+    // Class tabs
+    if (activeFilter !== 'all' && groupNames.indexOf(activeFilter) === -1) activeFilter = 'all';
     const tabsEl = document.getElementById('period-tabs');
     tabsEl.innerHTML = '';
     const allTab = document.createElement('button');
     allTab.className = 'period-tab' + (activeFilter === 'all' ? ' active' : '');
-    allTab.textContent = 'All Periods';
+    allTab.textContent = 'All Classes';
     allTab.onclick = function() { activeFilter = 'all'; renderDashboard(); };
     tabsEl.appendChild(allTab);
-    periods.forEach(function(p) {
+    groupNames.forEach(function(g) {
       const btn = document.createElement('button');
-      btn.className = 'period-tab' + (activeFilter === p ? ' active' : '');
-      btn.textContent = 'Period ' + p;
-      btn.onclick = function() { activeFilter = p; renderDashboard(); };
+      btn.className = 'period-tab' + (activeFilter === g ? ' active' : '');
+      btn.textContent = g;
+      btn.onclick = function() { activeFilter = g; renderDashboard(); };
       tabsEl.appendChild(btn);
     });
 
     // Filter results
-    const filtered = activeFilter === 'all' ? allResults : allResults.filter(r => r.period === activeFilter);
+    const filtered = activeFilter === 'all' ? allResults : allResults.filter(r => groupOf(r) === activeFilter);
 
-    // Group by period
     const area = document.getElementById('results-area');
     if (filtered.length === 0) {
       area.innerHTML = '<div class="empty-msg">No results yet. Students need to save their calculations.</div>';
       return;
     }
 
+    // Group by class
     const groups = {};
     filtered.forEach(function(r) {
-      const key = r.period || '—';
+      const key = groupOf(r);
       if (!groups[key]) groups[key] = [];
       groups[key].push(r);
     });
 
     area.innerHTML = '';
-    Object.keys(groups).sort().forEach(function(period) {
-      const rows = groups[period];
+    Object.keys(groups).sort().forEach(function(group) {
+      const rows = groups[group];
       const section = document.createElement('div');
       section.className = 'period-section';
       section.innerHTML = `
         <div class="period-heading">
-          Period ${period} &nbsp;<span style="color:#9080b0;font-size:0.78rem;font-weight:400">${rows.length} student${rows.length !== 1 ? 's' : ''}</span>
+          ${esc(group)} &nbsp;<span style="color:#9080b0;font-size:0.78rem;font-weight:400">${rows.length} result${rows.length !== 1 ? 's' : ''}</span>
         </div>
         <table class="results-table">
           <thead><tr><th>#</th><th>Name</th><th>Distance</th><th>Angle</th><th>Altitude</th><th>Time</th></tr></thead>
           <tbody>${rows.map(function(r, i) {
             const time = r.savedAt ? new Date(r.savedAt.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—';
+            const alt = parseFloat(r.altitude);
             return `<tr>
               <td>${i+1}</td>
-              <td>${r.name || 'Anonymous'}</td>
-              <td>${r.distance} ${r.unit}</td>
-              <td>${r.angle}°</td>
-              <td class="altitude-val">${parseFloat(r.altitude).toFixed(1)} ${r.unit}</td>
+              <td>${esc(r.name || 'Anonymous')}</td>
+              <td>${esc(r.distance)} ${esc(r.unit)}</td>
+              <td>${esc(r.angle)}°</td>
+              <td class="altitude-val">${isFinite(alt) ? alt.toFixed(1) : '—'} ${esc(r.unit)}</td>
               <td style="color:#9080b0;font-size:0.82rem">${time}</td>
             </tr>`;
           }).join('')}</tbody>
@@ -372,15 +359,23 @@
   }
 
   function clearAll() {
-    if (!confirm('Delete ALL results from the database? This cannot be undone.')) return;
+    if (!confirm('Delete ALL altitude results from the database, for every class? This cannot be undone.')) return;
     const db = firebase.firestore();
-    const batch = db.batch();
-    allResults.forEach(function(r) {
-      batch.delete(db.collection('results').doc(r.id));
-    });
-    batch.commit().then(function() {
+    const jobs = [];
+    for (let i = 0; i < allResults.length; i += 400) {
+      const batch = db.batch();
+      allResults.slice(i, i + 400).forEach(function(r) { batch.delete(db.collection('results').doc(r.id)); });
+      jobs.push(batch.commit());
+    }
+    jobs.push(db.collection('settings').doc('altitude-top20').set({ entries: [], v: 1 }));
+    jobs.push(db.collection('settings').doc('altitude-rankings').set({ locked: false }));
+    Promise.all(jobs).then(function() {
       allResults = [];
       renderDashboard();
+    }).catch(function(err) {
+      console.error('Clear failed:', err);
+      alert('Some results could not be deleted. Check your connection, then press Refresh and try again.');
+      loadResults();
     });
   }
 </script>

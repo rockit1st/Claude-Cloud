@@ -293,6 +293,29 @@
     .lock-btn:hover { background:rgba(240,192,64,0.12); }
     .lock-btn.locked { border-color:rgba(100,255,100,0.4); color:#80ff80; }
 
+    .final-badge { display:none; margin-left:8px; padding:2px 10px; border-radius:20px; font-size:0.65rem; letter-spacing:1.5px; color:#80ff80; border:1px solid rgba(100,255,100,0.4); vertical-align:middle; }
+    .final-badge.show { display:inline-block; }
+    .board-note { font-size:0.8rem; color:#a8d8f0; margin:-6px 0 12px; line-height:1.5; min-height:1.2em; }
+    .board-note a { color:#f0c040; }
+    .board-note strong { color:#f0c040; }
+    .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .alt-conv { color:#9080b0; font-size:0.78rem; font-weight:400; white-space:nowrap; }
+    .results-table tr.me td { background:rgba(0,245,255,0.07); }
+    .results-table tr.me td:nth-child(2)::after { content:' (you)'; color:#00f5ff; font-size:0.75rem; }
+    .del-btn { background:none; border:none; color:#ff6060; cursor:pointer; font-size:1rem; padding:2px 8px; border-radius:4px; opacity:0.6; transition:opacity 0.2s; }
+    .del-btn:hover, .del-btn:focus { opacity:1; }
+    .missing-list { display:none; margin-top:14px; padding:10px 14px; border-radius:8px; background:rgba(255,255,255,0.04); border-left:3px solid rgba(240,192,64,0.5); font-size:0.82rem; color:#a8d8f0; line-height:1.6; }
+    .save-ok { display:none; margin-top:10px; padding:10px 14px; border-radius:8px; background:rgba(64,192,122,0.12); border:1px solid rgba(64,192,122,0.4); color:#80e0a8; font-size:0.88rem; font-weight:600; }
+    .save-ok.show { display:block; }
+    .save-btn:disabled { opacity:0.6; cursor:default; }
+    /* let a card be narrower than its widest child (the table scrolls inside .table-scroll instead of widening the page) */
+    .container > .card { min-width:0; }
+    @media (max-width: 480px) { .results-table .col-extra { display:none; } }
+    @media (max-width: 650px) {
+      .results-table th, .results-table td { padding:9px 8px; }
+      .results-header { flex-wrap:wrap; gap:8px; }
+    }
+
     .rank-gold td   { background:rgba(240,192,64,0.1) !important; }
     .rank-silver td { background:rgba(200,215,225,0.07) !important; }
     .rank-bronze td { background:rgba(180,110,50,0.1) !important; }
@@ -420,12 +443,13 @@
     <h2>Measurements</h2>
 
     <div class="input-group" style="display:flex;gap:12px">
-      <div style="flex:2">
-        <label>Student Name</label>
-        <input type="text" id="student-name" placeholder="Enter your name" />
+      <div style="flex:2;min-width:0">
+        <label for="student-name">Student Name</label>
+        <input type="text" id="student-name" placeholder="First and last name" maxlength="40" autocomplete="off" />
       </div>
-      <div style="flex:1">
-        <label>Period</label>
+      <div style="flex:1;min-width:0">
+        <label for="student-period" id="group-label">Period</label>
+        <select id="student-class" style="display:none" aria-label="Your class"></select>
         <select id="student-period">
           <option value="" disabled selected>—</option>
           <option>1</option><option>2</option><option>3</option>
@@ -467,7 +491,8 @@
     </div>
 
     <button class="save-btn" id="save-btn" onclick="saveResult()">Save Result</button>
-    <div id="save-error" style="color:#ff8080;font-size:0.82rem;margin-top:6px;display:none"></div>
+    <div id="save-error" role="alert" style="color:#ff8080;font-size:0.82rem;margin-top:6px;display:none"></div>
+    <div id="save-ok" class="save-ok" role="status"></div>
     <div id="work-shown"></div>
 
     <div class="compare-section" id="compare-section" style="display:none">
@@ -503,12 +528,12 @@
     </svg>
   </div>
 
-  <div class="card results-card" id="results-card" style="display:none">
+  <div class="card results-card" id="results-card">
     <div class="results-header">
-      <h2 style="margin-bottom:0">Class Results</h2>
+      <h2 style="margin-bottom:0">🏆 Leaderboard <span class="final-badge" id="final-badge">Final</span></h2>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="lock-btn" id="lock-btn" onclick="lockRankings()">🏆 Lock Rankings</button>
-        <button class="clear-btn" id="clear-all-btn" onclick="clearResults()" style="display:none">Clear All</button>
+        <button class="clear-btn" id="clear-all-btn" onclick="clearResults()" style="display:none">Clear</button>
       </div>
     </div>
 
@@ -520,25 +545,19 @@
         <button class="podium-dismiss" onclick="document.getElementById('podium-overlay').classList.remove('show')">CLOSE</button>
       </div>
     </div>
-    <div class="period-tabs" id="period-tabs">
-      <button class="period-tab active" onclick="filterPeriod('all', this)">All Periods</button>
-      <button class="period-tab" onclick="filterPeriod('1', this)">Period 1</button>
-      <button class="period-tab" onclick="filterPeriod('2', this)">Period 2</button>
-      <button class="period-tab" onclick="filterPeriod('3', this)">Period 3</button>
-      <button class="period-tab" onclick="filterPeriod('4', this)">Period 4</button>
-      <button class="period-tab" onclick="filterPeriod('5', this)">Period 5</button>
-      <button class="period-tab" onclick="filterPeriod('6', this)">Period 6</button>
-      <button class="period-tab" onclick="filterPeriod('7', this)">Period 7</button>
-      <button class="period-tab" onclick="filterPeriod('8', this)">Period 8</button>
+
+    <!-- One tab for the Top 20 of all classes, plus one per class the viewer belongs to -->
+    <div class="period-tabs" id="board-tabs" role="tablist"></div>
+    <div class="board-note" id="board-note"></div>
+    <div class="table-scroll">
+      <table class="results-table">
+        <thead id="results-head"></thead>
+        <tbody id="results-body">
+          <tr><td class="empty-msg">Loading the leaderboard…</td></tr>
+        </tbody>
+      </table>
     </div>
-    <table class="results-table">
-      <thead>
-        <tr><th>#</th><th>Name</th><th>Period</th><th>Distance</th><th>Angle</th><th>Altitude</th></tr>
-      </thead>
-      <tbody id="results-body">
-        <tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>
-      </tbody>
-    </table>
+    <div class="missing-list" id="missing-list"></div>
   </div>
 
   <div class="card steps-card">
@@ -557,8 +576,8 @@
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div id="modal-step-1">
-      <h3>Clear All Results?</h3>
-      <p>This will permanently delete every saved result. Are you sure you want to continue?</p>
+      <h3 id="clear-title">Clear All Results?</h3>
+      <p id="clear-text">This will permanently delete every saved result. Are you sure you want to continue?</p>
       <div class="modal-btns">
         <button class="modal-cancel" onclick="closeModal()">Cancel</button>
         <button class="modal-confirm" onclick="showPasswordStep()">Yes, Continue</button>
@@ -566,7 +585,7 @@
     </div>
     <div id="modal-step-2" style="display:none">
       <h3>Teacher Password</h3>
-      <p>Enter the teacher password to clear all results.</p>
+      <p>Enter the teacher password to clear these results.</p>
       <input type="password" id="modal-pw" placeholder="••••••••" />
       <div class="pw-error" id="pw-error"></div>
       <div class="modal-btns">
@@ -578,7 +597,7 @@
 </div>
 
 <script>
-  let distUnit = 'ft', lastResult = null, resultCount = 0, activePeriodFilter = 'all', rankingsLocked = false, isTeacher = false;
+  let distUnit = 'ft', lastResult = null, rankingsLocked = false, lockSeen = false, isTeacher = false;
 
   function setDistUnit(unit, btn) {
     distUnit = unit;
@@ -645,178 +664,582 @@
     rocket.style.transform = 'translateY(0) rotate(-45deg)';
     altLine.classList.add('visible'); sightLine.classList.add('visible');
     smokes.forEach(s => { s.classList.remove('puff'); void s.getBoundingClientRect(); s.classList.add('puff'); });
-    lastResult = { name: document.getElementById('student-name').value.trim() || 'Anonymous',
-                   period: document.getElementById('student-period').value || '—',
-                   distance: distInput, angle: angleInput, altitude, unit: distUnit };
+    lastResult = { distance: distInput, angle: angleInput, altitude, unit: distUnit };
+    document.getElementById('save-error').style.display = 'none';
+    document.getElementById('save-ok').classList.remove('show');
     if (!rankingsLocked) document.getElementById('save-btn').style.display = 'block';
   }
 
-  var allResults = [];
+  // ── Leaderboard ────────────────────────────────────────────────────────────
+  // Two kinds of board:
+  //   • Top 20 · All Classes — public. Lives in one small document
+  //     (settings/altitude-top20) so no student ever has to download another
+  //     class's results to see it.
+  //   • One board per class — the whole class, best launch per student. A
+  //     student only ever asks Firestore for the classes they have joined, and
+  //     the security rules (firestore.rules) refuse anything else.
+  // The teacher sees every class and keeps the Top 20 document authoritative.
+  const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
+  const TOP_N = 20;
+  const FT_PER_M = 3.28084;
+  const MEDALS = ['🥇', '🥈', '🥉'];
+  const MEDAL_ROW = ['rank-gold', 'rank-silver', 'rank-bronze'];
 
-  function filterPeriod(period, btn) {
-    activePeriodFilter = period;
-    document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderResults();
+  let me = null;               // { uid, email, name, tag } of the signed-in user
+  let myClasses = [];          // [{ classId, className }] — joined (student) or owned (teacher)
+  let classResults = {};       // classId -> rows (student view; one listener per joined class)
+  let classState = {};         // classId -> 'loading' | 'ready' | 'error'
+  let classUnsubs = {};        // classId -> unsubscribe function
+  let ownResults = [];         // the signed-in student's own results
+  let allResults = [];         // every result (teacher only)
+  let topEntries = [];         // the public Top 20
+  let roster = {};             // classId -> [{ name, email }] enrolled students (teacher only)
+  let activeBoard = 'top';     // 'top' | 'c:<classId>' | 'none'
+  const loaded = { top: false, own: false, all: false, classes: false };
+  const fresh = { own: false, all: false };   // true once that data came from the server, not a cache
+  let topError = false, saving = false, clearScope = 'all';
+
+  function $(id) { return document.getElementById(id); }
+  function db() { return firebase.firestore(); }
+
+  function round2(x) { return Math.round(Number(x) * 100) / 100; }
+  function altFt(r) { const a = Number(r.altitude); return r.unit === 'm' ? a * FT_PER_M : a; }
+  function normName(s) { return String(s == null ? '' : s).trim().replace(/\s+/g, ' ').toLowerCase(); }
+  function savedMs(r) { const t = r.savedAt; return t && typeof t.toMillis === 'function' ? t.toMillis() : 0; }
+  function validResult(r) { const a = Number(r && r.altitude); return isFinite(a) && a > 0; }
+  function groupLabel(r) { return r.className || (r.period && r.period !== '—' ? 'Period ' + r.period : '—'); }
+
+  // Short one-way tag for an account, so the public Top 20 never carries anyone's email address.
+  function ownerTag(email) {
+    const s = String(email || '').trim().toLowerCase();
+    if (!s) return '';
+    let h1 = 0x811c9dc5, h2 = 5381;
+    for (let i = 0; i < s.length; i++) {
+      h1 = Math.imul(h1 ^ s.charCodeAt(i), 0x01000193);
+      h2 = (Math.imul(h2, 33) + s.charCodeAt(i)) | 0;
+    }
+    return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
+  }
+  // One board row per student: same account + same name. (The teacher can enter
+  // results for several students from one account, so the name is part of the key.)
+  function studentKey(r) {
+    const o = ownerTag(r.userEmail);
+    return o ? o + '|' + normName(r.name) : '|' + normName(r.name) + '|' + String(r.period || '');
+  }
+  function cmpRows(a, b) {
+    return (altFt(b) - altFt(a)) || (savedMs(a) - savedMs(b)) || (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0);
+  }
+  // Best launch per student, highest first (feet and metres are compared in feet).
+  function bestPerStudent(rows) {
+    const best = new Map();
+    rows.forEach(function(r) {
+      if (!validResult(r)) return;
+      const k = studentKey(r), cur = best.get(k);
+      if (!cur || cmpRows(r, cur) < 0) best.set(k, r);
+    });
+    return Array.from(best.values()).sort(cmpRows);
+  }
+  function rowsOf(snap) {
+    return snap.docs.map(function(d) {
+      return Object.assign({ id: d.id, _pending: d.metadata.hasPendingWrites }, d.data());
+    });
+  }
+  function confirmed(rows) { return rows.filter(function(r) { return !r._pending; }); }
+
+  // ── Top 20 document ──
+  function toEntry(r) {
+    return { k: studentKey(r), o: ownerTag(r.userEmail), n: String(r.name || '').trim().slice(0, 60), g: groupLabel(r),
+             c: r.classId || '', a: round2(r.altitude), u: r.unit === 'm' ? 'm' : 'ft', f: round2(altFt(r)), id: r.id, t: savedMs(r) };
+  }
+  function cleanEntry(e) {
+    if (!e || typeof e !== 'object') return null;
+    const f = Number(e.f), a = Number(e.a);
+    if (!e.k || !isFinite(f) || f <= 0 || !isFinite(a)) return null;
+    return { k: String(e.k), o: String(e.o || ''), n: String(e.n || '').slice(0, 60), g: String(e.g || '—'), c: String(e.c || ''),
+             a: round2(a), u: e.u === 'm' ? 'm' : 'ft', f: round2(f), id: String(e.id || ''), t: Number(e.t) || 0 };
+  }
+  function cmpEntries(a, b) {
+    return (b.f - a.f) || (a.t - b.t) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  }
+  function rankEntries(list) {
+    const best = new Map();
+    list.forEach(function(e) {
+      const cur = best.get(e.k);
+      if (!cur || cmpEntries(e, cur) < 0) best.set(e.k, e);
+    });
+    return Array.from(best.values()).sort(cmpEntries).slice(0, TOP_N);
+  }
+  function canon(list) {
+    return JSON.stringify(list.map(function(e) { return [e.k, e.o, e.n, e.g, e.c, e.a, e.u, e.f, e.id, e.t]; }));
+  }
+  function readEntries(snap) {
+    const d = snap.exists ? snap.data() : null;
+    return d && Array.isArray(d.entries) ? d.entries.map(cleanEntry).filter(Boolean) : [];
+  }
+  // What the Top 20 should contain, as far as this browser can know:
+  // the teacher sees everything and rebuilds it outright; a student only ever
+  // adds, updates or removes their OWN entry and leaves everyone else's alone.
+  function desiredTop(current) {
+    if (isTeacher) return rankEntries(bestPerStudent(confirmed(allResults)).map(toEntry));
+    const mine = bestPerStudent(confirmed(ownResults)).map(toEntry);
+    const others = current.filter(function(e) { return e.o !== me.tag; });
+    return rankEntries(others.concat(mine));
   }
 
-  function renderResults() {
-    const tbody = document.getElementById('results-body');
-    tbody.innerHTML = '';
-    let filtered;
-    if (isTeacher) {
-      filtered = activePeriodFilter === 'all'
-        ? allResults
-        : allResults.filter(r => r.period === activePeriodFilter);
-    } else {
-      const studentPeriod = document.getElementById('student-period').value;
-      if (!studentPeriod) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Select your period above to view class results.</td></tr>';
-        return;
-      }
-      filtered = allResults.filter(r => String(r.period) === String(studentPeriod));
-    }
-    if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No results yet.</td></tr>';
-      return;
-    }
+  let syncBusy = false, syncTimer = null, syncLog = [];
+  function scheduleSync(delay) {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(runSync, delay == null ? 600 : delay);
+  }
+  function runSync() {
+    if (!me || syncBusy || !loaded.top || topError) return;
+    if (isTeacher ? !fresh.all : !fresh.own) return;              // never decide from cached or partial data
+    if (canon(desiredTop(topEntries)) === canon(topEntries)) return;
+    const now = Date.now();
+    syncLog = syncLog.filter(function(t) { return now - t < 600000; });
+    if (syncLog.length >= 40) return;                             // safety valve: can never loop on writes
+    syncLog.push(now);
+    syncBusy = true;
+    const ref = db().collection('settings').doc('altitude-top20');
+    db().runTransaction(function(tx) {
+      return tx.get(ref).then(function(snap) {
+        const cur = readEntries(snap), next = desiredTop(cur);
+        if (canon(next) !== canon(cur)) {
+          tx.set(ref, { entries: next, v: 1, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        }
+      });
+    }).then(function() { syncBusy = false; scheduleSync(1500); },
+            function(err) { console.error('Top 20 update failed:', err); syncBusy = false; scheduleSync(20000); });
+  }
 
-    // When locked, sort by altitude descending to award medals
-    const rows = rankingsLocked
-      ? filtered.slice().sort((a, b) => b.altitude - a.altitude)
-      : filtered;
-    const medals = ['🥇', '🥈', '🥉'];
-    const medalClass = ['rank-gold', 'rank-silver', 'rank-bronze'];
+  // ── Which boards the viewer may open ──
+  function boardList() {
+    const list = [{ id: 'top', label: '🌎 Top ' + TOP_N + ' · All Classes' }];
+    myClasses.forEach(function(c) { list.push({ id: 'c:' + c.classId, label: (isTeacher ? '' : '👥 ') + c.className, classId: c.classId }); });
+    if (isTeacher && allResults.some(function(r) { return !r.classId; })) list.push({ id: 'none', label: 'No class' });
+    return list;
+  }
+  function currentBoard() {
+    const list = boardList();
+    return list.find(function(b) { return b.id === activeBoard; }) || list[0];
+  }
+  function selectBoard(id) {
+    activeBoard = id;
+    const b = currentBoard();
+    if (isTeacher && b.classId) loadRoster(b.classId);
+    renderBoards();
+  }
 
-    rows.forEach(function(r, i) {
-      const tr = document.createElement('tr');
-      if (rankingsLocked && i < 3) tr.className = medalClass[i];
-      const rankCell = rankingsLocked && i < 3
-        ? `<span class="medal-emoji">${medals[i]}</span>`
-        : `<span class="rank-badge">${i + 1}</span>`;
-      const deleteCell = isTeacher
-        ? `<td><button onclick="deleteResult('${r.id}')" style="background:none;border:none;color:#ff6060;cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:4px;opacity:0.6;transition:opacity 0.2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6" title="Delete this result">✕</button></td>`
-        : '';
-      tr.innerHTML = `<td>${rankCell}</td><td>${r.name}</td><td>${r.period}</td><td>${r.distance} ${r.unit}</td><td>${r.angle}°</td><td><strong>${r.altitude.toFixed(1)} ${r.unit}</strong></td>${deleteCell}`;
-      tbody.appendChild(tr);
+  function renderTabs(board) {
+    const tabs = $('board-tabs');
+    tabs.textContent = '';
+    boardList().forEach(function(b) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'period-tab' + (b.id === board.id ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', b.id === board.id ? 'true' : 'false');
+      btn.textContent = b.label;
+      btn.addEventListener('click', function() { selectBoard(b.id); });
+      tabs.appendChild(btn);
     });
   }
 
-  function deleteResult(id) {
-    if (!id) return;
-    firebase.firestore().collection('results').doc(id).delete()
-      .catch(function(err) { console.error('Delete failed:', err); });
+  // Every piece of student-typed text goes in with textContent, never innerHTML.
+  function td(tr, text) { const c = document.createElement('td'); c.textContent = text; tr.appendChild(c); return c; }
+  function rankTd(tr, i) {
+    const c = document.createElement('td'), s = document.createElement('span');
+    if (i < 3) { s.className = 'medal-emoji'; s.textContent = MEDALS[i]; s.title = 'Rank ' + (i + 1); tr.className = MEDAL_ROW[i]; }
+    else { s.className = 'rank-badge'; s.textContent = String(i + 1); }
+    c.appendChild(s); tr.appendChild(c);
+  }
+  function altTd(tr, alt, unit, ft) {
+    const c = document.createElement('td'), b = document.createElement('strong');
+    b.textContent = Number(alt).toFixed(1) + ' ' + unit;
+    c.appendChild(b);
+    if (unit === 'm') { const s = document.createElement('span'); s.className = 'alt-conv'; s.textContent = ' (' + Math.round(ft) + ' ft)'; c.appendChild(s); }
+    tr.appendChild(c);
+  }
+  function delTd(tr, id, name) {
+    const c = document.createElement('td'), b = document.createElement('button');
+    b.type = 'button'; b.className = 'del-btn'; b.textContent = '✕';
+    b.title = 'Delete this result'; b.setAttribute('aria-label', 'Delete the result for ' + name);
+    b.addEventListener('click', function() { deleteResult(id, name); });
+    c.appendChild(b); tr.appendChild(c);
+  }
+  function setHead(cols) {
+    const head = $('results-head'), tr = document.createElement('tr');
+    head.textContent = '';
+    cols.forEach(function(t) {
+      const th = document.createElement('th'); th.textContent = t;
+      if (t === 'Distance' || t === 'Angle' || t === 'Period') th.className = 'col-extra';
+      tr.appendChild(th);
+    });
+    if (isTeacher) { const th = document.createElement('th'); th.setAttribute('aria-label', 'Delete'); tr.appendChild(th); }
+    head.appendChild(tr);
+    return cols.length + (isTeacher ? 1 : 0);
+  }
+  function emptyRow(text, span) {
+    const tr = document.createElement('tr'), c = document.createElement('td');
+    c.className = 'empty-msg'; c.colSpan = span; c.textContent = text;
+    tr.appendChild(c); $('results-body').appendChild(tr);
+  }
+  function fmtAlt(r) { return Number(r.altitude).toFixed(1) + ' ' + (r.unit === 'm' ? 'm' : 'ft'); }
+
+  function renderBoards() {
+    if (!me) return;
+    const board = currentBoard();
+    activeBoard = board.id;
+    renderTabs(board);
+    const body = $('results-body'), note = $('board-note'), missing = $('missing-list');
+    body.textContent = ''; note.textContent = ''; missing.textContent = ''; missing.style.display = 'none';
+    $('final-badge').classList.toggle('show', rankingsLocked);
+    if (isTeacher) $('clear-all-btn').textContent = board.id === 'top' ? 'Clear All' : 'Clear This Board';
+
+    if (board.id === 'top') {
+      const span = setHead(['#', 'Name', 'Class', 'Altitude']);
+      note.appendChild(document.createTextNode('The ' + TOP_N + ' highest launches across every class — each student\'s best flight. '));
+      if (!isTeacher) {
+        const mine = bestPerStudent(ownResults)[0];
+        if (mine) {
+          note.appendChild(document.createTextNode('Your best: '));
+          const b = document.createElement('strong'); b.textContent = fmtAlt(mine); note.appendChild(b);
+          note.appendChild(document.createTextNode('. '));
+        }
+        if (loaded.classes && !myClasses.length) {
+          const a = document.createElement('a'); a.href = 'classes.html'; a.textContent = 'Join your class';
+          note.appendChild(a);
+          note.appendChild(document.createTextNode(' to see your whole class\'s board.'));
+        }
+      }
+      if (!loaded.top) { emptyRow('Loading the leaderboard…', span); return; }
+      if (topError) { emptyRow('The Top ' + TOP_N + ' could not be loaded. Refresh the page to try again.', span); return; }
+      if (!topEntries.length) { emptyRow('No results yet — be the first to save a launch!', span); return; }
+      topEntries.forEach(function(e, i) {
+        const tr = document.createElement('tr');
+        rankTd(tr, i);
+        td(tr, e.n || 'Anonymous');
+        td(tr, e.g);
+        altTd(tr, e.a, e.u, e.f);
+        if (isTeacher) delTd(tr, e.id, e.n);
+        if (!isTeacher && e.o && e.o === me.tag) tr.classList.add('me');
+        body.appendChild(tr);
+      });
+      return;
+    }
+
+    const noClass = board.id === 'none';
+    const span = setHead(noClass ? ['#', 'Name', 'Period', 'Distance', 'Angle', 'Altitude'] : ['#', 'Name', 'Distance', 'Angle', 'Altitude']);
+    let rows, state = 'ready';
+    if (isTeacher) {
+      rows = bestPerStudent(allResults.filter(function(r) { return noClass ? !r.classId : r.classId === board.classId; }));
+      if (!loaded.all) state = 'loading';
+    } else {
+      rows = bestPerStudent(classResults[board.classId] || []);
+      state = classState[board.classId] || 'loading';
+    }
+    if (state === 'loading') { emptyRow('Loading…', span); return; }
+    if (state === 'error') { emptyRow('This class board could not be loaded. Refresh the page to try again.', span); return; }
+
+    if (noClass) {
+      note.textContent = 'Results saved without a class (older results, or students who have not joined a class yet). Only you can see this list.';
+    } else if (isTeacher) {
+      const list = roster[board.classId];
+      const tail = ' Only you and the members of this class can see this board.';
+      if (list) {
+        const have = {}, names = {};
+        allResults.forEach(function(r) {
+          if (r.classId !== board.classId || !validResult(r)) return;
+          have[String(r.userEmail || '').toLowerCase()] = true; names[normName(r.name)] = true;
+        });
+        const waiting = list.filter(function(s) { return !have[String(s.email || '').toLowerCase()] && !names[normName(s.name)]; })
+                            .map(function(s) { return s.name || s.email; });
+        note.textContent = (list.length - waiting.length) + ' of ' + list.length + ' enrolled student' + (list.length === 1 ? ' has' : 's have') + ' saved a result.' + tail;
+        if (waiting.length) {
+          missing.textContent = 'Still to save a result (' + waiting.length + '): ' + waiting.join(', ');
+          missing.style.display = 'block';
+        }
+      } else {
+        note.textContent = rows.length + ' student' + (rows.length === 1 ? ' has' : 's have') + ' saved a result.' + tail;
+      }
+    } else {
+      note.textContent = 'Everyone in ' + board.label.replace(/^👥 /, '') + ' — each student\'s best flight. Only members of this class can see this board.';
+    }
+    if (!rows.length) { emptyRow('No results for this class yet.', span); return; }
+    rows.forEach(function(r, i) {
+      const tr = document.createElement('tr');
+      const unit = r.unit === 'm' ? 'm' : 'ft';
+      rankTd(tr, i);
+      td(tr, String(r.name || '').trim() || 'Anonymous');
+      if (noClass) td(tr, r.period && r.period !== '—' ? String(r.period) : '—').className = 'col-extra';
+      td(tr, r.distance + ' ' + unit).className = 'col-extra';
+      td(tr, r.angle + '°').className = 'col-extra';
+      altTd(tr, r.altitude, unit, altFt(r));
+      if (isTeacher) delTd(tr, r.id, String(r.name || ''));
+      if (!isTeacher && r.userEmail && String(r.userEmail).toLowerCase() === me.email.toLowerCase()) tr.classList.add('me');
+      body.appendChild(tr);
+    });
+  }
+
+  // ── Teacher actions ──
+  function deleteResult(id, name) {
+    if (!isTeacher || !id) return;
+    if (!confirm('Delete the result for ' + (name || 'this student') + '?')) return;
+    db().collection('results').doc(id).delete()
+      .catch(function(err) { console.error('Delete failed:', err); alert('That result could not be deleted. Check your connection and try again.'); });
   }
 
   function lockRankings() {
-    var locked = !rankingsLocked;
-    firebase.firestore().collection('settings').doc('altitude-rankings')
-      .set({ locked: locked });
+    if (!isTeacher) return;
+    db().collection('settings').doc('altitude-rankings').set({ locked: !rankingsLocked })
+      .catch(function(err) { console.error('Lock failed:', err); alert('The rankings could not be ' + (rankingsLocked ? 'unlocked' : 'locked') + '. Check your connection and try again.'); });
   }
 
   function showCelebration() {
-    const sorted = allResults.slice().sort((a, b) => b.altitude - a.altitude).slice(0, 3);
-    const medals = ['🥇', '🥈', '🥉'];
-    const classes = ['p1', 'p2', 'p3'];
-    document.getElementById('podium-places').innerHTML = sorted.map((r, i) =>
-      `<div class="podium-place ${classes[i]}">
-        <span class="podium-medal">${medals[i]}</span>
-        <div><div class="podium-name">${r.name}</div><div class="podium-alt">${r.altitude.toFixed(1)} ${r.unit}</div></div>
-      </div>`
-    ).join('');
-    document.getElementById('podium-overlay').classList.add('show');
+    const places = $('podium-places');
+    places.textContent = '';
+    topEntries.slice(0, 3).forEach(function(e, i) {
+      const row = document.createElement('div'); row.className = 'podium-place p' + (i + 1);
+      const medal = document.createElement('span'); medal.className = 'podium-medal'; medal.textContent = MEDALS[i];
+      const box = document.createElement('div');
+      const nm = document.createElement('div'); nm.className = 'podium-name'; nm.textContent = e.n || 'Anonymous';
+      const al = document.createElement('div'); al.className = 'podium-alt'; al.textContent = e.a.toFixed(1) + ' ' + e.u + (e.g && e.g !== '—' ? ' · ' + e.g : '');
+      box.appendChild(nm); box.appendChild(al); row.appendChild(medal); row.appendChild(box); places.appendChild(row);
+    });
+    if (places.childNodes.length) $('podium-overlay').classList.add('show');
   }
 
+  function loadRoster(classId) {
+    db().collection('enrollments').where('classId', '==', classId).get().then(function(snap) {
+      roster[classId] = snap.docs.map(function(d) { const x = d.data(); return { name: x.name || '', email: x.email || '' }; });
+      renderBoards();
+    }).catch(function(err) { console.error('Roster load failed:', err); });
+  }
+
+  // ── Name + class picker ──
+  function byName(a, b) { return String(a.className || '').localeCompare(String(b.className || '')); }
+  function setMyClasses(list) {
+    myClasses = list.slice().sort(byName);
+    loaded.classes = true;
+    const cs = $('student-class'), ps = $('student-period'), lbl = $('group-label');
+    if (myClasses.length) {
+      const keep = cs.value;
+      cs.textContent = '';
+      myClasses.forEach(function(c) {
+        const o = document.createElement('option'); o.value = c.classId; o.textContent = c.className; cs.appendChild(o);
+      });
+      if (keep && myClasses.some(function(c) { return c.classId === keep; })) cs.value = keep;
+      cs.style.display = ''; ps.style.display = 'none';
+      lbl.textContent = 'Class'; lbl.htmlFor = 'student-class';
+    } else {
+      cs.style.display = 'none'; ps.style.display = '';
+      lbl.textContent = 'Period'; lbl.htmlFor = 'student-period';
+    }
+    if (!isTeacher) {
+      const want = {};
+      myClasses.forEach(function(c) { want[c.classId] = true; if (!classUnsubs[c.classId]) watchClass(c.classId); });
+      Object.keys(classUnsubs).forEach(function(cid) {
+        if (want[cid]) return;
+        classUnsubs[cid](); delete classUnsubs[cid]; delete classResults[cid]; delete classState[cid];
+      });
+    }
+    renderBoards();
+  }
+  // Where a saved result belongs: the chosen class, or (no class joined yet) the chosen period.
+  function groupSelection() {
+    const cs = $('student-class');
+    if (cs.style.display !== 'none' && cs.value) {
+      const opt = cs.options[cs.selectedIndex];
+      return { classId: cs.value, className: opt ? opt.textContent : '', period: '' };
+    }
+    return { classId: '', className: '', period: $('student-period').value || '' };
+  }
+
+  // ── Live data ──
+  function watchClass(classId) {
+    classState[classId] = 'loading';
+    classUnsubs[classId] = db().collection('results').where('classId', '==', classId)
+      .onSnapshot({ includeMetadataChanges: true }, function(snap) {
+        classResults[classId] = rowsOf(snap); classState[classId] = 'ready'; renderBoards();
+      }, function(err) {
+        console.error('Class board failed:', err);
+        classResults[classId] = []; classState[classId] = 'error'; renderBoards();
+      });
+  }
+
+  function startBoards(user) {
+    me = { uid: user.uid, email: user.email || '', name: user.displayName || '', tag: ownerTag(user.email) };
+    isTeacher = me.email === TEACHER_EMAIL;
+
+    const nameEl = $('student-name');
+    if (isTeacher) {
+      nameEl.placeholder = "Student's first and last name";
+      $('clear-all-btn').style.display = '';
+      $('lock-btn').style.display = 'inline-block';
+    } else if (me.name) {
+      nameEl.value = me.name; nameEl.readOnly = true; nameEl.style.opacity = '0.85';
+      nameEl.title = 'From your school account';
+    }
+
+    // The public Top 20
+    db().collection('settings').doc('altitude-top20').onSnapshot(function(snap) {
+      topEntries = readEntries(snap); loaded.top = true; topError = false;
+      renderBoards(); scheduleSync();
+    }, function(err) { console.error('Top 20 failed:', err); loaded.top = true; topError = true; renderBoards(); });
+
+    // Lock / unlock, live
+    db().collection('settings').doc('altitude-rankings').onSnapshot(function(doc) {
+      const wasLocked = rankingsLocked;
+      rankingsLocked = doc.exists && doc.data().locked === true;
+      const lockBtn = $('lock-btn');
+      lockBtn.textContent = rankingsLocked ? '🔓 Unlock Rankings' : '🏆 Lock Rankings';
+      lockBtn.classList.toggle('locked', rankingsLocked);
+      if (rankingsLocked) $('save-btn').style.display = 'none';
+      else if (lastResult) $('save-btn').style.display = 'block';
+      renderBoards();
+      if (lockSeen && !wasLocked && rankingsLocked) showCelebration();
+      lockSeen = true;
+    }, function(err) { console.error('Lock state failed:', err); });
+
+    if (isTeacher) {
+      db().collection('results').onSnapshot({ includeMetadataChanges: true }, function(snap) {
+        allResults = rowsOf(snap); loaded.all = true; fresh.all = !snap.metadata.fromCache;
+        renderBoards(); scheduleSync();
+      }, function(err) { console.error('Results failed:', err); loaded.all = true; renderBoards(); });
+      db().collection('classes').where('teacherEmail', '==', me.email).onSnapshot(function(snap) {
+        setMyClasses(snap.docs.map(function(d) { return { classId: d.id, className: d.data().name || 'Class' }; }));
+      }, function(err) { console.error('Classes failed:', err); setMyClasses([]); });
+    } else {
+      db().collection('results').where('userEmail', '==', me.email)
+        .onSnapshot({ includeMetadataChanges: true }, function(snap) {
+          ownResults = rowsOf(snap); loaded.own = true; fresh.own = !snap.metadata.fromCache;
+          renderBoards(); scheduleSync();
+        }, function(err) { console.error('Own results failed:', err); loaded.own = true; renderBoards(); });
+      db().collection('enrollments').where('uid', '==', me.uid).onSnapshot(function(snap) {
+        setMyClasses(snap.docs.map(function(d) { return d.data(); })
+          .filter(function(x) { return x.classId; })
+          .map(function(x) { return { classId: x.classId, className: x.className || 'Class' }; }));
+      }, function(err) { console.error('Enrollments failed:', err); setMyClasses([]); });
+    }
+    renderBoards();
+  }
+
+  // ── Saving ──
   function saveResult() {
-    if (!lastResult) return;
-    const name = document.getElementById('student-name').value.trim();
-    const period = document.getElementById('student-period').value;
-    const errEl = document.getElementById('save-error');
+    if (!lastResult || saving) return;
+    const errEl = $('save-error'), okEl = $('save-ok'), btn = $('save-btn');
+    const name = $('student-name').value.trim().replace(/\s+/g, ' ');
+    const grp = groupSelection();
+    const user = firebase.auth().currentUser;
+    function fail(msg) { errEl.textContent = msg; errEl.style.display = 'block'; }
+    okEl.classList.remove('show');
+    if (!user) { fail('You are signed out. Refresh the page and sign in again to save.'); return; }
+    if (rankingsLocked) { fail('Rankings are locked, so new results cannot be saved right now. Ask your teacher.'); return; }
     const missing = [];
     if (!name) missing.push('name');
-    if (!period) missing.push('period');
-    if (missing.length) {
-      errEl.textContent = 'Please enter your ' + missing.join(' and ') + ' before saving.';
-      errEl.style.display = 'block';
-      return;
-    }
+    if (!grp.classId && !grp.period) missing.push('period');
+    if (missing.length) { fail('Please enter your ' + missing.join(' and ') + ' before saving.'); return; }
     errEl.style.display = 'none';
-    lastResult.name = name;
-    lastResult.period = period;
-    const db = firebase.firestore();
-    const user = firebase.auth().currentUser;
-    db.collection('results').add({
-      name:      lastResult.name,
-      period:    lastResult.period,
-      distance:  lastResult.distance,
-      angle:     lastResult.angle,
-      altitude:  lastResult.altitude,
-      unit:      lastResult.unit,
-      userEmail: user ? user.email : '',
-      savedAt:   firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(function(err) { console.error('Save failed:', err); });
 
-    document.getElementById('save-btn').style.display = 'none';
-    lastResult = null;
-    document.getElementById('results-card').style.display = 'block';
-    setTimeout(function() {
-      document.getElementById('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 300);
+    const rec = {
+      name: name, period: grp.period, classId: grp.classId, className: grp.className,
+      distance: lastResult.distance, angle: lastResult.angle, altitude: lastResult.altitude, unit: lastResult.unit,
+      altitudeFt: round2(altFt(lastResult)),
+      uid: user.uid, userEmail: user.email || '',
+      savedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const shown = fmtAlt(lastResult);
+    saving = true; btn.disabled = true; btn.textContent = 'Saving…';
+    const slow = setTimeout(function() {
+      if (saving) fail('Still saving… check your internet connection. Keep this page open.');
+    }, 8000);
+    db().collection('results').add(rec).then(function() {
+      clearTimeout(slow);
+      saving = false; btn.disabled = false; btn.textContent = 'Save Result'; btn.style.display = 'none';
+      errEl.style.display = 'none';
+      lastResult = null;
+      okEl.textContent = '✓ Saved! ' + shown + ' is on the ' + (grp.classId ? grp.className + ' board' : 'leaderboard') + '.';
+      okEl.classList.add('show');
+      if (isTeacher) $('student-name').value = '';
+      activeBoard = grp.classId ? 'c:' + grp.classId : 'top';
+      renderBoards();
+      setTimeout(function() { $('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 300);
+    }, function(err) {
+      clearTimeout(slow);
+      console.error('Save failed:', err);
+      saving = false; btn.disabled = false; btn.textContent = 'Save Result';
+      fail('Your result was NOT saved. Check your connection and press Save Result again.');
+    });
   }
 
   function fullReset() {
-    document.getElementById('student-name').value = '';
-    document.getElementById('student-period').value = '';
-    document.getElementById('distance').value = '';
-    document.getElementById('angle').value = '';
-    document.getElementById('error-msg').style.display = 'none';
-    document.getElementById('result-box').innerHTML = '<span class="placeholder-text">Enter measurements above and press Calculate</span>';
-    document.getElementById('work-shown').style.display = 'none';
-    document.getElementById('compare-section').style.display = 'none';
-    document.getElementById('bar-fill').style.width = '0%';
-    document.getElementById('save-btn').style.display = 'none';
+    const nameEl = $('student-name');
+    if (!nameEl.readOnly) nameEl.value = '';
+    $('distance').value = '';
+    $('angle').value = '';
+    $('error-msg').style.display = 'none';
+    $('save-error').style.display = 'none';
+    $('save-ok').classList.remove('show');
+    $('result-box').innerHTML = '<span class="placeholder-text">Enter measurements above and press Calculate</span>';
+    $('work-shown').style.display = 'none';
+    $('compare-section').style.display = 'none';
+    $('bar-fill').style.width = '0%';
+    $('save-btn').style.display = 'none';
     lastResult = null; resetDiagram();
   }
 
+  // ── Clear (teacher) ──
   const TEACHER_PASSWORD = 'rocket';
 
   function clearResults() {
-    document.getElementById('modal-step-1').style.display = 'block';
-    document.getElementById('modal-step-2').style.display = 'none';
-    document.getElementById('modal-pw').value = '';
-    document.getElementById('pw-error').textContent = '';
-    document.getElementById('modal-overlay').classList.add('open');
+    if (!isTeacher) return;
+    const board = currentBoard();
+    clearScope = board.id;
+    $('clear-title').textContent = board.id === 'top' ? 'Clear All Results?' : 'Clear This Board?';
+    $('clear-text').textContent = board.id === 'top'
+      ? 'This will permanently delete every saved result in EVERY class. Are you sure you want to continue?'
+      : board.id === 'none'
+        ? 'This will permanently delete every saved result that has no class. Are you sure you want to continue?'
+        : 'This will permanently delete every saved result for ' + board.label + '. Other classes are not touched. Are you sure you want to continue?';
+    $('modal-step-1').style.display = 'block';
+    $('modal-step-2').style.display = 'none';
+    $('modal-pw').value = '';
+    $('pw-error').textContent = '';
+    $('modal-overlay').classList.add('open');
   }
   function showPasswordStep() {
-    document.getElementById('modal-step-1').style.display = 'none';
-    document.getElementById('modal-step-2').style.display = 'block';
-    setTimeout(() => document.getElementById('modal-pw').focus(), 50);
+    $('modal-step-1').style.display = 'none';
+    $('modal-step-2').style.display = 'block';
+    setTimeout(function() { $('modal-pw').focus(); }, 50);
   }
   function checkPassword() {
-    if (document.getElementById('modal-pw').value === TEACHER_PASSWORD) {
-      closeModal();
-      const db = firebase.firestore();
-      Promise.all([
-        db.collection('results').get().then(function(snap) {
-          const batch = db.batch();
-          snap.docs.forEach(function(doc) { batch.delete(doc.ref); });
-          return batch.commit();
-        }),
-        db.collection('settings').doc('altitude-rankings').set({ locked: false })
-      ]).then(function() {
-        activePeriodFilter = 'all';
-        document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-        document.querySelector('.period-tab').classList.add('active');
-      }).catch(function(err) { console.error('Clear failed:', err); });
-    } else {
-      document.getElementById('pw-error').textContent = 'Incorrect password. Try again.';
-      document.getElementById('modal-pw').value = '';
-      document.getElementById('modal-pw').focus();
+    if (!isTeacher) return;
+    if ($('modal-pw').value !== TEACHER_PASSWORD) {
+      $('pw-error').textContent = 'Incorrect password. Try again.';
+      $('modal-pw').value = '';
+      $('modal-pw').focus();
+      return;
     }
+    closeModal();
+    const scope = clearScope;
+    const ids = allResults.filter(function(r) {
+      return scope === 'top' ? true : scope === 'none' ? !r.classId : 'c:' + r.classId === scope;
+    }).map(function(r) { return r.id; });
+    const jobs = [];
+    for (let i = 0; i < ids.length; i += 400) {            // a Firestore batch holds at most 500 writes
+      const batch = db().batch();
+      ids.slice(i, i + 400).forEach(function(id) { batch.delete(db().collection('results').doc(id)); });
+      jobs.push(batch.commit());
+    }
+    if (scope === 'top') jobs.push(db().collection('settings').doc('altitude-rankings').set({ locked: false }));
+    Promise.all(jobs).catch(function(err) {
+      console.error('Clear failed:', err);
+      alert('Some results could not be deleted. Check your connection and try again.');
+    });
   }
-  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
-  document.getElementById('modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-  document.getElementById('modal-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') checkPassword(); });
+  function closeModal() { $('modal-overlay').classList.remove('open'); }
+  $('modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+  $('modal-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') checkPassword(); });
 
   function resetDiagram() {
     const rocket = document.getElementById('svg-rocket');
@@ -849,13 +1272,10 @@
 
   document.getElementById('distance').addEventListener('input', resetDiagram);
   document.getElementById('angle').addEventListener('input', resetDiagram);
-  document.getElementById('student-period').addEventListener('change', function() {
-    if (!isTeacher && allResults.length > 0) {
-      document.getElementById('results-card').style.display = 'block';
-      renderResults();
-    }
+  // Enter runs the calculation only from the measurement boxes (not from buttons, tabs or the password box)
+  ['student-name', 'distance', 'angle'].forEach(function(id) {
+    document.getElementById(id).addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
   });
-  document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
 </script>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -864,50 +1284,9 @@
 <script src="auth.js"></script>
 <script>
   firebase.auth().onAuthStateChanged(function(user) {
-    if (!user) return;
-    if (user.email === 'ncapellini@hhh.k12.ny.us') {
-      isTeacher = true;
-      document.getElementById('clear-all-btn').style.display = '';
-      document.getElementById('lock-btn').style.display = '';
-    } else {
-      document.getElementById('period-tabs').style.display = 'none';
-    }
-    // Real-time listener — leaderboard updates live for all students
-    firebase.firestore().collection('results').orderBy('savedAt', 'desc')
-      .onSnapshot(function(snap) {
-        allResults = [];
-        snap.docs.forEach(function(doc) {
-          var r = doc.data();
-          r.id = doc.id;
-          allResults.push(r);
-        });
-        resultCount = allResults.length;
-        if (allResults.length > 0) {
-          document.getElementById('results-card').style.display = 'block';
-          renderResults();
-        } else {
-          document.getElementById('results-card').style.display = 'none';
-          document.getElementById('results-body').innerHTML = '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
-        }
-      }, function(err) { console.error('Load failed:', err); });
-
-    // Listen for rankings lock/unlock in real time
-    firebase.firestore().collection('settings').doc('altitude-rankings')
-      .onSnapshot(function(doc) {
-        var wasLocked = rankingsLocked;
-        rankingsLocked = doc.exists && doc.data().locked === true;
-        var lockBtn = document.getElementById('lock-btn');
-        if (rankingsLocked) {
-          lockBtn.textContent = '🔓 Unlock Rankings';
-          lockBtn.classList.add('locked');
-          document.getElementById('save-btn').style.display = 'none';
-        } else {
-          lockBtn.textContent = '🏆 Lock Rankings';
-          lockBtn.classList.remove('locked');
-        }
-        renderResults();
-        if (!wasLocked && rankingsLocked && allResults.length > 0) showCelebration();
-      });
+    // auth.js sends signed-out and off-domain visitors to the login page
+    if (!user || me || (user.email || '').split('@')[1] !== ALLOWED_DOMAIN) return;
+    startBoards(user);
   });
 </script>
 </body>
