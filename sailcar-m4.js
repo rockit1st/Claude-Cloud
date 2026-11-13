@@ -1,12 +1,19 @@
 // Sail Car Lab — Module 4: Friction (wheels and axles)
-// Rolling friction = crr × weight; it takes a bit more push to START rolling than to keep rolling
-// (SailLab.physics.STICKY); and what makes crr big or small on a real student car. Every number comes
-// from SailLab.physics (rollingFriction, airForce, windAt, simulate) — the same model as the hallway.
+// Rolling friction = crr × weight; last year's sliding sleds (SailLab.physics.SLED_FRICTION) against wheels;
+// it takes a bit more push to START rolling than to keep rolling (SailLab.physics.STICKY); and what makes crr
+// big or small on a real student car. Every number comes from SailLab.physics (rollingFriction, airForce,
+// windAt, simulate) — the same two-box-fan model as the hallway — and is worked out when the page loads.
 (function () {
   'use strict';
-  const P = SailLab.physics, C = P.DEFAULT_CAR;
-  const WHEELS = { smooth: 0.012, ok: C.crr, rub: 0.07 };              // step 1: three simple "stickiness" levels
-  // Axle builder (steps 3–4): the same crr numbers the Design Studio uses for these parts
+  const P = SailLab.physics, C = P.DEFAULT_CAR, FT = 3.28084;
+  const WHEELS = { smooth: 0.012, ok: C.crr, rub: 0.07 };              // three simple "stickiness" levels (steps 1–2)
+  const WHEEL_OPTS = [{ value: 'smooth', label: 'Spin freely' }, { value: 'ok', label: 'OK' }, { value: 'rub', label: 'Rubbing' }];
+  const WHEEL_NAME = { smooth: 'free-spinning wheels', ok: 'OK wheels', rub: 'rubbing wheels' };
+  // Last year's paper-sail SLED: no wheels, so it SLIDES (stickiness = SLED_FRICTION ≈ 0.3). About 20 g with a
+  // 20 cm × 22 cm tent-shaped sail sitting low (its middle 7 cm up) and its weight spread forward, so the strong
+  // two-fan push at the start line can't tip it over.
+  const SLED = { mass: 0.02, crr: P.SLED_FRICTION, sailArea: 0.044, sailHeight: 0.07, cgToFront: 0.10 };
+  // Axle builder (steps 4–5): the same crr numbers the Design Studio uses for these parts
   const BEARING = { straw: 0.012, taped: 0.022, hole: 0.03 }, WOBBLY = 0.012, RUBBING = 0.03;
   const BEARING_NAME = { straw: 'straw bearing', taped: 'taped skewer', hole: 'cardstock hole' };
   const BEARING_OPTS = [{ value: 'straw', label: 'Skewer spins in a straw' }, { value: 'taped', label: 'Skewer taped down' }, { value: 'hole', label: 'Skewer in a cardstock hole' }];
@@ -15,9 +22,50 @@
   function axleCrr(b, fit, gap) { return BEARING[b] + (fit === 'wobbly' ? WOBBLY : 0) + (gap === 'rub' ? RUBBING : 0); }
   // how far a bare chassis coasts after a push of v m/s if only friction slows it: v² ÷ (2 × crr × 9.81)
   function coast(v, crr) { return v * v / (2 * crr * P.G); }
-  // the wind's push on the standard car sitting still x metres from the fan (sail + body, as simulate() starts it)
+  // the wind's push on the standard car sitting still x metres from the fans (sail + body, as simulate() starts it)
   function pushAt(x) { const w = P.windAt(x); return P.airForce(w, C.sailArea, C.sailCd, 0) + P.airForce(w, C.bodyArea, C.bodyCd, 0); }
+  // the farthest spot (metres from the fans) where a 70 g car with this stickiness still STARTS by itself
+  function farStart(crr) {
+    const need = P.rollingFriction(C.mass, crr) * P.STICKY;
+    let lo = 0.3, hi = 200;
+    for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (pushAt(m) > need) lo = m; else hi = m; }
+    return lo;
+  }
   function N(f) { return f.toFixed(3) + ' N'; }
+  function ft(m) { return Math.round(m * FT); }
+  function dist(m) { return m.toFixed(2) + ' m (' + ft(m) + ' ft)'; }
+
+  // ── numbers worked out from the model (so every sentence below stays true) ──
+  const FR = P.rollingFriction(C.mass, C.crr);                          // the starting car: 70 g, OK wheels
+  const START_RUN = P.simulate({});
+  const STOP_X = START_RUN.opts.startX + START_RUN.distance;            // where it stops, rolling in from the start line (m from the fans)
+  const SLED_RUN = P.simulate(SLED);
+  const D = { smooth: P.simulate({ crr: WHEELS.smooth }).distance, ok: P.simulate({ crr: WHEELS.ok }).distance, rub: P.simulate({ crr: WHEELS.rub }).distance };
+  const TERRIBLE = axleCrr('hole', 'wobbly', 'rub'), TERRIBLE_D = P.simulate({ crr: TERRIBLE }).distance;
+  const HALL_GOAL = 20;                                                 // metres, step 5
+  const VEER = P.simulate({ veerDeg: 1.5 });
+
+  // ── the challenge rules: the steps call these before api.done(), and the node check script tests them ──
+  // where the starting car is set down (x m from the fans): 'start' it starts by itself; 'keep' it can't start, but the
+  // same car rolling in from the start line goes right past; 'crawl' a still car gets a hair more push than friction,
+  // but the rolling car has already stopped; 'weak' too weak even to keep a car rolling
+  function spot(x) {
+    const p = pushAt(x);
+    if (p > FR * P.STICKY) return 'start';
+    if (x < STOP_X) return 'keep';
+    return p > FR ? 'crawl' : 'weak';
+  }
+  const checks = {
+    lighter: function (grams, crr) { return grams >= 100 && P.rollingFriction(grams / 1000, crr) < FR; },
+    race: function (sledDist, carDist) { return carDist >= 2 * sledDist; },
+    spot: function (x) { return spot(x) === 'keep'; },
+    pushTest: function (crr) { return coast(1, crr) >= 2; },
+    hall: function (distance) { return distance >= HALL_GOAL; }
+  };
+  // the "keep" zone on the step-3 slider (0.1 m steps), for the message when it's found
+  let ZONE_LO = null;
+  for (let i = 3; i <= 200; i++) if (spot(i / 10) === 'keep') { ZONE_LO = i / 10; break; }
+
   // write a readout from plain strings and ['bold'] pieces — never innerHTML
   function say(api, box, parts) {
     box.textContent = '';
@@ -37,22 +85,38 @@
     rect(api, s, x, y, Math.max(2, Math.min(val, max) / max * px), 22, fill, { rx: 3 });
     if (val > max) label(api, s, x + px - 6, y + 17, 'off the chart →', { anchor: 'end', color: '#120826', size: 15, plain: true });
   }
+  // the box fans, with a label big enough to read on a phone (or no label)
+  function fans(api, s, x, floorY, size, withLabel) {
+    const g = api.draw.fan(s, x, floorY, size), t = g.querySelector('text');
+    if (t && withLabel) { t.setAttribute('font-size', 16); t.setAttribute('font-weight', 700); t.setAttribute('y', floorY + 20); t.setAttribute('class', 'sl-lbl'); }
+    else if (t) t.remove();
+  }
+  // wind streaks: shorter and fainter where the wind is weaker. m → px is given; x = metres from the fans
+  function streaks(api, s, toPx, from, to, stepM, floorY, heights) {
+    for (let m = from; m < to; m += stepM) {
+      const ww = P.windAt(m);
+      heights.forEach(function (y, i) {
+        api.svg('line', { x1: toPx(m) + i * 10, y1: floorY - y, x2: toPx(m) + i * 10 + ww * 8, y2: floorY - y, stroke: '#7ad7ff', 'stroke-width': 1.5,
+          opacity: Math.min(0.6, ww / P.FAN.v0 * 0.7).toFixed(2), 'stroke-linecap': 'round' }, s);
+      });
+    }
+  }
 
   const TESTS_HTML =
     '<p><strong>Test the friction in the hallway:</strong></p>' +
     '<ol><li><strong>Flick test:</strong> hold the car up and flick each wheel. It should spin for <strong>3 seconds or more</strong>. If it stops fast, find what rubs and fix it.</li>' +
     '<li><strong>Push test (before the sail goes on):</strong> make a ramp by leaning a binder or a piece of cardstock on a book. Let the chassis roll down from the same mark every time, and measure how far it coasts. ' +
     'Fix one thing, then test again. Farther = less friction.</li>' +
-    '<li><strong>Start test:</strong> with the sail on, set the car in front of the fan, then 50 cm farther back each time. Find the farthest spot where it still starts by itself. ' +
-    'Less friction = it can start farther from the fan.</li></ol>';
+    '<li><strong>Start test:</strong> with the sail on, set the car down 2\u00a0m (about 6½\u00a0ft) in front of the fans, then 2\u00a0m farther away each time. Find the farthest spot where it still starts rolling by itself. ' +
+    'Less friction = it can start farther from the fans. (In our model, the lab car with OK wheels starts up to about ' + Math.round(farStart(WHEELS.ok)) + ' m away, and with free-spinning wheels up to about ' + Math.round(farStart(WHEELS.smooth)) + ' m.)</li></ol>';
 
   SailLab.register({
     id: 'friction',
     num: 4,
     title: 'Friction',
     icon: '🛞',
-    blurb: 'Why wheels slow down — and how to build axles that spin and spin.',
-    minutes: 15,
+    blurb: 'Why wheels beat last year’s sleds, what slows them down, and how to build axles that spin and spin.',
+    minutes: 18,
     steps: [
       {
         title: 'Friction holds your car back',
@@ -63,22 +127,23 @@
           '<ul><li><strong>Weight</strong>: how hard the car presses down. In newtons, weight = mass in kg × 9.81. ' +
           'A 70 g car (0.07 kg) weighs 0.07 × 9.81 ≈ 0.69 N. A heavier car presses harder, so it has more friction.</li>' +
           '<li><strong>Stickiness</strong>: how easily the wheels and axles turn. Scientists call this number <span class="key">crr</span> ' +
-          '(the “coefficient of rolling resistance”). Free-spinning wheels: about 0.012. Wheels that rub: 0.07 or more.</li></ul>' +
+          '(the “coefficient of rolling resistance”). Free-spinning wheels: about 0.012. Wheels that rub: 0.07 or more. ' +
+          'A sled with no wheels, sliding on the floor: about ' + P.SLED_FRICTION + '!</li></ul>' +
           '<p style="text-align:center;font-size:1.1rem"><strong>friction = crr × weight</strong></p>' +
           '<p>The starting car below is 70 g with OK wheels: 0.025 × 0.69 N ≈ 0.017 N. That’s about the weight of two paper clips. Tiny! ' +
-          'But far from the fan, the wind’s push is tiny too.</p>',
+          'But far down the hall, the wind’s push is tiny too: about 15 m from the fans, it pushes this car with only about ' + N(pushAt(15)) + '.</p>',
         challenge: 'Build a car that weighs at least 100 g but has LESS friction than the starting car (70 g with OK wheels).',
         render: function (el, api) {
           const s = board(api, el, 260, 'A sail car with its weight pressing down and friction holding it back, and its friction compared with the starting car');
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
           const mass = api.ui.slider(row, { label: 'Car mass', min: 40, max: 200, step: 10, value: 70, format: function (v) { return v + ' g'; }, onInput: draw });
-          const wh = api.ui.choice(row, { label: 'Wheels', value: 'ok', options: [{ value: 'smooth', label: 'Spin freely' }, { value: 'ok', label: 'OK' }, { value: 'rub', label: 'Rubbing' }], onChange: draw });
+          const wh = api.ui.choice(row, { label: 'Wheels', value: 'ok', options: WHEEL_OPTS, onChange: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          const ref = P.rollingFriction(C.mass, C.crr), BX = 290, MAXF = 0.08, BW = 252;      // bars show 0 to 0.08 N
+          const BX = 290, MAXF = 0.08, BW = 252;      // bars show 0 to 0.08 N
           function draw() {
-            const m = mass.get() / 1000, crr = WHEELS[wh.get()], wt = m * P.G, fr = P.rollingFriction(m, crr);
+            const g = mass.get(), m = g / 1000, crr = WHEELS[wh.get()], wt = m * P.G, fr = P.rollingFriction(m, crr);
             clear(api, s, 260);
             // left: the car — weight presses down on the deck, friction holds it back at the wheels
             api.svg('line', { x1: 12, y1: 196, x2: 266, y2: 196, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
@@ -97,16 +162,106 @@
             api.svg('line', { x1: BX, y1: 88, x2: 546, y2: 88, stroke: '#6a5a8a', 'stroke-width': 2 }, s);
             label(api, s, BX, 156, 'Your car: ' + N(fr), { color: '#ffa040' });
             bar(api, s, BX, 164, fr, MAXF, BW, '#ffa040');
-            label(api, s, BX, 212, 'Starting car: ' + N(ref));
-            bar(api, s, BX, 220, ref, MAXF, BW, '#9080b0');
-            api.svg('line', { x1: BX + ref / MAXF * BW, y1: 160, x2: BX + ref / MAXF * BW, y2: 192, stroke: '#f0e6ff', 'stroke-width': 1.5, 'stroke-dasharray': '4,3' }, s);   // the starting car's friction, marked on your bar
+            label(api, s, BX, 212, 'Starting car: ' + N(FR));
+            bar(api, s, BX, 220, FR, MAXF, BW, '#9080b0');
+            api.svg('line', { x1: BX + FR / MAXF * BW, y1: 160, x2: BX + FR / MAXF * BW, y2: 192, stroke: '#f0e6ff', 'stroke-width': 1.5, 'stroke-dasharray': '4,3' }, s);   // the starting car's friction, marked on your bar
             const parts = ['⚖️ Weight = ' + m.toFixed(2) + ' kg × 9.81 = ', [wt.toFixed(2) + ' N'], '. Friction = ' + crr.toFixed(3) + ' × ' + wt.toFixed(2) + ' N = ', [N(fr)],
-              ' — that’s ', ['× ' + (fr / ref).toFixed(2)], ' the starting car’s friction.'];
-            if (m >= 0.1 && fr >= ref) parts.push(' A heavier car has more friction… can you make up for it with the wheels?');
+              ' — that’s ', ['× ' + (fr / FR).toFixed(2)], ' the starting car’s friction.'];
+            if (g >= 100 && fr >= FR) parts.push(' A heavier car has more friction… can you make up for it with the wheels?');
             say(api, out, parts);
-            if (m >= 0.1 && fr < ref) api.done('Friction = stickiness × weight. Your heavier car still has less friction, because free-spinning wheels cut the stickiness by more than half. Weight matters — but stickiness is the part you can fix!');
+            if (checks.lighter(g, crr)) api.done('Friction = stickiness × weight. Your heavier car still has less friction, because free-spinning wheels cut the stickiness by more than half. Weight matters — but stickiness is the part you can fix!');
           }
           draw();
+        }
+      },
+      {
+        title: 'Sleds slide, wheels roll',
+        html:
+          '<p>Last year’s classes built paper-sail <strong>sleds</strong> with no wheels. In front of the same two box fans, most slid about <strong>25 ft (7.6 m)</strong>, ' +
+          'and the best went about <strong>30 ft (9.1 m)</strong>.</p>' +
+          '<p>A sled <strong>slides</strong>: its whole bottom scrapes along the floor. Its friction is about <strong>' + P.SLED_FRICTION + ' × its weight</strong>. ' +
+          'Wheels <strong>roll</strong> instead. Even OK wheels (stickiness 0.025) have more than <strong>ten times less</strong> friction for the same weight, and wheels that spin freely in straw bearings (0.012) have even less. ' +
+          'That’s why a wheeled car can roll much farther with the same fans.</p>' +
+          '<p>Race our model sled against the 70 g lab car. The sled weighs only 20 g, and its tent-shaped sail sits low so the fans can’t tip it over.</p>',
+        challenge: 'Race the sled against a car that rolls at least TWICE as far as the sled.',
+        render: function (el, api) {
+          const H = 290, LS = 120, LC = 248, X0 = 76, XE = 540, SC = 30;     // two lanes; 0–30 m (the whole hallway)
+          const s = board(api, el, H, 'Two lanes of the hallway in front of the same two fans: last year’s sled and this year’s wheeled car race');
+          function hx(m) { return X0 + m / SC * (XE - X0); }
+          const row = api.h('div', { class: 'sl-row' });
+          el.appendChild(row);
+          const wh = api.ui.choice(row, { label: 'The car’s wheels', value: 'rub', options: WHEEL_OPTS.slice().reverse(), onChange: reset });
+          const go = api.h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '▶ Race!' });
+          const again = api.h('button', { type: 'button', class: 'sl-btn', text: '↺ Reset' });
+          el.appendChild(api.h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 8px' }, [go, again]));
+          const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
+          el.appendChild(out);
+          let raf = null;
+          function stop() { if (raf) cancelAnimationFrame(raf); raf = null; go.disabled = false; }
+          api.onLeave(stop);
+          function sled(x, fy) {
+            rect(api, s, x, fy - 5, 42, 5, '#e8dcc0', { stroke: '#a07830', 'stroke-width': 0.8 });                // cardstock base
+            api.svg('polygon', { points: [x + 3, fy - 5, x + 21, fy - 36, x + 39, fy - 5].join(','), fill: '#f0e6ff', stroke: '#9080b0', 'stroke-width': 1, opacity: 0.92 }, s);   // tent sail
+          }
+          function scene(ds, dc, sDone, cDone) {
+            clear(api, s, H);
+            // last year's sleds: most about 25 ft (7.6 m), the best about 30 ft (9.1 m)
+            rect(api, s, hx(7.6), LS - 58, hx(9.1) - hx(7.6), 58, '#f0c040', { opacity: 0.28 });
+            [7.6, 9.1].forEach(function (m) { api.svg('line', { x1: hx(m), y1: LS - 58, x2: hx(m), y2: LS, stroke: '#f0c040', 'stroke-width': 1.5 }, s); });
+            label(api, s, (hx(7.6) + hx(9.1)) / 2, LS - 64, 'last year: 25–30 ft', { anchor: 'middle', color: '#f0c040', size: 16 });
+            [LS, LC].forEach(function (fy, lane) {
+              api.svg('line', { x1: 10, y1: fy, x2: 550, y2: fy, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
+              fans(api, s, 40, fy, 56, lane === 0);
+              for (let m = 0; m <= SC; m += 5) api.svg('line', { x1: hx(m), y1: fy, x2: hx(m), y2: fy + 7, stroke: '#6a5a8a', 'stroke-width': 1.5 }, s);
+              streaks(api, s, function (m) { return hx(m - 0.3); }, 0.8, SC, 1.5, fy, [36, 56]);
+            });
+            for (let m = 0; m <= SC; m += 5) label(api, s, hx(m), LC + 25, m ? m + ' m' : '0', { anchor: 'middle', color: '#9080b0', size: 16, bold: false });
+            label(api, s, X0 + 10, 28, 'Last year’s SLED (20 g)', { color: '#f0e6ff' });
+            label(api, s, X0 + 10, 158, 'This year’s CAR (70 g)', { color: '#f0e6ff' });
+            [[ds, sDone, 28, LS], [dc, cDone, 158, LC]].forEach(function (r) {
+              if (r[0] == null) return;
+              label(api, s, 546, r[2], r[1] ? dist(r[0]) : r[0].toFixed(1) + ' m', { anchor: 'end', color: r[1] ? '#f0c040' : '#c8b8ea' });
+              if (r[1]) api.svg('line', { x1: hx(r[0]), y1: r[3] - 60, x2: hx(r[0]), y2: r[3], stroke: '#f0c040', 'stroke-dasharray': '4,4', 'stroke-width': 1.5 }, s);
+            });
+            sled(hx(ds || 0), LS);
+            api.draw.car(s, hx(dc || 0), LC, { scale: 1.7, length: 26 });
+          }
+          function reset() {
+            stop();
+            scene(null, null, false, false);
+            const crr = WHEELS[wh.get()], sw = SLED.mass * P.G, cw = C.mass * P.G;
+            say(api, out, ['🛷 Sled friction: ' + P.SLED_FRICTION + ' × ' + sw.toFixed(3) + ' N = ', [N(P.rollingFriction(SLED.mass, SLED.crr))],
+              '. 🚗 Car friction: ' + crr.toFixed(3) + ' × ' + cw.toFixed(3) + ' N = ', [N(P.rollingFriction(C.mass, crr))],
+              '. The sled weighs less than a third as much as the car, but its friction is bigger! Press ▶ Race!']);
+          }
+          function race() {
+            stop();
+            const kind = wh.get(), rs = P.simulate(SLED), rc = P.simulate({ crr: WHEELS[kind] });
+            const end = Math.max(rs.time, rc.time), speed = Math.max(2, end / 8), t0 = performance.now();
+            let is = 0, ic = 0;
+            go.disabled = true;
+            function frame(now) {
+              const t = (now - t0) / 1000 * speed;
+              while (is < rs.trace.length - 1 && rs.trace[is + 1].t <= t) is++;
+              while (ic < rc.trace.length - 1 && rc.trace[ic + 1].t <= t) ic++;
+              const sDone = t >= rs.time, cDone = t >= rc.time;
+              scene(sDone ? rs.distance : rs.trace[is].x, cDone ? rc.distance : rc.trace[ic].x, sDone, cDone);
+              if (!(sDone && cDone)) {
+                say(api, out, ['⏱ ' + Math.min(t, end).toFixed(0) + ' s · 🛷 sled ' + (sDone ? rs.distance : rs.trace[is].x).toFixed(1) + ' m · 🚗 car ' + rc.trace[ic].x.toFixed(1) + ' m']);
+                raf = requestAnimationFrame(frame);
+                return;
+              }
+              raf = null; go.disabled = false;
+              const ratio = rc.distance / rs.distance, win = checks.race(rs.distance, rc.distance);
+              say(api, out, ['🛷 Sled: ', [dist(rs.distance)], ' · 🚗 Car with ' + WHEEL_NAME[kind] + ': ', [dist(rc.distance)], ' → ', [ratio.toFixed(1) + ' times'], ' as far as the sled. ',
+                win ? 'Rolling beats sliding!' : 'Rubbing wheels on a heavier car: its friction (' + N(rc.friction) + ') is almost as big as the sled’s (' + N(rs.friction) + '), so it only just wins. Try better wheels!']);
+              if (win) api.done('With ' + WHEEL_NAME[kind] + ', the car rolled ' + dist(rc.distance) + ' — ' + ratio.toFixed(1) + ' times as far as the sled, with the same two fans. Rolling beats sliding!');
+            }
+            raf = requestAnimationFrame(frame);
+          }
+          go.addEventListener('click', race);
+          again.addEventListener('click', reset);
+          reset();
         }
       },
       {
@@ -117,50 +272,47 @@
           'In our hallway model, it takes about <strong>1.3 times</strong> as much push (30% more) to START rolling as to KEEP rolling:</p>' +
           '<ul><li>To <strong>start</strong>: the push must be bigger than friction × 1.3.</li>' +
           '<li>To <strong>keep rolling</strong>: the push must be bigger than friction.</li></ul>' +
-          '<p>The fan’s wind fades as it spreads out, so the push gets smaller the farther you go. Set the starting car (70 g, OK wheels) down at different spots and compare.</p>',
-        challenge: 'Find a spot where the wind could KEEP a rolling car going, but is too weak to START a car that’s sitting still.',
+          '<p>The wind from the two fans fades as it spreads out: about ' + P.FAN.L.toFixed(1) + ' m from the fans it’s half as strong, and about ' + (3 * P.FAN.L).toFixed(1) + ' m away only a quarter. ' +
+          'So the push gets smaller the farther you go. Set the starting car (70 g, OK wheels) down at different spots and compare.</p>',
+        challenge: 'Find a spot where the wind is too weak to START the car sitting still, but the same car rolling in from the start line keeps going right past it.',
         render: function (el, api) {
-          const H = 280, s = board(api, el, H, 'A hallway with the fan and your car, and a bar comparing the wind push with the push needed to start and to keep rolling');
-          const d = api.ui.slider(el, { label: 'Where you set the car down (distance from the fan)', min: 0.3, max: 6, step: 0.1, value: 1, format: function (v) { return v.toFixed(1) + ' m'; }, onInput: draw });
+          const H = 290, s = board(api, el, H, 'A hallway with the fans and your car, and a bar comparing the wind push with the push needed to start and to keep rolling');
+          const d = api.ui.slider(el, { label: 'Where you set the car down (distance from the fans)', min: 0.3, max: 20, step: 0.1, value: 2, format: function (v) { return v.toFixed(1) + ' m'; }, onInput: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          const fr = P.rollingFriction(C.mass, C.crr), st = fr * P.STICKY;
+          const st = FR * P.STICKY;
           const FL = 116, BX = 30, MAXP = 0.04, BW = 500;               // floor; push bar: 0 to 0.04 N across 500 px
-          function px(m) { return 60 + m * 77; }
+          function px(m) { return 60 + m * 24; }                         // 0–20 m
           function draw() {
-            const x = d.get(), w = P.windAt(x), p = pushAt(x);
+            const x = d.get(), w = P.windAt(x), p = pushAt(x), where = spot(x);
             clear(api, s, H);
-            // the hallway: fan, metre marks, fading wind, the car
+            // the hallway: fans, metre marks, fading wind, where the rolling car stops, the car
             api.svg('line', { x1: 10, y1: FL, x2: 550, y2: FL, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
-            api.draw.fan(s, 30, FL, 72);
-            for (let m = 1; m <= 6; m++) {
+            fans(api, s, 30, FL, 72, true);
+            for (let m = 2; m <= 20; m += 2) {
               api.svg('line', { x1: px(m), y1: FL, x2: px(m), y2: FL + 7, stroke: '#6a5a8a', 'stroke-width': 1.5 }, s);
               label(api, s, px(m), FL + 25, m + ' m', { anchor: 'middle', color: '#9080b0', size: 16, bold: false });
             }
-            for (let m = 0.15; m < 6; m += 0.3) {
-              const ww = P.windAt(m);
-              [62, 86].forEach(function (y, i) {
-                api.svg('line', { x1: px(m) + i * 10, y1: FL - y, x2: px(m) + i * 10 + ww * 8, y2: FL - y, stroke: '#7ad7ff', 'stroke-width': 1.5, opacity: Math.min(0.6, ww / P.FAN.v0 * 0.7).toFixed(2), 'stroke-linecap': 'round' }, s);
-              });
-            }
+            streaks(api, s, px, 0.15, 20, 1, FL, [62, 86]);
+            api.svg('line', { x1: px(STOP_X), y1: 30, x2: px(STOP_X), y2: FL, stroke: '#f0c040', 'stroke-width': 2, 'stroke-dasharray': '5,4' }, s);
+            label(api, s, px(STOP_X) + 6, 22, 'rolling in from the start line, the car stops at ' + STOP_X.toFixed(1) + ' m', { anchor: 'end', color: '#f0c040', size: 16, bold: false });
             api.draw.car(s, px(x) - 6, FL, { scale: 1.5, length: 26 });
-            label(api, s, Math.max(120, Math.min(460, px(x) + 14)), 24, 'wind ' + w.toFixed(2) + ' m/s', { anchor: 'middle', color: '#7ad7ff', size: 18 });
             // push bar against two lines: keep rolling (friction) and start (friction × 1.3)
-            label(api, s, BX, 168, 'Wind push on the car: ' + N(p), { color: '#40e080', size: 18 });
+            label(api, s, BX, 168, 'Wind ' + w.toFixed(2) + ' m/s → push on the car: ' + N(p), { color: '#40e080', size: 18 });
             bar(api, s, BX, 178, p, MAXP, BW, '#40e080');
-            [[fr, '#ffa040', 'keep rolling: ' + N(fr), 'end', -6], [st, '#f0c040', 'start: ' + N(st), 'start', 6]].forEach(function (b) {
+            [[FR, '#ffa040', 'keep rolling: ' + N(FR), 'end', -6], [st, '#f0c040', 'start: ' + N(st), 'start', 6]].forEach(function (b) {
               const lx = BX + b[0] / MAXP * BW;
               api.svg('line', { x1: lx, y1: 172, x2: lx, y2: 210, stroke: b[1], 'stroke-width': 3 }, s);
               label(api, s, lx + b[4], 230, b[2], { anchor: b[3], color: b[1] });
             });
-            const starts = p > st, keeps = p > fr;
-            label(api, s, BX, 266, starts ? 'It STARTS rolling here.' : keeps ? 'It could KEEP rolling, but can’t START here!' : 'Too weak to even keep a car rolling.',
-              { color: starts ? '#40e080' : keeps ? '#f0c040' : '#ff8060', size: 19 });
-            const parts = ['📍 ' + x.toFixed(1) + ' m from the fan: wind ' + w.toFixed(2) + ' m/s, push ', [N(p)], '. To keep rolling it needs more than ', [N(fr)],
+            label(api, s, BX, 266, { start: 'It STARTS rolling here.', keep: 'Can’t START here, but a rolling car keeps going!', crawl: 'The rolling car has already stopped before here.', weak: 'Too weak to even keep a car rolling.' }[where],
+              { color: { start: '#40e080', keep: '#f0c040', crawl: '#ff8060', weak: '#ff8060' }[where], size: 19 });
+            const parts = ['📍 ' + x.toFixed(1) + ' m from the fans: wind ' + w.toFixed(2) + ' m/s, push ', [N(p)], '. To keep rolling it needs more than ', [N(FR)],
               ' (the friction). To start, it needs more than ', [N(st)], ' (friction × 1.3).'];
-            if (!starts && keeps) parts.push(' A car rolling in from the start line cruises right through here — but a car set down here never moves.');
+            if (where === 'keep') parts.push(' The car rolling in from the start line goes right past this spot (it stops at ' + STOP_X.toFixed(1) + ' m) — but set down here, it never moves!');
+            if (where === 'crawl') parts.push(' A car sitting here gets just a hair more push than friction. But a moving car feels a little less wind (it’s moving along with the wind), so the car from the start line slowed to a crawl and stopped at ' + STOP_X.toFixed(1) + ' m.');
             say(api, out, parts);
-            if (keeps && !starts) api.done('From about 3.8 m to 4.4 m from the fan, a rolling car keeps going, but a car set down there never starts. Starting takes about 30% more push than rolling!');
+            if (checks.spot(x)) api.done('From about ' + ZONE_LO.toFixed(1) + ' m to ' + STOP_X.toFixed(1) + ' m from the fans, the car rolling in from the start line keeps going, but the same car set down there never starts. Starting takes about 30% more push than rolling!');
           }
           draw();
         }
@@ -175,7 +327,8 @@
           '<li><strong>The gap.</strong> A wheel rubbing the chassis (or a piece of tape, or glue) is like dragging your foot. ' +
           'A short piece of straw on the axle, called a <span class="key">spacer</span>, keeps a small gap.</li></ul>' +
           '<p>Build an axle below. Then do a <strong>push test</strong>: push the bare chassis (no sail yet) gently across the floor at 1 m/s and see how far it coasts. ' +
-          'Less stickiness = it coasts farther. (In real life, a little air drag makes it stop a bit sooner.)</p>',
+          'Less stickiness = it coasts farther. (In real life, a little air drag makes it stop a bit sooner. A sliding sled pushed the same way would stop after only about ' +
+          Math.round(coast(1, SLED.crr) * 100) + ' cm!)</p>',
         challenge: 'Fix the axle so the bare chassis coasts at least 2 metres in the push test.',
         render: function (el, api) {
           const H = 336, s = board(api, el, H, 'Front view of an axle with two wheels, and how far the chassis coasts in a push test');
@@ -189,9 +342,9 @@
           const FL = 176, AY = 124, WR = 52;                                       // floor, axle height, wheel radius
           function track(m) { return 40 + m * 96; }                                // push test: metres → px
           function draw() {
-            const b = br.get(), wob = fit.get() === 'wobbly', rub = gap.get() === 'rub', crr = axleCrr(b, fit.get(), gap.get()), dist = coast(1, crr);
+            const b = br.get(), wob = fit.get() === 'wobbly', rub = gap.get() === 'rub', crr = axleCrr(b, fit.get(), gap.get()), dst = coast(1, crr);
             clear(api, s, H);
-            label(api, s, 546, 24, 'front view of one axle', { anchor: 'end', color: '#9080b0', size: 15, bold: false });
+            label(api, s, 546, 24, 'front view of one axle', { anchor: 'end', color: '#9080b0', size: 16, bold: false });
             api.svg('line', { x1: 20, y1: FL, x2: 540, y2: FL, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
             rect(api, s, 150, 62, 260, 18, '#d8b070', { rx: 3, stroke: '#a07830' });
             label(api, s, 280, 52, 'chassis', { anchor: 'middle', color: '#d8b070' });
@@ -238,16 +391,16 @@
               label(api, s, track(m), 324, m + ' m', { anchor: 'middle', color: m === 2 ? '#f0c040' : '#9080b0', size: 16, bold: m === 2 });
             }
             api.svg('line', { x1: track(2), y1: 246, x2: track(2), y2: 300, stroke: '#f0c040', 'stroke-width': 1.5, 'stroke-dasharray': '4,4' }, s);
-            const ex = track(Math.min(5, dist));
+            const ex = track(Math.min(5, dst));
             rect(api, s, track(0), 291, ex - track(0), 4, '#ffa040', { opacity: 0.5 });
             rect(api, s, ex - 26, 282, 28, 6, '#d8b070', { rx: 1 });
             [ex - 20, ex - 4].forEach(function (cx) { api.svg('circle', { cx: cx, cy: 294, r: 6, fill: '#222', stroke: '#888' }, s); });
-            label(api, s, ex - 12, 272, dist.toFixed(2) + ' m', { anchor: 'middle', color: '#f0c040', size: 18 });
+            label(api, s, ex - 12, 272, dst.toFixed(2) + ' m', { anchor: 'middle', color: '#f0c040', size: 18 });
             const why = { straw: '', taped: ' The wheels’ holes rub on the taped-down skewer.', hole: ' The skewer scrapes in the tight cardstock hole.' }[b] +
               (wob ? ' The wobbly wheels bump and scrub.' : '') + (rub ? ' The wheels rub the chassis.' : '');
-            say(api, out, ['🛞 Stickiness ', ['crr = ' + crr.toFixed(3)], '. Push test: coast ≈ 1 × 1 ÷ (2 × ' + crr.toFixed(3) + ' × 9.81) ≈ ', [dist.toFixed(2) + ' m'], '.',
+            say(api, out, ['🛞 Stickiness ', ['crr = ' + crr.toFixed(3)], '. Push test: coast ≈ 1 × 1 ÷ (2 × ' + crr.toFixed(3) + ' × 9.81) ≈ ', [dst.toFixed(2) + ' m'], '.',
               why || ' Nothing rubs or wobbles — the wheels spin and spin!']);
-            if (dist >= 2) api.done('Your chassis coasts ' + dist.toFixed(2) + ' m on the same gentle push. Less stickiness = it rolls much farther. Next: see what that does in the hallway!');
+            if (checks.pushTest(crr)) api.done('Your chassis coasts ' + dst.toFixed(2) + ' m on the same gentle push. Less stickiness = it rolls much farther. Next: see what that does in the hallway!');
           }
           draw();
         }
@@ -255,16 +408,20 @@
       {
         title: 'Hallway challenge: fix the axles',
         html:
-          '<p>Here’s the standard lab car: a 20 × 20 cm paper sail, 70 g, starting 30 cm from the fan. ' +
-          'But this one has <strong>terrible axles</strong>: skewers in tight cardstock holes, wobbly wheels, and wheels rubbing the chassis.</p>' +
+          '<p>Here’s the standard lab car: a 20 × 20 cm paper sail, 70 g, starting 30 cm from the two box fans. ' +
+          'But this one has <strong>terrible axles</strong>: skewers in tight cardstock holes, wobbly wheels, and wheels rubbing the chassis. ' +
+          'It rolls only about ' + TERRIBLE_D.toFixed(1) + ' m (' + ft(TERRIBLE_D) + ' ft) — no better than last year’s sleds!</p>' +
           '<p>You can only change the axles. Fix <strong>one thing at a time</strong> and run the car after each fix. Then you’ll know which fix helped the most.</p>',
-        challenge: 'Fix the axles so the car rolls at least 6 metres.',
+        challenge: 'Fix the axles so the car rolls at least ' + HALL_GOAL + ' metres (about ' + ft(HALL_GOAL) + ' ft).',
         render: function (el, api) {
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const br = api.ui.choice(row, { label: 'Bearing', value: 'hole', options: BEARING_OPTS, onChange: info });
-          const fit = api.ui.choice(row, { label: 'Wheel fit', value: 'wobbly', options: FIT_OPTS, onChange: info });
-          const gap = api.ui.choice(row, { label: 'Wheel gap', value: 'rub', options: GAP_OPTS, onChange: info });
+          let sim = null;
+          // changing an axle stops the run on screen, so an old run can't count for the new axles
+          function changed() { if (sim) sim.reset(); info(); }
+          const br = api.ui.choice(row, { label: 'Bearing', value: 'hole', options: BEARING_OPTS, onChange: changed });
+          const fit = api.ui.choice(row, { label: 'Wheel fit', value: 'wobbly', options: FIT_OPTS, onChange: changed });
+          const gap = api.ui.choice(row, { label: 'Wheel gap', value: 'rub', options: GAP_OPTS, onChange: changed });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
           function crr() { return axleCrr(br.get(), fit.get(), gap.get()); }
@@ -273,20 +430,21 @@
           }
           info();
           const runs = [], log = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite', text: '📋 Your runs will be listed here, newest first.' });
-          const sim = api.ui.trackSim(el, function () { return { crr: crr() }; }, {
-            scaleM: 8, playSpeed: 3,
+          sim = api.ui.trackSim(el, function () { return { crr: crr() }; }, {
+            scaleM: 30,
             onResult: function (r) {
-              runs.unshift(BEARING_NAME[br.get()] + ' · ' + fit.get() + ' · ' + (gap.get() === 'rub' ? 'rubbing' : 'spacer') + ' (crr ' + r.car.crr.toFixed(3) + ') → ' + api.fmt(r.distance, 2) + ' m');
+              if (Math.abs(r.car.crr - crr()) > 1e-9) return;                // not the axles on screen now
+              runs.unshift(BEARING_NAME[br.get()] + ' · ' + fit.get() + ' · ' + (gap.get() === 'rub' ? 'rubbing' : 'spacer') + ' (crr ' + r.car.crr.toFixed(3) + ') → ' + dist(r.distance));
               log.textContent = '';
               log.appendChild(api.h('strong', { text: '📋 Your runs (newest first)' }));
               runs.slice(0, 6).forEach(function (t, i) { log.appendChild(api.h('div', { text: (runs.length - i) + '. ' + t })); });
-              if (r.distance >= 6) api.done('It rolled ' + api.fmt(r.distance, 2) + ' m — over three times as far as with the terrible axles! Same sail, same fan: only the friction changed.');
+              if (checks.hall(r.distance)) api.done('It rolled ' + dist(r.distance) + ' — ' + (r.distance / TERRIBLE_D).toFixed(1) + ' times as far as with the terrible axles! Same sail, same fans: only the friction changed.');
             }
           });
           api.onLeave(sim.stop);
           el.appendChild(log);
-          api.ui.note(el, 'good', '🏁 <strong>Friction is the biggest factor</strong> in how far a sail car goes. Same sail, same fan: stickiness 0.012 → about 7 m, ' +
-            '0.025 → about 4.3 m, 0.07 → about 2 m. The wind fades down the hallway, so a car with less friction can keep rolling where the wind is weak.');
+          api.ui.note(el, 'good', '🏁 <strong>Friction is one of the biggest factors</strong> in how far a sail car goes. Same sail, same fans: stickiness 0.012 → about ' + D.smooth.toFixed(1) + ' m (' + ft(D.smooth) + ' ft), ' +
+            '0.025 → about ' + D.ok.toFixed(1) + ' m (' + ft(D.ok) + ' ft), 0.07 → about ' + D.rub.toFixed(1) + ' m (' + ft(D.rub) + ' ft). The wind fades down the hallway, so a car with less friction can keep rolling where the wind is weak.');
         }
       },
       {
@@ -294,7 +452,8 @@
         html:
           '<p><strong>Build your axles like this:</strong></p>' +
           '<ol><li><strong>Straw bearings:</strong> cut two pieces of straw a little wider than your chassis. Hot-glue them <strong>across</strong> the chassis, one near the front and one near the back.</li>' +
-          '<li><strong>Parallel axles:</strong> before the glue cools, measure the distance between the straws at both ends with a ruler. Same number = parallel. Crooked axles make the car curve into the wall.</li>' +
+          '<li><strong>Parallel axles:</strong> before the glue cools, measure the distance between the straws at both ends with a ruler. Same number = parallel. Crooked axles make the car curve into the wall. ' +
+          '(In our model, a front axle just 1.5° off square hits the wall after only about ' + VEER.distance.toFixed(1) + ' m.)</li>' +
           '<li><strong>Straight skewers:</strong> roll each skewer or dowel on the table. If it wobbles, it’s bent — use another one. Snip off the sharp tip.</li>' +
           '<li><strong>Spacers:</strong> slide the skewer through the straw, then add a short piece of straw (about 5 mm) on each end.</li>' +
           '<li><strong>Wheels:</strong> push a wheel onto each end and glue it to the skewer, so the whole axle turns inside the straw. Leave a 1–2 mm gap so nothing squeezes. ' +
@@ -303,7 +462,7 @@
         render: function (el, api) {
           const s = board(api, el, 304, 'Top view of a chassis with straw bearings, skewer axles, spacers and wheels');
           clear(api, s, 304);
-          label(api, s, 14, 26, 'seen from above', { color: '#9080b0', size: 15, bold: false });
+          label(api, s, 14, 26, 'seen from above', { color: '#9080b0', size: 16, bold: false });
           label(api, s, 548, 168, 'front →', { anchor: 'end', color: '#9080b0', size: 16, bold: false });
           [112, 172].forEach(function (y) { rect(api, s, 120, y, 320, 16, '#d8b070', { rx: 8, stroke: '#a07830' }); });   // popsicle-stick rails
           [166, 394].forEach(function (ax) {
@@ -338,7 +497,7 @@
         why: 'Friction = crr × weight. More weight makes the wheels and axles press harder, so there is more friction.' },
       { q: 'A rolling car has 0.020 N of friction. In our hallway model, about how much push does it need to START rolling from a stop?', options: ['0.010 N', '0.020 N', '0.026 N', '0.200 N'], answer: 2,
         why: 'Starting takes about 1.3 times the rolling friction: 0.020 N × 1.3 = 0.026 N.' },
-      { q: 'Far down the hallway, the wind could keep a ROLLING car going, but a car set down there never moves. Why?', options: ['The wind only pushes on cars that are already moving', 'A car standing still has no friction at all', 'Gravity is stronger on a car that isn’t moving', 'It takes more push to start rolling than to keep rolling'], answer: 3,
+      { q: 'Far down the hallway from the two box fans, the wind can’t start a car that is set down there, but the same car rolling in from the start line keeps going right past. Why?', options: ['The wind only pushes on cars that are already moving', 'A car standing still has no friction at all', 'Gravity is stronger on a car that isn’t moving', 'It takes more push to start rolling than to keep rolling'], answer: 3,
         why: 'Parts that sit still grip each other a little more. It takes about 30% more push to START rolling than to KEEP rolling.' },
       { q: 'Which axle setup has the LEAST friction?', options: ['A straight skewer spinning freely inside a straw glued to the chassis', 'A skewer pushed through a tight hole in cardstock', 'Wheels pressed tight against the side of the chassis', 'Tape wrapped around the skewer right where the wheels turn'], answer: 0,
         why: 'A straw makes a smooth bearing, so the skewer spins easily inside it. Tight holes, rubbing wheels and tape all add friction.' },
@@ -346,12 +505,16 @@
         why: 'A good wheel spins for 3 seconds or more. If it stops fast, something is rubbing. Find it and fix it.' },
       { q: 'What is the short piece of straw on the axle, between the wheel and the chassis, for?', options: ['It makes the wheel spin faster in the wind', 'It adds weight to hold the car down', 'It locks the wheel so it can’t turn', 'It’s a spacer: it keeps a small gap so the wheel can’t rub the chassis'], answer: 3,
         why: 'A spacer stops the wheel from rubbing the side of the chassis. Rubbing is one of the biggest causes of friction.' },
-      { q: 'Same sail, same fan: a car with rubbing, sticky axles (crr 0.07) rolls about 2 m. About how far does it roll once its wheels spin freely (crr 0.012)?', options: ['Still about 2 m — axles don’t matter much', 'About 2.5 m', 'About 7 m', 'All 30 m to the end of the hallway'], answer: 2,
-        why: 'Friction is the biggest factor in how far a sail car goes. Smooth axles roll about 7 m, more than three times as far as rubbing ones.' },
-      { q: 'One wheel wobbles from side to side as it spins. What is the most likely cause?', options: ['The sail is too big', 'Its hole is off-centre, a glue blob is stuck on it, or the axle is bent', 'The fan is too strong', 'The chassis is too long'], answer: 1,
-        why: 'Off-centre holes, glue blobs and bent axles make wheels wobble. A wobbly wheel bumps and scrubs as it rolls, which adds friction.' },
+      { q: 'In front of the two box fans, the lab car with rubbing, sticky axles (crr 0.07) rolls about ' + Math.round(D.rub) + ' m. About how far does the same car roll once its wheels spin freely (crr 0.012)?',
+        options: ['Still about ' + Math.round(D.rub) + ' m — axles don’t matter much', 'About ' + (Math.round(D.rub) + 1) + ' m — just a little farther', 'About ' + Math.round(D.smooth) + ' m — about ' + Math.round(D.smooth / D.rub) + ' times as far', 'It won’t move at all — free-spinning wheels can’t grip the floor'], answer: 2,
+        why: 'Less friction lets the car keep rolling where the wind is weak. Free-spinning wheels roll about ' + D.smooth.toFixed(1) + ' m in our model, about ' + Math.round(D.smooth / D.rub) + ' times as far as rubbing ones.' },
+      { q: 'Last year’s paper-sail sleds (no wheels) slid about 25 ft in front of the same two box fans. What is the main reason a wheeled car can roll much farther?', options: ['Rolling wheels have many times less friction than a sled sliding on its bottom', 'Wheeled cars are lighter than sleds', 'The fans blow harder on a car with wheels', 'Wheels add weight, and heavier things always go farther'], answer: 0,
+        why: 'A sliding sled’s friction is about ' + P.SLED_FRICTION + ' × its weight. Wheels are about 0.025 (OK) or 0.012 (spinning freely) — more than ten times less. In our model the sled slides about ' + SLED_RUN.distance.toFixed(1) + ' m, and the 70 g car with OK wheels rolls about ' + D.ok.toFixed(1) + ' m, even though it is heavier.' },
       { q: 'You hot-glue the wheels tightly onto the ends of a skewer. How should that skewer be held on the chassis?', options: ['Loose inside a straw glued across the chassis, so the whole axle can turn', 'Hot-glued to the chassis so it can’t move', 'Taped down tight so it can’t turn', 'Pushed through a tight hole so it can’t slip'], answer: 0,
         why: 'If the wheels are glued to the skewer, the skewer has to turn too. A straw bearing lets it spin freely.' }
-    ]
+    ],
+    // the model's numbers and the challenge rules, for the node check script (not used by the page)
+    _model: { WHEELS: WHEELS, SLED: SLED, BEARING: BEARING, WOBBLY: WOBBLY, RUBBING: RUBBING, axleCrr: axleCrr, coast: coast, pushAt: pushAt, farStart: farStart,
+              spot: spot, STOP_X: STOP_X, ZONE_LO: ZONE_LO, HALL_GOAL: HALL_GOAL, TERRIBLE: TERRIBLE, checks: checks }
   });
 })();

@@ -1,7 +1,7 @@
 // Sail Car Lab — shared core
 // ─────────────────────────────────────────────────────────────────────────────
 // • SailLab.register(module)  — each module file (sailcar-m1.js …) calls this once
-// • SailLab.physics           — ONE physics model of a box fan blowing a sail car down
+// • SailLab.physics           — ONE physics model of two box fans blowing a sail car down
 //                               the hallway, used by every simulator and the Design Studio
 // • SailLab.ui / SailLab.draw — small helpers so every module looks and behaves the same
 // • Progress (which modules a student has passed) is saved in Firestore
@@ -43,9 +43,14 @@
   // ── PHYSICS ───────────────────────────────────────────────────────────────
   // Units: metres, kilograms, seconds, newtons.  x = distance from the fan.
   const AIR = 1.2, G = 9.81;
-  // A box fan on high blows about 3.5 m/s at the grille. The jet spreads out, so the
-  // wind gets weaker the farther you are from the fan:  wind(x) = v0 / (1 + x / L)
-  const FAN = { v0: 3.5, L: 1.2 };
+  // TWO box fans side by side on high, at the start of the hallway (Mr. Capellini's setup).
+  // About 3.5 m/s at the grilles. The wide jet from two fans fades slowly down the hall:
+  //   wind(x) = v0 / (1 + x / L)
+  // L is calibrated from real results with these fans: paper-sail SLEDS (no wheels, about 20 g,
+  // sliding friction about 0.3, a 20 cm × 22 cm sail) typically slid about 25 ft (7.6 m), the
+  // best about 30 ft — so the wind is still about 1.35 m/s at 7.6 m.
+  const FAN = { v0: 3.5, L: 4.8, count: 2 };
+  const SLED_FRICTION = 0.3;   // a paper or cardstock sled SLIDING on hallway tile (wheels are about 10× less)
   // A typical student car: popsicle-stick chassis, skewer axles in straws, 4 plastic
   // wheels, a 20 cm × 20 cm paper sail on a skewer mast.
   const DEFAULT_CAR = {
@@ -75,7 +80,7 @@
   // Simulate one run down the hallway. Returns distance travelled and why it stopped.
   function simulate(carIn, optsIn) {
     const car = Object.assign({}, DEFAULT_CAR, carIn || {});
-    const o = Object.assign({ fan: FAN, startX: 0.3, hallLength: 30, hallWidth: 2.4, dt: 0.004, maxTime: 120, recordEvery: 0.04 }, optsIn || {});
+    const o = Object.assign({ fan: FAN, startX: 0.3, hallLength: 30, hallWidth: 2.4, dt: 0.004, maxTime: 240, recordEvery: 0.04 }, optsIn || {});
     let x = o.startX, v = 0, t = 0, moving = false, top = 0, reason = 'coasted to a stop', recT = 0;
     let path = 0, lateral = 0;                       // distance rolled along its own path, and sideways drift
     const trace = [];
@@ -97,8 +102,8 @@
       const a = (fs + fb - fr) / car.mass;
       v += a * o.dt;
       if (v <= 0) { v = 0; moving = false; }
-      // nearly stopped and the push can't beat sticky friction: the car stays put
-      if (v < 0.02 && fs + fb < fr * STICKY) { v = 0; moving = false; }
+      // crawling (under 5 cm/s) and the push can't beat sticky friction: a real car just stops here
+      if (v < 0.05 && fs + fb < fr * STICKY) { v = 0; moving = false; }
       path += v * o.dt; t += o.dt;
       if (turnR === Infinity) x = o.startX + path;
       else { const th = Math.min(Math.PI / 2, path / turnR); x = o.startX + turnR * Math.sin(th); lateral = turnR * (1 - Math.cos(th)); }
@@ -112,7 +117,7 @@
              friction: rollingFriction(car.mass, car.crr), car: car, opts: o };
   }
 
-  const physics = { AIR: AIR, G: G, FAN: FAN, DEFAULT_CAR: DEFAULT_CAR, STICKY: STICKY,
+  const physics = { AIR: AIR, G: G, FAN: FAN, SLED_FRICTION: SLED_FRICTION, DEFAULT_CAR: DEFAULT_CAR, STICKY: STICKY,
                     windAt: windAt, airForce: airForce, rollingFriction: rollingFriction, simulate: simulate };
 
   // ── DRAWING ───────────────────────────────────────────────────────────────
@@ -129,13 +134,13 @@
       if (label) svg('text', { x: (x1 + x2) / 2 + (opts.dx || 0), y: (y1 + y2) / 2 + (opts.dy == null ? -9 : opts.dy), 'text-anchor': 'middle', fill: color, 'font-size': opts.size || 12, 'font-weight': 700, class: 'sl-lbl' }, g, label);
       return g;
     },
-    // a box fan seen from the side, at (x, floorY)
-    fan: function (parent, x, floorY, size) {
+    // the box fans seen from the side (two side by side look like one), at (x, floorY)
+    fan: function (parent, x, floorY, size, label) {
       size = size || 60;
       const g = svg('g', { class: 'sl-fan' }, parent);
       svg('rect', { x: x, y: floorY - size, width: size * 0.32, height: size, rx: 4, fill: '#3a2a5a', stroke: '#9080b0', 'stroke-width': 2 }, g);
       for (let i = 1; i < 5; i++) svg('line', { x1: x + 3, y1: floorY - size + i * size / 5, x2: x + size * 0.32 - 3, y2: floorY - size + i * size / 5, stroke: '#6a5a8a', 'stroke-width': 1.5 }, g);
-      svg('text', { x: x + size * 0.16, y: floorY + 14, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 10 }, g, 'FAN');
+      svg('text', { x: x + size * 0.16, y: floorY + 14, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 10 }, g, label || '2 FANS');
       return g;
     },
     // a sail car seen from the side; (x, floorY) = back wheel contact point. 1 unit ≈ 1 px per cm × scale
@@ -200,7 +205,7 @@
     //   opts      → simulate() options (fan, startX, hallLength…), plus
     //               { getOpts() → options read fresh on every run (e.g. a fan-speed control),
     //                 showForces (default true), scaleM (metres shown; default fits the run),
-    //                 playSpeed (default 2×), onResult(result) }
+    //                 playSpeed (default: 2×, faster for long runs so it lasts ≤ ~9 s), onResult(result) }
     // Returns { run(), reset(), last() }
     trackSim: function (parent, getCar, opts) {
       opts = opts || {};
@@ -274,7 +279,7 @@
         last = res;
         scaleM = opts.scaleM || Math.max(6, Math.ceil(res.distance * 1.15));
         runBtn.disabled = true;
-        const speedUp = opts.playSpeed || 2, t0 = performance.now(), tr = res.trace;
+        const speedUp = opts.playSpeed || Math.max(2, res.time / 9), t0 = performance.now(), tr = res.trace;
         let i = 0;
         function frame(now) {
           const tt = (now - t0) / 1000 * speedUp;
