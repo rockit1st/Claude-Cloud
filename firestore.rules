@@ -1,0 +1,164 @@
+// Firestore security rules for technoteacher.org
+//
+// HOW TO USE: this file is NOT deployed automatically. Copy everything in it,
+// then in the Firebase console go to Firestore Database -> Rules, select all,
+// paste, and press Publish.
+//
+// WHEN: publish these rules only AFTER the new altitude-calculator.html is live
+// on the website (pull request merged and deployed). Then ask students to
+// refresh any copy of the page they already have open.
+//
+// What these rules do:
+//  - Altitude Calculator results ("results"): a student can read only their own
+//    results and the results of a class they have joined. Only the teacher can
+//    read everything, and only the teacher can change or delete a result.
+//  - "settings/altitude-top20" is the public Top 20 board every signed-in
+//    student may read. "settings/altitude-rankings" (the lock) is teacher-only.
+//  - Only verified Google accounts @hhh.k12.ny.us can read or write anything.
+//  - A student can only join a class with its join code (no back-door joins).
+//  - A student's altitude above the teacher's limit (Launch-Day Setup, 300 ft
+//    by default) is saved as "waiting for teacher check" and stays off the boards.
+//  - rocket_builds: each student's "I'm building this one" design from Rocket Lab.
+//  - Sail Car Lab: sailcar_progress (each student's modules) and sailcar_runs
+//    (real hallway runs, private to the class like the altitude boards).
+//  - Everything else behaves as before.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Signed in with a verified school Google account. (The site already turns
+    // everyone else away; this makes the database refuse them too.)
+    function signedIn() {
+      return request.auth != null
+             && request.auth.token.email_verified == true
+             && request.auth.token.firebase.sign_in_provider == 'google.com'
+             && request.auth.token.email.matches('^.+@hhh[.]k12[.]ny[.]us$');
+    }
+    function isTeacher() {
+      return signedIn() && request.auth.token.email == 'ncapellini@hhh.k12.ny.us';
+    }
+    // A student may only add themselves to a class with that class's join code,
+    // exactly as the Join form on classes.html does it.
+    function validJoin(id) {
+      let d = request.resource.data;
+      return d.uid == request.auth.uid
+             && d.classId is string
+             && id == d.classId + '_' + request.auth.uid
+             && exists(/databases/$(database)/documents/classes/$(d.classId))
+             && d.code == get(/databases/$(database)/documents/classes/$(d.classId)).data.code;
+    }
+    // Highest believable altitude in feet, from the teacher's launch-day setup
+    // (settings/altitude-setup); 300 ft until the teacher sets one.
+    function maxFt() {
+      let m = exists(/databases/$(database)/documents/settings/altitude-setup)
+              ? get(/databases/$(database)/documents/settings/altitude-setup).data.get('maxFt', 300)
+              : 300;
+      return (m is number && m >= 10 && m <= 100000) ? m : 300;
+    }
+    function altitudeFt(d) {
+      return d.unit == 'm' ? d.altitude * 3.28084 : d.altitude;
+    }
+    // True when the signed-in student has joined the class (classes.html
+    // stores each enrollment at enrollments/{classId}_{uid}).
+    function inClass(classId) {
+      return exists(/databases/$(database)/documents/enrollments/$(classId + '_' + request.auth.uid));
+    }
+
+    // ── Rocket Altitude Calculator ──────────────────────────────────────────
+    match /results/{id} {
+      allow read: if isTeacher()
+                  || (signedIn() && resource.data.userEmail == request.auth.token.email)
+                  || (signedIn() && inClass(resource.data.classId));
+      allow create: if isTeacher()
+                    || (signedIn()
+                        && request.resource.data.userEmail == request.auth.token.email
+                        && request.resource.data.name is string
+                        && request.resource.data.name.size() <= 60
+                        && request.resource.data.altitude is number
+                        && request.resource.data.altitude > 0
+                        && request.resource.data.unit in ['ft', 'm']
+                        // above the limit it must wait for the teacher's check
+                        && (request.resource.data.get('review', '') == 'pending'
+                            || (!('review' in request.resource.data)
+                                && altitudeFt(request.resource.data) <= maxFt()))
+                        && (request.resource.data.get('classId', '') == ''
+                            || inClass(request.resource.data.classId)));
+      allow update, delete: if isTeacher();
+    }
+
+    match /settings/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher()
+                   || (signedIn()
+                       && id == 'altitude-top20'
+                       && request.resource.data.entries is list
+                       && request.resource.data.entries.size() <= 20);
+    }
+
+    // ── Games and other leaderboards (unchanged) ────────────────────────────
+    match /game-results/{id} {
+      allow read, write: if signedIn();
+    }
+    match /sailcar_results/{id} {
+      allow read, write: if signedIn();
+    }
+    match /rocket_results/{id} {
+      allow read, write: if signedIn();
+    }
+    // ── Sail Car Lab ────────────────────────────────────────────────────────
+    // Each student's module progress (the teacher reads everyone's)
+    match /sailcar_progress/{uid} {
+      allow read: if isTeacher() || (signedIn() && request.auth.uid == uid);
+      allow write: if isTeacher() || (signedIn() && request.auth.uid == uid);
+    }
+    // Real hallway runs: visible to the student, their class, and the teacher
+    match /sailcar_runs/{id} {
+      allow read: if isTeacher()
+                  || (signedIn() && resource.data.userEmail == request.auth.token.email)
+                  || (signedIn() && inClass(resource.data.classId));
+      allow create: if isTeacher()
+                    || (signedIn()
+                        && request.resource.data.userEmail == request.auth.token.email
+                        && request.resource.data.name is string
+                        && request.resource.data.name.size() <= 60
+                        && request.resource.data.distanceM is number
+                        && request.resource.data.distanceM >= 0
+                        && request.resource.data.distanceM <= 100
+                        && (request.resource.data.get('classId', '') == ''
+                            || inClass(request.resource.data.classId)));
+      allow update, delete: if isTeacher();
+    }
+
+    // Rocket Lab: the design a student says they are really building
+    match /rocket_builds/{uid} {
+      allow read: if isTeacher() || (signedIn() && request.auth.uid == uid);
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ── Classes and rosters (unchanged) ─────────────────────────────────────
+    match /classes/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+    match /enrollments/{id} {
+      allow read: if isTeacher()
+                  || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isTeacher() || (signedIn() && validJoin(id));
+      allow update: if isTeacher()
+                    || (signedIn() && validJoin(id) && resource.data.uid == request.auth.uid);
+      allow delete: if isTeacher()
+                    || (signedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    // ── Ruler game Race Mode (unchanged) ────────────────────────────────────
+    match /races/{raceId} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+      match /players/{uid} {
+        allow read: if signedIn();
+        allow write: if isTeacher() || (signedIn() && request.auth.uid == uid);
+      }
+    }
+  }
+}

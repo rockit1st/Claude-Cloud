@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sail Car Lab | Tech Class Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 14px 32px; background: rgba(10,0,15,0.88); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(180,79,255,0.3); }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #b44fff; background: rgba(180,79,255,0.08); border-color: rgba(180,79,255,0.35); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; }
+    @media (max-width: 700px) { .topnav { padding: 10px 12px; } .nav-link { padding: 5px 8px; font-size: 0.72rem; } .nav-user { display: none !important; } }
+
+    .banner { margin-top: 60px; background: linear-gradient(135deg, #0a000f 0%, #1a0035 50%, #0a000f 100%); padding: 40px 20px 34px; text-align: center; position: relative; border-bottom: 2px solid rgba(180,79,255,0.3); }
+    .banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #b44fff, transparent); box-shadow: 0 0 20px #b44fff; }
+    .banner-icon { font-size: 3rem; margin-bottom: 8px; }
+    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.7rem, 5vw, 3rem); font-weight: 900; color: #b44fff; letter-spacing: 4px; text-shadow: 0 0 20px rgba(180,79,255,0.7); }
+    .banner-sub { color: #9080b0; font-size: 0.95rem; margin-top: 8px; letter-spacing: 1px; }
+
+    .content { max-width: 980px; margin: 0 auto; padding: 26px 16px 70px; }
+    .breadcrumb { font-size: 0.8rem; color: #9080b0; margin-bottom: 20px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #b44fff; }
+    .sl-muted { color: #9080b0; font-size: 0.85rem; margin-top: 10px; }
+
+    /* hub */
+    .sl-progress { margin-bottom: 18px; }
+    .sl-progress-txt { font-weight: 700; margin-bottom: 8px; color: #e0d0ff; }
+    .sl-progress-bar { height: 12px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .sl-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #b44fff, #00f5ff); transition: width 0.6s; }
+    .sl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; margin-top: 18px; }
+    .sl-card { text-align: left; background: rgba(180,79,255,0.06); border: 1px solid rgba(180,79,255,0.3); border-radius: 16px; padding: 18px; color: inherit; font-family: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+    .sl-card:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(180,79,255,0.25); border-color: rgba(180,79,255,0.6); }
+    .sl-card:focus-visible { outline: 3px solid #00f5ff; outline-offset: 2px; }
+    .sl-card.locked { opacity: 0.45; cursor: not-allowed; }
+    .sl-card.passed { border-color: rgba(64,224,128,0.55); background: rgba(64,224,128,0.06); }
+    .sl-card-num { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 2px; color: #9080b0; }
+    .sl-card-icon { font-size: 2.2rem; margin: 6px 0; }
+    .sl-card-title { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.95rem; color: #d8a8ff; letter-spacing: 1px; }
+    .sl-card-blurb { font-size: 0.85rem; color: #b0a0d0; margin: 6px 0 10px; line-height: 1.45; min-height: 2.5em; }
+    .sl-card-status { font-size: 0.78rem; font-weight: 700; color: #00f5ff; }
+    .sl-card.passed .sl-card-status { color: #40e080; }
+    .sl-card.locked .sl-card-status { color: #9080b0; }
+
+    /* module player */
+    #sl-module { display: none; }
+    .sl-mod-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+    .sl-mod-title { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.15rem; color: #d8a8ff; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+    .sl-mod-icon { font-size: 1.6rem; }
+    .sl-dots { display: flex; gap: 6px; margin: 4px 0 16px; flex-wrap: wrap; }
+    .sl-dot { width: 26px; height: 6px; border-radius: 99px; background: rgba(255,255,255,0.12); }
+    .sl-dot.done { background: rgba(180,79,255,0.6); }
+    .sl-dot.on { background: #00f5ff; }
+    .sl-step { background: rgba(180,79,255,0.05); border: 1px solid rgba(180,79,255,0.22); border-radius: 18px; padding: 22px; }
+    .sl-step-title { font-family: 'Orbitron', sans-serif; font-size: 1.05rem; color: #f0c040; letter-spacing: 1px; margin-bottom: 14px; }
+    .sl-step-body { font-size: 1rem; line-height: 1.65; color: #e0d6f5; }
+    .sl-step-body p { margin-bottom: 12px; }
+    .sl-step-body ul, .sl-step-body ol { margin: 0 0 12px 22px; }
+    .sl-step-body li { margin-bottom: 6px; }
+    .sl-step-body strong { color: #fff; }
+    .sl-step-body .key { color: #00f5ff; font-weight: 700; }
+    .sl-step-body svg { max-width: 100%; height: auto; display: block; margin: 8px auto; }
+    .sl-challenge { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: rgba(240,192,64,0.08); border: 1px solid rgba(240,192,64,0.35); color: #ffe6a0; font-size: 0.92rem; }
+    .sl-done { display: none; margin-top: 10px; padding: 10px 14px; border-radius: 10px; background: rgba(64,224,128,0.1); border: 1px solid rgba(64,224,128,0.4); color: #80f0b0; font-weight: 700; }
+    .sl-done.show { display: block; }
+    .sl-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .sl-nav .sl-btn-go { margin-left: auto; }
+
+    .sl-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.25); color: #e8dcff; border-radius: 10px; padding: 10px 18px; font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.92rem; cursor: pointer; }
+    .sl-btn:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+    .sl-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .sl-btn:focus-visible, .sl-chip:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #00f5ff; outline-offset: 2px; }
+    .sl-btn-go { background: linear-gradient(135deg, #b44fff, #7a20d0); border: none; color: #fff; }
+    .sl-btn-go:hover:not(:disabled) { background: linear-gradient(135deg, #c060ff, #8a30e0); }
+
+    /* controls */
+    .sl-ctrl { margin: 12px 0; }
+    .sl-ctrl-lbl { display: block; font-size: 0.85rem; font-weight: 700; color: #c8b8ea; margin-bottom: 6px; }
+    .sl-val { color: #00f5ff; font-family: 'Orbitron', sans-serif; font-size: 0.82rem; margin-left: 6px; }
+    .sl-ctrl input[type=range] { width: 100%; accent-color: #b44fff; height: 28px; }
+    .sl-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sl-chip { background: transparent; border: 1px solid rgba(180,79,255,0.45); color: #c8b8ea; border-radius: 20px; padding: 7px 14px; font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+    .sl-chip.active { background: rgba(180,79,255,0.3); color: #fff; border-color: #b44fff; }
+    .sl-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 4px 20px; }
+
+    .sl-note { margin: 12px 0; padding: 11px 14px; border-radius: 10px; font-size: 0.92rem; line-height: 1.55; }
+    .sl-note-tip { background: rgba(0,245,255,0.06); border-left: 4px solid #00f5ff; }
+    .sl-note-warn { background: rgba(255,160,64,0.1); border-left: 4px solid #ffa040; }
+    .sl-note-good { background: rgba(64,224,128,0.08); border-left: 4px solid #40e080; }
+    .sl-note-build { background: rgba(240,192,64,0.08); border-left: 4px solid #f0c040; }
+
+    /* hallway simulator */
+    .sl-track { margin: 14px 0; border: 1px solid rgba(180,79,255,0.3); border-radius: 12px; overflow: hidden; background: #120826; }
+    .sl-track-svg { width: 100%; height: auto; display: block; }
+    .sl-track-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 12px; border-top: 1px solid rgba(180,79,255,0.2); }
+    .sl-readout { font-size: 0.88rem; color: #d8ccf0; flex: 1; min-width: 200px; }
+    .sl-lbl { paint-order: stroke; stroke: #120826; stroke-width: 3px; stroke-linejoin: round; }
+
+    /* quiz */
+    .sl-quiz-help { color: #c8b8ea; margin-bottom: 14px; }
+    .sl-quiz { list-style: decimal; margin-left: 22px; }
+    .sl-q { margin-bottom: 18px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+    .sl-q.right { border-color: rgba(64,224,128,0.6); background: rgba(64,224,128,0.06); }
+    .sl-q.wrong { border-color: rgba(255,80,80,0.6); background: rgba(255,80,80,0.06); }
+    .sl-q-text { font-weight: 700; margin-bottom: 8px; color: #fff; }
+    .sl-q-opts { display: flex; flex-direction: column; gap: 6px; }
+    .sl-q-opt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 8px; cursor: pointer; background: rgba(255,255,255,0.03); }
+    .sl-q-opt:hover { background: rgba(180,79,255,0.12); }
+    .sl-q-opt input { margin-top: 4px; accent-color: #b44fff; width: 18px; height: 18px; flex: none; }
+    .sl-q-why { margin-top: 8px; font-size: 0.88rem; color: #d0c4ec; }
+    .sl-q.right .sl-q-why { color: #90f0c0; }
+    .sl-q.wrong .sl-q-why { color: #ffb0b0; }
+    .sl-quiz-result { margin-top: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .sl-quiz-score { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.1rem; width: 100%; }
+    .sl-quiz-result.pass .sl-quiz-score { color: #40e080; }
+    .sl-quiz-result.fail .sl-quiz-score { color: #ffb060; }
+
+    /* teacher */
+    #sl-teacher { display: none; margin-top: 34px; padding: 20px; border-radius: 16px; border: 1px solid rgba(0,245,255,0.3); background: rgba(0,245,255,0.04); }
+    .sl-teacher-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: #00f5ff; margin-bottom: 12px; }
+    #sl-class { padding: 8px 12px; background: rgba(255,255,255,0.08); color: #f0e6ff; border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; font-family: inherit; font-size: 0.92rem; margin-bottom: 12px; }
+    #sl-class option { background: #1a0035; }
+    .sl-table-wrap { overflow-x: auto; }
+    .sl-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+    .sl-table th, .sl-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: center; white-space: nowrap; }
+    .sl-table th:first-child, .sl-table td:first-child { text-align: left; }
+    .sl-table th { color: #00f5ff; font-size: 0.78rem; }
+    .sl-table td.ok { color: #40e080; font-weight: 900; }
+    .sl-table td.try { color: #ffb060; }
+    .sl-table td.none { color: #6a5a8a; }
+
+    #sl-loading { text-align: center; color: #9080b0; padding: 50px 0; }
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
+    @media (max-width: 600px) { .sl-step { padding: 16px 12px; } .sl-step-body { font-size: 0.95rem; } }
+  </style>
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link active">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
+    <a href="classes.html" class="nav-link">👥 Classes</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">⛵</div>
+  <div class="banner-title">SAIL CAR LAB</div>
+  <div class="banner-sub">Learn the forces · Design your car · Win the hallway</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="sailboat.html">Sail Cars</a> / Sail Car Lab</div>
+  <div id="sl-loading">Loading your progress…</div>
+  <div id="sl-hub-wrap" style="display:none"><div id="sl-hub"></div></div>
+  <div id="sl-module" role="region" aria-label="Module"></div>
+  <div id="sl-teacher"></div>
+</div>
+
+<footer>Technology Class &copy; 2025</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="student-classes.js"></script>
+<script src="sailcar-core.js"></script>
+<script src="sailcar-m1.js"></script>
+<script src="sailcar-m2.js"></script>
+<script src="sailcar-m3.js"></script>
+<script src="sailcar-m4.js"></script>
+<script src="sailcar-m5.js"></script>
+<script src="sailcar-m6.js"></script>
+<script src="sailcar-studio.js"></script>
+<script>
+  firebase.auth().onAuthStateChanged(function (user) {
+    if (!user || (user.email || '').split('@')[1] !== ALLOWED_DOMAIN || window.__slStarted) return;
+    window.__slStarted = true;
+    SailLab.start(user);
+  });
+</script>
+</body>
+</html>

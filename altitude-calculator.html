@@ -293,6 +293,101 @@
     .lock-btn:hover { background:rgba(240,192,64,0.12); }
     .lock-btn.locked { border-color:rgba(100,255,100,0.4); color:#80ff80; }
 
+    /* ── calculator additions ── */
+    .label-hint { text-transform:none; letter-spacing:0; font-weight:400; color:#7890b0; }
+    .mode-toggle { display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.2); margin-bottom:8px; }
+    .mode-toggle button { flex:1; background:transparent; border:none; color:#a8d8f0; padding:8px 6px; font-size:0.78rem; cursor:pointer; font-weight:600; }
+    .mode-toggle button.active { background:#80e0a0; color:#0a0a2e; }
+    .protractor-box { display:flex; gap:10px; align-items:center; margin-top:10px; }
+    #protractor { width:150px; max-height:160px; flex:none; height:auto; }
+    .angle-explain { font-size:0.85rem; color:#c8e8f8; line-height:1.5; }
+    .angle-explain strong { color:#f0c040; font-size:1rem; }
+    .angle-explain .bad { color:#ff8080; }
+    .angle-explain .hint { color:#7890b0; font-size:0.75rem; margin-top:4px; }
+    .station-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+    .station-chip { background:rgba(240,192,64,0.1); border:1px solid rgba(240,192,64,0.4); color:#f0c040; border-radius:20px; padding:6px 12px; font-size:0.8rem; font-weight:700; cursor:pointer; }
+    .station-chip.active { background:#f0c040; color:#0a0a2e; }
+    .eye-group input[type="number"] { max-width:120px; }
+    .result-box .range-line { font-size:0.85rem; color:#c8e8f8; margin-top:8px; }
+    .result-box .range-line span { color:#7890b0; font-size:0.78rem; }
+    .headline { display:none; margin-top:10px; font-size:0.95rem; font-weight:600; color:#ffe080; text-align:center; line-height:1.5; }
+    .note-box { display:none; margin-top:10px; padding:10px 14px; border-radius:8px; font-size:0.85rem; line-height:1.5; }
+    .note-box.coach { background:rgba(128,224,160,0.08); border-left:3px solid rgba(128,224,160,0.6); color:#c8f0d8; }
+    .note-box.warn { background:rgba(255,160,64,0.1); border-left:3px solid rgba(255,160,64,0.8); color:#ffd8b0; }
+    .predict-card { display:none; margin-top:12px; padding:14px; border-radius:10px; background:rgba(0,245,255,0.05); border:1px solid rgba(0,245,255,0.25); font-size:0.85rem; color:#c8e8f8; line-height:1.5; }
+    .predict-card a { color:#00f5ff; }
+    .predict-title { font-weight:700; color:#00f5ff; margin-bottom:8px; }
+    .pbar { display:flex; align-items:center; gap:8px; margin:5px 0; font-size:0.8rem; }
+    .pbar-lbl { width:78px; flex:none; color:#a8d8f0; }
+    .pbar-track { flex:1; height:10px; border-radius:99px; background:rgba(255,255,255,0.08); overflow:hidden; }
+    .pbar-fill { height:100%; border-radius:99px; }
+    .pbar-val { width:96px; flex:none; text-align:right; font-weight:700; }
+    .pverdict { margin:8px 0 6px; font-weight:600; }
+    .reason-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .reason-chip { background:transparent; border:1px solid rgba(0,245,255,0.35); color:#a8d8f0; border-radius:20px; padding:5px 10px; font-size:0.78rem; cursor:pointer; }
+    .reason-chip.active { background:rgba(0,245,255,0.18); color:#fff; border-color:#00f5ff; }
+    .pdesign { margin-top:8px; font-size:0.75rem; color:#7890b0; }
+    .tan-explain { display:none; margin-top:10px; font-size:0.85rem; color:#c8e8f8; line-height:1.6; background:rgba(0,0,0,0.25); border-radius:8px; padding:10px 14px; }
+    .tan-explain strong { color:#f0c040; }
+    .diagram .dg-late { opacity:0; transition:opacity 0.4s ease-out 1.2s; }
+    .diagram.go .dg-late { opacity:1; }
+    .diagram .lm { opacity:0.3; transition:opacity 0.35s ease-out; }
+    .diagram.go .lm-pass { opacity:1; }
+    .diagram .dg-rocket { transform-box:fill-box; transform-origin:center; }
+    .dg-card { align-self:start; position:sticky; top:76px; }
+    @media (max-width: 650px) { .dg-card { position:static; } }
+    .diagram .lbl { paint-order:stroke; stroke:rgba(13,6,40,0.9); stroke-width:3px; stroke-linejoin:round; }
+    .setup-card { grid-column:1 / -1; }
+    .setup-card summary { cursor:pointer; font-size:1.05rem; color:#f0c040; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+    .setup-sum { text-transform:none; letter-spacing:0; font-weight:400; font-size:0.8rem; color:#a8d8f0; margin-left:8px; }
+    .setup-help { font-size:0.82rem; color:#a8d8f0; margin:12px 0; line-height:1.5; }
+    .setup-card input[type="number"], .setup-card input[type="text"], .setup-card select, .review-strip input[type="number"] { width:auto; flex:none; padding:6px 8px; font-size:0.9rem; border-radius:6px; }
+    .setup-card select { padding-right:28px; }
+    .station-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+    .station-row input[type="text"] { width:110px; }
+    .station-row input[type="number"] { width:90px; }
+    .setup-grid { display:flex; flex-wrap:wrap; gap:16px; margin:12px 0; font-size:0.85rem; color:#c8e8f8; }
+    .setup-grid input[type="number"] { width:80px; }
+    .setup-lbl { display:block; font-size:0.75rem; color:#a8d8f0; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; font-weight:600; }
+    .small-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25); color:#e8f4fd; border-radius:6px; padding:6px 12px; font-size:0.8rem; font-weight:700; cursor:pointer; }
+    .small-btn.primary { background:linear-gradient(135deg,#f0c040,#e08020); color:#0a0a2e; border:none; }
+    .small-btn.danger { color:#ff8080; border-color:rgba(255,100,100,0.4); }
+    .small-btn.ok { color:#80e0a8; border-color:rgba(64,192,122,0.5); }
+    .setup-status { margin-left:10px; font-size:0.82rem; color:#80e0a8; }
+    .review-strip { display:none; margin-bottom:14px; padding:12px 14px; border-radius:10px; background:rgba(255,160,64,0.08); border:1px solid rgba(255,160,64,0.4); }
+    .review-title { font-weight:700; color:#ffc080; margin-bottom:4px; }
+    .review-help { font-size:0.78rem; color:#c8a890; margin-bottom:8px; }
+    .review-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); font-size:0.85rem; }
+    .review-info strong { color:#ffe080; }
+    .review-acts { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+    .review-acts label { display:inline; text-transform:none; font-size:0.75rem; margin:0 2px 0 0; letter-spacing:0; }
+    .pending-note { display:none; margin:-4px 0 12px; padding:8px 12px; border-radius:8px; background:rgba(255,160,64,0.1); color:#ffd8b0; font-size:0.82rem; }
+
+    .final-badge { display:none; margin-left:8px; padding:2px 10px; border-radius:20px; font-size:0.65rem; letter-spacing:1.5px; color:#80ff80; border:1px solid rgba(100,255,100,0.4); vertical-align:middle; }
+    .final-badge.show { display:inline-block; }
+    .board-note { font-size:0.8rem; color:#a8d8f0; margin:-6px 0 12px; line-height:1.5; min-height:1.2em; }
+    .board-note a { color:#f0c040; }
+    .adopt-btn { margin-left:6px; background:rgba(240,192,64,0.15); border:1px solid rgba(240,192,64,0.5); color:#f0c040; border-radius:6px; padding:4px 12px; font-size:0.78rem; font-weight:700; cursor:pointer; }
+    .adopt-btn:hover { background:rgba(240,192,64,0.28); }
+    .board-note strong { color:#f0c040; }
+    .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .alt-conv { color:#9080b0; font-size:0.78rem; font-weight:400; white-space:nowrap; }
+    .results-table tr.me td { background:rgba(0,245,255,0.07); }
+    .results-table tr.me td:nth-child(2)::after { content:' (you)'; color:#00f5ff; font-size:0.75rem; }
+    .del-btn { background:none; border:none; color:#ff6060; cursor:pointer; font-size:1rem; padding:2px 8px; border-radius:4px; opacity:0.6; transition:opacity 0.2s; }
+    .del-btn:hover, .del-btn:focus { opacity:1; }
+    .missing-list { display:none; margin-top:14px; padding:10px 14px; border-radius:8px; background:rgba(255,255,255,0.04); border-left:3px solid rgba(240,192,64,0.5); font-size:0.82rem; color:#a8d8f0; line-height:1.6; }
+    .save-ok { display:none; margin-top:10px; padding:10px 14px; border-radius:8px; background:rgba(64,192,122,0.12); border:1px solid rgba(64,192,122,0.4); color:#80e0a8; font-size:0.88rem; font-weight:600; }
+    .save-ok.show { display:block; }
+    .save-btn:disabled { opacity:0.6; cursor:default; }
+    /* let a card be narrower than its widest child (the table scrolls inside .table-scroll instead of widening the page) */
+    .container > .card { min-width:0; }
+    @media (max-width: 480px) { .results-table .col-extra { display:none; } }
+    @media (max-width: 650px) {
+      .results-table th, .results-table td { padding:9px 8px; }
+      .results-header { flex-wrap:wrap; gap:8px; }
+    }
+
     .rank-gold td   { background:rgba(240,192,64,0.1) !important; }
     .rank-silver td { background:rgba(200,215,225,0.07) !important; }
     .rank-bronze td { background:rgba(180,110,50,0.1) !important; }
@@ -420,12 +515,13 @@
     <h2>Measurements</h2>
 
     <div class="input-group" style="display:flex;gap:12px">
-      <div style="flex:2">
-        <label>Student Name</label>
-        <input type="text" id="student-name" placeholder="Enter your name" />
+      <div style="flex:2;min-width:0">
+        <label for="student-name">Student Name</label>
+        <input type="text" id="student-name" placeholder="First and last name" maxlength="40" autocomplete="off" />
       </div>
-      <div style="flex:1">
-        <label>Period</label>
+      <div style="flex:1;min-width:0">
+        <label for="student-period" id="group-label">Period</label>
+        <select id="student-class" style="display:none" aria-label="Your class"></select>
         <select id="student-period">
           <option value="" disabled selected>—</option>
           <option>1</option><option>2</option><option>3</option>
@@ -436,26 +532,43 @@
     </div>
 
     <div class="input-group">
-      <label>Distance from Launch Site</label>
+      <label for="distance">Distance from Launch Site</label>
+      <div class="station-chips" id="station-chips" style="display:none"></div>
       <div class="input-row">
-        <input type="number" id="distance" placeholder="e.g. 30" min="0" step="any" />
+        <input type="number" id="distance" placeholder="e.g. 100" min="0" step="any" />
         <span class="unit-badge" id="dist-unit-badge">ft</span>
       </div>
-      <div class="unit-toggle">
-        <button class="active" onclick="setDistUnit('ft', this)">Feet</button>
-        <button onclick="setDistUnit('m', this)">Meters</button>
+      <div class="unit-toggle" id="unit-toggle">
+        <button type="button" class="active" data-unit="ft" onclick="setDistUnit('ft', this)">Feet</button>
+        <button type="button" data-unit="m" onclick="setDistUnit('m', this)">Meters</button>
       </div>
     </div>
 
     <div class="input-group">
-      <label>Angle of Elevation (inclinometer)</label>
+      <label for="angle" id="angle-label">String reading (the number your string points to)</label>
+      <div class="mode-toggle" role="group" aria-label="What number are you typing?">
+        <button type="button" id="mode-string" class="active" aria-pressed="true" onclick="setAngleMode('string')">String reading</button>
+        <button type="button" id="mode-elev" aria-pressed="false" onclick="setAngleMode('elev')">I already did 90° − reading</button>
+      </div>
       <div class="input-row">
-        <input type="number" id="angle" placeholder="e.g. 65" min="0" max="89" step="any" />
+        <input type="number" id="angle" placeholder="e.g. 30" min="0" max="180" step="any" />
         <span class="unit-badge">deg</span>
+      </div>
+      <div class="protractor-box">
+        <svg id="protractor" viewBox="-130 -20 260 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Your inclinometer"></svg>
+        <div class="angle-explain" id="angle-explain" aria-live="polite"></div>
       </div>
     </div>
 
-    <p class="error-msg" id="error-msg">Please enter a distance &gt; 0 and an angle between 1° and 89°.</p>
+    <div class="input-group eye-group">
+      <label for="eye-height">Your eye height <span class="label-hint">(how high your eyes are off the ground)</span></label>
+      <div class="input-row">
+        <input type="number" id="eye-height" value="5" min="0" step="any" />
+        <span class="unit-badge" id="eye-unit-badge">ft</span>
+      </div>
+    </div>
+
+    <p class="error-msg" id="error-msg" role="alert"></p>
 
     <div class="btn-row">
       <button class="calculate-btn" style="flex:2" onclick="calculate()">Calculate</button>
@@ -465,50 +578,42 @@
     <div class="result-box" id="result-box">
       <span class="placeholder-text">Enter measurements above and press Calculate</span>
     </div>
+    <div class="headline" id="headline"></div>
+    <div class="note-box coach" id="coach-note"></div>
+    <div class="note-box warn" id="reality-note" role="alert"></div>
+    <div class="predict-card" id="predict-card"></div>
 
     <button class="save-btn" id="save-btn" onclick="saveResult()">Save Result</button>
-    <div id="save-error" style="color:#ff8080;font-size:0.82rem;margin-top:6px;display:none"></div>
+    <div id="save-error" role="alert" style="color:#ff8080;font-size:0.82rem;margin-top:6px;display:none"></div>
+    <div id="save-ok" class="save-ok" role="status"></div>
     <div id="work-shown"></div>
-
-    <div class="compare-section" id="compare-section" style="display:none">
-      <div class="compare-label">How does this compare to a 3-story building (~40 ft / 12 m)?</div>
-      <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
-      <div class="compare-items"><span>Ground</span><span>3-story building</span><span>2×</span></div>
-    </div>
   </div>
 
-  <div class="card">
+  <div class="card dg-card">
     <h2>Diagram</h2>
-    <svg class="diagram" viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg">
-      <line x1="20" y1="220" x2="320" y2="220" stroke="#4a8ab0" stroke-width="2"/>
-      <line id="svg-altitude" x1="260" y1="220" x2="260" y2="60" stroke="#f0c040" stroke-width="2.5" stroke-dasharray="6,4"/>
-      <line id="svg-sight" x1="60" y1="220" x2="260" y2="60" stroke="#80e0a0" stroke-width="2"/>
-      <circle cx="60" cy="220" r="5" fill="#80e0a0"/>
-      <text x="60" y="240" text-anchor="middle" fill="#80e0a0" font-size="11">Observer</text>
-      <circle cx="260" cy="220" r="4" fill="#f0c040"/>
-      <text x="260" y="240" text-anchor="middle" fill="#f0c040" font-size="11">Launch Site</text>
-      <circle class="smoke" id="smoke1" cx="255" cy="220" r="6" fill="#ffffff"/>
-      <circle class="smoke" id="smoke2" cx="265" cy="222" r="5" fill="#dddddd"/>
-      <circle class="smoke" id="smoke3" cx="258" cy="218" r="7" fill="#eeeeee"/>
-      <text id="svg-rocket" x="260" y="50" text-anchor="middle" font-size="22" style="transform:translateY(170px) rotate(-45deg)">🚀</text>
-      <path id="svg-arc" d="M 90,220 A 30,30 0 0,0 75,202" fill="none" stroke="#ff9f40" stroke-width="2"/>
-      <text x="102" y="212" fill="#ff9f40" font-size="11" id="svg-angle-label">θ</text>
-      <text x="160" y="215" text-anchor="middle" fill="#4a8ab0" font-size="11">distance (d)</text>
-      <text id="svg-dist-value" x="160" y="229" text-anchor="middle" fill="#6ab8e0" font-size="10"></text>
-      <text x="284" y="145" text-anchor="start" fill="#f0c040" font-size="11">altitude</text>
-      <text x="284" y="157" text-anchor="start" fill="#f0c040" font-size="11">(h)</text>
-      <text id="svg-alt-value" x="284" y="170" text-anchor="start" fill="#ffe080" font-size="10"></text>
-      <polyline points="250,220 250,210 260,210" fill="none" stroke="#aaa" stroke-width="1.5"/>
-      <text id="svg-sight-label" x="148" y="125" text-anchor="middle" fill="#80e0a0" font-size="11" transform="rotate(-38,148,130)">line of sight</text>
-    </svg>
+    <svg class="diagram" id="diagram-svg" viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of your measurement, drawn to scale"></svg>
+    <div class="tan-explain" id="tan-explain"></div>
   </div>
 
-  <div class="card results-card" id="results-card" style="display:none">
+  <details class="card setup-card" id="setup-card" style="display:none">
+    <summary>⚙️ Launch-Day Setup <span class="setup-sum" id="setup-summary"></span></summary>
+    <p class="setup-help">Stations are the spots you measured on the field — students tap their station instead of typing a distance. From now on, results higher than the altitude limit, or with an angle outside the range, wait under <strong>Needs your check</strong> until you approve them. (Results already saved are not re-checked.)</p>
+    <div class="station-rows" id="station-rows"></div>
+    <button type="button" class="small-btn" id="add-station">+ Add station</button>
+    <div class="setup-grid">
+      <div><span class="setup-lbl">Highest believable altitude</span><input type="number" id="setup-max" min="10" step="1" /> ft</div>
+      <div><span class="setup-lbl">Angle limits</span><input type="number" id="setup-min-angle" min="1" max="89" step="1" /> ° to <input type="number" id="setup-max-angle" min="1" max="89" step="1" /> °</div>
+    </div>
+    <button type="button" class="small-btn primary" id="setup-save">Save setup</button>
+    <span class="setup-status" id="setup-status" role="status"></span>
+  </details>
+
+  <div class="card results-card" id="results-card">
     <div class="results-header">
-      <h2 style="margin-bottom:0">Class Results</h2>
+      <h2 style="margin-bottom:0">🏆 Leaderboard <span class="final-badge" id="final-badge">Final</span></h2>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="lock-btn" id="lock-btn" onclick="lockRankings()">🏆 Lock Rankings</button>
-        <button class="clear-btn" id="clear-all-btn" onclick="clearResults()" style="display:none">Clear All</button>
+        <button class="clear-btn" id="clear-all-btn" onclick="clearResults()" style="display:none">Clear</button>
       </div>
     </div>
 
@@ -520,35 +625,32 @@
         <button class="podium-dismiss" onclick="document.getElementById('podium-overlay').classList.remove('show')">CLOSE</button>
       </div>
     </div>
-    <div class="period-tabs" id="period-tabs">
-      <button class="period-tab active" onclick="filterPeriod('all', this)">All Periods</button>
-      <button class="period-tab" onclick="filterPeriod('1', this)">Period 1</button>
-      <button class="period-tab" onclick="filterPeriod('2', this)">Period 2</button>
-      <button class="period-tab" onclick="filterPeriod('3', this)">Period 3</button>
-      <button class="period-tab" onclick="filterPeriod('4', this)">Period 4</button>
-      <button class="period-tab" onclick="filterPeriod('5', this)">Period 5</button>
-      <button class="period-tab" onclick="filterPeriod('6', this)">Period 6</button>
-      <button class="period-tab" onclick="filterPeriod('7', this)">Period 7</button>
-      <button class="period-tab" onclick="filterPeriod('8', this)">Period 8</button>
+
+    <div class="review-strip" id="review-strip"></div>
+    <div class="pending-note" id="pending-note"></div>
+
+    <!-- One tab for the Top 20 of all classes, plus one per class the viewer belongs to -->
+    <div class="period-tabs" id="board-tabs" role="tablist"></div>
+    <div class="board-note" id="board-note"></div>
+    <div class="table-scroll">
+      <table class="results-table">
+        <thead id="results-head"></thead>
+        <tbody id="results-body">
+          <tr><td class="empty-msg">Loading the leaderboard…</td></tr>
+        </tbody>
+      </table>
     </div>
-    <table class="results-table">
-      <thead>
-        <tr><th>#</th><th>Name</th><th>Period</th><th>Distance</th><th>Angle</th><th>Altitude</th></tr>
-      </thead>
-      <tbody id="results-body">
-        <tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>
-      </tbody>
-    </table>
+    <div class="missing-list" id="missing-list"></div>
   </div>
 
   <div class="card steps-card">
     <h2>How It Works</h2>
-    <div class="formula">altitude = distance × tan(angle)</div>
+    <div class="formula">altitude = distance × tan(angle) + eye height</div>
     <div class="steps">
-      <div class="step"><div class="step-number">Step 1</div><div class="step-title">Measure Distance</div><div class="step-desc">Stand a known distance away from the launch site. Use a measuring tape or count paces.</div></div>
-      <div class="step"><div class="step-number">Step 2</div><div class="step-title">Read the Inclinometer</div><div class="step-desc">Aim your inclinometer at the rocket at its highest point and read the angle of elevation in degrees.</div></div>
-      <div class="step"><div class="step-number">Step 3</div><div class="step-title">Apply Trigonometry</div><div class="step-desc">The rocket, launch site, and you form a right triangle. Tangent connects the opposite side (altitude) to the adjacent side (distance).</div></div>
-      <div class="step"><div class="step-number">Step 4</div><div class="step-title">Calculate!</div><div class="step-desc">Multiply your distance by the tangent of the angle. The result is how high the rocket flew above the launch site.</div></div>
+      <div class="step"><div class="step-number">Step 1</div><div class="step-title">Measure Distance</div><div class="step-desc">Stand at a measured spot (your teacher's station or a measuring tape). Best spot: about as far away as you think the rocket will fly.</div></div>
+      <div class="step"><div class="step-number">Step 2</div><div class="step-title">Read the Inclinometer</div><div class="step-desc">Aim the straw at the rocket at its highest point, pinch the string and read the number. Type that string reading — the calculator does 90° − reading for you.</div></div>
+      <div class="step"><div class="step-number">Step 3</div><div class="step-title">Apply Trigonometry</div><div class="step-desc">You, the launch pad and the rocket make a right triangle. Tangent tells you how many feet your line of sight climbs for every foot you stood away.</div></div>
+      <div class="step"><div class="step-number">Step 4</div><div class="step-title">Add Your Eye Height</div><div class="step-desc">You measured from your eyes, not the ground, so add how high your eyes are (about 5 ft). The answer is how high the rocket flew above the launch pad.</div></div>
     </div>
   </div>
 
@@ -557,8 +659,8 @@
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div id="modal-step-1">
-      <h3>Clear All Results?</h3>
-      <p>This will permanently delete every saved result. Are you sure you want to continue?</p>
+      <h3 id="clear-title">Clear All Results?</h3>
+      <p id="clear-text">This will permanently delete every saved result. Are you sure you want to continue?</p>
       <div class="modal-btns">
         <button class="modal-cancel" onclick="closeModal()">Cancel</button>
         <button class="modal-confirm" onclick="showPasswordStep()">Yes, Continue</button>
@@ -566,7 +668,7 @@
     </div>
     <div id="modal-step-2" style="display:none">
       <h3>Teacher Password</h3>
-      <p>Enter the teacher password to clear all results.</p>
+      <p>Enter the teacher password to clear these results.</p>
       <input type="password" id="modal-pw" placeholder="••••••••" />
       <div class="pw-error" id="pw-error"></div>
       <div class="modal-btns">
@@ -578,284 +680,1299 @@
 </div>
 
 <script>
-  let distUnit = 'ft', lastResult = null, resultCount = 0, activePeriodFilter = 'all', rankingsLocked = false, isTeacher = false;
+  let distUnit = 'ft', angleMode = 'string', lastResult = null, rankingsLocked = false, lockSeen = false, isTeacher = false;
+  // Teacher's launch-day setup (settings/altitude-setup): measured stations and believable limits
+  let setup = { stations: [], maxFt: 300, minAngle: 10, maxAngle: 80 };
+  let myBuild = null;            // the student's Rocket Lab build (rocket_builds/{uid}), if they saved one
+  let buildsBlocked = false;     // the database does not allow Rocket Lab builds yet (rules not published)
+  let savedPredict = null;       // prediction card kept (read-only) after the result was saved
+  let diffReason = '';           // why the real flight differed from the prediction (optional)
+  let pickedStation = '';        // station label the distance came from, if any
+  let eyeFt = 5;                 // eye height in feet as the student last typed it (switching units never rounds it)
+  const M_TO_FT = 3.28084;
+  const ANGLE_MODE_KEY = 'altcalc-angle-mode', EYE_KEY = 'altcalc-eye';
 
-  function setDistUnit(unit, btn) {
+  // Landmarks for the to-scale picture and the "higher than…" sentence (heights in feet — edit freely)
+  const LANDMARKS = [
+    { ft: 10,  icon: '🏀', short: 'Hoop',           name: 'a basketball hoop' },
+    { ft: 18,  icon: '🦒', short: 'Giraffe',        name: 'a giraffe' },
+    { ft: 40,  icon: '🚌', short: 'Bus on end',     name: 'a school bus standing on end' },
+    { ft: 100, icon: '🏢', short: '10 floors',      name: 'a 10-story building' },
+    { ft: 151, icon: '🗽', short: 'Liberty',        name: 'the Statue of Liberty' },
+    { ft: 186, icon: '🗼', short: 'Pisa',           name: 'the Leaning Tower of Pisa' },
+    { ft: 300, icon: '🏈', short: 'Football field', name: 'a football field standing on end' }
+  ];
+  const REASONS = [
+    ['wind', '💨 Windy'], ['leak', '💧 Leaked water'], ['wobble', '🌀 Wobbled or tumbled'],
+    ['reading', '📐 Angle was hard to read'], ['close', '🎯 About what we predicted']
+  ];
+
+  function toFt(v, unit) { return unit === 'm' ? v * M_TO_FT : v; }
+  function fromFt(ft, unit) { return unit === 'm' ? ft / M_TO_FT : ft; }
+  function fmt1(v) { return (Math.round(v * 10) / 10).toFixed(1); }
+  function fmtW(v, unit) { return unit === 'm' ? fmt1(v) : String(Math.round(v)); }   // whole feet, or metres to 0.1
+  function trimNum(v) { return String(Math.round(v * 100) / 100); }
+  function deg2rad(d) { return d * Math.PI / 180; }
+
+  // ── Units, eye height, angle mode ──
+  function setDistUnit(unit) {
+    if (unit === distUnit) return;
     distUnit = unit;
-    document.querySelectorAll('.unit-toggle button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('dist-unit-badge').textContent = unit;
+    pickedStation = '';           // a station tap sets it again right after changing the unit
+    if ($('eye-height').value !== '') $('eye-height').value = trimNum(fromFt(eyeFt, unit));
+    document.querySelectorAll('#unit-toggle button').forEach(function(b) { b.classList.toggle('active', b.dataset.unit === unit); });
+    $('dist-unit-badge').textContent = unit;
+    $('eye-unit-badge').textContent = unit;
+    renderStations();
+    invalidateResult();
   }
+  function rememberEye() {           // called when the student types an eye height
+    const v = parseFloat($('eye-height').value);
+    if (!(isFinite(v) && v >= 0)) return;
+    eyeFt = toFt(v, distUnit);
+    try { localStorage.setItem(EYE_KEY, JSON.stringify({ ft: eyeFt })); } catch (e) {}
+  }
+  function restoreEye() {
+    try { const s = JSON.parse(localStorage.getItem(EYE_KEY) || 'null'); if (s && isFinite(s.ft) && s.ft >= 0 && s.ft <= 10) eyeFt = s.ft; } catch (e) {}
+    $('eye-height').value = trimNum(fromFt(eyeFt, distUnit));
+  }
+  function setAngleMode(mode) {
+    angleMode = mode === 'elev' ? 'elev' : 'string';
+    try { localStorage.setItem(ANGLE_MODE_KEY, angleMode); } catch (e) {}
+    const str = angleMode === 'string';
+    $('mode-string').classList.toggle('active', str); $('mode-string').setAttribute('aria-pressed', String(str));
+    $('mode-elev').classList.toggle('active', !str); $('mode-elev').setAttribute('aria-pressed', String(!str));
+    $('angle-label').textContent = str ? 'String reading (the number your string points to)' : 'Angle of elevation (you already did 90° − reading)';
+    $('angle').placeholder = str ? 'e.g. 30' : 'e.g. 60';
+    $('angle').max = str ? '180' : '89';
+    updateProtractor();
+    invalidateResult();
+  }
+  // What the angle box means: in string mode the page does 90° − reading (or reading − 90° if the
+  // string swung past 90 because the inclinometer was held the other way round).
+  function readAngle() {
+    const raw = parseFloat($('angle').value);
+    if (!isFinite(raw)) return null;
+    if (angleMode === 'string') {
+      if (raw < 0 || raw > 180) return { reading: raw, elev: NaN, flipped: false, bad: true };
+      return { reading: raw, elev: Math.round(Math.abs(90 - raw) * 1e6) / 1e6, flipped: raw > 90 };
+    }
+    return { reading: null, elev: raw, flipped: false };
+  }
+  function angleOk(a) { return a && !a.bad && a.elev >= 1 && a.elev <= 89; }
+
+  // ── Live protractor (the same picture as the Inclinometer page) ──
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function sv(parent, tag, attrs, text) {
+    const e = document.createElementNS(SVGNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    parent.appendChild(e);
+    return e;
+  }
+  function updateProtractor() {
+    const svg = $('protractor'), box = $('angle-explain');
+    const a = readAngle(), ok = angleOk(a);
+    const elev = a && isFinite(a.elev) ? Math.max(0, Math.min(89, a.elev)) : 0;
+    const reading = a && isFinite(a.elev) ? (angleMode === 'string' ? a.reading : 90 - a.elev) : 90;
+    const tilt = a && a.flipped ? elev : -elev;          // the straw tips up toward the rocket
+    const cx = 0, cy = 0, R = 92;
+    svg.textContent = '';
+    // fit the view box around the tilted protractor + hanging string so no tilt is ever clipped
+    const tr = deg2rad(tilt), pts = [[0, R + 14], [0, 0]];
+    const rot = function(x, y) { pts.push([x * Math.cos(tr) - y * Math.sin(tr), x * Math.sin(tr) + y * Math.cos(tr)]); };
+    for (let t = 0; t <= 180; t += 15) rot(R * Math.cos(deg2rad(180 - t)), R * Math.sin(deg2rad(180 - t)));
+    rot(-(R + 32), -10); rot(R + 32, -10); rot(-(R + 32), 4); rot(R + 32, 4);
+    const xs = pts.map(function(p) { return p[0]; }), ys = pts.map(function(p) { return p[1]; });
+    const minX = Math.min.apply(null, xs) - 6, minY = Math.min.apply(null, ys) - 6;
+    svg.setAttribute('viewBox', minX.toFixed(1) + ' ' + minY.toFixed(1) + ' ' + (Math.max.apply(null, xs) + 6 - minX).toFixed(1) + ' ' + (Math.max.apply(null, ys) + 6 - minY).toFixed(1));
+    const g = sv(svg, 'g', { transform: 'rotate(' + tilt + ')' });
+    sv(g, 'rect', { x: cx - R - 12, y: cy - 7, width: 2 * R + 24, height: 7, rx: 3, fill: 'rgba(255,45,120,0.15)', stroke: 'rgba(255,45,120,0.5)', 'stroke-width': 1 });
+    // the half-circle hangs below the straw, on the same side as the tick marks
+    sv(g, 'path', { d: 'M ' + (cx - R) + ',' + cy + ' A ' + R + ',' + R + ' 0 0,0 ' + (cx + R) + ',' + cy, fill: 'rgba(255,45,120,0.08)', stroke: '#ff2d78', 'stroke-width': 2 });
+    for (let t = 0; t <= 180; t += 10) {
+      const ang = deg2rad(180 - t), major = t % 30 === 0, ir = major ? R - 14 : R - 8;
+      sv(g, 'line', { x1: cx + ir * Math.cos(ang), y1: cy + ir * Math.sin(ang), x2: cx + R * Math.cos(ang), y2: cy + R * Math.sin(ang), stroke: major ? '#fff' : 'rgba(255,150,180,0.8)', 'stroke-width': major ? 1.8 : 1 });
+      if (major) sv(g, 'text', { x: cx + (R - 25) * Math.cos(ang), y: cy + (R - 25) * Math.sin(ang) + 4, 'text-anchor': 'middle', fill: '#fff', 'font-size': 10, 'font-weight': 'bold' }, String(t));
+    }
+    const end = a && a.flipped ? -1 : 1;                   // which end of the straw points at the rocket
+    sv(g, 'text', { x: cx + end * (R + 22), y: cy, 'text-anchor': 'middle', 'font-size': 14 }, '🚀');
+    // the string always hangs straight down
+    sv(svg, 'line', { x1: cx, y1: cy, x2: cx, y2: cy + R + 6, stroke: '#f0c040', 'stroke-width': 2, 'stroke-linecap': 'round' });
+    sv(svg, 'circle', { cx: cx, cy: cy + R + 9, r: 4, fill: '#f0c040' });
+    sv(svg, 'circle', { cx: cx, cy: cy, r: 3.5, fill: '#ff2d78' });
+
+    box.textContent = '';
+    function add(tag, text, cls) { const e = document.createElement(tag); e.textContent = text; if (cls) e.className = cls; box.appendChild(e); return e; }
+    if (!a) { add('span', angleMode === 'string' ? 'Type your string reading and watch the protractor tilt.' : 'Type your angle of elevation.'); return; }
+    if (!ok) {
+      add('span', angleMode === 'string'
+        ? 'A reading of ' + trimNum(a.reading) + '° gives ' + (isFinite(a.elev) ? trimNum(a.elev) + '°' : 'no angle') + '. When you aim up at a rocket the string reads between 1° and 89° (or 91°–179°).'
+        : 'The angle of elevation must be between 1° and 89°.', 'bad');
+      return;
+    }
+    if (angleMode === 'string') {
+      add('div', a.flipped ? trimNum(a.reading) + '° − 90° =' : '90° − ' + trimNum(a.reading) + '° =');
+      add('strong', trimNum(a.elev) + '° angle of elevation');
+      add('div', 'Already subtracted it yourself? Tap “I already did 90° − reading”.', 'hint');
+    } else {
+      add('strong', trimNum(a.elev) + '° angle of elevation');
+      add('div', '(your string read ' + trimNum(90 - a.elev) + '°)');
+    }
+  }
+
+  // ── Launch-day stations ──
+  function renderStations() {
+    const box = $('station-chips');
+    box.textContent = '';
+    const list = setup.stations || [];
+    box.style.display = list.length ? 'flex' : 'none';
+    list.forEach(function(st) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'station-chip' + (pickedStation && pickedStation === st.label && st.unit === distUnit && parseFloat($('distance').value) === st.dist ? ' active' : '');
+      b.textContent = '📍 ' + (st.label || 'Station') + ' · ' + st.dist + ' ' + st.unit;
+      b.addEventListener('click', function() { pickStation(st); });
+      box.appendChild(b);
+    });
+  }
+  function pickStation(st) {
+    if (st.unit !== distUnit) setDistUnit(st.unit);
+    $('distance').value = String(st.dist);
+    pickedStation = st.label || 'Station';
+    invalidateResult();
+    renderStations();
+  }
+  // the picked station, but only while the distance box still holds exactly that station's distance
+  function currentStation() {
+    if (!pickedStation) return '';
+    const d = parseFloat($('distance').value);
+    return (setup.stations || []).some(function(st) { return st.label === pickedStation && st.unit === distUnit && st.dist === d; }) ? pickedStation : '';
+  }
+  function setupMaxFt() { return setup.maxFt > 0 ? setup.maxFt : 300; }
+  // Students' results outside the teacher's limits wait for a teacher check before reaching any board
+  function needsCheck(r) {
+    return !isTeacher && (toFt(r.altitude, r.unit) > setupMaxFt() || r.angle < setup.minAngle || r.angle > setup.maxAngle);
+  }
+
+  // ── Results ──
+  function hideExtras() {
+    ['headline', 'coach-note', 'reality-note', 'predict-card', 'tan-explain'].forEach(function(id) { $(id).style.display = 'none'; });
+    $('work-shown').style.display = 'none';
+  }
+  function clearResult(msg) {
+    lastResult = null; savedPredict = null;
+    $('save-btn').style.display = 'none';
+    $('result-box').innerHTML = '<span class="placeholder-text">' + msg + '</span>';
+    hideExtras();
+    resetDiagram();
+  }
+  // The numbers on screen changed (or were rejected), so the last answer must not be saved any more.
+  function invalidateResult() {
+    if (!lastResult && $('work-shown').style.display !== 'block') return;
+    clearResult('Press Calculate to see your new result');
+  }
+  function showNote(id, text) { const e = $(id); e.textContent = text; e.style.display = text ? 'block' : 'none'; }
 
   function calculate() {
-    const distInput = parseFloat(document.getElementById('distance').value);
-    const angleInput = parseFloat(document.getElementById('angle').value);
-    const errorEl = document.getElementById('error-msg');
-    const resultBox = document.getElementById('result-box');
-    const workEl = document.getElementById('work-shown');
-    const compareSection = document.getElementById('compare-section');
+    const d = parseFloat($('distance').value);
+    const a = readAngle();
+    const eye = parseFloat($('eye-height').value);
+    const eyeMax = distUnit === 'm' ? 3 : 10;
+    const errorEl = $('error-msg');
     errorEl.style.display = 'none';
-    if (!distInput || distInput <= 0 || !angleInput || angleInput <= 0 || angleInput >= 90) {
-      errorEl.style.display = 'block';
-      resultBox.innerHTML = '<span class="placeholder-text">Enter valid measurements to see results.</span>';
-      workEl.style.display = 'none'; compareSection.style.display = 'none'; return;
+    let problem = '';
+    if (!(d > 0)) problem = 'Enter your distance from the launch pad (more than 0).';
+    else if (!a) problem = angleMode === 'string' ? 'Enter the number your string points to.' : 'Enter your angle of elevation (1° to 89°).';
+    else if (!angleOk(a)) problem = angleMode === 'string'
+      ? 'Check your string reading: when you aim up at a rocket it reads between 1° and 89° (or 91° to 179°).'
+      : 'The angle of elevation must be between 1° and 89°.';
+    else if (!(eye >= 0 && eye <= eyeMax)) problem = 'Eye height must be between 0 and ' + eyeMax + ' ' + distUnit + '.';
+    const tanV = a ? Math.tan(deg2rad(a.elev)) : NaN;
+    const above = d * tanV, alt = above + eye;
+    if (!problem && !(isFinite(alt) && alt < 1e7)) problem = 'Those numbers are too big — check your distance.';
+    if (problem) {
+      errorEl.textContent = problem; errorEl.style.display = 'block';
+      clearResult('Enter valid measurements to see results.');
+      return;
     }
-    const angleRad = angleInput * Math.PI / 180;
-    const tanVal = Math.tan(angleRad);
-    const altitude = distInput * tanVal;
-    const unitLabel = distUnit;
-    const benchmarkFt = distUnit === 'ft' ? 40 : 12;
-    const pct = Math.min((altitude / (benchmarkFt * 2)) * 100, 100);
-    resultBox.innerHTML = `<div class="altitude-value">${altitude.toFixed(1)} <span style="font-size:1.2rem">${unitLabel}</span></div><div class="altitude-label">Rocket Altitude</div>`;
-    workEl.style.display = 'block';
-    workEl.innerHTML = `<div class="step-line">Given:</div><div>  distance (d) = ${distInput} ${unitLabel}</div><div>  angle (θ)    = ${angleInput}°</div><br/><div class="step-line">Formula:</div><div>  altitude = d × tan(θ)</div><br/><div class="step-line">Substitute:</div><div>  altitude = ${distInput} × tan(${angleInput}°)</div><div>  altitude = ${distInput} × ${tanVal.toFixed(4)}</div><br/><div class="answer-line">  altitude ≈ ${altitude.toFixed(2)} ${unitLabel}</div>`;
-    compareSection.style.display = 'block';
-    setTimeout(() => { document.getElementById('bar-fill').style.width = pct + '%'; }, 50);
-    const svgRocketY = Math.max(30, Math.round(220 - Math.min(200 * tanVal, 190)));
-    updateArc(svgRocketY, angleInput);
-    document.getElementById('svg-dist-value').textContent = distInput + ' ' + distUnit;
-    document.getElementById('svg-alt-value').textContent = altitude.toFixed(1) + ' ' + unitLabel;
-    ['svg-arc', 'svg-angle-label', 'svg-dist-value', 'svg-alt-value'].forEach(id => {
-      const el = document.getElementById(id);
-      el.style.transition = 'none';
-      el.style.opacity = '0';
+    const unit = distUnit, elev = a.elev;
+    const lo = d * Math.tan(deg2rad(Math.max(elev - 2, 0.5))) + eye;
+    const hi = d * Math.tan(deg2rad(Math.min(elev + 2, 89.5))) + eye;
+    lastResult = { distance: d, angle: Math.round(elev * 100) / 100, reading: angleMode === 'string' ? a.reading : null,
+                   angleMode: angleMode, eyeHeight: eye, altitude: alt, unit: unit, station: currentStation(), lo: lo, hi: hi };
+    diffReason = ''; savedPredict = null;
+
+    // big number + give-or-take range
+    $('result-box').innerHTML = '<div class="altitude-value">' + fmt1(alt) + ' <span style="font-size:1.2rem">' + unit + '</span></div>' +
+      '<div class="altitude-label">Rocket Altitude</div>' +
+      '<div class="range-line">Give or take: about ' + fmtW(lo, unit) + '–' + fmtW(hi, unit) + ' ' + unit + ' <span>(if your reading was 2° off)</span></div>';
+
+
+    // where-to-stand coaching
+    const half = (hi - lo) / 2;
+    let coach = '';
+    if (elev > 70) coach = '📏 You stood very close to the pad. At ' + trimNum(elev) + '°, being 2° off changes your answer by about ±' + fmtW(half, unit) + ' ' + unit + '. Next launch, stand farther back — about as far away as you think the rocket will fly.';
+    else if (elev < 20) coach = '🔭 You stood very far away, so the top of the flight is hard to see. Next launch, stand closer — about as far away as you think the rocket will fly (that puts your angle near 45°).';
+    else if (elev >= 30 && elev <= 60) coach = '👍 Great spot! Angles between 30° and 60° give the most trustworthy readings.';
+    showNote('coach-note', coach);
+
+
+    // work shown
+    const L = [];
+    L.push('<div class="step-line">Given:</div>');
+    if (lastResult.reading != null) {
+      L.push('<div>  string reading = ' + trimNum(a.reading) + '°</div>');
+      L.push('<div>  angle (θ)      = ' + (a.flipped ? trimNum(a.reading) + '° − 90°' : '90° − ' + trimNum(a.reading) + '°') + ' = ' + trimNum(elev) + '°</div>');
+    } else L.push('<div>  angle (θ)      = ' + trimNum(elev) + '°</div>');
+    L.push('<div>  distance (d)   = ' + trimNum(d) + ' ' + unit + '</div>');
+    L.push('<div>  eye height (e) = ' + trimNum(eye) + ' ' + unit + '</div><br/>');
+    L.push('<div class="step-line">Formula:</div><div>  altitude = d × tan(θ) + e</div><br/>');
+    L.push('<div class="step-line">Substitute:</div>');
+    L.push('<div>  altitude = ' + trimNum(d) + ' × tan(' + trimNum(elev) + '°) + ' + trimNum(eye) + '</div>');
+    L.push('<div>  altitude = ' + trimNum(d) + ' × ' + tanV.toFixed(6) + ' + ' + trimNum(eye) + '</div>');
+    L.push('<div>  altitude = ' + above.toFixed(2) + ' + ' + trimNum(eye) + '</div><br/>');
+    L.push('<div class="answer-line">  altitude ≈ ' + fmt1(alt) + ' ' + unit + '</div>');
+    $('work-shown').innerHTML = L.join('');
+    $('work-shown').style.display = 'block';
+
+    // what tan is doing
+    const te = $('tan-explain');
+    const tShow = String(Number(tanV.toPrecision(4)));
+    te.innerHTML = '📐 <strong>What tan does:</strong> tan(' + trimNum(elev) + '°) ≈ ' + tShow +
+      '. For every 1 ' + unit + ' you stood from the pad, your line of sight climbs about ' + tShow + ' ' + unit + '. ' +
+      'You stood ' + trimNum(d) + ' ' + unit + ' away, so it climbed ' + trimNum(d) + ' × ' + tShow + ' ≈ <strong>' + fmt1(above) + ' ' + unit + '</strong> above your eyes' +
+      (eye > 0 ? ' — plus your ' + trimNum(eye) + ' ' + unit + ' eye height = <strong>' + fmt1(alt) + ' ' + unit + '</strong>.' : '.');
+    te.style.display = 'block';
+
+    drawDiagram({ d: d, elev: elev, eye: eye, alt: alt, lo: lo, hi: hi, unit: unit });
+    renderPredict();
+    $('save-error').style.display = 'none';
+    $('save-ok').classList.remove('show');
+    showFlagState();
+    if (!rankingsLocked) $('save-btn').style.display = 'block';
+  }
+
+  // Headline, double-check note and Save label for the result on screen, from the current limits
+  function showFlagState() {
+    const r = lastResult;
+    if (!r) return;
+    const flagged = needsCheck(r), unit = r.unit, shownAlt = Math.round(r.altitude * 10) / 10;
+    const h = $('headline'); h.textContent = landmarkSentence(toFt(shownAlt, unit), unit, flagged); h.style.display = 'block';
+    if (flagged) {
+      const why = [];
+      if (toFt(r.altitude, unit) > setupMaxFt()) why.push('That is higher than ' + fmtW(fromFt(setupMaxFt(), unit), unit) + ' ' + unit + ' — real bottle rockets usually reach about 150–200 ft.');
+      if (r.angle < setup.minAngle || r.angle > setup.maxAngle) why.push('Your angle (' + trimNum(r.angle) + '°) is outside the ' + setup.minAngle + '°–' + setup.maxAngle + '° range your teacher set.');
+      showNote('reality-note', '🤔 Double-check! ' + why.join(' ') + ' Check your distance and your string reading with your partner. If it is right, you can still save it — your teacher will check it before it goes on the leaderboard.');
+    } else showNote('reality-note', '');
+    if (!saving) $('save-btn').textContent = flagged ? '⏳ Save for Teacher Check' : 'Save Result';
+  }
+
+  function landmarkSentence(altFt, unit, flagged) {
+    const show = function(ft) { return fmtW(fromFt(ft, unit), unit) + ' ' + unit; };
+    const passed = LANDMARKS.filter(function(l) { return l.ft <= altFt; });
+    const next = LANDMARKS.find(function(l) { return l.ft > altFt; });
+    if (next && parseFloat(fmtW(fromFt(next.ft - altFt, unit), unit)) === 0) return 'About as tall as ' + next.icon + ' ' + next.name + ' (' + show(next.ft) + ')!';
+    if (!passed.length) return 'Not quite as tall as ' + next.icon + ' ' + next.name + ' (' + show(next.ft) + ') — ' + show(next.ft - altFt) + ' to go!';
+    const top = passed[passed.length - 1];
+    if (parseFloat(fmtW(fromFt(altFt - top.ft, unit), unit)) === 0) return 'About as tall as ' + top.icon + ' ' + top.name + ' (' + show(top.ft) + ')!';
+    let s = 'Higher than ' + top.icon + ' ' + top.name + ' (' + show(top.ft) + ')';
+    s += next ? ', and ' + show(next.ft - altFt) + ' short of ' + next.icon + ' ' + next.name + ' (' + show(next.ft) + ').' : (flagged ? '.' : ' — a monster launch!');
+    return s;
+  }
+
+  // ── Rocket Lab prediction vs. the real flight ──
+  function renderPredict() {
+    const box = $('predict-card');
+    box.textContent = '';
+    const res = lastResult || (savedPredict && savedPredict.result);
+    const readOnly = !lastResult && !!savedPredict;
+    if (!res || isTeacher) { box.style.display = 'none'; return; }
+    const measFt = toFt(res.altitude, res.unit);
+    if (!myBuild || !(Number(myBuild.predictedFt) > 0)) {
+      if (buildsBlocked || readOnly) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      box.innerHTML = '🧪 <strong>Compare with a prediction:</strong> in <a href="rocket-builder.html" target="_blank" rel="noopener">Rocket Lab</a> (opens in a new tab), set up the rocket you really built and press <em>“I’m building this one”</em>. <strong>Save this result first</strong> — your next one will show how close the simulator was.';
+      return;
+    }
+    box.style.display = 'block';
+    const p = Number(myBuild.predictedFt), pct = Math.round(measFt / p * 100), top = Math.max(p, measFt);
+    function div(cls, text) { const e = document.createElement('div'); e.className = cls; if (text != null) e.textContent = text; return e; }
+    box.appendChild(div('predict-title', '🧪 Rocket Lab prediction vs. your real flight'));
+    [['Predicted', p, '#b44fff'], ['Measured', measFt, '#00f5ff']].forEach(function(x) {
+      const row = div('pbar');
+      row.appendChild(div('pbar-lbl', x[0]));
+      const tr = div('pbar-track'), fill = div('pbar-fill');
+      fill.style.width = Math.max(2, x[1] / top * 100) + '%'; fill.style.background = x[2];
+      tr.appendChild(fill); row.appendChild(tr);
+      row.appendChild(div('pbar-val', Math.round(x[1]) + ' ft (' + fmt1(x[1] / M_TO_FT) + ' m)'));
+      box.appendChild(row);
     });
-    void document.getElementById('svg-dist-value').getBoundingClientRect();
-    ['svg-arc', 'svg-angle-label', 'svg-dist-value', 'svg-alt-value'].forEach(id => {
-      const el = document.getElementById(id);
-      el.style.transition = 'opacity 0.4s ease-out 1.2s';
-      el.style.opacity = '1';
+    box.appendChild(div('pverdict', pct >= 85 && pct <= 115 ? '🎯 ' + pct + '% of the prediction — your rocket flew like the simulator said!'
+      : pct < 85 ? '📉 ' + pct + '% of the prediction — lower than predicted. What happened?' : '📈 ' + pct + '% of the prediction — higher than predicted! What happened?'));
+    const chips = div('reason-chips');
+    const chosen = readOnly ? savedPredict.reason : diffReason;
+    REASONS.forEach(function(rz) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'reason-chip' + (chosen === rz[0] ? ' active' : ''); b.textContent = rz[1];
+      b.setAttribute('aria-pressed', String(chosen === rz[0]));
+      if (readOnly) b.disabled = true;
+      else b.addEventListener('click', function() {
+        if (saving || !lastResult) return;            // the reason is locked in once Save is pressed
+        diffReason = diffReason === rz[0] ? '' : rz[0]; renderPredict();
+      });
+      chips.appendChild(b);
     });
-    const rocket = document.getElementById('svg-rocket');
-    const altLine = document.getElementById('svg-altitude');
-    const sightLine = document.getElementById('svg-sight');
-    const sightLabel = document.getElementById('svg-sight-label');
-    const smokes = document.querySelectorAll('.smoke');
-    altLine.setAttribute('y2', svgRocketY); sightLine.setAttribute('y2', svgRocketY);
-    const midX = 160, midY = Math.round((220 + svgRocketY) / 2);
-    const visualAngleDeg = Math.atan2(220 - svgRocketY, 200) * 180 / Math.PI;
-    sightLabel.setAttribute('x', midX); sightLabel.setAttribute('y', midY - 6);
-    sightLabel.setAttribute('transform', `rotate(${-visualAngleDeg.toFixed(1)},${midX},${midY})`);
-    rocket.setAttribute('y', svgRocketY);
-    altLine.classList.remove('visible'); sightLine.classList.remove('visible');
-    rocket.style.transition = 'none';
-    rocket.style.transform = `translateY(${220 - svgRocketY}px) rotate(-45deg)`;
-    void rocket.getBoundingClientRect();
+    box.appendChild(chips);
+    if (readOnly) box.appendChild(div('pdesign', '✓ Saved with your result' + (chosen ? '' : ' (no reason picked)') + '.'));
+    const fins = Number(myBuild.finCount) ? myBuild.finCount + ' ' + (myBuild.finSize || '') + ' fins' : 'no fins';
+    box.appendChild(div('pdesign', 'Your Rocket Lab design: ' + [myBuild.bottle + ' oz bottle', myBuild.waterPct + '% water', myBuild.psi + ' psi', (myBuild.nose || '') + ' nose', fins].join(' · ')));
+  }
+
+  // ── To-scale diagram ──
+  function drawDiagram(r) {
+    const svg = $('diagram-svg');
+    svg.classList.remove('go');
+    svg.textContent = '';
+    const G = 222, XL = 222, XMIN = 24, TOP = 24, LMX = 240;
+    sv(svg, 'line', { x1: 8, y1: G, x2: 232, y2: G, stroke: '#4a8ab0', 'stroke-width': 2 });
+    if (!r) {
+      // example picture until there is a result
+      const xo = 60, ye = G - 12, yr = 62;
+      sv(svg, 'line', { x1: xo, y1: G, x2: xo, y2: ye + 4, stroke: '#80e0a0', 'stroke-width': 2 });
+      sv(svg, 'circle', { cx: xo, cy: ye, r: 3.5, fill: '#80e0a0' });
+      sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: ye, stroke: '#4a8ab0', 'stroke-dasharray': '3,3' });
+      sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: yr, stroke: '#80e0a0', 'stroke-width': 2, opacity: 0.5 });
+      sv(svg, 'line', { x1: XL, y1: G, x2: XL, y2: yr, stroke: '#f0c040', 'stroke-width': 2.5, 'stroke-dasharray': '6,4', opacity: 0.5 });
+      sv(svg, 'text', { x: XL, y: yr - 4, 'text-anchor': 'middle', 'font-size': 18 }, '🚀');
+      sv(svg, 'text', { x: xo, y: G + 14, 'text-anchor': 'middle', fill: '#80e0a0', 'font-size': 10 }, 'you');
+      sv(svg, 'text', { x: XL, y: G + 14, 'text-anchor': 'middle', fill: '#f0c040', 'font-size': 10 }, 'launch pad');
+      sv(svg, 'text', { x: (xo + XL) / 2, y: G + 28, 'text-anchor': 'middle', fill: '#6ab8e0', 'font-size': 10 }, 'distance (d)');
+      sv(svg, 'text', { x: XL - 6, y: (G + yr) / 2, 'text-anchor': 'end', fill: '#f0c040', 'font-size': 10 }, 'altitude (h)');
+      sv(svg, 'text', { x: xo + 30, y: ye - 6, fill: '#ff9f40', 'font-size': 11 }, 'θ');
+      sv(svg, 'text', { x: 286, y: 120, 'text-anchor': 'middle', fill: 'rgba(255,255,255,0.35)', 'font-size': 10 }, 'Calculate to see');
+      sv(svg, 'text', { x: 286, y: 134, 'text-anchor': 'middle', fill: 'rgba(255,255,255,0.35)', 'font-size': 10 }, 'your flight to scale');
+      return;
+    }
+    const unit = r.unit;
+    const lms = LANDMARKS.map(function(l) { return { icon: l.icon, short: l.short, h: fromFt(l.ft, unit) }; });
+    const next = lms.find(function(l) { return l.h > r.alt; });
+    const hMax = Math.max(r.alt, next && next.h <= r.alt * 1.5 ? next.h : r.alt);
+    const s = Math.min((XL - XMIN) / r.d, (G - TOP) / hMax);
+    const xo = XL - r.d * s, ye = G - r.eye * s, yr = G - r.alt * s;
+    const yOf = function(h) { return Math.max(4, G - h * s); };
+
+    // landmark scale (lights up as the rocket passes each one)
+    sv(svg, 'line', { x1: LMX, y1: G, x2: LMX, y2: TOP - 10, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1 });
+    let lastY = -Infinity;
+    lms.filter(function(l) { return l.h <= hMax * 1.0001; }).sort(function(a, b) { return b.h - a.h; }).forEach(function(l) {
+      const y = G - l.h * s, passed = l.h <= Math.round(r.alt * 10) / 10 + 1e-9;
+      const grp = sv(svg, 'g', { class: 'lm ' + (passed ? 'lm-pass' : 'lm-next') });
+      if (passed) grp.style.transitionDelay = (0.2 + 1.4 * Math.sqrt(l.h / r.alt)).toFixed(2) + 's';
+      sv(grp, 'line', { x1: LMX - 4, y1: y, x2: LMX + 6, y2: y, stroke: passed ? '#ffe080' : '#a8d8f0', 'stroke-width': 1.5 });
+      if (y - lastY >= 12) {
+        sv(grp, 'text', { x: LMX + 9, y: y + 3.5, fill: passed ? '#ffe080' : '#a8d8f0', 'font-size': 9 }, l.icon + ' ' + l.short + ' ' + fmtW(l.h, unit));
+        lastY = y;
+      }
+    });
+
+    // eye-level baseline (d), observer, give-or-take lines, sight line, altitude
+    sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: ye, stroke: '#4a8ab0', 'stroke-dasharray': '3,3' });
+    sv(svg, 'line', { x1: xo, y1: G, x2: xo, y2: Math.min(G, ye + 4), stroke: '#80e0a0', 'stroke-width': 2 });
+    sv(svg, 'circle', { cx: xo, cy: ye, r: 3.5, fill: '#80e0a0' });
+    [r.lo, r.hi].forEach(function(v) {
+      sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: yOf(v), stroke: '#80e0a0', 'stroke-width': 1, 'stroke-dasharray': '2,3', opacity: 0.45, class: 'dg-late' });
+    });
+    sv(svg, 'line', { x1: XL + 5, y1: yOf(r.lo), x2: XL + 5, y2: yOf(r.hi), stroke: 'rgba(240,192,64,0.45)', 'stroke-width': 5, 'stroke-linecap': 'round', class: 'dg-late' });
+    sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: yr, stroke: '#80e0a0', 'stroke-width': 2, class: 'dg-late' });
+    sv(svg, 'line', { x1: XL, y1: G, x2: XL, y2: yr, stroke: '#f0c040', 'stroke-width': 2.5, 'stroke-dasharray': '6,4', class: 'dg-late' });
+    if (XL - xo > 14 && ye - yr > 14) sv(svg, 'polyline', { points: (XL - 8) + ',' + ye + ' ' + (XL - 8) + ',' + (ye - 8) + ' ' + XL + ',' + (ye - 8), fill: 'none', stroke: '#aaa', 'stroke-width': 1.2 });
+
+    // angle arc at your eye
+    const ang = Math.atan2(ye - yr, XL - xo), AR = Math.min(26, (XL - xo) * 0.7);
+    const angLabel = sv(svg, 'text', { fill: '#ff9f40', 'font-size': 11, class: 'dg-late lbl' }, trimNum(r.elev) + '°');
+    if (AR >= 8) {
+      sv(svg, 'path', { d: 'M ' + (xo + AR) + ',' + ye + ' A ' + AR + ',' + AR + ' 0 0,0 ' + (xo + AR * Math.cos(ang)).toFixed(1) + ',' + (ye - AR * Math.sin(ang)).toFixed(1), fill: 'none', stroke: '#ff9f40', 'stroke-width': 2, class: 'dg-late' });
+      angLabel.setAttribute('x', (xo + (AR + 12) * Math.cos(ang / 2)).toFixed(1));
+      angLabel.setAttribute('y', (ye - (AR + 12) * Math.sin(ang / 2) + 4).toFixed(1));
+    } else {
+      angLabel.setAttribute('x', xo - 6); angLabel.setAttribute('y', ye - 8); angLabel.setAttribute('text-anchor', 'end');
+    }
+
+    // labels
+    const tight = xo > XL - 50;            // steep: "you" and the pad are close together
+    sv(svg, 'text', { x: tight ? xo - 3 : xo, y: G + 14, 'text-anchor': tight ? 'end' : 'middle', fill: '#80e0a0', 'font-size': 10, class: 'lbl' }, 'you');
+    sv(svg, 'text', { x: tight ? XL + 4 : XL, y: G + 14, 'text-anchor': tight ? 'start' : 'middle', fill: '#f0c040', 'font-size': 10, class: 'lbl' }, tight ? 'pad' : 'launch pad');
+    sv(svg, 'text', { x: Math.max(30, (xo + XL) / 2), y: G + 28, 'text-anchor': 'middle', fill: '#6ab8e0', 'font-size': 10, class: 'lbl' }, 'd = ' + trimNum(r.d) + ' ' + unit + (r.eye > 0 ? '   eye = ' + trimNum(r.eye) + ' ' + unit : ''));
+    sv(svg, 'text', { x: XL - 6, y: Math.min(G - 18, Math.max(TOP + 10, G - 0.3 * (G - yr))), 'text-anchor': 'end', fill: '#ffe080', 'font-size': 10, class: 'dg-late lbl' }, 'h = ' + fmt1(r.alt) + ' ' + unit);
+
+    // smoke + the rocket climbing to its height
+    [[-5, 0, 6, '#fff'], [5, 2, 5, '#ddd'], [-2, -2, 7, '#eee']].forEach(function(p) { sv(svg, 'circle', { class: 'smoke', cx: XL + p[0], cy: G + p[1], r: p[2], fill: p[3] }); });
+    const rocket = sv(svg, 'text', { x: XL, y: yr + 6, 'text-anchor': 'middle', 'font-size': 18, class: 'dg-rocket' }, '🚀');
+    rocket.style.transform = 'translateY(' + (G - yr) + 'px) rotate(-45deg)';
+    void svg.getBoundingClientRect();
     rocket.style.transition = 'transform 1.6s cubic-bezier(0.25, 0.9, 0.35, 1)';
     rocket.style.transform = 'translateY(0) rotate(-45deg)';
-    altLine.classList.add('visible'); sightLine.classList.add('visible');
-    smokes.forEach(s => { s.classList.remove('puff'); void s.getBoundingClientRect(); s.classList.add('puff'); });
-    lastResult = { name: document.getElementById('student-name').value.trim() || 'Anonymous',
-                   period: document.getElementById('student-period').value || '—',
-                   distance: distInput, angle: angleInput, altitude, unit: distUnit };
-    if (!rankingsLocked) document.getElementById('save-btn').style.display = 'block';
+    svg.querySelectorAll('.smoke').forEach(function(sm) { sm.classList.add('puff'); });
+    svg.classList.add('go');
   }
 
-  var allResults = [];
+  // ── Leaderboard ────────────────────────────────────────────────────────────
+  // Two kinds of board:
+  //   • Top 20 · All Classes — public. Lives in one small document
+  //     (settings/altitude-top20) so no student ever has to download another
+  //     class's results to see it.
+  //   • One board per class — the whole class, best launch per student. A
+  //     student only ever asks Firestore for the classes they have joined, and
+  //     the security rules (firestore.rules) refuse anything else.
+  // The teacher sees every class and keeps the Top 20 document authoritative.
+  const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
+  const TOP_N = 20;
+  const CLASS_PICK_KEY = 'altcalc-class';
+  const FT_PER_M = 3.28084;
+  const MEDALS = ['🥇', '🥈', '🥉'];
+  const MEDAL_ROW = ['rank-gold', 'rank-silver', 'rank-bronze'];
 
-  function filterPeriod(period, btn) {
-    activePeriodFilter = period;
-    document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderResults();
-  }
+  let me = null;               // { uid, email, name, tag } of the signed-in user
+  let myClasses = [];          // [{ classId, className }] — joined (student) or owned (teacher)
+  let classResults = {};       // classId -> rows (student view; one listener per joined class)
+  let classState = {};         // classId -> 'loading' | 'ready' | 'error'
+  let classUnsubs = {};        // classId -> unsubscribe function
+  let ownResults = [];         // the signed-in student's own results
+  let allResults = [];         // every result (teacher only)
+  let topEntries = [];         // the public Top 20
+  let roster = {};             // classId -> [{ name, email }] enrolled students (teacher only)
+  let activeBoard = 'top';     // 'top' | 'c:<classId>' | 'none'
+  const loaded = { top: false, own: false, all: false, classes: false };
+  const fresh = { own: false, all: false };   // true once that data came from the server, not a cache
+  let topError = false, saving = false, clearScope = 'all';
 
-  function renderResults() {
-    const tbody = document.getElementById('results-body');
-    tbody.innerHTML = '';
-    let filtered;
-    if (isTeacher) {
-      filtered = activePeriodFilter === 'all'
-        ? allResults
-        : allResults.filter(r => r.period === activePeriodFilter);
-    } else {
-      const studentPeriod = document.getElementById('student-period').value;
-      if (!studentPeriod) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Select your period above to view class results.</td></tr>';
-        return;
-      }
-      filtered = allResults.filter(r => String(r.period) === String(studentPeriod));
+  function $(id) { return document.getElementById(id); }
+  function db() { return firebase.firestore(); }
+
+  function round2(x) { return Math.round(Number(x) * 100) / 100; }
+  function altFt(r) { const a = Number(r.altitude); return r.unit === 'm' ? a * FT_PER_M : a; }
+  function normName(s) { return String(s == null ? '' : s).trim().replace(/\s+/g, ' ').toLowerCase(); }
+  function savedMs(r) { const t = r.savedAt; return t && typeof t.toMillis === 'function' ? t.toMillis() : 0; }
+  function validResult(r) { const a = Number(r && r.altitude); return isFinite(a) && a > 0; }
+  function groupLabel(r) { return r.className || (r.period && r.period !== '—' ? 'Period ' + r.period : '—'); }
+
+  // Short one-way tag for an account, so the public Top 20 never carries anyone's email address.
+  function ownerTag(email) {
+    const s = String(email || '').trim().toLowerCase();
+    if (!s) return '';
+    let h1 = 0x811c9dc5, h2 = 5381;
+    for (let i = 0; i < s.length; i++) {
+      h1 = Math.imul(h1 ^ s.charCodeAt(i), 0x01000193);
+      h2 = (Math.imul(h2, 33) + s.charCodeAt(i)) | 0;
     }
-    if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No results yet.</td></tr>';
+    return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
+  }
+  // One board row per student: same account + same name. (The teacher can enter
+  // results for several students from one account, so the name is part of the key.)
+  function studentKey(r) {
+    const em = String(r.userEmail || '').trim().toLowerCase();
+    const o = ownerTag(em);
+    if (o && em !== TEACHER_EMAIL) return o;
+    return o + '|' + normName(r.name) + '|' + String(r.classId || r.period || '');
+  }
+  function cmpRows(a, b) {
+    return (altFt(b) - altFt(a)) || (savedMs(a) - savedMs(b)) || (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0);
+  }
+  // Best launch per student, highest first (feet and metres are compared in feet).
+  function bestPerStudent(rows) {
+    const best = new Map();
+    rows.forEach(function(r) {
+      if (!validResult(r) || r.review === 'pending') return;
+      const k = studentKey(r), cur = best.get(k);
+      if (!cur || cmpRows(r, cur) < 0) best.set(k, r);
+    });
+    return Array.from(best.values()).sort(cmpRows);
+  }
+  function rowsOf(snap) {
+    return snap.docs.map(function(d) {
+      return Object.assign({ id: d.id, _pending: d.metadata.hasPendingWrites }, d.data());
+    });
+  }
+  function confirmed(rows) { return rows.filter(function(r) { return !r._pending; }); }
+
+  // ── Top 20 document ──
+  function toEntry(r) {
+    return { k: studentKey(r), o: ownerTag(r.userEmail), n: String(r.name || '').trim().slice(0, 60), g: groupLabel(r),
+             c: r.classId || '', a: round2(r.altitude), u: r.unit === 'm' ? 'm' : 'ft', f: round2(altFt(r)), id: r.id, t: savedMs(r) };
+  }
+  function cleanEntry(e) {
+    if (!e || typeof e !== 'object') return null;
+    const f = Number(e.f), a = Number(e.a);
+    if (!e.k || !isFinite(f) || f <= 0 || !isFinite(a)) return null;
+    return { k: String(e.k), o: String(e.o || ''), n: String(e.n || '').slice(0, 60), g: String(e.g || '—'), c: String(e.c || ''),
+             a: round2(a), u: e.u === 'm' ? 'm' : 'ft', f: round2(f), id: String(e.id || ''), t: Number(e.t) || 0 };
+  }
+  function cmpEntries(a, b) {
+    return (b.f - a.f) || (a.t - b.t) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  }
+  function rankEntries(list) {
+    const best = new Map();
+    list.forEach(function(e) {
+      const cur = best.get(e.k);
+      if (!cur || cmpEntries(e, cur) < 0) best.set(e.k, e);
+    });
+    return Array.from(best.values()).sort(cmpEntries).slice(0, TOP_N);
+  }
+  function canon(list) {
+    return JSON.stringify(list.map(function(e) { return [e.k, e.o, e.n, e.g, e.c, e.a, e.u, e.f, e.id, e.t]; }));
+  }
+  function readEntries(snap) {
+    const d = snap.exists ? snap.data() : null;
+    return d && Array.isArray(d.entries) ? d.entries.map(cleanEntry).filter(Boolean) : [];
+  }
+  // What the Top 20 should contain, as far as this browser can know:
+  // the teacher sees everything and rebuilds it outright; a student only ever
+  // adds, updates or removes their OWN entry and leaves everyone else's alone.
+  function desiredTop(current) {
+    if (isTeacher) return rankEntries(bestPerStudent(confirmed(allResults)).map(toEntry).map(cleanEntry).filter(Boolean));
+    const mine = bestPerStudent(confirmed(ownResults)).map(toEntry).map(cleanEntry).filter(Boolean);
+    const others = current.filter(function(e) { return e.o !== me.tag; });
+    return rankEntries(others.concat(mine));
+  }
+
+  let syncBusy = false, syncTimer = null, syncLog = [];
+  function scheduleSync(delay) {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(runSync, delay == null ? 600 : delay);
+  }
+  function runSync() {
+    if (!me || syncBusy || !loaded.top || topError) return;
+    if (isTeacher ? !fresh.all : !fresh.own) return;              // never decide from cached or partial data
+    if (isTeacher && allResults.some(function(r) { return r._pending; })) return;   // the commit snapshot re-runs this
+    if (canon(desiredTop(topEntries)) === canon(topEntries)) return;
+    const now = Date.now();
+    syncLog = syncLog.filter(function(t) { return now - t < 600000; });
+    if (syncLog.length >= 40) {                                   // safety valve: can never loop on writes
+      scheduleSync(600000 - (now - syncLog[0]) + 1000);
+      return;
+    }
+    syncLog.push(now);
+    syncBusy = true;
+    const ref = db().collection('settings').doc('altitude-top20');
+    db().runTransaction(function(tx) {
+      return tx.get(ref).then(function(snap) {
+        const cur = readEntries(snap), next = desiredTop(cur);
+        if (canon(next) !== canon(cur)) {
+          tx.set(ref, { entries: next, v: 1, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        }
+      });
+    }).then(function() { syncBusy = false; scheduleSync(1500); },
+            function(err) { console.error('Top 20 update failed:', err); syncBusy = false; scheduleSync(20000); });
+  }
+
+  // ── Which boards the viewer may open ──
+  function noClassResult(r) {
+    return !r.classId || (loaded.classes && !myClasses.some(function(c) { return c.classId === r.classId; }));
+  }
+  function boardList() {
+    const list = [{ id: 'top', label: '🌎 Top ' + TOP_N + ' · All Classes' }];
+    myClasses.forEach(function(c) { list.push({ id: 'c:' + c.classId, label: (isTeacher ? '' : '👥 ') + c.className, classId: c.classId }); });
+    if (isTeacher && allResults.some(noClassResult)) list.push({ id: 'none', label: 'No class' });
+    return list;
+  }
+  function currentBoard() {
+    const list = boardList();
+    return list.find(function(b) { return b.id === activeBoard; }) || list[0];
+  }
+  function selectBoard(id) {
+    activeBoard = id;
+    const b = currentBoard();
+    if (isTeacher && b.classId) loadRoster(b.classId);
+    if (isTeacher && b.id === 'none') myClasses.forEach(function(c) { loadRoster(c.classId); });
+    renderBoards();
+  }
+
+  function renderTabs(board) {
+    const tabs = $('board-tabs');
+    tabs.textContent = '';
+    boardList().forEach(function(b) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'period-tab' + (b.id === board.id ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', b.id === board.id ? 'true' : 'false');
+      btn.textContent = b.label;
+      btn.dataset.board = b.id;
+      btn.addEventListener('click', function() { selectBoard(b.id); });
+      tabs.appendChild(btn);
+    });
+  }
+
+  // Every piece of student-typed text goes in with textContent, never innerHTML.
+  function td(tr, text) { const c = document.createElement('td'); c.textContent = text; tr.appendChild(c); return c; }
+  function rankTd(tr, i) {
+    const c = document.createElement('td'), s = document.createElement('span');
+    if (i < 3) { s.className = 'medal-emoji'; s.textContent = MEDALS[i]; s.title = 'Rank ' + (i + 1); tr.className = MEDAL_ROW[i]; }
+    else { s.className = 'rank-badge'; s.textContent = String(i + 1); }
+    c.appendChild(s); tr.appendChild(c);
+  }
+  function altTd(tr, alt, unit, ft) {
+    const c = document.createElement('td'), b = document.createElement('strong');
+    b.textContent = Number(alt).toFixed(1) + ' ' + unit;
+    c.appendChild(b);
+    if (unit === 'm') { const s = document.createElement('span'); s.className = 'alt-conv'; s.textContent = ' (' + Math.round(ft) + ' ft)'; c.appendChild(s); }
+    tr.appendChild(c);
+  }
+  function delTd(tr, id, name) {
+    const c = document.createElement('td'), b = document.createElement('button');
+    b.type = 'button'; b.className = 'del-btn'; b.textContent = '✕'; b.dataset.id = id;
+    b.title = 'Delete this result'; b.setAttribute('aria-label', 'Delete the result for ' + name);
+    b.addEventListener('click', function() { deleteResult(id, name); });
+    c.appendChild(b); tr.appendChild(c);
+  }
+  function setHead(cols) {
+    const head = $('results-head'), tr = document.createElement('tr');
+    head.textContent = '';
+    cols.forEach(function(t) {
+      const th = document.createElement('th'); th.textContent = t;
+      if (t === 'Distance' || t === 'Angle' || t === 'Period') th.className = 'col-extra';
+      tr.appendChild(th);
+    });
+    if (isTeacher) { const th = document.createElement('th'); th.setAttribute('aria-label', 'Delete'); tr.appendChild(th); }
+    head.appendChild(tr);
+    return cols.length + (isTeacher ? 1 : 0);
+  }
+  function emptyRow(text, span) {
+    const tr = document.createElement('tr'), c = document.createElement('td');
+    c.className = 'empty-msg'; c.colSpan = span; c.textContent = text;
+    tr.appendChild(c); $('results-body').appendChild(tr);
+  }
+  function fmtAlt(r) { return Number(r.altitude).toFixed(1) + ' ' + (r.unit === 'm' ? 'm' : 'ft'); }
+
+  function renderBoards() {
+    const f = document.activeElement;
+    const tabFocus = f && f.dataset && f.dataset.board && $('board-tabs').contains(f) ? f.dataset.board : null;
+    const delFocus = f && f.classList && f.classList.contains('del-btn') ? f.dataset.id : null;
+    drawBoards();
+    let back = null;
+    if (tabFocus) back = Array.prototype.find.call($('board-tabs').children, function(b) { return b.dataset.board === tabFocus; });
+    if (delFocus) back = Array.prototype.find.call(document.querySelectorAll('#results-body .del-btn'), function(b) { return b.dataset.id === delFocus; });
+    if (back && document.activeElement !== back) back.focus();
+    renderReview();
+    renderPending();
+  }
+  function drawBoards() {
+    if (!me) return;
+    const board = currentBoard();
+    activeBoard = board.id;
+    renderTabs(board);
+    const body = $('results-body'), note = $('board-note'), missing = $('missing-list');
+    body.textContent = ''; note.textContent = ''; missing.textContent = ''; missing.style.display = 'none';
+    $('final-badge').classList.toggle('show', rankingsLocked);
+    if (isTeacher) $('clear-all-btn').textContent = board.id === 'top' ? 'Clear All' : 'Clear This Board';
+
+    if (board.id === 'top') {
+      const span = setHead(['#', 'Name', 'Class', 'Altitude']);
+      note.appendChild(document.createTextNode('The ' + TOP_N + ' highest launches across every class — each student\'s best flight. '));
+      if (!isTeacher) {
+        const mine = bestPerStudent(ownResults)[0];
+        if (mine) {
+          note.appendChild(document.createTextNode('Your best: '));
+          const b = document.createElement('strong'); b.textContent = fmtAlt(mine); note.appendChild(b);
+          note.appendChild(document.createTextNode('. '));
+        }
+        if (loaded.classes && !myClasses.length) {
+          const a = document.createElement('a'); a.href = 'classes.html'; a.textContent = 'Join your class';
+          note.appendChild(a);
+          note.appendChild(document.createTextNode(' to see your whole class\'s board.'));
+        }
+      }
+      if (!loaded.top) { emptyRow('Loading the leaderboard…', span); return; }
+      if (topError) { emptyRow('The Top ' + TOP_N + ' could not be loaded. Refresh the page to try again.', span); return; }
+      if (!topEntries.length) { emptyRow('No results yet — be the first to save a launch!', span); return; }
+      topEntries.forEach(function(e, i) {
+        const tr = document.createElement('tr');
+        rankTd(tr, i);
+        td(tr, e.n || 'Anonymous');
+        td(tr, e.g);
+        altTd(tr, e.a, e.u, e.f);
+        if (isTeacher) delTd(tr, e.id, e.n);
+        if (!isTeacher && e.o && e.o === me.tag) tr.classList.add('me');
+        body.appendChild(tr);
+      });
       return;
     }
 
-    // When locked, sort by altitude descending to award medals
-    const rows = rankingsLocked
-      ? filtered.slice().sort((a, b) => b.altitude - a.altitude)
-      : filtered;
-    const medals = ['🥇', '🥈', '🥉'];
-    const medalClass = ['rank-gold', 'rank-silver', 'rank-bronze'];
+    const noClass = board.id === 'none';
+    const span = setHead(noClass ? ['#', 'Name', 'Period', 'Distance', 'Angle', 'Altitude'] : ['#', 'Name', 'Distance', 'Angle', 'Altitude']);
+    let rows, state = 'ready';
+    if (isTeacher) {
+      rows = bestPerStudent(allResults.filter(function(r) { return noClass ? noClassResult(r) : r.classId === board.classId; }));
+      if (!loaded.all) state = 'loading';
+    } else {
+      rows = bestPerStudent(classResults[board.classId] || []);
+      state = classState[board.classId] || 'loading';
+    }
+    if (state === 'loading') { emptyRow('Loading…', span); return; }
+    if (state === 'error') { emptyRow('This class board could not be loaded. Refresh the page to try again.', span); return; }
 
+    if (noClass) {
+      note.textContent = 'Results saved without a class (older results, students who have not joined a class yet, or a class that was deleted). Only you can see this list. ';
+      const movable = adoptable();
+      if (movable.length) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.id = 'adopt-btn'; b.className = 'adopt-btn';
+        b.textContent = 'Move ' + movable.length + ' result' + (movable.length === 1 ? '' : 's') + ' to ' + (movable.length === 1 ? 'its class board' : 'their class boards');
+        b.addEventListener('click', function() { adoptResults(movable); });
+        note.appendChild(b);
+      }
+    } else if (isTeacher) {
+      const list = roster[board.classId];
+      const tail = ' Only you and the members of this class can see this board.';
+      if (list) {
+        const have = {}, names = {};
+        allResults.forEach(function(r) {
+          if (r.classId !== board.classId || !validResult(r)) return;
+          have[String(r.userEmail || '').toLowerCase()] = true; names[normName(r.name)] = true;
+        });
+        const waiting = list.filter(function(s) { return !have[String(s.email || '').toLowerCase()] && !names[normName(s.name)]; })
+                            .map(function(s) { return s.name || s.email; });
+        note.textContent = (list.length - waiting.length) + ' of ' + list.length + ' enrolled student' + (list.length === 1 ? ' has' : 's have') + ' saved a result.' + tail;
+        if (waiting.length) {
+          missing.textContent = 'Still to save a result (' + waiting.length + '): ' + waiting.join(', ');
+          missing.style.display = 'block';
+        }
+      } else {
+        note.textContent = rows.length + ' student' + (rows.length === 1 ? ' has' : 's have') + ' saved a result.' + tail;
+      }
+    } else {
+      note.textContent = 'Everyone in ' + board.label.replace(/^👥 /, '') + ' — each student\'s best flight. Only members of this class can see this board.';
+    }
+    if (!rows.length) { emptyRow('No results for this class yet.', span); return; }
     rows.forEach(function(r, i) {
       const tr = document.createElement('tr');
-      if (rankingsLocked && i < 3) tr.className = medalClass[i];
-      const rankCell = rankingsLocked && i < 3
-        ? `<span class="medal-emoji">${medals[i]}</span>`
-        : `<span class="rank-badge">${i + 1}</span>`;
-      const deleteCell = isTeacher
-        ? `<td><button onclick="deleteResult('${r.id}')" style="background:none;border:none;color:#ff6060;cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:4px;opacity:0.6;transition:opacity 0.2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6" title="Delete this result">✕</button></td>`
-        : '';
-      tr.innerHTML = `<td>${rankCell}</td><td>${r.name}</td><td>${r.period}</td><td>${r.distance} ${r.unit}</td><td>${r.angle}°</td><td><strong>${r.altitude.toFixed(1)} ${r.unit}</strong></td>${deleteCell}`;
-      tbody.appendChild(tr);
+      const unit = r.unit === 'm' ? 'm' : 'ft';
+      rankTd(tr, i);
+      const nameCell = td(tr, String(r.name || '').trim() || 'Anonymous');
+      if (isTeacher && r.userEmail) nameCell.title = 'Saved from ' + r.userEmail;
+      if (noClass) td(tr, r.period && r.period !== '—' ? String(r.period) : '—').className = 'col-extra';
+      td(tr, r.distance + ' ' + unit).className = 'col-extra';
+      td(tr, r.angle + '°').className = 'col-extra';
+      altTd(tr, r.altitude, unit, altFt(r));
+      if (isTeacher) delTd(tr, r.id, String(r.name || ''));
+      if (!isTeacher && r.userEmail && String(r.userEmail).toLowerCase() === me.email.toLowerCase()) tr.classList.add('me');
+      body.appendChild(tr);
     });
   }
 
-  function deleteResult(id) {
-    if (!id) return;
-    firebase.firestore().collection('results').doc(id).delete()
-      .catch(function(err) { console.error('Delete failed:', err); });
+  // ── Teacher actions ──
+  function deleteResult(id, name) {
+    if (!isTeacher || !id) return;
+    if (!confirm('Delete the result for ' + (name || 'this student') + '?')) return;
+    db().collection('results').doc(id).delete()
+      .catch(function(err) { console.error('Delete failed:', err); alert('That result could not be deleted. Check your connection and try again.'); });
   }
 
   function lockRankings() {
-    var locked = !rankingsLocked;
-    firebase.firestore().collection('settings').doc('altitude-rankings')
-      .set({ locked: locked });
+    if (!isTeacher) return;
+    db().collection('settings').doc('altitude-rankings').set({ locked: !rankingsLocked })
+      .catch(function(err) { console.error('Lock failed:', err); alert('The rankings could not be ' + (rankingsLocked ? 'unlocked' : 'locked') + '. Check your connection and try again.'); });
   }
 
   function showCelebration() {
-    const sorted = allResults.slice().sort((a, b) => b.altitude - a.altitude).slice(0, 3);
-    const medals = ['🥇', '🥈', '🥉'];
-    const classes = ['p1', 'p2', 'p3'];
-    document.getElementById('podium-places').innerHTML = sorted.map((r, i) =>
-      `<div class="podium-place ${classes[i]}">
-        <span class="podium-medal">${medals[i]}</span>
-        <div><div class="podium-name">${r.name}</div><div class="podium-alt">${r.altitude.toFixed(1)} ${r.unit}</div></div>
-      </div>`
-    ).join('');
-    document.getElementById('podium-overlay').classList.add('show');
+    const places = $('podium-places');
+    places.textContent = '';
+    topEntries.slice(0, 3).forEach(function(e, i) {
+      const row = document.createElement('div'); row.className = 'podium-place p' + (i + 1);
+      const medal = document.createElement('span'); medal.className = 'podium-medal'; medal.textContent = MEDALS[i];
+      const box = document.createElement('div');
+      const nm = document.createElement('div'); nm.className = 'podium-name'; nm.textContent = e.n || 'Anonymous';
+      const al = document.createElement('div'); al.className = 'podium-alt'; al.textContent = e.a.toFixed(1) + ' ' + e.u + (e.g && e.g !== '—' ? ' · ' + e.g : '');
+      box.appendChild(nm); box.appendChild(al); row.appendChild(medal); row.appendChild(box); places.appendChild(row);
+    });
+    if (places.childNodes.length) $('podium-overlay').classList.add('show');
   }
 
+  // Older results were saved with only a period. If that student has since joined exactly one of
+  // the teacher's classes, the result can be moved onto that class's board (nothing else changes).
+  function adoptable() {
+    const byEmail = {};
+    myClasses.forEach(function(c) {
+      (roster[c.classId] || []).forEach(function(s) {
+        const e = String(s.email || '').toLowerCase();
+        if (e) (byEmail[e] = byEmail[e] || []).push(c);
+      });
+    });
+    return allResults.filter(function(r) { return noClassResult(r) && !r._pending; }).map(function(r) {
+      const m = byEmail[String(r.userEmail || '').toLowerCase()];
+      return m && m.length === 1 ? { id: r.id, classId: m[0].classId, className: m[0].className } : null;
+    }).filter(Boolean);
+  }
+  function adoptResults(list) {
+    if (!isTeacher || !list.length) return;
+    if (!confirm('Move ' + list.length + ' result' + (list.length === 1 ? '' : 's') + ' onto the board of the class each student has joined?')) return;
+    const jobs = [];
+    for (let i = 0; i < list.length; i += 400) {
+      const batch = db().batch();
+      list.slice(i, i + 400).forEach(function(x) {
+        batch.update(db().collection('results').doc(x.id), { classId: x.classId, className: x.className });
+      });
+      jobs.push(batch.commit());
+    }
+    Promise.all(jobs).catch(function(err) {
+      console.error('Move failed:', err);
+      alert('Some results could not be moved. Check your connection and try again.');
+    });
+  }
+
+  function loadRoster(classId) {
+    db().collection('enrollments').where('classId', '==', classId).get().then(function(snap) {
+      roster[classId] = snap.docs.map(function(d) { const x = d.data(); return { name: x.name || '', email: x.email || '' }; });
+      renderBoards();
+    }).catch(function(err) { console.error('Roster load failed:', err); });
+  }
+
+  // ── Name + class picker ──
+  function byName(a, b) { return String(a.className || '').localeCompare(String(b.className || '')); }
+  function setMyClasses(list) {
+    myClasses = list.slice().sort(byName);
+    loaded.classes = true;
+    const cs = $('student-class'), ps = $('student-period'), lbl = $('group-label');
+    if (myClasses.length) {
+      let keep = cs.value;
+      if (!keep) { try { keep = localStorage.getItem(CLASS_PICK_KEY) || ''; } catch (e) {} }
+      cs.textContent = '';
+      if (myClasses.length > 1) {
+        const ph = document.createElement('option');
+        ph.value = ''; ph.disabled = true; ph.textContent = isTeacher ? "Student's class" : 'Choose your class';
+        cs.appendChild(ph);
+      }
+      myClasses.forEach(function(c) {
+        const o = document.createElement('option'); o.value = c.classId; o.textContent = c.className; cs.appendChild(o);
+      });
+      cs.value = (keep && myClasses.some(function(c) { return c.classId === keep; })) ? keep : (myClasses.length > 1 ? '' : myClasses[0].classId);
+      cs.style.display = ''; ps.style.display = 'none';
+      lbl.textContent = 'Class'; lbl.htmlFor = 'student-class';
+    } else {
+      cs.style.display = 'none'; ps.style.display = '';
+      lbl.textContent = 'Period'; lbl.htmlFor = 'student-period';
+    }
+    if (!isTeacher) {
+      const want = {};
+      myClasses.forEach(function(c) { want[c.classId] = true; if (!classUnsubs[c.classId]) watchClass(c.classId); });
+      Object.keys(classUnsubs).forEach(function(cid) {
+        if (want[cid]) return;
+        classUnsubs[cid](); delete classUnsubs[cid]; delete classResults[cid]; delete classState[cid];
+      });
+    }
+    renderBoards();
+  }
+  // Where a saved result belongs: the chosen class, or (no class joined yet) the chosen period.
+  function groupSelection() {
+    const cs = $('student-class');
+    if (cs.style.display !== 'none') {
+      const opt = cs.options[cs.selectedIndex];
+      return cs.value ? { classId: cs.value, className: opt ? opt.textContent : '', period: '' } : { classId: '', className: '', period: '', needsClass: true };
+    }
+    return { classId: '', className: '', period: $('student-period').value || '' };
+  }
+
+  // ── Live data ──
+  function watchClass(classId) {
+    classState[classId] = 'loading';
+    classUnsubs[classId] = db().collection('results').where('classId', '==', classId)
+      .onSnapshot({ includeMetadataChanges: true }, function(snap) {
+        classResults[classId] = rowsOf(snap); classState[classId] = 'ready'; renderBoards();
+      }, function(err) {
+        console.error('Class board failed:', err);
+        classResults[classId] = []; classState[classId] = 'error'; renderBoards();
+      });
+  }
+
+  function startBoards(user) {
+    me = { uid: user.uid, email: user.email || '', name: user.displayName || '', tag: ownerTag(user.email) };
+    isTeacher = me.email === TEACHER_EMAIL;
+
+    const nameEl = $('student-name');
+    if (isTeacher) {
+      nameEl.placeholder = "Student's first and last name";
+      $('clear-all-btn').style.display = '';
+      $('lock-btn').style.display = 'inline-block';
+    } else if (me.name) {
+      nameEl.value = me.name; nameEl.readOnly = true; nameEl.style.opacity = '0.85';
+      nameEl.title = 'From your school account';
+    }
+
+    // The public Top 20
+    db().collection('settings').doc('altitude-top20').onSnapshot(function(snap) {
+      topEntries = readEntries(snap); loaded.top = true; topError = false;
+      renderBoards(); scheduleSync();
+    }, function(err) { console.error('Top 20 failed:', err); loaded.top = true; topError = true; renderBoards(); });
+
+    // Lock / unlock, live
+    db().collection('settings').doc('altitude-rankings').onSnapshot(function(doc) {
+      const wasLocked = rankingsLocked;
+      rankingsLocked = doc.exists && doc.data().locked === true;
+      const lockBtn = $('lock-btn');
+      lockBtn.textContent = rankingsLocked ? '🔓 Unlock Rankings' : '🏆 Lock Rankings';
+      lockBtn.classList.toggle('locked', rankingsLocked);
+      if (rankingsLocked) $('save-btn').style.display = 'none';
+      else if (lastResult) $('save-btn').style.display = 'block';
+      renderBoards();
+      if (lockSeen && !wasLocked && rankingsLocked) showCelebration();
+      lockSeen = true;
+    }, function(err) { console.error('Lock state failed:', err); });
+
+    // Launch-day setup: everyone reads it (stations, limits); only the teacher edits it
+    db().collection('settings').doc('altitude-setup').onSnapshot(function(doc) {
+      setup = readSetup(doc.exists ? doc.data() : null);
+      if (pickedStation && !currentStation()) pickedStation = '';
+      renderStations(); fillSetupForm();
+      showFlagState();
+    }, function(err) { console.error('Launch-day setup failed:', err); });
+    if (isTeacher) {
+      $('setup-card').style.display = '';
+      initSetupForm();
+    } else {
+      // the rocket this student said they are building in Rocket Lab (predicted vs. measured)
+      db().collection('rocket_builds').doc(me.uid).onSnapshot(function(doc) {
+        myBuild = doc.exists ? doc.data() : null;
+        if (lastResult) renderPredict();
+      }, function(err) {
+        console.warn('Rocket Lab build not available:', err && err.code);
+        myBuild = null; buildsBlocked = !!(err && err.code === 'permission-denied');
+        if (lastResult) renderPredict();
+      });
+    }
+
+    if (isTeacher) {
+      db().collection('results').onSnapshot({ includeMetadataChanges: true }, function(snap) {
+        allResults = rowsOf(snap); loaded.all = true; fresh.all = !snap.metadata.fromCache;
+        renderBoards(); scheduleSync();
+      }, function(err) { console.error('Results failed:', err); loaded.all = true; renderBoards(); });
+      db().collection('classes').where('teacherEmail', '==', me.email).onSnapshot(function(snap) {
+        setMyClasses(snap.docs.map(function(d) { return { classId: d.id, className: d.data().name || 'Class' }; }));
+      }, function(err) { console.error('Classes failed:', err); setMyClasses([]); });
+    } else {
+      db().collection('results').where('userEmail', '==', me.email)
+        .onSnapshot({ includeMetadataChanges: true }, function(snap) {
+          ownResults = rowsOf(snap); loaded.own = true; fresh.own = !snap.metadata.fromCache;
+          renderBoards(); scheduleSync();
+        }, function(err) { console.error('Own results failed:', err); loaded.own = true; renderBoards(); });
+      db().collection('enrollments').where('uid', '==', me.uid).onSnapshot(function(snap) {
+        setMyClasses(snap.docs.map(function(d) { return d.data(); })
+          .filter(function(x) { return x.classId; })
+          .map(function(x) { return { classId: x.classId, className: x.className || 'Class' }; }));
+      }, function(err) { console.error('Enrollments failed:', err); setMyClasses([]); });
+    }
+    renderBoards();
+  }
+
+  // ── Launch-day setup (teacher) ──
+  function readSetup(d) {
+    d = d || {};
+    function num(v, def, lo, hi) { v = Number(v); return isFinite(v) && v >= lo && v <= hi ? v : def; }
+    const stations = Array.isArray(d.stations) ? d.stations.slice(0, 12).map(function(st) {
+      st = st || {};
+      return { label: String(st.label || '').slice(0, 20), dist: num(st.dist, 0, 0, 5000), unit: st.unit === 'm' ? 'm' : 'ft' };
+    }).filter(function(st) { return st.dist > 0; }) : [];
+    let minA = num(d.minAngle, 10, 1, 89), maxA = num(d.maxAngle, 80, 1, 89);
+    if (minA >= maxA) { minA = 10; maxA = 80; }
+    const maxFt = (typeof d.maxFt === 'number' && d.maxFt >= 10 && d.maxFt <= 100000) ? d.maxFt : 300;   // same test as firestore.rules
+    return { stations: stations, maxFt: maxFt, minAngle: minA, maxAngle: maxA };
+  }
+  let setupDirty = false;
+  function setupTouched() { setupDirty = true; $('setup-status').textContent = ''; }
+  function initSetupForm() {
+    $('add-station').addEventListener('click', function() { addStationRow({ label: '', dist: '', unit: 'ft' }); setupTouched(); });
+    $('setup-save').addEventListener('click', saveSetup);
+    ['setup-max', 'setup-min-angle', 'setup-max-angle'].forEach(function(id) { $(id).addEventListener('input', setupTouched); });
+    fillSetupForm();
+  }
+  function addStationRow(st) {
+    const row = document.createElement('div'); row.className = 'station-row';
+    const lab = document.createElement('input'); lab.type = 'text'; lab.placeholder = 'Name (e.g. A)'; lab.maxLength = 20; lab.value = st.label || ''; lab.className = 'st-label'; lab.setAttribute('aria-label', 'Station name');
+    const dist = document.createElement('input'); dist.type = 'number'; dist.min = '0'; dist.step = 'any'; dist.placeholder = 'Distance'; dist.value = st.dist === '' ? '' : String(st.dist); dist.className = 'st-dist'; dist.setAttribute('aria-label', 'Station distance');
+    const unit = document.createElement('select'); unit.className = 'st-unit'; unit.setAttribute('aria-label', 'Unit');
+    ['ft', 'm'].forEach(function(u) { const o = document.createElement('option'); o.value = u; o.textContent = u; unit.appendChild(o); });
+    unit.value = st.unit === 'm' ? 'm' : 'ft';
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'small-btn danger'; del.textContent = '✕'; del.title = 'Remove this station'; del.setAttribute('aria-label', 'Remove this station');
+    del.addEventListener('click', function() { row.remove(); setupTouched(); });
+    [lab, dist, unit].forEach(function(e) { e.addEventListener('input', setupTouched); });
+    row.appendChild(lab); row.appendChild(dist); row.appendChild(unit); row.appendChild(del);
+    $('station-rows').appendChild(row);
+  }
+  function fillSetupForm() {
+    if (!isTeacher) return;
+    const n = setup.stations.length;
+    $('setup-summary').textContent = (n ? n + ' station' + (n === 1 ? '' : 's') : 'no stations yet') + ' · limit ' + setup.maxFt + ' ft · angles ' + setup.minAngle + '°–' + setup.maxAngle + '°';
+    if (setupDirty) return;                 // never overwrite what the teacher is typing
+    $('station-rows').textContent = '';
+    setup.stations.forEach(addStationRow);
+    $('setup-max').value = setup.maxFt; $('setup-min-angle').value = setup.minAngle; $('setup-max-angle').value = setup.maxAngle;
+  }
+  function saveSetup() {
+    if (!isTeacher) return;
+    const status = $('setup-status');
+    const stations = [];
+    let bad = '';
+    document.querySelectorAll('#station-rows .station-row').forEach(function(row, i) {
+      const label = row.querySelector('.st-label').value.trim().slice(0, 20);
+      const raw = row.querySelector('.st-dist').value, dist = parseFloat(raw);
+      if (!label && !raw) return;                       // empty row: ignore it
+      if (!(dist > 0 && dist <= 5000)) { if (!bad) bad = 'Station ' + (label || i + 1) + ' needs a distance.'; return; }
+      stations.push({ label: label || 'Station ' + (stations.length + 1), dist: Math.round(dist * 100) / 100, unit: row.querySelector('.st-unit').value === 'm' ? 'm' : 'ft' });
+    });
+    const maxFt = parseFloat($('setup-max').value), minA = parseFloat($('setup-min-angle').value), maxA = parseFloat($('setup-max-angle').value);
+    if (!bad && stations.length > 12) bad = 'Use at most 12 stations.';
+    if (!bad && !(maxFt >= 10 && maxFt <= 100000)) bad = 'The altitude limit must be at least 10 ft.';
+    if (!bad && !(minA >= 1 && maxA <= 89 && minA < maxA)) bad = 'Angle limits must be between 1° and 89°, smallest first.';
+    if (bad) { status.style.color = '#ff8080'; status.textContent = bad; return; }
+    status.style.color = ''; status.textContent = 'Saving…';
+    db().collection('settings').doc('altitude-setup').set({ stations: stations, maxFt: Math.round(maxFt), minAngle: minA, maxAngle: maxA, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+      .then(function() { setupDirty = false; fillSetupForm(); status.style.color = ''; status.textContent = '✓ Saved — students see it right away.'; },
+            function(err) { console.error('Setup save failed:', err); status.style.color = '#ff8080'; status.textContent = 'Could not save — check your connection and try again.'; });
+  }
+
+  // ── Needs your check (teacher) ──
+  let fixingId = null, reviewSig = '', fixFocusNext = false;
+  function actBtn(text, cls, fn) { const b = document.createElement('button'); b.type = 'button'; b.className = 'small-btn ' + cls; b.textContent = text; b.addEventListener('click', fn); return b; }
+  function renderReview() {
+    const box = $('review-strip');
+    if (!isTeacher) { box.style.display = 'none'; return; }
+    const pend = allResults.filter(function(r) { return r.review === 'pending'; }).sort(function(a, b) { return savedMs(a) - savedMs(b); });
+    if (fixingId && !pend.some(function(r) { return r.id === fixingId; })) fixingId = null;
+    const sig = pend.map(function(r) { return r.id + ':' + r.altitude + ':' + r.name; }).join(',') + '|' + fixingId;
+    if (sig === reviewSig) return;          // unchanged: keep focus and anything being typed
+    reviewSig = sig;
+    // keep what the teacher is typing in an open Fix form (and where the cursor was) across the rebuild
+    let keep = null;
+    const open = box.querySelectorAll('.review-acts input');
+    if (fixingId && open.length === 3) keep = { vals: [open[0].value, open[1].value, open[2].value], focus: Array.prototype.indexOf.call(open, document.activeElement) };
+    box.textContent = '';
+    if (!pend.length) { box.style.display = 'none'; fixingId = null; return; }
+    box.style.display = 'block';
+    const t = document.createElement('div'); t.className = 'review-title'; t.textContent = '⏳ Needs your check (' + pend.length + ')';
+    const hlp = document.createElement('div'); hlp.className = 'review-help';
+    hlp.textContent = 'These results are outside your launch-day limits, so they are not on any board yet. Approve them, fix the numbers, or delete them.';
+    box.appendChild(t); box.appendChild(hlp);
+    pend.forEach(function(r) {
+      const unit = r.unit === 'm' ? 'm' : 'ft';
+      const row = document.createElement('div'); row.className = 'review-row';
+      const info = document.createElement('div'); info.className = 'review-info';
+      const nm = document.createElement('strong'); nm.textContent = String(r.name || 'Anonymous').trim() || 'Anonymous';
+      info.appendChild(nm);
+      info.appendChild(document.createTextNode(' · ' + groupLabel(r) + ' · ' + r.distance + ' ' + unit + ' at ' + r.angle + '°' +
+        (r.reading != null ? ' (string read ' + r.reading + '°)' : '') + ' → ' + fmtAlt(r)));
+      row.appendChild(info);
+      const acts = document.createElement('div'); acts.className = 'review-acts';
+      if (fixingId === r.id) buildFixForm(acts, r, keep);
+      else {
+        acts.appendChild(actBtn('✓ Approve', 'ok', function() { reviewUpdate(r.id, { review: 'ok' }); }));
+        acts.appendChild(actBtn('✎ Fix', '', function() { fixingId = r.id; fixFocusNext = true; renderReview(); }));
+        acts.appendChild(actBtn('✕ Delete', 'danger', function() { deleteResult(r.id, String(r.name || '')); }));
+      }
+      row.appendChild(acts);
+      box.appendChild(row);
+    });
+  }
+  function buildFixForm(acts, r, keep) {
+    const unit = r.unit === 'm' ? 'm' : 'ft', eyeMax = unit === 'm' ? 3 : 10;
+    function field(label, val, w) {
+      const l = document.createElement('label'); l.textContent = label;
+      const i = document.createElement('input'); i.type = 'number'; i.step = 'any'; i.value = val; i.style.width = w;
+      l.appendChild(i); acts.appendChild(l); return i;
+    }
+    const v = keep ? keep.vals : [r.distance, r.angle, r.eyeHeight != null ? r.eyeHeight : 0];
+    const dIn = field('distance ', v[0], '76px'); acts.appendChild(document.createTextNode(unit));
+    const aIn = field(' angle ', v[1], '62px'); acts.appendChild(document.createTextNode('°'));
+    const eIn = field(' eye ', v[2], '54px'); acts.appendChild(document.createTextNode(unit));
+    acts.appendChild(actBtn('Save fix', 'ok', function() {
+      const d = parseFloat(dIn.value), a = parseFloat(aIn.value), e = parseFloat(eIn.value);
+      if (!(d > 0) || !(a >= 1 && a <= 89) || !(e >= 0 && e <= eyeMax)) { alert('Check the numbers: distance more than 0, angle 1°–89°, eye height 0–' + eyeMax + ' ' + unit + '.'); return; }
+      const alt = d * Math.tan(deg2rad(a)) + e;
+      reviewUpdate(r.id, { distance: d, angle: a, eyeHeight: e, altitude: alt, altitudeFt: round2(toFt(alt, unit)),
+                           angleMode: 'elevation', reading: firebase.firestore.FieldValue.delete(), review: 'ok', fixedByTeacher: true });
+    }));
+    acts.appendChild(actBtn('Cancel', '', function() { fixingId = null; renderReview(); }));
+    if (fixFocusNext) { fixFocusNext = false; setTimeout(function() { aIn.focus(); aIn.select(); }, 0); }
+    else if (keep && keep.focus >= 0) {
+      const back = [dIn, aIn, eIn][keep.focus];
+      setTimeout(function() { back.focus(); const n = back.value.length; try { back.setSelectionRange(n, n); } catch (e) {} }, 0);
+    }
+  }
+  function reviewUpdate(id, data) {
+    if (!isTeacher) return;
+    db().collection('results').doc(id).update(data).then(function() {
+      if (fixingId === id) { fixingId = null; renderReview(); }
+    }, function(err) { console.error('Review update failed:', err); alert('That result could not be updated. Check your connection and try again.'); });
+  }
+  // A student's own results that are waiting for the teacher
+  function renderPending() {
+    const box = $('pending-note');
+    const mine = isTeacher ? [] : ownResults.filter(function(r) { return r.review === 'pending'; });
+    box.textContent = mine.length ? '⏳ Waiting for your teacher to check: ' + mine.map(fmtAlt).join(', ') + '. It goes on the board once it is approved.' : '';
+    box.style.display = mine.length ? 'block' : 'none';
+  }
+
+  // ── Saving ──
   function saveResult() {
-    if (!lastResult) return;
-    const name = document.getElementById('student-name').value.trim();
-    const period = document.getElementById('student-period').value;
-    const errEl = document.getElementById('save-error');
+    if (!lastResult || saving) return;
+    const errEl = $('save-error'), okEl = $('save-ok'), btn = $('save-btn');
+    const name = $('student-name').value.trim().replace(/\s+/g, ' ').slice(0, 60);
+    const grp = groupSelection();
+    const user = firebase.auth().currentUser;
+    function fail(msg) { errEl.textContent = msg; errEl.style.display = 'block'; }
+    okEl.classList.remove('show');
+    if (!user) { fail('You are signed out. Refresh the page and sign in again to save.'); return; }
+    if (rankingsLocked) { fail('Rankings are locked, so new results cannot be saved right now. Ask your teacher.'); return; }
     const missing = [];
     if (!name) missing.push('name');
-    if (!period) missing.push('period');
-    if (missing.length) {
-      errEl.textContent = 'Please enter your ' + missing.join(' and ') + ' before saving.';
-      errEl.style.display = 'block';
-      return;
-    }
+    if (grp.needsClass) missing.push('class');
+    else if (!grp.classId && !grp.period) missing.push('period');
+    if (missing.length) { fail('Please enter your ' + missing.join(' and ') + ' before saving.'); return; }
     errEl.style.display = 'none';
-    lastResult.name = name;
-    lastResult.period = period;
-    const db = firebase.firestore();
-    const user = firebase.auth().currentUser;
-    db.collection('results').add({
-      name:      lastResult.name,
-      period:    lastResult.period,
-      distance:  lastResult.distance,
-      angle:     lastResult.angle,
-      altitude:  lastResult.altitude,
-      unit:      lastResult.unit,
-      userEmail: user ? user.email : '',
-      savedAt:   firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(function(err) { console.error('Save failed:', err); });
 
-    document.getElementById('save-btn').style.display = 'none';
-    lastResult = null;
-    document.getElementById('results-card').style.display = 'block';
-    setTimeout(function() {
-      document.getElementById('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 300);
+    const rec = {
+      name: name, period: grp.period, classId: grp.classId, className: grp.className,
+      distance: lastResult.distance, angle: lastResult.angle, altitude: lastResult.altitude, unit: lastResult.unit,
+      altitudeFt: round2(altFt(lastResult)),
+      uid: user.uid, userEmail: user.email || '',
+      savedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    let flagged = needsCheck(lastResult);
+    rec.angleMode = lastResult.angleMode === 'string' ? 'string' : 'elevation';
+    rec.eyeHeight = round2(lastResult.eyeHeight);
+    if (lastResult.reading != null) rec.reading = lastResult.reading;
+    if (lastResult.station) rec.station = String(lastResult.station).slice(0, 20);
+    if (flagged) rec.review = 'pending';
+    if (!isTeacher && myBuild && Number(myBuild.predictedFt) > 0) {
+      rec.predictedFt = round2(Number(myBuild.predictedFt));
+      if (diffReason) rec.diffReason = diffReason;
+    }
+    const shown = fmtAlt(lastResult), savedResult = lastResult;
+    saving = true; btn.disabled = true; btn.textContent = 'Saving…';
+    const slow = setTimeout(function() {
+      if (saving) fail('Still saving… check your internet connection. Keep this page open.');
+    }, 8000);
+    let retried = false;
+    const onSaved = function() {
+      clearTimeout(slow);
+      saving = false; btn.disabled = false; btn.textContent = 'Save Result';
+      errEl.style.display = 'none';
+      if (lastResult === savedResult) {
+        lastResult = null; btn.style.display = 'none';
+        if (rec.predictedFt) { savedPredict = { result: savedResult, reason: rec.diffReason || '' }; renderPredict(); }
+      } else showFlagState();        // a newer result is on screen: label it for itself
+      okEl.textContent = flagged
+        ? '⏳ Saved! ' + shown + ' will go on the board after your teacher checks it.'
+        : '✓ Saved! ' + shown + ' is on the ' + (grp.classId ? grp.className + ' board' : 'leaderboard') + '.';
+      okEl.classList.add('show');
+      if (isTeacher) $('student-name').value = '';
+      selectBoard(grp.classId ? 'c:' + grp.classId : 'top');
+      setTimeout(function() { $('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 300);
+    };
+    const onFailed = function(err) {
+      // The teacher may have just lowered the limit: the database then only accepts it for a teacher check.
+      if (err && err.code === 'permission-denied' && !isTeacher && !rec.review && !retried) {
+        retried = true; rec.review = 'pending'; flagged = true;
+        db().collection('results').add(rec).then(onSaved, onFailed);
+        return;
+      }
+      clearTimeout(slow);
+      console.error('Save failed:', err);
+      saving = false; btn.disabled = false;
+      showFlagState();
+      fail(err && err.code === 'permission-denied'
+        ? 'Your result was NOT saved: the database refused it. If you just joined or left a class, refresh the page and try again; otherwise ask your teacher.'
+        : 'Your result was NOT saved. Check your connection and press Save Result again.');
+    };
+    db().collection('results').add(rec).then(onSaved, onFailed);
   }
 
   function fullReset() {
-    document.getElementById('student-name').value = '';
-    document.getElementById('student-period').value = '';
-    document.getElementById('distance').value = '';
-    document.getElementById('angle').value = '';
-    document.getElementById('error-msg').style.display = 'none';
-    document.getElementById('result-box').innerHTML = '<span class="placeholder-text">Enter measurements above and press Calculate</span>';
-    document.getElementById('work-shown').style.display = 'none';
-    document.getElementById('compare-section').style.display = 'none';
-    document.getElementById('bar-fill').style.width = '0%';
-    document.getElementById('save-btn').style.display = 'none';
-    lastResult = null; resetDiagram();
+    const nameEl = $('student-name');
+    if (!nameEl.readOnly) nameEl.value = '';
+    $('distance').value = '';
+    $('angle').value = '';
+    pickedStation = ''; diffReason = '';
+    $('error-msg').style.display = 'none';
+    $('save-error').style.display = 'none';
+    $('save-ok').classList.remove('show');
+    clearResult('Enter measurements above and press Calculate');
+    renderStations();
+    updateProtractor();
   }
 
+  // ── Clear (teacher) ──
   const TEACHER_PASSWORD = 'rocket';
 
   function clearResults() {
-    document.getElementById('modal-step-1').style.display = 'block';
-    document.getElementById('modal-step-2').style.display = 'none';
-    document.getElementById('modal-pw').value = '';
-    document.getElementById('pw-error').textContent = '';
-    document.getElementById('modal-overlay').classList.add('open');
+    if (!isTeacher) return;
+    const board = currentBoard();
+    clearScope = board.id;
+    $('clear-title').textContent = board.id === 'top' ? 'Clear All Results?' : 'Clear This Board?';
+    $('clear-text').textContent = board.id === 'top'
+      ? 'This will permanently delete every saved result in EVERY class. Are you sure you want to continue?'
+      : board.id === 'none'
+        ? 'This will permanently delete every saved result that has no class. Are you sure you want to continue?'
+        : 'This will permanently delete every saved result for ' + board.label + '. Other classes are not touched. Are you sure you want to continue?';
+    $('modal-step-1').style.display = 'block';
+    $('modal-step-2').style.display = 'none';
+    $('modal-pw').value = '';
+    $('pw-error').textContent = '';
+    $('modal-overlay').classList.add('open');
   }
   function showPasswordStep() {
-    document.getElementById('modal-step-1').style.display = 'none';
-    document.getElementById('modal-step-2').style.display = 'block';
-    setTimeout(() => document.getElementById('modal-pw').focus(), 50);
+    $('modal-step-1').style.display = 'none';
+    $('modal-step-2').style.display = 'block';
+    setTimeout(function() { $('modal-pw').focus(); }, 50);
   }
   function checkPassword() {
-    if (document.getElementById('modal-pw').value === TEACHER_PASSWORD) {
-      closeModal();
-      const db = firebase.firestore();
-      Promise.all([
-        db.collection('results').get().then(function(snap) {
-          const batch = db.batch();
-          snap.docs.forEach(function(doc) { batch.delete(doc.ref); });
-          return batch.commit();
-        }),
-        db.collection('settings').doc('altitude-rankings').set({ locked: false })
-      ]).then(function() {
-        activePeriodFilter = 'all';
-        document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-        document.querySelector('.period-tab').classList.add('active');
-      }).catch(function(err) { console.error('Clear failed:', err); });
-    } else {
-      document.getElementById('pw-error').textContent = 'Incorrect password. Try again.';
-      document.getElementById('modal-pw').value = '';
-      document.getElementById('modal-pw').focus();
+    if (!isTeacher) return;
+    if ($('modal-pw').value !== TEACHER_PASSWORD) {
+      $('pw-error').textContent = 'Incorrect password. Try again.';
+      $('modal-pw').value = '';
+      $('modal-pw').focus();
+      return;
     }
-  }
-  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
-  document.getElementById('modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-  document.getElementById('modal-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') checkPassword(); });
-
-  function resetDiagram() {
-    const rocket = document.getElementById('svg-rocket');
-    const rocketY = parseFloat(rocket.getAttribute('y')) || 50;
-    rocket.style.transition = 'none';
-    rocket.style.transform = `translateY(${220 - rocketY}px) rotate(-45deg)`;
-    document.getElementById('svg-altitude').classList.remove('visible');
-    document.getElementById('svg-sight').classList.remove('visible');
-    ['svg-arc', 'svg-angle-label', 'svg-dist-value', 'svg-alt-value'].forEach(id => {
-      const el = document.getElementById(id);
-      el.style.transition = 'none'; el.style.opacity = '0';
+    closeModal();
+    const scope = clearScope;
+    const ids = allResults.filter(function(r) {
+      return scope === 'top' ? true : scope === 'none' ? noClassResult(r) : 'c:' + r.classId === scope;
+    }).map(function(r) { return r.id; });
+    const jobs = [];
+    for (let i = 0; i < ids.length; i += 400) {            // a Firestore batch holds at most 500 writes
+      const batch = db().batch();
+      ids.slice(i, i + 400).forEach(function(id) { batch.delete(db().collection('results').doc(id)); });
+      jobs.push(batch.commit());
+    }
+    if (scope === 'top') jobs.push(db().collection('settings').doc('altitude-rankings').set({ locked: false }));
+    Promise.all(jobs).catch(function(err) {
+      console.error('Clear failed:', err);
+      alert('Some results could not be deleted. Check your connection and try again.');
     });
-    document.getElementById('svg-dist-value').textContent = '';
-    document.getElementById('svg-alt-value').textContent = '';
-    document.querySelectorAll('.smoke').forEach(s => s.classList.remove('puff'));
   }
+  function closeModal() { $('modal-overlay').classList.remove('open'); }
+  $('modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+  $('modal-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') checkPassword(); });
 
-  function updateArc(svgRocketY, inputAngle) {
-    const R = 28, cx = 60, cy = 220;
-    const visualAngle = Math.atan2(cy - svgRocketY, 260 - cx);
-    const endX = cx + R * Math.cos(visualAngle);
-    const endY = cy - R * Math.sin(visualAngle);
-    document.getElementById('svg-arc').setAttribute('d', `M ${cx + R},${cy} A ${R},${R} 0 0,0 ${endX.toFixed(1)},${endY.toFixed(1)}`);
-    const midAngle = visualAngle / 2, labelR = R + 12;
-    const label = document.getElementById('svg-angle-label');
-    label.setAttribute('x', (cx + labelR * Math.cos(midAngle)).toFixed(1));
-    label.setAttribute('y', (cy - labelR * Math.sin(midAngle)).toFixed(1));
-    label.textContent = inputAngle + '°';
-  }
+  function resetDiagram() { drawDiagram(null); }
 
-  document.getElementById('distance').addEventListener('input', resetDiagram);
-  document.getElementById('angle').addEventListener('input', resetDiagram);
-  document.getElementById('student-period').addEventListener('change', function() {
-    if (!isTeacher && allResults.length > 0) {
-      document.getElementById('results-card').style.display = 'block';
-      renderResults();
-    }
+  $('distance').addEventListener('input', function() { pickedStation = ''; renderStations(); invalidateResult(); });
+  $('angle').addEventListener('input', function() { updateProtractor(); invalidateResult(); });
+  $('eye-height').addEventListener('input', function() { rememberEye(); invalidateResult(); });
+  $('student-class').addEventListener('change', function() {
+    try { if (this.value) localStorage.setItem(CLASS_PICK_KEY, this.value); } catch (e) {}
   });
-  document.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
+  // Enter runs the calculation only from the measurement boxes (not from buttons, tabs or the password box)
+  ['student-name', 'distance', 'angle', 'eye-height'].forEach(function(id) {
+    document.getElementById(id).addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
+  });
+  // first paint: remembered angle mode and eye height, protractor, example diagram
+  (function() {
+    let m = 'string';
+    try { if (localStorage.getItem(ANGLE_MODE_KEY) === 'elev') m = 'elev'; } catch (e) {}
+    restoreEye();
+    setAngleMode(m);
+    drawDiagram(null);
+  })();
 </script>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -864,50 +1981,9 @@
 <script src="auth.js"></script>
 <script>
   firebase.auth().onAuthStateChanged(function(user) {
-    if (!user) return;
-    if (user.email === 'ncapellini@hhh.k12.ny.us') {
-      isTeacher = true;
-      document.getElementById('clear-all-btn').style.display = '';
-      document.getElementById('lock-btn').style.display = '';
-    } else {
-      document.getElementById('period-tabs').style.display = 'none';
-    }
-    // Real-time listener — leaderboard updates live for all students
-    firebase.firestore().collection('results').orderBy('savedAt', 'desc')
-      .onSnapshot(function(snap) {
-        allResults = [];
-        snap.docs.forEach(function(doc) {
-          var r = doc.data();
-          r.id = doc.id;
-          allResults.push(r);
-        });
-        resultCount = allResults.length;
-        if (allResults.length > 0) {
-          document.getElementById('results-card').style.display = 'block';
-          renderResults();
-        } else {
-          document.getElementById('results-card').style.display = 'none';
-          document.getElementById('results-body').innerHTML = '<tr><td colspan="6" class="empty-msg">No results saved yet.</td></tr>';
-        }
-      }, function(err) { console.error('Load failed:', err); });
-
-    // Listen for rankings lock/unlock in real time
-    firebase.firestore().collection('settings').doc('altitude-rankings')
-      .onSnapshot(function(doc) {
-        var wasLocked = rankingsLocked;
-        rankingsLocked = doc.exists && doc.data().locked === true;
-        var lockBtn = document.getElementById('lock-btn');
-        if (rankingsLocked) {
-          lockBtn.textContent = '🔓 Unlock Rankings';
-          lockBtn.classList.add('locked');
-          document.getElementById('save-btn').style.display = 'none';
-        } else {
-          lockBtn.textContent = '🏆 Lock Rankings';
-          lockBtn.classList.remove('locked');
-        }
-        renderResults();
-        if (!wasLocked && rankingsLocked && allResults.length > 0) showCelebration();
-      });
+    // auth.js sends signed-out and off-domain visitors to the login page
+    if (!user || me || (user.email || '').split('@')[1] !== ALLOWED_DOMAIN) return;
+    startBoards(user);
   });
 </script>
 </body>
