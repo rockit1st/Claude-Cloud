@@ -4,27 +4,44 @@
 // then in the Firebase console go to Firestore Database -> Rules, select all,
 // paste, and press Publish.
 //
+// WHEN: publish these rules only AFTER the new altitude-calculator.html is live
+// on the website (pull request merged and deployed). Then ask students to
+// refresh any copy of the page they already have open.
+//
 // What these rules do:
 //  - Altitude Calculator results ("results"): a student can read only their own
 //    results and the results of a class they have joined. Only the teacher can
 //    read everything, and only the teacher can change or delete a result.
 //  - "settings/altitude-top20" is the public Top 20 board every signed-in
 //    student may read. "settings/altitude-rankings" (the lock) is teacher-only.
-//  - Only accounts @hhh.k12.ny.us can read or write anything.
+//  - Only verified Google accounts @hhh.k12.ny.us can read or write anything.
+//  - A student can only join a class with its join code (no back-door joins).
 //  - Everything else behaves as before.
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Signed in with a school account. (The site already turns everyone else
-    // away; this makes the database refuse them too.)
+    // Signed in with a verified school Google account. (The site already turns
+    // everyone else away; this makes the database refuse them too.)
     function signedIn() {
       return request.auth != null
+             && request.auth.token.email_verified == true
+             && request.auth.token.firebase.sign_in_provider == 'google.com'
              && request.auth.token.email.matches('^.+@hhh[.]k12[.]ny[.]us$');
     }
     function isTeacher() {
       return signedIn() && request.auth.token.email == 'ncapellini@hhh.k12.ny.us';
+    }
+    // A student may only add themselves to a class with that class's join code,
+    // exactly as the Join form on classes.html does it.
+    function validJoin(id) {
+      let d = request.resource.data;
+      return d.uid == request.auth.uid
+             && d.classId is string
+             && id == d.classId + '_' + request.auth.uid
+             && exists(/databases/$(database)/documents/classes/$(d.classId))
+             && d.code == get(/databases/$(database)/documents/classes/$(d.classId)).data.code;
     }
     // True when the signed-in student has joined the class (classes.html
     // stores each enrollment at enrollments/{classId}_{uid}).
@@ -78,8 +95,9 @@ service cloud.firestore {
     match /enrollments/{id} {
       allow read: if isTeacher()
                   || (signedIn() && resource.data.uid == request.auth.uid);
-      allow create, update: if isTeacher()
-                            || (signedIn() && request.resource.data.uid == request.auth.uid);
+      allow create: if isTeacher() || (signedIn() && validJoin(id));
+      allow update: if isTeacher()
+                    || (signedIn() && validJoin(id) && resource.data.uid == request.auth.uid);
       allow delete: if isTeacher()
                     || (signedIn() && resource.data.uid == request.auth.uid);
     }

@@ -241,7 +241,7 @@
     if (n === 2) return '⅛"';
     if (n === 1) return '1/16"';
     if (d === 'easy' || d === 'medium' || d === 'hard') return d.charAt(0).toUpperCase() + d.slice(1);
-    return (d != null && d !== '') ? String(d) : '—';
+    return (d != null && d !== '') ? esc(String(d)) : '—';
   }
 
   function gameInputLabel(r) {

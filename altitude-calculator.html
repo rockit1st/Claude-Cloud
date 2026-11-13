@@ -602,6 +602,7 @@
   let distUnit = 'ft', lastResult = null, rankingsLocked = false, lockSeen = false, isTeacher = false;
 
   function setDistUnit(unit, btn) {
+    if (unit === distUnit) return;
     distUnit = unit;
     document.querySelectorAll('.unit-toggle button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -697,6 +698,7 @@
   // The teacher sees every class and keeps the Top 20 document authoritative.
   const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
   const TOP_N = 20;
+  const CLASS_PICK_KEY = 'altcalc-class';
   const FT_PER_M = 3.28084;
   const MEDALS = ['🥇', '🥈', '🥉'];
   const MEDAL_ROW = ['rank-gold', 'rank-silver', 'rank-bronze'];
@@ -739,8 +741,10 @@
   // One board row per student: same account + same name. (The teacher can enter
   // results for several students from one account, so the name is part of the key.)
   function studentKey(r) {
-    const o = ownerTag(r.userEmail);
-    return o ? o + '|' + normName(r.name) : '|' + normName(r.name) + '|' + String(r.period || '');
+    const em = String(r.userEmail || '').trim().toLowerCase();
+    const o = ownerTag(em);
+    if (o && em !== TEACHER_EMAIL) return o;
+    return o + '|' + normName(r.name) + '|' + String(r.classId || r.period || '');
   }
   function cmpRows(a, b) {
     return (altFt(b) - altFt(a)) || (savedMs(a) - savedMs(b)) || (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0);
@@ -796,8 +800,8 @@
   // the teacher sees everything and rebuilds it outright; a student only ever
   // adds, updates or removes their OWN entry and leaves everyone else's alone.
   function desiredTop(current) {
-    if (isTeacher) return rankEntries(bestPerStudent(confirmed(allResults)).map(toEntry));
-    const mine = bestPerStudent(confirmed(ownResults)).map(toEntry);
+    if (isTeacher) return rankEntries(bestPerStudent(confirmed(allResults)).map(toEntry).map(cleanEntry).filter(Boolean));
+    const mine = bestPerStudent(confirmed(ownResults)).map(toEntry).map(cleanEntry).filter(Boolean);
     const others = current.filter(function(e) { return e.o !== me.tag; });
     return rankEntries(others.concat(mine));
   }
@@ -810,10 +814,14 @@
   function runSync() {
     if (!me || syncBusy || !loaded.top || topError) return;
     if (isTeacher ? !fresh.all : !fresh.own) return;              // never decide from cached or partial data
+    if (isTeacher && allResults.some(function(r) { return r._pending; })) return;   // the commit snapshot re-runs this
     if (canon(desiredTop(topEntries)) === canon(topEntries)) return;
     const now = Date.now();
     syncLog = syncLog.filter(function(t) { return now - t < 600000; });
-    if (syncLog.length >= 40) return;                             // safety valve: can never loop on writes
+    if (syncLog.length >= 40) {                                   // safety valve: can never loop on writes
+      scheduleSync(600000 - (now - syncLog[0]) + 1000);
+      return;
+    }
     syncLog.push(now);
     syncBusy = true;
     const ref = db().collection('settings').doc('altitude-top20');
@@ -829,10 +837,13 @@
   }
 
   // ── Which boards the viewer may open ──
+  function noClassResult(r) {
+    return !r.classId || (loaded.classes && !myClasses.some(function(c) { return c.classId === r.classId; }));
+  }
   function boardList() {
     const list = [{ id: 'top', label: '🌎 Top ' + TOP_N + ' · All Classes' }];
     myClasses.forEach(function(c) { list.push({ id: 'c:' + c.classId, label: (isTeacher ? '' : '👥 ') + c.className, classId: c.classId }); });
-    if (isTeacher && allResults.some(function(r) { return !r.classId; })) list.push({ id: 'none', label: 'No class' });
+    if (isTeacher && allResults.some(noClassResult)) list.push({ id: 'none', label: 'No class' });
     return list;
   }
   function currentBoard() {
@@ -857,6 +868,7 @@
       btn.setAttribute('role', 'tab');
       btn.setAttribute('aria-selected', b.id === board.id ? 'true' : 'false');
       btn.textContent = b.label;
+      btn.dataset.board = b.id;
       btn.addEventListener('click', function() { selectBoard(b.id); });
       tabs.appendChild(btn);
     });
@@ -879,7 +891,7 @@
   }
   function delTd(tr, id, name) {
     const c = document.createElement('td'), b = document.createElement('button');
-    b.type = 'button'; b.className = 'del-btn'; b.textContent = '✕';
+    b.type = 'button'; b.className = 'del-btn'; b.textContent = '✕'; b.dataset.id = id;
     b.title = 'Delete this result'; b.setAttribute('aria-label', 'Delete the result for ' + name);
     b.addEventListener('click', function() { deleteResult(id, name); });
     c.appendChild(b); tr.appendChild(c);
@@ -904,6 +916,16 @@
   function fmtAlt(r) { return Number(r.altitude).toFixed(1) + ' ' + (r.unit === 'm' ? 'm' : 'ft'); }
 
   function renderBoards() {
+    const f = document.activeElement;
+    const tabFocus = f && f.dataset && f.dataset.board && $('board-tabs').contains(f) ? f.dataset.board : null;
+    const delFocus = f && f.classList && f.classList.contains('del-btn') ? f.dataset.id : null;
+    drawBoards();
+    let back = null;
+    if (tabFocus) back = Array.prototype.find.call($('board-tabs').children, function(b) { return b.dataset.board === tabFocus; });
+    if (delFocus) back = Array.prototype.find.call(document.querySelectorAll('#results-body .del-btn'), function(b) { return b.dataset.id === delFocus; });
+    if (back && document.activeElement !== back) back.focus();
+  }
+  function drawBoards() {
     if (!me) return;
     const board = currentBoard();
     activeBoard = board.id;
@@ -949,7 +971,7 @@
     const span = setHead(noClass ? ['#', 'Name', 'Period', 'Distance', 'Angle', 'Altitude'] : ['#', 'Name', 'Distance', 'Angle', 'Altitude']);
     let rows, state = 'ready';
     if (isTeacher) {
-      rows = bestPerStudent(allResults.filter(function(r) { return noClass ? !r.classId : r.classId === board.classId; }));
+      rows = bestPerStudent(allResults.filter(function(r) { return noClass ? noClassResult(r) : r.classId === board.classId; }));
       if (!loaded.all) state = 'loading';
     } else {
       rows = bestPerStudent(classResults[board.classId] || []);
@@ -959,7 +981,7 @@
     if (state === 'error') { emptyRow('This class board could not be loaded. Refresh the page to try again.', span); return; }
 
     if (noClass) {
-      note.textContent = 'Results saved without a class (older results, or students who have not joined a class yet). Only you can see this list. ';
+      note.textContent = 'Results saved without a class (older results, students who have not joined a class yet, or a class that was deleted). Only you can see this list. ';
       const movable = adoptable();
       if (movable.length) {
         const b = document.createElement('button');
@@ -1045,7 +1067,7 @@
         if (e) (byEmail[e] = byEmail[e] || []).push(c);
       });
     });
-    return allResults.filter(function(r) { return !r.classId && !r._pending; }).map(function(r) {
+    return allResults.filter(function(r) { return noClassResult(r) && !r._pending; }).map(function(r) {
       const m = byEmail[String(r.userEmail || '').toLowerCase()];
       return m && m.length === 1 ? { id: r.id, classId: m[0].classId, className: m[0].className } : null;
     }).filter(Boolean);
@@ -1081,12 +1103,18 @@
     loaded.classes = true;
     const cs = $('student-class'), ps = $('student-period'), lbl = $('group-label');
     if (myClasses.length) {
-      const keep = cs.value;
+      let keep = cs.value;
+      if (!keep) { try { keep = localStorage.getItem(CLASS_PICK_KEY) || ''; } catch (e) {} }
       cs.textContent = '';
+      if (myClasses.length > 1) {
+        const ph = document.createElement('option');
+        ph.value = ''; ph.disabled = true; ph.textContent = isTeacher ? "Student's class" : 'Choose your class';
+        cs.appendChild(ph);
+      }
       myClasses.forEach(function(c) {
         const o = document.createElement('option'); o.value = c.classId; o.textContent = c.className; cs.appendChild(o);
       });
-      if (keep && myClasses.some(function(c) { return c.classId === keep; })) cs.value = keep;
+      cs.value = (keep && myClasses.some(function(c) { return c.classId === keep; })) ? keep : (myClasses.length > 1 ? '' : myClasses[0].classId);
       cs.style.display = ''; ps.style.display = 'none';
       lbl.textContent = 'Class'; lbl.htmlFor = 'student-class';
     } else {
@@ -1106,9 +1134,9 @@
   // Where a saved result belongs: the chosen class, or (no class joined yet) the chosen period.
   function groupSelection() {
     const cs = $('student-class');
-    if (cs.style.display !== 'none' && cs.value) {
+    if (cs.style.display !== 'none') {
       const opt = cs.options[cs.selectedIndex];
-      return { classId: cs.value, className: opt ? opt.textContent : '', period: '' };
+      return cs.value ? { classId: cs.value, className: opt ? opt.textContent : '', period: '' } : { classId: '', className: '', period: '', needsClass: true };
     }
     return { classId: '', className: '', period: $('student-period').value || '' };
   }
@@ -1186,7 +1214,7 @@
   function saveResult() {
     if (!lastResult || saving) return;
     const errEl = $('save-error'), okEl = $('save-ok'), btn = $('save-btn');
-    const name = $('student-name').value.trim().replace(/\s+/g, ' ');
+    const name = $('student-name').value.trim().replace(/\s+/g, ' ').slice(0, 60);
     const grp = groupSelection();
     const user = firebase.auth().currentUser;
     function fail(msg) { errEl.textContent = msg; errEl.style.display = 'block'; }
@@ -1195,7 +1223,8 @@
     if (rankingsLocked) { fail('Rankings are locked, so new results cannot be saved right now. Ask your teacher.'); return; }
     const missing = [];
     if (!name) missing.push('name');
-    if (!grp.classId && !grp.period) missing.push('period');
+    if (grp.needsClass) missing.push('class');
+    else if (!grp.classId && !grp.period) missing.push('period');
     if (missing.length) { fail('Please enter your ' + missing.join(' and ') + ' before saving.'); return; }
     errEl.style.display = 'none';
 
@@ -1206,16 +1235,16 @@
       uid: user.uid, userEmail: user.email || '',
       savedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
-    const shown = fmtAlt(lastResult);
+    const shown = fmtAlt(lastResult), savedResult = lastResult;
     saving = true; btn.disabled = true; btn.textContent = 'Saving…';
     const slow = setTimeout(function() {
       if (saving) fail('Still saving… check your internet connection. Keep this page open.');
     }, 8000);
     db().collection('results').add(rec).then(function() {
       clearTimeout(slow);
-      saving = false; btn.disabled = false; btn.textContent = 'Save Result'; btn.style.display = 'none';
+      saving = false; btn.disabled = false; btn.textContent = 'Save Result';
       errEl.style.display = 'none';
-      lastResult = null;
+      if (lastResult === savedResult) { lastResult = null; btn.style.display = 'none'; }
       okEl.textContent = '✓ Saved! ' + shown + ' is on the ' + (grp.classId ? grp.className + ' board' : 'leaderboard') + '.';
       okEl.classList.add('show');
       if (isTeacher) $('student-name').value = '';
@@ -1225,7 +1254,9 @@
       clearTimeout(slow);
       console.error('Save failed:', err);
       saving = false; btn.disabled = false; btn.textContent = 'Save Result';
-      fail('Your result was NOT saved. Check your connection and press Save Result again.');
+      fail(err && err.code === 'permission-denied'
+        ? 'Your result was NOT saved: the database refused it. If you just joined or left a class, refresh the page and try again; otherwise ask your teacher.'
+        : 'Your result was NOT saved. Check your connection and press Save Result again.');
     });
   }
 
@@ -1280,7 +1311,7 @@
     closeModal();
     const scope = clearScope;
     const ids = allResults.filter(function(r) {
-      return scope === 'top' ? true : scope === 'none' ? !r.classId : 'c:' + r.classId === scope;
+      return scope === 'top' ? true : scope === 'none' ? noClassResult(r) : 'c:' + r.classId === scope;
     }).map(function(r) { return r.id; });
     const jobs = [];
     for (let i = 0; i < ids.length; i += 400) {            // a Firestore batch holds at most 500 writes
@@ -1329,6 +1360,9 @@
 
   document.getElementById('distance').addEventListener('input', invalidateResult);
   document.getElementById('angle').addEventListener('input', invalidateResult);
+  $('student-class').addEventListener('change', function() {
+    try { if (this.value) localStorage.setItem(CLASS_PICK_KEY, this.value); } catch (e) {}
+  });
   // Enter runs the calculation only from the measurement boxes (not from buttons, tabs or the password box)
   ['student-name', 'distance', 'angle'].forEach(function(id) {
     document.getElementById(id).addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
