@@ -49,9 +49,10 @@ service cloud.firestore {
     // Highest believable altitude in feet, from the teacher's launch-day setup
     // (settings/altitude-setup); 300 ft until the teacher sets one.
     function maxFt() {
-      return exists(/databases/$(database)/documents/settings/altitude-setup)
-             ? get(/databases/$(database)/documents/settings/altitude-setup).data.get('maxFt', 300)
-             : 300;
+      let m = exists(/databases/$(database)/documents/settings/altitude-setup)
+              ? get(/databases/$(database)/documents/settings/altitude-setup).data.get('maxFt', 300)
+              : 300;
+      return (m is number && m >= 10 && m <= 100000) ? m : 300;
     }
     function altitudeFt(d) {
       return d.unit == 'm' ? d.altitude * 3.28084 : d.altitude;

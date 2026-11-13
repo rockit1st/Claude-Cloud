@@ -287,7 +287,7 @@
     document.getElementById('stats-row').style.display = '';
     document.getElementById('period-tabs').style.display = '';
     // Stats (metres are converted so every launch counts)
-    const altitudes = allResults.map(altFt).filter(function(a) { return isFinite(a) && a > 0; });
+    const altitudes = allResults.filter(function(r) { return r.review !== 'pending'; }).map(altFt).filter(function(a) { return isFinite(a) && a > 0; });
     const groupNames = [...new Set(allResults.map(groupOf))].sort();
 
     document.getElementById('stat-total').textContent = allResults.length;

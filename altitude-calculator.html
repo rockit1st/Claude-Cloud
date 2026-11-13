@@ -303,6 +303,7 @@
     .angle-explain { font-size:0.85rem; color:#c8e8f8; line-height:1.5; }
     .angle-explain strong { color:#f0c040; font-size:1rem; }
     .angle-explain .bad { color:#ff8080; }
+    .angle-explain .hint { color:#7890b0; font-size:0.75rem; margin-top:4px; }
     .station-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
     .station-chip { background:rgba(240,192,64,0.1); border:1px solid rgba(240,192,64,0.4); color:#f0c040; border-radius:20px; padding:6px 12px; font-size:0.8rem; font-weight:700; cursor:pointer; }
     .station-chip.active { background:#f0c040; color:#0a0a2e; }
@@ -596,7 +597,7 @@
 
   <details class="card setup-card" id="setup-card" style="display:none">
     <summary>⚙️ Launch-Day Setup <span class="setup-sum" id="setup-summary"></span></summary>
-    <p class="setup-help">Stations are the spots you measured on the field — students tap their station instead of typing a distance. Results higher than the altitude limit, or with an angle outside the range, wait under <strong>Needs your check</strong> until you approve them.</p>
+    <p class="setup-help">Stations are the spots you measured on the field — students tap their station instead of typing a distance. From now on, results higher than the altitude limit, or with an angle outside the range, wait under <strong>Needs your check</strong> until you approve them. (Results already saved are not re-checked.)</p>
     <div class="station-rows" id="station-rows"></div>
     <button type="button" class="small-btn" id="add-station">+ Add station</button>
     <div class="setup-grid">
@@ -683,6 +684,8 @@
   // Teacher's launch-day setup (settings/altitude-setup): measured stations and believable limits
   let setup = { stations: [], maxFt: 300, minAngle: 10, maxAngle: 80 };
   let myBuild = null;            // the student's Rocket Lab build (rocket_builds/{uid}), if they saved one
+  let buildsBlocked = false;     // the database does not allow Rocket Lab builds yet (rules not published)
+  let savedPredict = null;       // prediction card kept (read-only) after the result was saved
   let diffReason = '';           // why the real flight differed from the prediction (optional)
   let pickedStation = '';        // station label the distance came from, if any
   let eyeFt = 5;                 // eye height in feet as the student last typed it (switching units never rounds it)
@@ -715,6 +718,7 @@
   function setDistUnit(unit) {
     if (unit === distUnit) return;
     distUnit = unit;
+    pickedStation = '';           // a station tap sets it again right after changing the unit
     if ($('eye-height').value !== '') $('eye-height').value = trimNum(fromFt(eyeFt, unit));
     document.querySelectorAll('#unit-toggle button').forEach(function(b) { b.classList.toggle('active', b.dataset.unit === unit); });
     $('dist-unit-badge').textContent = unit;
@@ -810,6 +814,7 @@
     if (angleMode === 'string') {
       add('div', a.flipped ? trimNum(a.reading) + '° − 90° =' : '90° − ' + trimNum(a.reading) + '° =');
       add('strong', trimNum(a.elev) + '° angle of elevation');
+      add('div', 'Already subtracted it yourself? Tap “I already did 90° − reading”.', 'hint');
     } else {
       add('strong', trimNum(a.elev) + '° angle of elevation');
       add('div', '(your string read ' + trimNum(90 - a.elev) + '°)');
@@ -838,6 +843,12 @@
     invalidateResult();
     renderStations();
   }
+  // the picked station, but only while the distance box still holds exactly that station's distance
+  function currentStation() {
+    if (!pickedStation) return '';
+    const d = parseFloat($('distance').value);
+    return (setup.stations || []).some(function(st) { return st.label === pickedStation && st.unit === distUnit && st.dist === d; }) ? pickedStation : '';
+  }
   function setupMaxFt() { return setup.maxFt > 0 ? setup.maxFt : 300; }
   // Students' results outside the teacher's limits wait for a teacher check before reaching any board
   function needsCheck(r) {
@@ -850,7 +861,7 @@
     $('work-shown').style.display = 'none';
   }
   function clearResult(msg) {
-    lastResult = null;
+    lastResult = null; savedPredict = null;
     $('save-btn').style.display = 'none';
     $('result-box').innerHTML = '<span class="placeholder-text">' + msg + '</span>';
     hideExtras();
@@ -889,17 +900,14 @@
     const lo = d * Math.tan(deg2rad(Math.max(elev - 2, 0.5))) + eye;
     const hi = d * Math.tan(deg2rad(Math.min(elev + 2, 89.5))) + eye;
     lastResult = { distance: d, angle: Math.round(elev * 100) / 100, reading: angleMode === 'string' ? a.reading : null,
-                   angleMode: angleMode, eyeHeight: eye, altitude: alt, unit: unit, station: pickedStation, lo: lo, hi: hi };
-    diffReason = '';
-    const flagged = needsCheck(lastResult);
+                   angleMode: angleMode, eyeHeight: eye, altitude: alt, unit: unit, station: currentStation(), lo: lo, hi: hi };
+    diffReason = ''; savedPredict = null;
 
     // big number + give-or-take range
     $('result-box').innerHTML = '<div class="altitude-value">' + fmt1(alt) + ' <span style="font-size:1.2rem">' + unit + '</span></div>' +
       '<div class="altitude-label">Rocket Altitude</div>' +
       '<div class="range-line">Give or take: about ' + fmtW(lo, unit) + '–' + fmtW(hi, unit) + ' ' + unit + ' <span>(if your reading was 2° off)</span></div>';
 
-    // "higher than…" sentence
-    const h = $('headline'); h.textContent = landmarkSentence(toFt(alt, unit), unit); h.style.display = 'block';
 
     // where-to-stand coaching
     const half = (hi - lo) / 2;
@@ -909,13 +917,6 @@
     else if (elev >= 30 && elev <= 60) coach = '👍 Great spot! Angles between 30° and 60° give the most trustworthy readings.';
     showNote('coach-note', coach);
 
-    // reality check
-    if (flagged) {
-      const why = [];
-      if (toFt(alt, unit) > setupMaxFt()) why.push('That is higher than ' + fmtW(fromFt(setupMaxFt(), unit), unit) + ' ' + unit + ' — real bottle rockets usually reach about 150–200 ft.');
-      if (elev < setup.minAngle || elev > setup.maxAngle) why.push('Your angle (' + trimNum(elev) + '°) is outside the ' + setup.minAngle + '°–' + setup.maxAngle + '° range your teacher set.');
-      showNote('reality-note', '🤔 Double-check! ' + why.join(' ') + ' Check your distance and your string reading with your partner. If it is right, you can still save it — your teacher will check it before it goes on the leaderboard.');
-    } else showNote('reality-note', '');
 
     // work shown
     const L = [];
@@ -937,9 +938,10 @@
 
     // what tan is doing
     const te = $('tan-explain');
-    te.innerHTML = '📐 <strong>What tan does:</strong> tan(' + trimNum(elev) + '°) = ' + tanV.toFixed(2) +
-      '. For every 1 ' + unit + ' you stood from the pad, your line of sight climbs ' + tanV.toFixed(2) + ' ' + unit + '. ' +
-      'You stood ' + trimNum(d) + ' ' + unit + ' away, so it climbed ' + trimNum(d) + ' × ' + tanV.toFixed(2) + ' = <strong>' + fmt1(above) + ' ' + unit + '</strong> above your eyes' +
+    const tShow = String(Number(tanV.toPrecision(4)));
+    te.innerHTML = '📐 <strong>What tan does:</strong> tan(' + trimNum(elev) + '°) ≈ ' + tShow +
+      '. For every 1 ' + unit + ' you stood from the pad, your line of sight climbs about ' + tShow + ' ' + unit + '. ' +
+      'You stood ' + trimNum(d) + ' ' + unit + ' away, so it climbed ' + trimNum(d) + ' × ' + tShow + ' ≈ <strong>' + fmt1(above) + ' ' + unit + '</strong> above your eyes' +
       (eye > 0 ? ' — plus your ' + trimNum(eye) + ' ' + unit + ' eye height = <strong>' + fmt1(alt) + ' ' + unit + '</strong>.' : '.');
     te.style.display = 'block';
 
@@ -947,18 +949,35 @@
     renderPredict();
     $('save-error').style.display = 'none';
     $('save-ok').classList.remove('show');
-    $('save-btn').textContent = flagged ? '⏳ Save for Teacher Check' : 'Save Result';
+    showFlagState();
     if (!rankingsLocked) $('save-btn').style.display = 'block';
   }
 
-  function landmarkSentence(altFt, unit) {
+  // Headline, double-check note and Save label for the result on screen, from the current limits
+  function showFlagState() {
+    const r = lastResult;
+    if (!r) return;
+    const flagged = needsCheck(r), unit = r.unit, shownAlt = Math.round(r.altitude * 10) / 10;
+    const h = $('headline'); h.textContent = landmarkSentence(toFt(shownAlt, unit), unit, flagged); h.style.display = 'block';
+    if (flagged) {
+      const why = [];
+      if (toFt(r.altitude, unit) > setupMaxFt()) why.push('That is higher than ' + fmtW(fromFt(setupMaxFt(), unit), unit) + ' ' + unit + ' — real bottle rockets usually reach about 150–200 ft.');
+      if (r.angle < setup.minAngle || r.angle > setup.maxAngle) why.push('Your angle (' + trimNum(r.angle) + '°) is outside the ' + setup.minAngle + '°–' + setup.maxAngle + '° range your teacher set.');
+      showNote('reality-note', '🤔 Double-check! ' + why.join(' ') + ' Check your distance and your string reading with your partner. If it is right, you can still save it — your teacher will check it before it goes on the leaderboard.');
+    } else showNote('reality-note', '');
+    if (!saving) $('save-btn').textContent = flagged ? '⏳ Save for Teacher Check' : 'Save Result';
+  }
+
+  function landmarkSentence(altFt, unit, flagged) {
     const show = function(ft) { return fmtW(fromFt(ft, unit), unit) + ' ' + unit; };
     const passed = LANDMARKS.filter(function(l) { return l.ft <= altFt; });
     const next = LANDMARKS.find(function(l) { return l.ft > altFt; });
+    if (next && parseFloat(fmtW(fromFt(next.ft - altFt, unit), unit)) === 0) return 'About as tall as ' + next.icon + ' ' + next.name + ' (' + show(next.ft) + ')!';
     if (!passed.length) return 'Not quite as tall as ' + next.icon + ' ' + next.name + ' (' + show(next.ft) + ') — ' + show(next.ft - altFt) + ' to go!';
     const top = passed[passed.length - 1];
+    if (parseFloat(fmtW(fromFt(altFt - top.ft, unit), unit)) === 0) return 'About as tall as ' + top.icon + ' ' + top.name + ' (' + show(top.ft) + ')!';
     let s = 'Higher than ' + top.icon + ' ' + top.name + ' (' + show(top.ft) + ')';
-    s += next ? ', and ' + show(next.ft - altFt) + ' short of ' + next.icon + ' ' + next.name + ' (' + show(next.ft) + ').' : ' — a monster launch!';
+    s += next ? ', and ' + show(next.ft - altFt) + ' short of ' + next.icon + ' ' + next.name + ' (' + show(next.ft) + ').' : (flagged ? '.' : ' — a monster launch!');
     return s;
   }
 
@@ -966,13 +985,17 @@
   function renderPredict() {
     const box = $('predict-card');
     box.textContent = '';
-    if (!lastResult || isTeacher) { box.style.display = 'none'; return; }
-    box.style.display = 'block';
-    const measFt = toFt(lastResult.altitude, lastResult.unit);
+    const res = lastResult || (savedPredict && savedPredict.result);
+    const readOnly = !lastResult && !!savedPredict;
+    if (!res || isTeacher) { box.style.display = 'none'; return; }
+    const measFt = toFt(res.altitude, res.unit);
     if (!myBuild || !(Number(myBuild.predictedFt) > 0)) {
-      box.innerHTML = '🧪 <strong>Compare with a prediction:</strong> in <a href="rocket-builder.html">Rocket Lab</a>, set up the rocket you really built and press <em>“I’m building this one”</em>. Then your result here will show how close the simulator was.';
+      if (buildsBlocked || readOnly) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      box.innerHTML = '🧪 <strong>Compare with a prediction:</strong> in <a href="rocket-builder.html" target="_blank" rel="noopener">Rocket Lab</a> (opens in a new tab), set up the rocket you really built and press <em>“I’m building this one”</em>. <strong>Save this result first</strong> — your next one will show how close the simulator was.';
       return;
     }
+    box.style.display = 'block';
     const p = Number(myBuild.predictedFt), pct = Math.round(measFt / p * 100), top = Math.max(p, measFt);
     function div(cls, text) { const e = document.createElement('div'); e.className = cls; if (text != null) e.textContent = text; return e; }
     box.appendChild(div('predict-title', '🧪 Rocket Lab prediction vs. your real flight'));
@@ -988,14 +1011,20 @@
     box.appendChild(div('pverdict', pct >= 85 && pct <= 115 ? '🎯 ' + pct + '% of the prediction — your rocket flew like the simulator said!'
       : pct < 85 ? '📉 ' + pct + '% of the prediction — lower than predicted. What happened?' : '📈 ' + pct + '% of the prediction — higher than predicted! What happened?'));
     const chips = div('reason-chips');
+    const chosen = readOnly ? savedPredict.reason : diffReason;
     REASONS.forEach(function(rz) {
       const b = document.createElement('button');
-      b.type = 'button'; b.className = 'reason-chip' + (diffReason === rz[0] ? ' active' : ''); b.textContent = rz[1];
-      b.setAttribute('aria-pressed', String(diffReason === rz[0]));
-      b.addEventListener('click', function() { diffReason = diffReason === rz[0] ? '' : rz[0]; renderPredict(); });
+      b.type = 'button'; b.className = 'reason-chip' + (chosen === rz[0] ? ' active' : ''); b.textContent = rz[1];
+      b.setAttribute('aria-pressed', String(chosen === rz[0]));
+      if (readOnly) b.disabled = true;
+      else b.addEventListener('click', function() {
+        if (saving || !lastResult) return;            // the reason is locked in once Save is pressed
+        diffReason = diffReason === rz[0] ? '' : rz[0]; renderPredict();
+      });
       chips.appendChild(b);
     });
     box.appendChild(chips);
+    if (readOnly) box.appendChild(div('pdesign', '✓ Saved with your result' + (chosen ? '' : ' (no reason picked)') + '.'));
     const fins = Number(myBuild.finCount) ? myBuild.finCount + ' ' + (myBuild.finSize || '') + ' fins' : 'no fins';
     box.appendChild(div('pdesign', 'Your Rocket Lab design: ' + [myBuild.bottle + ' oz bottle', myBuild.waterPct + '% water', myBuild.psi + ' psi', (myBuild.nose || '') + ' nose', fins].join(' · ')));
   }
@@ -1037,7 +1066,7 @@
     sv(svg, 'line', { x1: LMX, y1: G, x2: LMX, y2: TOP - 10, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1 });
     let lastY = -Infinity;
     lms.filter(function(l) { return l.h <= hMax * 1.0001; }).sort(function(a, b) { return b.h - a.h; }).forEach(function(l) {
-      const y = G - l.h * s, passed = l.h <= r.alt;
+      const y = G - l.h * s, passed = l.h <= Math.round(r.alt * 10) / 10 + 1e-9;
       const grp = sv(svg, 'g', { class: 'lm ' + (passed ? 'lm-pass' : 'lm-next') });
       if (passed) grp.style.transitionDelay = (0.2 + 1.4 * Math.sqrt(l.h / r.alt)).toFixed(2) + 's';
       sv(grp, 'line', { x1: LMX - 4, y1: y, x2: LMX + 6, y2: y, stroke: passed ? '#ffe080' : '#a8d8f0', 'stroke-width': 1.5 });
@@ -1071,8 +1100,9 @@
     }
 
     // labels
-    sv(svg, 'text', { x: xo, y: G + 14, 'text-anchor': 'middle', fill: '#80e0a0', 'font-size': 10, class: 'lbl' }, 'you');
-    sv(svg, 'text', { x: XL, y: G + 14, 'text-anchor': xo > XL - 50 ? 'start' : 'middle', fill: '#f0c040', 'font-size': 10, class: 'lbl' }, xo > XL - 50 ? '  pad' : 'launch pad');
+    const tight = xo > XL - 50;            // steep: "you" and the pad are close together
+    sv(svg, 'text', { x: tight ? xo - 3 : xo, y: G + 14, 'text-anchor': tight ? 'end' : 'middle', fill: '#80e0a0', 'font-size': 10, class: 'lbl' }, 'you');
+    sv(svg, 'text', { x: tight ? XL + 4 : XL, y: G + 14, 'text-anchor': tight ? 'start' : 'middle', fill: '#f0c040', 'font-size': 10, class: 'lbl' }, tight ? 'pad' : 'launch pad');
     sv(svg, 'text', { x: Math.max(30, (xo + XL) / 2), y: G + 28, 'text-anchor': 'middle', fill: '#6ab8e0', 'font-size': 10, class: 'lbl' }, 'd = ' + trimNum(r.d) + ' ' + unit + (r.eye > 0 ? '   eye = ' + trimNum(r.eye) + ' ' + unit : ''));
     sv(svg, 'text', { x: XL - 6, y: Math.min(G - 18, Math.max(TOP + 10, G - 0.3 * (G - yr))), 'text-anchor': 'end', fill: '#ffe080', 'font-size': 10, class: 'dg-late lbl' }, 'h = ' + fmt1(r.alt) + ' ' + unit);
 
@@ -1592,8 +1622,9 @@
     // Launch-day setup: everyone reads it (stations, limits); only the teacher edits it
     db().collection('settings').doc('altitude-setup').onSnapshot(function(doc) {
       setup = readSetup(doc.exists ? doc.data() : null);
+      if (pickedStation && !currentStation()) pickedStation = '';
       renderStations(); fillSetupForm();
-      if (lastResult) $('save-btn').textContent = needsCheck(lastResult) ? '⏳ Save for Teacher Check' : 'Save Result';
+      showFlagState();
     }, function(err) { console.error('Launch-day setup failed:', err); });
     if (isTeacher) {
       $('setup-card').style.display = '';
@@ -1603,7 +1634,11 @@
       db().collection('rocket_builds').doc(me.uid).onSnapshot(function(doc) {
         myBuild = doc.exists ? doc.data() : null;
         if (lastResult) renderPredict();
-      }, function(err) { console.warn('Rocket Lab build not available:', err && err.code); myBuild = null; });
+      }, function(err) {
+        console.warn('Rocket Lab build not available:', err && err.code);
+        myBuild = null; buildsBlocked = !!(err && err.code === 'permission-denied');
+        if (lastResult) renderPredict();
+      });
     }
 
     if (isTeacher) {
@@ -1639,7 +1674,8 @@
     }).filter(function(st) { return st.dist > 0; }) : [];
     let minA = num(d.minAngle, 10, 1, 89), maxA = num(d.maxAngle, 80, 1, 89);
     if (minA >= maxA) { minA = 10; maxA = 80; }
-    return { stations: stations, maxFt: num(d.maxFt, 300, 10, 100000), minAngle: minA, maxAngle: maxA };
+    const maxFt = (typeof d.maxFt === 'number' && d.maxFt >= 10 && d.maxFt <= 100000) ? d.maxFt : 300;   // same test as firestore.rules
+    return { stations: stations, maxFt: maxFt, minAngle: minA, maxAngle: maxA };
   }
   let setupDirty = false;
   function setupTouched() { setupDirty = true; $('setup-status').textContent = ''; }
@@ -1695,15 +1731,20 @@
   }
 
   // ── Needs your check (teacher) ──
-  let fixingId = null, reviewSig = '';
+  let fixingId = null, reviewSig = '', fixFocusNext = false;
   function actBtn(text, cls, fn) { const b = document.createElement('button'); b.type = 'button'; b.className = 'small-btn ' + cls; b.textContent = text; b.addEventListener('click', fn); return b; }
   function renderReview() {
     const box = $('review-strip');
     if (!isTeacher) { box.style.display = 'none'; return; }
     const pend = allResults.filter(function(r) { return r.review === 'pending'; }).sort(function(a, b) { return savedMs(a) - savedMs(b); });
+    if (fixingId && !pend.some(function(r) { return r.id === fixingId; })) fixingId = null;
     const sig = pend.map(function(r) { return r.id + ':' + r.altitude + ':' + r.name; }).join(',') + '|' + fixingId;
     if (sig === reviewSig) return;          // unchanged: keep focus and anything being typed
     reviewSig = sig;
+    // keep what the teacher is typing in an open Fix form (and where the cursor was) across the rebuild
+    let keep = null;
+    const open = box.querySelectorAll('.review-acts input');
+    if (fixingId && open.length === 3) keep = { vals: [open[0].value, open[1].value, open[2].value], focus: Array.prototype.indexOf.call(open, document.activeElement) };
     box.textContent = '';
     if (!pend.length) { box.style.display = 'none'; fixingId = null; return; }
     box.style.display = 'block';
@@ -1721,26 +1762,27 @@
         (r.reading != null ? ' (string read ' + r.reading + '°)' : '') + ' → ' + fmtAlt(r)));
       row.appendChild(info);
       const acts = document.createElement('div'); acts.className = 'review-acts';
-      if (fixingId === r.id) buildFixForm(acts, r);
+      if (fixingId === r.id) buildFixForm(acts, r, keep);
       else {
         acts.appendChild(actBtn('✓ Approve', 'ok', function() { reviewUpdate(r.id, { review: 'ok' }); }));
-        acts.appendChild(actBtn('✎ Fix', '', function() { fixingId = r.id; renderReview(); }));
+        acts.appendChild(actBtn('✎ Fix', '', function() { fixingId = r.id; fixFocusNext = true; renderReview(); }));
         acts.appendChild(actBtn('✕ Delete', 'danger', function() { deleteResult(r.id, String(r.name || '')); }));
       }
       row.appendChild(acts);
       box.appendChild(row);
     });
   }
-  function buildFixForm(acts, r) {
+  function buildFixForm(acts, r, keep) {
     const unit = r.unit === 'm' ? 'm' : 'ft', eyeMax = unit === 'm' ? 3 : 10;
     function field(label, val, w) {
       const l = document.createElement('label'); l.textContent = label;
       const i = document.createElement('input'); i.type = 'number'; i.step = 'any'; i.value = val; i.style.width = w;
       l.appendChild(i); acts.appendChild(l); return i;
     }
-    const dIn = field('distance ', r.distance, '76px'); acts.appendChild(document.createTextNode(unit));
-    const aIn = field(' angle ', r.angle, '62px'); acts.appendChild(document.createTextNode('°'));
-    const eIn = field(' eye ', r.eyeHeight != null ? r.eyeHeight : 0, '54px'); acts.appendChild(document.createTextNode(unit));
+    const v = keep ? keep.vals : [r.distance, r.angle, r.eyeHeight != null ? r.eyeHeight : 0];
+    const dIn = field('distance ', v[0], '76px'); acts.appendChild(document.createTextNode(unit));
+    const aIn = field(' angle ', v[1], '62px'); acts.appendChild(document.createTextNode('°'));
+    const eIn = field(' eye ', v[2], '54px'); acts.appendChild(document.createTextNode(unit));
     acts.appendChild(actBtn('Save fix', 'ok', function() {
       const d = parseFloat(dIn.value), a = parseFloat(aIn.value), e = parseFloat(eIn.value);
       if (!(d > 0) || !(a >= 1 && a <= 89) || !(e >= 0 && e <= eyeMax)) { alert('Check the numbers: distance more than 0, angle 1°–89°, eye height 0–' + eyeMax + ' ' + unit + '.'); return; }
@@ -1749,7 +1791,11 @@
                            angleMode: 'elevation', reading: firebase.firestore.FieldValue.delete(), review: 'ok', fixedByTeacher: true });
     }));
     acts.appendChild(actBtn('Cancel', '', function() { fixingId = null; renderReview(); }));
-    setTimeout(function() { aIn.focus(); aIn.select(); }, 0);
+    if (fixFocusNext) { fixFocusNext = false; setTimeout(function() { aIn.focus(); aIn.select(); }, 0); }
+    else if (keep && keep.focus >= 0) {
+      const back = [dIn, aIn, eIn][keep.focus];
+      setTimeout(function() { back.focus(); const n = back.value.length; try { back.setSelectionRange(n, n); } catch (e) {} }, 0);
+    }
   }
   function reviewUpdate(id, data) {
     if (!isTeacher) return;
@@ -1790,7 +1836,7 @@
       uid: user.uid, userEmail: user.email || '',
       savedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
-    const flagged = needsCheck(lastResult);
+    let flagged = needsCheck(lastResult);
     rec.angleMode = lastResult.angleMode === 'string' ? 'string' : 'elevation';
     rec.eyeHeight = round2(lastResult.eyeHeight);
     if (lastResult.reading != null) rec.reading = lastResult.reading;
@@ -1805,11 +1851,15 @@
     const slow = setTimeout(function() {
       if (saving) fail('Still saving… check your internet connection. Keep this page open.');
     }, 8000);
-    db().collection('results').add(rec).then(function() {
+    let retried = false;
+    const onSaved = function() {
       clearTimeout(slow);
-      saving = false; btn.disabled = false; btn.textContent = flagged ? '⏳ Save for Teacher Check' : 'Save Result';
+      saving = false; btn.disabled = false; btn.textContent = 'Save Result';
       errEl.style.display = 'none';
-      if (lastResult === savedResult) { lastResult = null; btn.style.display = 'none'; }
+      if (lastResult === savedResult) {
+        lastResult = null; btn.style.display = 'none';
+        if (rec.predictedFt) { savedPredict = { result: savedResult, reason: rec.diffReason || '' }; renderPredict(); }
+      } else showFlagState();        // a newer result is on screen: label it for itself
       okEl.textContent = flagged
         ? '⏳ Saved! ' + shown + ' will go on the board after your teacher checks it.'
         : '✓ Saved! ' + shown + ' is on the ' + (grp.classId ? grp.className + ' board' : 'leaderboard') + '.';
@@ -1817,14 +1867,23 @@
       if (isTeacher) $('student-name').value = '';
       selectBoard(grp.classId ? 'c:' + grp.classId : 'top');
       setTimeout(function() { $('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 300);
-    }, function(err) {
+    };
+    const onFailed = function(err) {
+      // The teacher may have just lowered the limit: the database then only accepts it for a teacher check.
+      if (err && err.code === 'permission-denied' && !isTeacher && !rec.review && !retried) {
+        retried = true; rec.review = 'pending'; flagged = true;
+        db().collection('results').add(rec).then(onSaved, onFailed);
+        return;
+      }
       clearTimeout(slow);
       console.error('Save failed:', err);
-      saving = false; btn.disabled = false; btn.textContent = flagged ? '⏳ Save for Teacher Check' : 'Save Result';
+      saving = false; btn.disabled = false;
+      showFlagState();
       fail(err && err.code === 'permission-denied'
         ? 'Your result was NOT saved: the database refused it. If you just joined or left a class, refresh the page and try again; otherwise ask your teacher.'
         : 'Your result was NOT saved. Check your connection and press Save Result again.');
-    });
+    };
+    db().collection('results').add(rec).then(onSaved, onFailed);
   }
 
   function fullReset() {
