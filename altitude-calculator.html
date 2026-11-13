@@ -293,6 +293,72 @@
     .lock-btn:hover { background:rgba(240,192,64,0.12); }
     .lock-btn.locked { border-color:rgba(100,255,100,0.4); color:#80ff80; }
 
+    /* ── calculator additions ── */
+    .label-hint { text-transform:none; letter-spacing:0; font-weight:400; color:#7890b0; }
+    .mode-toggle { display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.2); margin-bottom:8px; }
+    .mode-toggle button { flex:1; background:transparent; border:none; color:#a8d8f0; padding:8px 6px; font-size:0.78rem; cursor:pointer; font-weight:600; }
+    .mode-toggle button.active { background:#80e0a0; color:#0a0a2e; }
+    .protractor-box { display:flex; gap:10px; align-items:center; margin-top:10px; }
+    #protractor { width:150px; flex:none; height:auto; }
+    .angle-explain { font-size:0.85rem; color:#c8e8f8; line-height:1.5; }
+    .angle-explain strong { color:#f0c040; font-size:1rem; }
+    .angle-explain .bad { color:#ff8080; }
+    .station-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+    .station-chip { background:rgba(240,192,64,0.1); border:1px solid rgba(240,192,64,0.4); color:#f0c040; border-radius:20px; padding:6px 12px; font-size:0.8rem; font-weight:700; cursor:pointer; }
+    .station-chip.active { background:#f0c040; color:#0a0a2e; }
+    .eye-group input[type="number"] { max-width:120px; }
+    .result-box .range-line { font-size:0.85rem; color:#c8e8f8; margin-top:8px; }
+    .result-box .range-line span { color:#7890b0; font-size:0.78rem; }
+    .headline { display:none; margin-top:10px; font-size:0.95rem; font-weight:600; color:#ffe080; text-align:center; line-height:1.5; }
+    .note-box { display:none; margin-top:10px; padding:10px 14px; border-radius:8px; font-size:0.85rem; line-height:1.5; }
+    .note-box.coach { background:rgba(128,224,160,0.08); border-left:3px solid rgba(128,224,160,0.6); color:#c8f0d8; }
+    .note-box.warn { background:rgba(255,160,64,0.1); border-left:3px solid rgba(255,160,64,0.8); color:#ffd8b0; }
+    .predict-card { display:none; margin-top:12px; padding:14px; border-radius:10px; background:rgba(0,245,255,0.05); border:1px solid rgba(0,245,255,0.25); font-size:0.85rem; color:#c8e8f8; line-height:1.5; }
+    .predict-card a { color:#00f5ff; }
+    .predict-title { font-weight:700; color:#00f5ff; margin-bottom:8px; }
+    .pbar { display:flex; align-items:center; gap:8px; margin:5px 0; font-size:0.8rem; }
+    .pbar-lbl { width:78px; flex:none; color:#a8d8f0; }
+    .pbar-track { flex:1; height:10px; border-radius:99px; background:rgba(255,255,255,0.08); overflow:hidden; }
+    .pbar-fill { height:100%; border-radius:99px; }
+    .pbar-val { width:96px; flex:none; text-align:right; font-weight:700; }
+    .pverdict { margin:8px 0 6px; font-weight:600; }
+    .reason-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .reason-chip { background:transparent; border:1px solid rgba(0,245,255,0.35); color:#a8d8f0; border-radius:20px; padding:5px 10px; font-size:0.78rem; cursor:pointer; }
+    .reason-chip.active { background:rgba(0,245,255,0.18); color:#fff; border-color:#00f5ff; }
+    .pdesign { margin-top:8px; font-size:0.75rem; color:#7890b0; }
+    .tan-explain { display:none; margin-top:10px; font-size:0.85rem; color:#c8e8f8; line-height:1.6; background:rgba(0,0,0,0.25); border-radius:8px; padding:10px 14px; }
+    .tan-explain strong { color:#f0c040; }
+    .diagram .dg-late { opacity:0; transition:opacity 0.4s ease-out 1.2s; }
+    .diagram.go .dg-late { opacity:1; }
+    .diagram .lm { opacity:0.3; transition:opacity 0.35s ease-out; }
+    .diagram.go .lm-pass { opacity:1; }
+    .diagram .dg-rocket { transform-box:fill-box; transform-origin:center; }
+    .setup-card { grid-column:1 / -1; }
+    .setup-card summary { cursor:pointer; font-size:1.05rem; color:#f0c040; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+    .setup-sum { text-transform:none; letter-spacing:0; font-weight:400; font-size:0.8rem; color:#a8d8f0; margin-left:8px; }
+    .setup-help { font-size:0.82rem; color:#a8d8f0; margin:12px 0; line-height:1.5; }
+    .setup-card input[type="number"], .setup-card input[type="text"], .setup-card select, .review-strip input[type="number"] { width:auto; flex:none; padding:6px 8px; font-size:0.9rem; border-radius:6px; }
+    .setup-card select { padding-right:28px; }
+    .station-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+    .station-row input[type="text"] { width:110px; }
+    .station-row input[type="number"] { width:90px; }
+    .setup-grid { display:flex; flex-wrap:wrap; gap:16px; margin:12px 0; font-size:0.85rem; color:#c8e8f8; }
+    .setup-grid input[type="number"] { width:80px; }
+    .setup-lbl { display:block; font-size:0.75rem; color:#a8d8f0; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; font-weight:600; }
+    .small-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25); color:#e8f4fd; border-radius:6px; padding:6px 12px; font-size:0.8rem; font-weight:700; cursor:pointer; }
+    .small-btn.primary { background:linear-gradient(135deg,#f0c040,#e08020); color:#0a0a2e; border:none; }
+    .small-btn.danger { color:#ff8080; border-color:rgba(255,100,100,0.4); }
+    .small-btn.ok { color:#80e0a8; border-color:rgba(64,192,122,0.5); }
+    .setup-status { margin-left:10px; font-size:0.82rem; color:#80e0a8; }
+    .review-strip { display:none; margin-bottom:14px; padding:12px 14px; border-radius:10px; background:rgba(255,160,64,0.08); border:1px solid rgba(255,160,64,0.4); }
+    .review-title { font-weight:700; color:#ffc080; margin-bottom:4px; }
+    .review-help { font-size:0.78rem; color:#c8a890; margin-bottom:8px; }
+    .review-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px solid rgba(255,255,255,0.08); font-size:0.85rem; }
+    .review-info strong { color:#ffe080; }
+    .review-acts { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+    .review-acts label { display:inline; text-transform:none; font-size:0.75rem; margin:0 2px 0 0; letter-spacing:0; }
+    .pending-note { display:none; margin:-4px 0 12px; padding:8px 12px; border-radius:8px; background:rgba(255,160,64,0.1); color:#ffd8b0; font-size:0.82rem; }
+
     .final-badge { display:none; margin-left:8px; padding:2px 10px; border-radius:20px; font-size:0.65rem; letter-spacing:1.5px; color:#80ff80; border:1px solid rgba(100,255,100,0.4); vertical-align:middle; }
     .final-badge.show { display:inline-block; }
     .board-note { font-size:0.8rem; color:#a8d8f0; margin:-6px 0 12px; line-height:1.5; min-height:1.2em; }
@@ -462,26 +528,43 @@
     </div>
 
     <div class="input-group">
-      <label>Distance from Launch Site</label>
+      <label for="distance">Distance from Launch Site</label>
+      <div class="station-chips" id="station-chips" style="display:none"></div>
       <div class="input-row">
-        <input type="number" id="distance" placeholder="e.g. 30" min="0" step="any" />
+        <input type="number" id="distance" placeholder="e.g. 100" min="0" step="any" />
         <span class="unit-badge" id="dist-unit-badge">ft</span>
       </div>
-      <div class="unit-toggle">
-        <button class="active" onclick="setDistUnit('ft', this)">Feet</button>
-        <button onclick="setDistUnit('m', this)">Meters</button>
+      <div class="unit-toggle" id="unit-toggle">
+        <button type="button" class="active" data-unit="ft" onclick="setDistUnit('ft', this)">Feet</button>
+        <button type="button" data-unit="m" onclick="setDistUnit('m', this)">Meters</button>
       </div>
     </div>
 
     <div class="input-group">
-      <label>Angle of Elevation (inclinometer)</label>
+      <label for="angle" id="angle-label">String reading (the number your string points to)</label>
+      <div class="mode-toggle" role="group" aria-label="What number are you typing?">
+        <button type="button" id="mode-string" class="active" aria-pressed="true" onclick="setAngleMode('string')">String reading</button>
+        <button type="button" id="mode-elev" aria-pressed="false" onclick="setAngleMode('elev')">I already did 90° − reading</button>
+      </div>
       <div class="input-row">
-        <input type="number" id="angle" placeholder="e.g. 65" min="0" max="89" step="any" />
+        <input type="number" id="angle" placeholder="e.g. 30" min="0" max="180" step="any" />
         <span class="unit-badge">deg</span>
+      </div>
+      <div class="protractor-box">
+        <svg id="protractor" viewBox="0 0 240 132" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Your inclinometer"></svg>
+        <div class="angle-explain" id="angle-explain" aria-live="polite"></div>
       </div>
     </div>
 
-    <p class="error-msg" id="error-msg">Please enter a distance &gt; 0 and an angle between 1° and 89°.</p>
+    <div class="input-group eye-group">
+      <label for="eye-height">Your eye height <span class="label-hint">(how high your eyes are off the ground)</span></label>
+      <div class="input-row">
+        <input type="number" id="eye-height" value="5" min="0" step="any" />
+        <span class="unit-badge" id="eye-unit-badge">ft</span>
+      </div>
+    </div>
+
+    <p class="error-msg" id="error-msg" role="alert"></p>
 
     <div class="btn-row">
       <button class="calculate-btn" style="flex:2" onclick="calculate()">Calculate</button>
@@ -491,44 +574,35 @@
     <div class="result-box" id="result-box">
       <span class="placeholder-text">Enter measurements above and press Calculate</span>
     </div>
+    <div class="headline" id="headline"></div>
+    <div class="note-box coach" id="coach-note"></div>
+    <div class="note-box warn" id="reality-note" role="alert"></div>
+    <div class="predict-card" id="predict-card"></div>
 
     <button class="save-btn" id="save-btn" onclick="saveResult()">Save Result</button>
     <div id="save-error" role="alert" style="color:#ff8080;font-size:0.82rem;margin-top:6px;display:none"></div>
     <div id="save-ok" class="save-ok" role="status"></div>
     <div id="work-shown"></div>
-
-    <div class="compare-section" id="compare-section" style="display:none">
-      <div class="compare-label">How does this compare to a 3-story building (~40 ft / 12 m)?</div>
-      <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
-      <div class="compare-items"><span>Ground</span><span>3-story building</span><span>2×</span></div>
-    </div>
   </div>
 
   <div class="card">
     <h2>Diagram</h2>
-    <svg class="diagram" viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg">
-      <line x1="20" y1="220" x2="320" y2="220" stroke="#4a8ab0" stroke-width="2"/>
-      <line id="svg-altitude" x1="260" y1="220" x2="260" y2="60" stroke="#f0c040" stroke-width="2.5" stroke-dasharray="6,4"/>
-      <line id="svg-sight" x1="60" y1="220" x2="260" y2="60" stroke="#80e0a0" stroke-width="2"/>
-      <circle cx="60" cy="220" r="5" fill="#80e0a0"/>
-      <text x="60" y="240" text-anchor="middle" fill="#80e0a0" font-size="11">Observer</text>
-      <circle cx="260" cy="220" r="4" fill="#f0c040"/>
-      <text x="260" y="240" text-anchor="middle" fill="#f0c040" font-size="11">Launch Site</text>
-      <circle class="smoke" id="smoke1" cx="255" cy="220" r="6" fill="#ffffff"/>
-      <circle class="smoke" id="smoke2" cx="265" cy="222" r="5" fill="#dddddd"/>
-      <circle class="smoke" id="smoke3" cx="258" cy="218" r="7" fill="#eeeeee"/>
-      <text id="svg-rocket" x="260" y="50" text-anchor="middle" font-size="22" style="transform:translateY(170px) rotate(-45deg)">🚀</text>
-      <path id="svg-arc" d="M 90,220 A 30,30 0 0,0 75,202" fill="none" stroke="#ff9f40" stroke-width="2"/>
-      <text x="102" y="212" fill="#ff9f40" font-size="11" id="svg-angle-label">θ</text>
-      <text x="160" y="215" text-anchor="middle" fill="#4a8ab0" font-size="11">distance (d)</text>
-      <text id="svg-dist-value" x="160" y="229" text-anchor="middle" fill="#6ab8e0" font-size="10"></text>
-      <text x="284" y="145" text-anchor="start" fill="#f0c040" font-size="11">altitude</text>
-      <text x="284" y="157" text-anchor="start" fill="#f0c040" font-size="11">(h)</text>
-      <text id="svg-alt-value" x="284" y="170" text-anchor="start" fill="#ffe080" font-size="10"></text>
-      <polyline points="250,220 250,210 260,210" fill="none" stroke="#aaa" stroke-width="1.5"/>
-      <text id="svg-sight-label" x="148" y="125" text-anchor="middle" fill="#80e0a0" font-size="11" transform="rotate(-38,148,130)">line of sight</text>
-    </svg>
+    <svg class="diagram" id="diagram-svg" viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of your measurement, drawn to scale"></svg>
+    <div class="tan-explain" id="tan-explain"></div>
   </div>
+
+  <details class="card setup-card" id="setup-card" style="display:none">
+    <summary>⚙️ Launch-Day Setup <span class="setup-sum" id="setup-summary"></span></summary>
+    <p class="setup-help">Stations are the spots you measured on the field — students tap their station instead of typing a distance. Results higher than the altitude limit, or with an angle outside the range, wait under <strong>Needs your check</strong> until you approve them.</p>
+    <div class="station-rows" id="station-rows"></div>
+    <button type="button" class="small-btn" id="add-station">+ Add station</button>
+    <div class="setup-grid">
+      <div><span class="setup-lbl">Highest believable altitude</span><input type="number" id="setup-max" min="10" step="1" /> ft</div>
+      <div><span class="setup-lbl">Angle limits</span><input type="number" id="setup-min-angle" min="1" max="89" step="1" /> ° to <input type="number" id="setup-max-angle" min="1" max="89" step="1" /> °</div>
+    </div>
+    <button type="button" class="small-btn primary" id="setup-save">Save setup</button>
+    <span class="setup-status" id="setup-status" role="status"></span>
+  </details>
 
   <div class="card results-card" id="results-card">
     <div class="results-header">
@@ -548,6 +622,9 @@
       </div>
     </div>
 
+    <div class="review-strip" id="review-strip"></div>
+    <div class="pending-note" id="pending-note"></div>
+
     <!-- One tab for the Top 20 of all classes, plus one per class the viewer belongs to -->
     <div class="period-tabs" id="board-tabs" role="tablist"></div>
     <div class="board-note" id="board-note"></div>
@@ -564,12 +641,12 @@
 
   <div class="card steps-card">
     <h2>How It Works</h2>
-    <div class="formula">altitude = distance × tan(angle)</div>
+    <div class="formula">altitude = distance × tan(angle) + eye height</div>
     <div class="steps">
-      <div class="step"><div class="step-number">Step 1</div><div class="step-title">Measure Distance</div><div class="step-desc">Stand a known distance away from the launch site. Use a measuring tape or count paces.</div></div>
-      <div class="step"><div class="step-number">Step 2</div><div class="step-title">Read the Inclinometer</div><div class="step-desc">Aim your inclinometer at the rocket at its highest point and read the angle of elevation in degrees.</div></div>
-      <div class="step"><div class="step-number">Step 3</div><div class="step-title">Apply Trigonometry</div><div class="step-desc">The rocket, launch site, and you form a right triangle. Tangent connects the opposite side (altitude) to the adjacent side (distance).</div></div>
-      <div class="step"><div class="step-number">Step 4</div><div class="step-title">Calculate!</div><div class="step-desc">Multiply your distance by the tangent of the angle. The result is how high the rocket flew above the launch site.</div></div>
+      <div class="step"><div class="step-number">Step 1</div><div class="step-title">Measure Distance</div><div class="step-desc">Stand at a measured spot (your teacher's station or a measuring tape). Best spot: about as far away as you think the rocket will fly.</div></div>
+      <div class="step"><div class="step-number">Step 2</div><div class="step-title">Read the Inclinometer</div><div class="step-desc">Aim the straw at the rocket at its highest point, pinch the string and read the number. Type that string reading — the calculator does 90° − reading for you.</div></div>
+      <div class="step"><div class="step-number">Step 3</div><div class="step-title">Apply Trigonometry</div><div class="step-desc">You, the launch pad and the rocket make a right triangle. Tangent tells you how many feet your line of sight climbs for every foot you stood away.</div></div>
+      <div class="step"><div class="step-number">Step 4</div><div class="step-title">Add Your Eye Height</div><div class="step-desc">You measured from your eyes, not the ground, so add how high your eyes are (about 5 ft). The answer is how high the rocket flew above the launch pad.</div></div>
     </div>
   </div>
 
@@ -599,92 +676,403 @@
 </div>
 
 <script>
-  let distUnit = 'ft', lastResult = null, rankingsLocked = false, lockSeen = false, isTeacher = false;
+  let distUnit = 'ft', angleMode = 'string', lastResult = null, rankingsLocked = false, lockSeen = false, isTeacher = false;
+  // Teacher's launch-day setup (settings/altitude-setup): measured stations and believable limits
+  let setup = { stations: [], maxFt: 300, minAngle: 10, maxAngle: 80 };
+  let myBuild = null;            // the student's Rocket Lab build (rocket_builds/{uid}), if they saved one
+  let diffReason = '';           // why the real flight differed from the prediction (optional)
+  let pickedStation = '';        // station label the distance came from, if any
+  let eyeFt = 5;                 // eye height in feet as the student last typed it (switching units never rounds it)
+  const M_TO_FT = 3.28084;
+  const ANGLE_MODE_KEY = 'altcalc-angle-mode', EYE_KEY = 'altcalc-eye';
 
-  function setDistUnit(unit, btn) {
+  // Landmarks for the to-scale picture and the "higher than…" sentence (heights in feet — edit freely)
+  const LANDMARKS = [
+    { ft: 10,  icon: '🏀', short: 'Hoop',           name: 'a basketball hoop' },
+    { ft: 18,  icon: '🦒', short: 'Giraffe',        name: 'a giraffe' },
+    { ft: 40,  icon: '🚌', short: 'Bus on end',     name: 'a school bus standing on end' },
+    { ft: 100, icon: '🏢', short: '10 floors',      name: 'a 10-story building' },
+    { ft: 151, icon: '🗽', short: 'Liberty',        name: 'the Statue of Liberty' },
+    { ft: 186, icon: '🗼', short: 'Pisa',           name: 'the Leaning Tower of Pisa' },
+    { ft: 300, icon: '🏈', short: 'Football field', name: 'a football field standing on end' }
+  ];
+  const REASONS = [
+    ['wind', '💨 Windy'], ['leak', '💧 Leaked water'], ['wobble', '🌀 Wobbled or tumbled'],
+    ['reading', '📐 Angle was hard to read'], ['close', '🎯 About what we predicted']
+  ];
+
+  function toFt(v, unit) { return unit === 'm' ? v * M_TO_FT : v; }
+  function fromFt(ft, unit) { return unit === 'm' ? ft / M_TO_FT : ft; }
+  function fmt1(v) { return (Math.round(v * 10) / 10).toFixed(1); }
+  function fmtW(v, unit) { return unit === 'm' ? fmt1(v) : String(Math.round(v)); }   // whole feet, or metres to 0.1
+  function trimNum(v) { return String(Math.round(v * 100) / 100); }
+  function deg2rad(d) { return d * Math.PI / 180; }
+
+  // ── Units, eye height, angle mode ──
+  function setDistUnit(unit) {
     if (unit === distUnit) return;
     distUnit = unit;
-    document.querySelectorAll('.unit-toggle button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('dist-unit-badge').textContent = unit;
+    if ($('eye-height').value !== '') $('eye-height').value = trimNum(fromFt(eyeFt, unit));
+    document.querySelectorAll('#unit-toggle button').forEach(function(b) { b.classList.toggle('active', b.dataset.unit === unit); });
+    $('dist-unit-badge').textContent = unit;
+    $('eye-unit-badge').textContent = unit;
+    renderStations();
     invalidateResult();
   }
+  function rememberEye() {           // called when the student types an eye height
+    const v = parseFloat($('eye-height').value);
+    if (!(isFinite(v) && v >= 0)) return;
+    eyeFt = toFt(v, distUnit);
+    try { localStorage.setItem(EYE_KEY, JSON.stringify({ ft: eyeFt })); } catch (e) {}
+  }
+  function restoreEye() {
+    try { const s = JSON.parse(localStorage.getItem(EYE_KEY) || 'null'); if (s && isFinite(s.ft) && s.ft >= 0 && s.ft <= 10) eyeFt = s.ft; } catch (e) {}
+    $('eye-height').value = trimNum(fromFt(eyeFt, distUnit));
+  }
+  function setAngleMode(mode) {
+    angleMode = mode === 'elev' ? 'elev' : 'string';
+    try { localStorage.setItem(ANGLE_MODE_KEY, angleMode); } catch (e) {}
+    const str = angleMode === 'string';
+    $('mode-string').classList.toggle('active', str); $('mode-string').setAttribute('aria-pressed', String(str));
+    $('mode-elev').classList.toggle('active', !str); $('mode-elev').setAttribute('aria-pressed', String(!str));
+    $('angle-label').textContent = str ? 'String reading (the number your string points to)' : 'Angle of elevation (you already did 90° − reading)';
+    $('angle').placeholder = str ? 'e.g. 30' : 'e.g. 60';
+    $('angle').max = str ? '180' : '89';
+    updateProtractor();
+    invalidateResult();
+  }
+  // What the angle box means: in string mode the page does 90° − reading (or reading − 90° if the
+  // string swung past 90 because the inclinometer was held the other way round).
+  function readAngle() {
+    const raw = parseFloat($('angle').value);
+    if (!isFinite(raw)) return null;
+    if (angleMode === 'string') {
+      if (raw < 0 || raw > 180) return { reading: raw, elev: NaN, flipped: false, bad: true };
+      return { reading: raw, elev: Math.round(Math.abs(90 - raw) * 1e6) / 1e6, flipped: raw > 90 };
+    }
+    return { reading: null, elev: raw, flipped: false };
+  }
+  function angleOk(a) { return a && !a.bad && a.elev >= 1 && a.elev <= 89; }
 
-  // The numbers on screen changed (or were rejected), so the last answer must not be saved any more.
-  function invalidateResult() {
-    if (!lastResult && document.getElementById('work-shown').style.display !== 'block') return;
-    lastResult = null;
-    document.getElementById('save-btn').style.display = 'none';
-    document.getElementById('result-box').innerHTML = '<span class="placeholder-text">Press Calculate to see your new result</span>';
-    document.getElementById('work-shown').style.display = 'none';
-    document.getElementById('compare-section').style.display = 'none';
-    resetDiagram();
+  // ── Live protractor (the same picture as the Inclinometer page) ──
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function sv(parent, tag, attrs, text) {
+    const e = document.createElementNS(SVGNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    parent.appendChild(e);
+    return e;
+  }
+  function updateProtractor() {
+    const svg = $('protractor'), box = $('angle-explain');
+    const a = readAngle(), ok = angleOk(a);
+    const elev = a && isFinite(a.elev) ? Math.max(0, Math.min(89, a.elev)) : 0;
+    const reading = a && isFinite(a.elev) ? (angleMode === 'string' ? a.reading : 90 - a.elev) : 90;
+    const tilt = a && a.flipped ? elev : -elev;          // the straw tips up toward the rocket
+    const cx = 120, cy = 24, R = 92;
+    svg.textContent = '';
+    const g = sv(svg, 'g', { transform: 'rotate(' + tilt + ',' + cx + ',' + cy + ')' });
+    sv(g, 'rect', { x: cx - R - 12, y: cy - 7, width: 2 * R + 24, height: 7, rx: 3, fill: 'rgba(255,45,120,0.15)', stroke: 'rgba(255,45,120,0.5)', 'stroke-width': 1 });
+    sv(g, 'path', { d: 'M ' + (cx - R) + ',' + cy + ' A ' + R + ',' + R + ' 0 0,1 ' + (cx + R) + ',' + cy, fill: 'rgba(255,45,120,0.08)', stroke: '#ff2d78', 'stroke-width': 2 });
+    for (let t = 0; t <= 180; t += 10) {
+      const ang = deg2rad(180 - t), major = t % 30 === 0, ir = major ? R - 14 : R - 8;
+      sv(g, 'line', { x1: cx + ir * Math.cos(ang), y1: cy + ir * Math.sin(ang), x2: cx + R * Math.cos(ang), y2: cy + R * Math.sin(ang), stroke: major ? '#fff' : 'rgba(255,150,180,0.8)', 'stroke-width': major ? 1.8 : 1 });
+      if (major) sv(g, 'text', { x: cx + (R - 25) * Math.cos(ang), y: cy + (R - 25) * Math.sin(ang) + 4, 'text-anchor': 'middle', fill: '#fff', 'font-size': 10, 'font-weight': 'bold' }, String(t));
+    }
+    const end = a && a.flipped ? -1 : 1;                   // which end of the straw points at the rocket
+    sv(g, 'text', { x: cx + end * (R + 22), y: cy, 'text-anchor': 'middle', 'font-size': 14 }, '🚀');
+    // the string always hangs straight down
+    sv(svg, 'line', { x1: cx, y1: cy, x2: cx, y2: cy + R + 6, stroke: '#f0c040', 'stroke-width': 2, 'stroke-linecap': 'round' });
+    sv(svg, 'circle', { cx: cx, cy: cy + R + 9, r: 4, fill: '#f0c040' });
+    sv(svg, 'circle', { cx: cx, cy: cy, r: 3.5, fill: '#ff2d78' });
+
+    box.textContent = '';
+    function add(tag, text, cls) { const e = document.createElement(tag); e.textContent = text; if (cls) e.className = cls; box.appendChild(e); return e; }
+    if (!a) { add('span', angleMode === 'string' ? 'Type your string reading and watch the protractor tilt.' : 'Type your angle of elevation.'); return; }
+    if (!ok) {
+      add('span', angleMode === 'string'
+        ? 'A reading of ' + trimNum(a.reading) + '° gives ' + (isFinite(a.elev) ? trimNum(a.elev) + '°' : 'no angle') + '. When you aim up at a rocket the string reads between 1° and 89° (or 91°–179°).'
+        : 'The angle of elevation must be between 1° and 89°.', 'bad');
+      return;
+    }
+    if (angleMode === 'string') {
+      add('div', a.flipped ? trimNum(a.reading) + '° − 90° =' : '90° − ' + trimNum(a.reading) + '° =');
+      add('strong', trimNum(a.elev) + '° angle of elevation');
+    } else {
+      add('strong', trimNum(a.elev) + '° angle of elevation');
+      add('div', '(your string read ' + trimNum(90 - a.elev) + '°)');
+    }
   }
 
+  // ── Launch-day stations ──
+  function renderStations() {
+    const box = $('station-chips');
+    box.textContent = '';
+    const list = setup.stations || [];
+    box.style.display = list.length ? 'flex' : 'none';
+    list.forEach(function(st) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'station-chip' + (pickedStation && pickedStation === st.label && st.unit === distUnit && parseFloat($('distance').value) === st.dist ? ' active' : '');
+      b.textContent = '📍 ' + (st.label || 'Station') + ' · ' + st.dist + ' ' + st.unit;
+      b.addEventListener('click', function() { pickStation(st); });
+      box.appendChild(b);
+    });
+  }
+  function pickStation(st) {
+    if (st.unit !== distUnit) setDistUnit(st.unit);
+    $('distance').value = String(st.dist);
+    pickedStation = st.label || 'Station';
+    invalidateResult();
+    renderStations();
+  }
+  function setupMaxFt() { return setup.maxFt > 0 ? setup.maxFt : 300; }
+  // Students' results outside the teacher's limits wait for a teacher check before reaching any board
+  function needsCheck(r) {
+    return !isTeacher && (toFt(r.altitude, r.unit) > setupMaxFt() || r.angle < setup.minAngle || r.angle > setup.maxAngle);
+  }
+
+  // ── Results ──
+  function hideExtras() {
+    ['headline', 'coach-note', 'reality-note', 'predict-card', 'tan-explain'].forEach(function(id) { $(id).style.display = 'none'; });
+    $('work-shown').style.display = 'none';
+  }
+  function clearResult(msg) {
+    lastResult = null;
+    $('save-btn').style.display = 'none';
+    $('result-box').innerHTML = '<span class="placeholder-text">' + msg + '</span>';
+    hideExtras();
+    resetDiagram();
+  }
+  // The numbers on screen changed (or were rejected), so the last answer must not be saved any more.
+  function invalidateResult() {
+    if (!lastResult && $('work-shown').style.display !== 'block') return;
+    clearResult('Press Calculate to see your new result');
+  }
+  function showNote(id, text) { const e = $(id); e.textContent = text; e.style.display = text ? 'block' : 'none'; }
+
   function calculate() {
-    const distInput = parseFloat(document.getElementById('distance').value);
-    const angleInput = parseFloat(document.getElementById('angle').value);
-    const errorEl = document.getElementById('error-msg');
-    const resultBox = document.getElementById('result-box');
-    const workEl = document.getElementById('work-shown');
-    const compareSection = document.getElementById('compare-section');
+    const d = parseFloat($('distance').value);
+    const a = readAngle();
+    const eye = parseFloat($('eye-height').value);
+    const eyeMax = distUnit === 'm' ? 3 : 10;
+    const errorEl = $('error-msg');
     errorEl.style.display = 'none';
-    const angleRad = angleInput * Math.PI / 180;
-    const tanVal = Math.tan(angleRad);
-    const altitude = distInput * tanVal;
-    if (!(distInput > 0) || !(angleInput >= 1) || !(angleInput <= 89) || !isFinite(altitude)) {
-      errorEl.style.display = 'block';
-      lastResult = null;
-      document.getElementById('save-btn').style.display = 'none';
-      resultBox.innerHTML = '<span class="placeholder-text">Enter valid measurements to see results.</span>';
-      workEl.style.display = 'none'; compareSection.style.display = 'none'; resetDiagram(); return;
+    let problem = '';
+    if (!(d > 0)) problem = 'Enter your distance from the launch pad (more than 0).';
+    else if (!a) problem = angleMode === 'string' ? 'Enter the number your string points to.' : 'Enter your angle of elevation (1° to 89°).';
+    else if (!angleOk(a)) problem = angleMode === 'string'
+      ? 'Check your string reading: when you aim up at a rocket it reads between 1° and 89° (or 91° to 179°).'
+      : 'The angle of elevation must be between 1° and 89°.';
+    else if (!(eye >= 0 && eye <= eyeMax)) problem = 'Eye height must be between 0 and ' + eyeMax + ' ' + distUnit + '.';
+    const tanV = a ? Math.tan(deg2rad(a.elev)) : NaN;
+    const above = d * tanV, alt = above + eye;
+    if (!problem && !(isFinite(alt) && alt < 1e7)) problem = 'Those numbers are too big — check your distance.';
+    if (problem) {
+      errorEl.textContent = problem; errorEl.style.display = 'block';
+      clearResult('Enter valid measurements to see results.');
+      return;
     }
-    const unitLabel = distUnit;
-    const benchmarkFt = distUnit === 'ft' ? 40 : 12;
-    const pct = Math.min((altitude / (benchmarkFt * 2)) * 100, 100);
-    resultBox.innerHTML = `<div class="altitude-value">${altitude.toFixed(1)} <span style="font-size:1.2rem">${unitLabel}</span></div><div class="altitude-label">Rocket Altitude</div>`;
-    workEl.style.display = 'block';
-    workEl.innerHTML = `<div class="step-line">Given:</div><div>  distance (d) = ${distInput} ${unitLabel}</div><div>  angle (θ)    = ${angleInput}°</div><br/><div class="step-line">Formula:</div><div>  altitude = d × tan(θ)</div><br/><div class="step-line">Substitute:</div><div>  altitude = ${distInput} × tan(${angleInput}°)</div><div>  altitude = ${distInput} × ${tanVal.toFixed(4)}</div><br/><div class="answer-line">  altitude ≈ ${altitude.toFixed(2)} ${unitLabel}</div>`;
-    compareSection.style.display = 'block';
-    setTimeout(() => { document.getElementById('bar-fill').style.width = pct + '%'; }, 50);
-    const svgRocketY = Math.max(30, Math.round(220 - Math.min(200 * tanVal, 190)));
-    updateArc(svgRocketY, angleInput);
-    document.getElementById('svg-dist-value').textContent = distInput + ' ' + distUnit;
-    document.getElementById('svg-alt-value').textContent = altitude.toFixed(1) + ' ' + unitLabel;
-    ['svg-arc', 'svg-angle-label', 'svg-dist-value', 'svg-alt-value'].forEach(id => {
-      const el = document.getElementById(id);
-      el.style.transition = 'none';
-      el.style.opacity = '0';
+    const unit = distUnit, elev = a.elev;
+    const lo = d * Math.tan(deg2rad(Math.max(elev - 2, 0.5))) + eye;
+    const hi = d * Math.tan(deg2rad(Math.min(elev + 2, 89.5))) + eye;
+    lastResult = { distance: d, angle: Math.round(elev * 100) / 100, reading: angleMode === 'string' ? a.reading : null,
+                   angleMode: angleMode, eyeHeight: eye, altitude: alt, unit: unit, station: pickedStation, lo: lo, hi: hi };
+    diffReason = '';
+    const flagged = needsCheck(lastResult);
+
+    // big number + give-or-take range
+    $('result-box').innerHTML = '<div class="altitude-value">' + fmt1(alt) + ' <span style="font-size:1.2rem">' + unit + '</span></div>' +
+      '<div class="altitude-label">Rocket Altitude</div>' +
+      '<div class="range-line">Give or take: about ' + fmtW(lo, unit) + '–' + fmtW(hi, unit) + ' ' + unit + ' <span>(if your reading was 2° off)</span></div>';
+
+    // "higher than…" sentence
+    const h = $('headline'); h.textContent = landmarkSentence(toFt(alt, unit), unit); h.style.display = 'block';
+
+    // where-to-stand coaching
+    const half = (hi - lo) / 2;
+    let coach = '';
+    if (elev > 70) coach = '📏 You stood very close to the pad. At ' + trimNum(elev) + '°, being 2° off changes your answer by about ±' + fmtW(half, unit) + ' ' + unit + '. Next launch, stand farther back — about as far away as you think the rocket will fly.';
+    else if (elev < 20) coach = '🔭 You stood very far away, so the top of the flight is hard to see. Next launch, stand closer — about as far away as you think the rocket will fly (that puts your angle near 45°).';
+    else if (elev >= 30 && elev <= 60) coach = '👍 Great spot! Angles between 30° and 60° give the most trustworthy readings.';
+    showNote('coach-note', coach);
+
+    // reality check
+    if (flagged) {
+      const why = [];
+      if (toFt(alt, unit) > setupMaxFt()) why.push('That is higher than ' + fmtW(fromFt(setupMaxFt(), unit), unit) + ' ' + unit + ' — real bottle rockets usually reach about 150–200 ft.');
+      if (elev < setup.minAngle || elev > setup.maxAngle) why.push('Your angle (' + trimNum(elev) + '°) is outside the ' + setup.minAngle + '°–' + setup.maxAngle + '° range your teacher set.');
+      showNote('reality-note', '🤔 Double-check! ' + why.join(' ') + ' Check your distance and your string reading with your partner. If it is right, you can still save it — your teacher will check it before it goes on the leaderboard.');
+    } else showNote('reality-note', '');
+
+    // work shown
+    const L = [];
+    L.push('<div class="step-line">Given:</div>');
+    if (lastResult.reading != null) {
+      L.push('<div>  string reading = ' + trimNum(a.reading) + '°</div>');
+      L.push('<div>  angle (θ)      = ' + (a.flipped ? trimNum(a.reading) + '° − 90°' : '90° − ' + trimNum(a.reading) + '°') + ' = ' + trimNum(elev) + '°</div>');
+    } else L.push('<div>  angle (θ)      = ' + trimNum(elev) + '°</div>');
+    L.push('<div>  distance (d)   = ' + trimNum(d) + ' ' + unit + '</div>');
+    L.push('<div>  eye height (e) = ' + trimNum(eye) + ' ' + unit + '</div><br/>');
+    L.push('<div class="step-line">Formula:</div><div>  altitude = d × tan(θ) + e</div><br/>');
+    L.push('<div class="step-line">Substitute:</div>');
+    L.push('<div>  altitude = ' + trimNum(d) + ' × tan(' + trimNum(elev) + '°) + ' + trimNum(eye) + '</div>');
+    L.push('<div>  altitude = ' + trimNum(d) + ' × ' + tanV.toFixed(6) + ' + ' + trimNum(eye) + '</div>');
+    L.push('<div>  altitude = ' + above.toFixed(2) + ' + ' + trimNum(eye) + '</div><br/>');
+    L.push('<div class="answer-line">  altitude ≈ ' + fmt1(alt) + ' ' + unit + '</div>');
+    $('work-shown').innerHTML = L.join('');
+    $('work-shown').style.display = 'block';
+
+    // what tan is doing
+    const te = $('tan-explain');
+    te.innerHTML = '📐 <strong>What tan does:</strong> tan(' + trimNum(elev) + '°) = ' + tanV.toFixed(2) +
+      '. For every 1 ' + unit + ' you stood from the pad, your line of sight climbs ' + tanV.toFixed(2) + ' ' + unit + '. ' +
+      'You stood ' + trimNum(d) + ' ' + unit + ' away, so it climbed ' + trimNum(d) + ' × ' + tanV.toFixed(2) + ' = <strong>' + fmt1(above) + ' ' + unit + '</strong> above your eyes' +
+      (eye > 0 ? ' — plus your ' + trimNum(eye) + ' ' + unit + ' eye height = <strong>' + fmt1(alt) + ' ' + unit + '</strong>.' : '.');
+    te.style.display = 'block';
+
+    drawDiagram({ d: d, elev: elev, eye: eye, alt: alt, lo: lo, hi: hi, unit: unit });
+    renderPredict();
+    $('save-error').style.display = 'none';
+    $('save-ok').classList.remove('show');
+    $('save-btn').textContent = flagged ? '⏳ Save for Teacher Check' : 'Save Result';
+    if (!rankingsLocked) $('save-btn').style.display = 'block';
+  }
+
+  function landmarkSentence(altFt, unit) {
+    const show = function(ft) { return fmtW(fromFt(ft, unit), unit) + ' ' + unit; };
+    const passed = LANDMARKS.filter(function(l) { return l.ft <= altFt; });
+    const next = LANDMARKS.find(function(l) { return l.ft > altFt; });
+    if (!passed.length) return 'Not quite as tall as ' + next.icon + ' ' + next.name + ' (' + show(next.ft) + ') — ' + show(next.ft - altFt) + ' to go!';
+    const top = passed[passed.length - 1];
+    let s = 'Higher than ' + top.icon + ' ' + top.name + ' (' + show(top.ft) + ')';
+    s += next ? ', and ' + show(next.ft - altFt) + ' short of ' + next.icon + ' ' + next.name + ' (' + show(next.ft) + ').' : ' — a monster launch!';
+    return s;
+  }
+
+  // ── Rocket Lab prediction vs. the real flight ──
+  function renderPredict() {
+    const box = $('predict-card');
+    box.textContent = '';
+    if (!lastResult || isTeacher) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    const measFt = toFt(lastResult.altitude, lastResult.unit);
+    if (!myBuild || !(Number(myBuild.predictedFt) > 0)) {
+      box.innerHTML = '🧪 <strong>Compare with a prediction:</strong> in <a href="rocket-builder.html">Rocket Lab</a>, set up the rocket you really built and press <em>“I’m building this one”</em>. Then your result here will show how close the simulator was.';
+      return;
+    }
+    const p = Number(myBuild.predictedFt), pct = Math.round(measFt / p * 100), top = Math.max(p, measFt);
+    function div(cls, text) { const e = document.createElement('div'); e.className = cls; if (text != null) e.textContent = text; return e; }
+    box.appendChild(div('predict-title', '🧪 Rocket Lab prediction vs. your real flight'));
+    [['Predicted', p, '#b44fff'], ['Measured', measFt, '#00f5ff']].forEach(function(x) {
+      const row = div('pbar');
+      row.appendChild(div('pbar-lbl', x[0]));
+      const tr = div('pbar-track'), fill = div('pbar-fill');
+      fill.style.width = Math.max(2, x[1] / top * 100) + '%'; fill.style.background = x[2];
+      tr.appendChild(fill); row.appendChild(tr);
+      row.appendChild(div('pbar-val', Math.round(x[1]) + ' ft (' + fmt1(x[1] / M_TO_FT) + ' m)'));
+      box.appendChild(row);
     });
-    void document.getElementById('svg-dist-value').getBoundingClientRect();
-    ['svg-arc', 'svg-angle-label', 'svg-dist-value', 'svg-alt-value'].forEach(id => {
-      const el = document.getElementById(id);
-      el.style.transition = 'opacity 0.4s ease-out 1.2s';
-      el.style.opacity = '1';
+    box.appendChild(div('pverdict', pct >= 85 && pct <= 115 ? '🎯 ' + pct + '% of the prediction — your rocket flew like the simulator said!'
+      : pct < 85 ? '📉 ' + pct + '% of the prediction — lower than predicted. What happened?' : '📈 ' + pct + '% of the prediction — higher than predicted! What happened?'));
+    const chips = div('reason-chips');
+    REASONS.forEach(function(rz) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'reason-chip' + (diffReason === rz[0] ? ' active' : ''); b.textContent = rz[1];
+      b.setAttribute('aria-pressed', String(diffReason === rz[0]));
+      b.addEventListener('click', function() { diffReason = diffReason === rz[0] ? '' : rz[0]; renderPredict(); });
+      chips.appendChild(b);
     });
-    const rocket = document.getElementById('svg-rocket');
-    const altLine = document.getElementById('svg-altitude');
-    const sightLine = document.getElementById('svg-sight');
-    const sightLabel = document.getElementById('svg-sight-label');
-    const smokes = document.querySelectorAll('.smoke');
-    altLine.setAttribute('y2', svgRocketY); sightLine.setAttribute('y2', svgRocketY);
-    const midX = 160, midY = Math.round((220 + svgRocketY) / 2);
-    const visualAngleDeg = Math.atan2(220 - svgRocketY, 200) * 180 / Math.PI;
-    sightLabel.setAttribute('x', midX); sightLabel.setAttribute('y', midY - 6);
-    sightLabel.setAttribute('transform', `rotate(${-visualAngleDeg.toFixed(1)},${midX},${midY})`);
-    rocket.setAttribute('y', svgRocketY);
-    altLine.classList.remove('visible'); sightLine.classList.remove('visible');
-    rocket.style.transition = 'none';
-    rocket.style.transform = `translateY(${220 - svgRocketY}px) rotate(-45deg)`;
-    void rocket.getBoundingClientRect();
+    box.appendChild(chips);
+    const fins = Number(myBuild.finCount) ? myBuild.finCount + ' ' + (myBuild.finSize || '') + ' fins' : 'no fins';
+    box.appendChild(div('pdesign', 'Your Rocket Lab design: ' + [myBuild.bottle + ' oz bottle', myBuild.waterPct + '% water', myBuild.psi + ' psi', (myBuild.nose || '') + ' nose', fins].join(' · ')));
+  }
+
+  // ── To-scale diagram ──
+  function drawDiagram(r) {
+    const svg = $('diagram-svg');
+    svg.classList.remove('go');
+    svg.textContent = '';
+    const G = 222, XL = 222, XMIN = 24, TOP = 24, LMX = 240;
+    sv(svg, 'line', { x1: 8, y1: G, x2: 232, y2: G, stroke: '#4a8ab0', 'stroke-width': 2 });
+    if (!r) {
+      // example picture until there is a result
+      const xo = 60, ye = G - 12, yr = 62;
+      sv(svg, 'line', { x1: xo, y1: G, x2: xo, y2: ye + 4, stroke: '#80e0a0', 'stroke-width': 2 });
+      sv(svg, 'circle', { cx: xo, cy: ye, r: 3.5, fill: '#80e0a0' });
+      sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: ye, stroke: '#4a8ab0', 'stroke-dasharray': '3,3' });
+      sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: yr, stroke: '#80e0a0', 'stroke-width': 2, opacity: 0.5 });
+      sv(svg, 'line', { x1: XL, y1: G, x2: XL, y2: yr, stroke: '#f0c040', 'stroke-width': 2.5, 'stroke-dasharray': '6,4', opacity: 0.5 });
+      sv(svg, 'text', { x: XL, y: yr - 4, 'text-anchor': 'middle', 'font-size': 18 }, '🚀');
+      sv(svg, 'text', { x: xo, y: G + 14, 'text-anchor': 'middle', fill: '#80e0a0', 'font-size': 10 }, 'you');
+      sv(svg, 'text', { x: XL, y: G + 14, 'text-anchor': 'middle', fill: '#f0c040', 'font-size': 10 }, 'launch pad');
+      sv(svg, 'text', { x: (xo + XL) / 2, y: G + 28, 'text-anchor': 'middle', fill: '#6ab8e0', 'font-size': 10 }, 'distance (d)');
+      sv(svg, 'text', { x: XL - 6, y: (G + yr) / 2, 'text-anchor': 'end', fill: '#f0c040', 'font-size': 10 }, 'altitude (h)');
+      sv(svg, 'text', { x: xo + 30, y: ye - 6, fill: '#ff9f40', 'font-size': 11 }, 'θ');
+      sv(svg, 'text', { x: 286, y: 120, 'text-anchor': 'middle', fill: 'rgba(255,255,255,0.35)', 'font-size': 10 }, 'Calculate to see');
+      sv(svg, 'text', { x: 286, y: 134, 'text-anchor': 'middle', fill: 'rgba(255,255,255,0.35)', 'font-size': 10 }, 'your flight to scale');
+      return;
+    }
+    const unit = r.unit;
+    const lms = LANDMARKS.map(function(l) { return { icon: l.icon, short: l.short, h: fromFt(l.ft, unit) }; });
+    const next = lms.find(function(l) { return l.h > r.alt; });
+    const hMax = Math.max(r.alt, next && next.h <= r.alt * 1.5 ? next.h : r.alt);
+    const s = Math.min((XL - XMIN) / r.d, (G - TOP) / hMax);
+    const xo = XL - r.d * s, ye = G - r.eye * s, yr = G - r.alt * s;
+    const yOf = function(h) { return Math.max(4, G - h * s); };
+
+    // landmark scale (lights up as the rocket passes each one)
+    sv(svg, 'line', { x1: LMX, y1: G, x2: LMX, y2: TOP - 10, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1 });
+    let lastY = -Infinity;
+    lms.filter(function(l) { return l.h <= hMax * 1.0001; }).sort(function(a, b) { return b.h - a.h; }).forEach(function(l) {
+      const y = G - l.h * s, passed = l.h <= r.alt;
+      const grp = sv(svg, 'g', { class: 'lm ' + (passed ? 'lm-pass' : 'lm-next') });
+      if (passed) grp.style.transitionDelay = (0.2 + 1.4 * Math.sqrt(l.h / r.alt)).toFixed(2) + 's';
+      sv(grp, 'line', { x1: LMX - 4, y1: y, x2: LMX + 6, y2: y, stroke: passed ? '#ffe080' : '#a8d8f0', 'stroke-width': 1.5 });
+      if (y - lastY >= 12) {
+        sv(grp, 'text', { x: LMX + 9, y: y + 3.5, fill: passed ? '#ffe080' : '#a8d8f0', 'font-size': 9 }, l.icon + ' ' + l.short + ' ' + fmtW(l.h, unit));
+        lastY = y;
+      }
+    });
+
+    // eye-level baseline (d), observer, give-or-take lines, sight line, altitude
+    sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: ye, stroke: '#4a8ab0', 'stroke-dasharray': '3,3' });
+    sv(svg, 'line', { x1: xo, y1: G, x2: xo, y2: Math.min(G, ye + 4), stroke: '#80e0a0', 'stroke-width': 2 });
+    sv(svg, 'circle', { cx: xo, cy: ye, r: 3.5, fill: '#80e0a0' });
+    [r.lo, r.hi].forEach(function(v) {
+      sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: yOf(v), stroke: '#80e0a0', 'stroke-width': 1, 'stroke-dasharray': '2,3', opacity: 0.45, class: 'dg-late' });
+    });
+    sv(svg, 'line', { x1: XL + 5, y1: yOf(r.lo), x2: XL + 5, y2: yOf(r.hi), stroke: 'rgba(240,192,64,0.45)', 'stroke-width': 5, 'stroke-linecap': 'round', class: 'dg-late' });
+    sv(svg, 'line', { x1: xo, y1: ye, x2: XL, y2: yr, stroke: '#80e0a0', 'stroke-width': 2, class: 'dg-late' });
+    sv(svg, 'line', { x1: XL, y1: G, x2: XL, y2: yr, stroke: '#f0c040', 'stroke-width': 2.5, 'stroke-dasharray': '6,4', class: 'dg-late' });
+    if (XL - xo > 14 && ye - yr > 14) sv(svg, 'polyline', { points: (XL - 8) + ',' + ye + ' ' + (XL - 8) + ',' + (ye - 8) + ' ' + XL + ',' + (ye - 8), fill: 'none', stroke: '#aaa', 'stroke-width': 1.2 });
+
+    // angle arc at your eye
+    const ang = Math.atan2(ye - yr, XL - xo), AR = Math.min(26, (XL - xo) * 0.7);
+    const angLabel = sv(svg, 'text', { fill: '#ff9f40', 'font-size': 11, class: 'dg-late' }, trimNum(r.elev) + '°');
+    if (AR >= 8) {
+      sv(svg, 'path', { d: 'M ' + (xo + AR) + ',' + ye + ' A ' + AR + ',' + AR + ' 0 0,0 ' + (xo + AR * Math.cos(ang)).toFixed(1) + ',' + (ye - AR * Math.sin(ang)).toFixed(1), fill: 'none', stroke: '#ff9f40', 'stroke-width': 2, class: 'dg-late' });
+      angLabel.setAttribute('x', (xo + (AR + 12) * Math.cos(ang / 2)).toFixed(1));
+      angLabel.setAttribute('y', (ye - (AR + 12) * Math.sin(ang / 2) + 4).toFixed(1));
+    } else {
+      angLabel.setAttribute('x', xo - 6); angLabel.setAttribute('y', ye - 8); angLabel.setAttribute('text-anchor', 'end');
+    }
+
+    // labels
+    sv(svg, 'text', { x: xo, y: G + 14, 'text-anchor': 'middle', fill: '#80e0a0', 'font-size': 10 }, 'you');
+    sv(svg, 'text', { x: XL, y: G + 14, 'text-anchor': xo > XL - 50 ? 'start' : 'middle', fill: '#f0c040', 'font-size': 10 }, xo > XL - 50 ? '  pad' : 'launch pad');
+    sv(svg, 'text', { x: Math.max(30, (xo + XL) / 2), y: G + 28, 'text-anchor': 'middle', fill: '#6ab8e0', 'font-size': 10 }, 'd = ' + trimNum(r.d) + ' ' + unit + (r.eye > 0 ? '   eye = ' + trimNum(r.eye) + ' ' + unit : ''));
+    sv(svg, 'text', { x: XL - 6, y: Math.max(TOP + 10, (G + yr) / 2), 'text-anchor': 'end', fill: '#ffe080', 'font-size': 10, class: 'dg-late' }, 'h = ' + fmt1(r.alt) + ' ' + unit);
+
+    // smoke + the rocket climbing to its height
+    [[-5, 0, 6, '#fff'], [5, 2, 5, '#ddd'], [-2, -2, 7, '#eee']].forEach(function(p) { sv(svg, 'circle', { class: 'smoke', cx: XL + p[0], cy: G + p[1], r: p[2], fill: p[3] }); });
+    const rocket = sv(svg, 'text', { x: XL, y: yr + 6, 'text-anchor': 'middle', 'font-size': 18, class: 'dg-rocket' }, '🚀');
+    rocket.style.transform = 'translateY(' + (G - yr) + 'px) rotate(-45deg)';
+    void svg.getBoundingClientRect();
     rocket.style.transition = 'transform 1.6s cubic-bezier(0.25, 0.9, 0.35, 1)';
     rocket.style.transform = 'translateY(0) rotate(-45deg)';
-    altLine.classList.add('visible'); sightLine.classList.add('visible');
-    smokes.forEach(s => { s.classList.remove('puff'); void s.getBoundingClientRect(); s.classList.add('puff'); });
-    lastResult = { distance: distInput, angle: angleInput, altitude, unit: distUnit };
-    document.getElementById('save-error').style.display = 'none';
-    document.getElementById('save-ok').classList.remove('show');
-    if (!rankingsLocked) document.getElementById('save-btn').style.display = 'block';
+    svg.querySelectorAll('.smoke').forEach(function(sm) { sm.classList.add('puff'); });
+    svg.classList.add('go');
   }
 
   // ── Leaderboard ────────────────────────────────────────────────────────────
@@ -753,7 +1141,7 @@
   function bestPerStudent(rows) {
     const best = new Map();
     rows.forEach(function(r) {
-      if (!validResult(r)) return;
+      if (!validResult(r) || r.review === 'pending') return;
       const k = studentKey(r), cur = best.get(k);
       if (!cur || cmpRows(r, cur) < 0) best.set(k, r);
     });
@@ -924,6 +1312,8 @@
     if (tabFocus) back = Array.prototype.find.call($('board-tabs').children, function(b) { return b.dataset.board === tabFocus; });
     if (delFocus) back = Array.prototype.find.call(document.querySelectorAll('#results-body .del-btn'), function(b) { return b.dataset.id === delFocus; });
     if (back && document.activeElement !== back) back.focus();
+    renderReview();
+    renderPending();
   }
   function drawBoards() {
     if (!me) return;
@@ -1187,6 +1577,23 @@
       lockSeen = true;
     }, function(err) { console.error('Lock state failed:', err); });
 
+    // Launch-day setup: everyone reads it (stations, limits); only the teacher edits it
+    db().collection('settings').doc('altitude-setup').onSnapshot(function(doc) {
+      setup = readSetup(doc.exists ? doc.data() : null);
+      renderStations(); fillSetupForm();
+      if (lastResult) $('save-btn').textContent = needsCheck(lastResult) ? '⏳ Save for Teacher Check' : 'Save Result';
+    }, function(err) { console.error('Launch-day setup failed:', err); });
+    if (isTeacher) {
+      $('setup-card').style.display = '';
+      initSetupForm();
+    } else {
+      // the rocket this student said they are building in Rocket Lab (predicted vs. measured)
+      db().collection('rocket_builds').doc(me.uid).onSnapshot(function(doc) {
+        myBuild = doc.exists ? doc.data() : null;
+        if (lastResult) renderPredict();
+      }, function(err) { console.warn('Rocket Lab build not available:', err && err.code); myBuild = null; });
+    }
+
     if (isTeacher) {
       db().collection('results').onSnapshot({ includeMetadataChanges: true }, function(snap) {
         allResults = rowsOf(snap); loaded.all = true; fresh.all = !snap.metadata.fromCache;
@@ -1208,6 +1615,142 @@
       }, function(err) { console.error('Enrollments failed:', err); setMyClasses([]); });
     }
     renderBoards();
+  }
+
+  // ── Launch-day setup (teacher) ──
+  function readSetup(d) {
+    d = d || {};
+    function num(v, def, lo, hi) { v = Number(v); return isFinite(v) && v >= lo && v <= hi ? v : def; }
+    const stations = Array.isArray(d.stations) ? d.stations.slice(0, 12).map(function(st) {
+      st = st || {};
+      return { label: String(st.label || '').slice(0, 20), dist: num(st.dist, 0, 0, 5000), unit: st.unit === 'm' ? 'm' : 'ft' };
+    }).filter(function(st) { return st.dist > 0; }) : [];
+    let minA = num(d.minAngle, 10, 1, 89), maxA = num(d.maxAngle, 80, 1, 89);
+    if (minA >= maxA) { minA = 10; maxA = 80; }
+    return { stations: stations, maxFt: num(d.maxFt, 300, 10, 100000), minAngle: minA, maxAngle: maxA };
+  }
+  let setupDirty = false;
+  function setupTouched() { setupDirty = true; $('setup-status').textContent = ''; }
+  function initSetupForm() {
+    $('add-station').addEventListener('click', function() { addStationRow({ label: '', dist: '', unit: 'ft' }); setupTouched(); });
+    $('setup-save').addEventListener('click', saveSetup);
+    ['setup-max', 'setup-min-angle', 'setup-max-angle'].forEach(function(id) { $(id).addEventListener('input', setupTouched); });
+    fillSetupForm();
+  }
+  function addStationRow(st) {
+    const row = document.createElement('div'); row.className = 'station-row';
+    const lab = document.createElement('input'); lab.type = 'text'; lab.placeholder = 'Name (e.g. A)'; lab.maxLength = 20; lab.value = st.label || ''; lab.className = 'st-label'; lab.setAttribute('aria-label', 'Station name');
+    const dist = document.createElement('input'); dist.type = 'number'; dist.min = '0'; dist.step = 'any'; dist.placeholder = 'Distance'; dist.value = st.dist === '' ? '' : String(st.dist); dist.className = 'st-dist'; dist.setAttribute('aria-label', 'Station distance');
+    const unit = document.createElement('select'); unit.className = 'st-unit'; unit.setAttribute('aria-label', 'Unit');
+    ['ft', 'm'].forEach(function(u) { const o = document.createElement('option'); o.value = u; o.textContent = u; unit.appendChild(o); });
+    unit.value = st.unit === 'm' ? 'm' : 'ft';
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'small-btn danger'; del.textContent = '✕'; del.title = 'Remove this station'; del.setAttribute('aria-label', 'Remove this station');
+    del.addEventListener('click', function() { row.remove(); setupTouched(); });
+    [lab, dist, unit].forEach(function(e) { e.addEventListener('input', setupTouched); });
+    row.appendChild(lab); row.appendChild(dist); row.appendChild(unit); row.appendChild(del);
+    $('station-rows').appendChild(row);
+  }
+  function fillSetupForm() {
+    if (!isTeacher) return;
+    const n = setup.stations.length;
+    $('setup-summary').textContent = (n ? n + ' station' + (n === 1 ? '' : 's') : 'no stations yet') + ' · limit ' + setup.maxFt + ' ft · angles ' + setup.minAngle + '°–' + setup.maxAngle + '°';
+    if (setupDirty) return;                 // never overwrite what the teacher is typing
+    $('station-rows').textContent = '';
+    setup.stations.forEach(addStationRow);
+    $('setup-max').value = setup.maxFt; $('setup-min-angle').value = setup.minAngle; $('setup-max-angle').value = setup.maxAngle;
+  }
+  function saveSetup() {
+    if (!isTeacher) return;
+    const status = $('setup-status');
+    const stations = [];
+    let bad = '';
+    document.querySelectorAll('#station-rows .station-row').forEach(function(row, i) {
+      const label = row.querySelector('.st-label').value.trim().slice(0, 20);
+      const raw = row.querySelector('.st-dist').value, dist = parseFloat(raw);
+      if (!label && !raw) return;                       // empty row: ignore it
+      if (!(dist > 0 && dist <= 5000)) { if (!bad) bad = 'Station ' + (label || i + 1) + ' needs a distance.'; return; }
+      stations.push({ label: label || 'Station ' + (stations.length + 1), dist: Math.round(dist * 100) / 100, unit: row.querySelector('.st-unit').value === 'm' ? 'm' : 'ft' });
+    });
+    const maxFt = parseFloat($('setup-max').value), minA = parseFloat($('setup-min-angle').value), maxA = parseFloat($('setup-max-angle').value);
+    if (!bad && stations.length > 12) bad = 'Use at most 12 stations.';
+    if (!bad && !(maxFt >= 10 && maxFt <= 100000)) bad = 'The altitude limit must be at least 10 ft.';
+    if (!bad && !(minA >= 1 && maxA <= 89 && minA < maxA)) bad = 'Angle limits must be between 1° and 89°, smallest first.';
+    if (bad) { status.style.color = '#ff8080'; status.textContent = bad; return; }
+    status.style.color = ''; status.textContent = 'Saving…';
+    db().collection('settings').doc('altitude-setup').set({ stations: stations, maxFt: Math.round(maxFt), minAngle: minA, maxAngle: maxA, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+      .then(function() { setupDirty = false; fillSetupForm(); status.style.color = ''; status.textContent = '✓ Saved — students see it right away.'; },
+            function(err) { console.error('Setup save failed:', err); status.style.color = '#ff8080'; status.textContent = 'Could not save — check your connection and try again.'; });
+  }
+
+  // ── Needs your check (teacher) ──
+  let fixingId = null, reviewSig = '';
+  function actBtn(text, cls, fn) { const b = document.createElement('button'); b.type = 'button'; b.className = 'small-btn ' + cls; b.textContent = text; b.addEventListener('click', fn); return b; }
+  function renderReview() {
+    const box = $('review-strip');
+    if (!isTeacher) { box.style.display = 'none'; return; }
+    const pend = allResults.filter(function(r) { return r.review === 'pending'; }).sort(function(a, b) { return savedMs(a) - savedMs(b); });
+    const sig = pend.map(function(r) { return r.id + ':' + r.altitude + ':' + r.name; }).join(',') + '|' + fixingId;
+    if (sig === reviewSig) return;          // unchanged: keep focus and anything being typed
+    reviewSig = sig;
+    box.textContent = '';
+    if (!pend.length) { box.style.display = 'none'; fixingId = null; return; }
+    box.style.display = 'block';
+    const t = document.createElement('div'); t.className = 'review-title'; t.textContent = '⏳ Needs your check (' + pend.length + ')';
+    const hlp = document.createElement('div'); hlp.className = 'review-help';
+    hlp.textContent = 'These results are outside your launch-day limits, so they are not on any board yet. Approve them, fix the numbers, or delete them.';
+    box.appendChild(t); box.appendChild(hlp);
+    pend.forEach(function(r) {
+      const unit = r.unit === 'm' ? 'm' : 'ft';
+      const row = document.createElement('div'); row.className = 'review-row';
+      const info = document.createElement('div'); info.className = 'review-info';
+      const nm = document.createElement('strong'); nm.textContent = String(r.name || 'Anonymous').trim() || 'Anonymous';
+      info.appendChild(nm);
+      info.appendChild(document.createTextNode(' · ' + groupLabel(r) + ' · ' + r.distance + ' ' + unit + ' at ' + r.angle + '°' +
+        (r.reading != null ? ' (string read ' + r.reading + '°)' : '') + ' → ' + fmtAlt(r)));
+      row.appendChild(info);
+      const acts = document.createElement('div'); acts.className = 'review-acts';
+      if (fixingId === r.id) buildFixForm(acts, r);
+      else {
+        acts.appendChild(actBtn('✓ Approve', 'ok', function() { reviewUpdate(r.id, { review: 'ok' }); }));
+        acts.appendChild(actBtn('✎ Fix', '', function() { fixingId = r.id; renderReview(); }));
+        acts.appendChild(actBtn('✕ Delete', 'danger', function() { deleteResult(r.id, String(r.name || '')); }));
+      }
+      row.appendChild(acts);
+      box.appendChild(row);
+    });
+  }
+  function buildFixForm(acts, r) {
+    const unit = r.unit === 'm' ? 'm' : 'ft', eyeMax = unit === 'm' ? 3 : 10;
+    function field(label, val, w) {
+      const l = document.createElement('label'); l.textContent = label;
+      const i = document.createElement('input'); i.type = 'number'; i.step = 'any'; i.value = val; i.style.width = w;
+      l.appendChild(i); acts.appendChild(l); return i;
+    }
+    const dIn = field('distance ', r.distance, '76px'); acts.appendChild(document.createTextNode(unit));
+    const aIn = field(' angle ', r.angle, '62px'); acts.appendChild(document.createTextNode('°'));
+    const eIn = field(' eye ', r.eyeHeight != null ? r.eyeHeight : 0, '54px'); acts.appendChild(document.createTextNode(unit));
+    acts.appendChild(actBtn('Save fix', 'ok', function() {
+      const d = parseFloat(dIn.value), a = parseFloat(aIn.value), e = parseFloat(eIn.value);
+      if (!(d > 0) || !(a >= 1 && a <= 89) || !(e >= 0 && e <= eyeMax)) { alert('Check the numbers: distance more than 0, angle 1°–89°, eye height 0–' + eyeMax + ' ' + unit + '.'); return; }
+      const alt = d * Math.tan(deg2rad(a)) + e;
+      reviewUpdate(r.id, { distance: d, angle: a, eyeHeight: e, altitude: alt, altitudeFt: round2(toFt(alt, unit)),
+                           angleMode: 'elevation', reading: firebase.firestore.FieldValue.delete(), review: 'ok', fixedByTeacher: true });
+    }));
+    acts.appendChild(actBtn('Cancel', '', function() { fixingId = null; renderReview(); }));
+    setTimeout(function() { aIn.focus(); aIn.select(); }, 0);
+  }
+  function reviewUpdate(id, data) {
+    if (!isTeacher) return;
+    db().collection('results').doc(id).update(data).then(function() {
+      if (fixingId === id) { fixingId = null; renderReview(); }
+    }, function(err) { console.error('Review update failed:', err); alert('That result could not be updated. Check your connection and try again.'); });
+  }
+  // A student's own results that are waiting for the teacher
+  function renderPending() {
+    const box = $('pending-note');
+    const mine = isTeacher ? [] : ownResults.filter(function(r) { return r.review === 'pending'; });
+    box.textContent = mine.length ? '⏳ Waiting for your teacher to check: ' + mine.map(fmtAlt).join(', ') + '. It goes on the board once it is approved.' : '';
+    box.style.display = mine.length ? 'block' : 'none';
   }
 
   // ── Saving ──
@@ -1235,6 +1778,16 @@
       uid: user.uid, userEmail: user.email || '',
       savedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
+    const flagged = needsCheck(lastResult);
+    rec.angleMode = lastResult.angleMode === 'string' ? 'string' : 'elevation';
+    rec.eyeHeight = round2(lastResult.eyeHeight);
+    if (lastResult.reading != null) rec.reading = lastResult.reading;
+    if (lastResult.station) rec.station = String(lastResult.station).slice(0, 20);
+    if (flagged) rec.review = 'pending';
+    if (!isTeacher && myBuild && Number(myBuild.predictedFt) > 0) {
+      rec.predictedFt = round2(Number(myBuild.predictedFt));
+      if (diffReason) rec.diffReason = diffReason;
+    }
     const shown = fmtAlt(lastResult), savedResult = lastResult;
     saving = true; btn.disabled = true; btn.textContent = 'Saving…';
     const slow = setTimeout(function() {
@@ -1242,10 +1795,12 @@
     }, 8000);
     db().collection('results').add(rec).then(function() {
       clearTimeout(slow);
-      saving = false; btn.disabled = false; btn.textContent = 'Save Result';
+      saving = false; btn.disabled = false; btn.textContent = flagged ? '⏳ Save for Teacher Check' : 'Save Result';
       errEl.style.display = 'none';
       if (lastResult === savedResult) { lastResult = null; btn.style.display = 'none'; }
-      okEl.textContent = '✓ Saved! ' + shown + ' is on the ' + (grp.classId ? grp.className + ' board' : 'leaderboard') + '.';
+      okEl.textContent = flagged
+        ? '⏳ Saved! ' + shown + ' will go on the board after your teacher checks it.'
+        : '✓ Saved! ' + shown + ' is on the ' + (grp.classId ? grp.className + ' board' : 'leaderboard') + '.';
       okEl.classList.add('show');
       if (isTeacher) $('student-name').value = '';
       selectBoard(grp.classId ? 'c:' + grp.classId : 'top');
@@ -1253,7 +1808,7 @@
     }, function(err) {
       clearTimeout(slow);
       console.error('Save failed:', err);
-      saving = false; btn.disabled = false; btn.textContent = 'Save Result';
+      saving = false; btn.disabled = false; btn.textContent = flagged ? '⏳ Save for Teacher Check' : 'Save Result';
       fail(err && err.code === 'permission-denied'
         ? 'Your result was NOT saved: the database refused it. If you just joined or left a class, refresh the page and try again; otherwise ask your teacher.'
         : 'Your result was NOT saved. Check your connection and press Save Result again.');
@@ -1265,15 +1820,13 @@
     if (!nameEl.readOnly) nameEl.value = '';
     $('distance').value = '';
     $('angle').value = '';
+    pickedStation = ''; diffReason = '';
     $('error-msg').style.display = 'none';
     $('save-error').style.display = 'none';
     $('save-ok').classList.remove('show');
-    $('result-box').innerHTML = '<span class="placeholder-text">Enter measurements above and press Calculate</span>';
-    $('work-shown').style.display = 'none';
-    $('compare-section').style.display = 'none';
-    $('bar-fill').style.width = '0%';
-    $('save-btn').style.display = 'none';
-    lastResult = null; resetDiagram();
+    clearResult('Enter measurements above and press Calculate');
+    renderStations();
+    updateProtractor();
   }
 
   // ── Clear (teacher) ──
@@ -1329,44 +1882,26 @@
   $('modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
   $('modal-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') checkPassword(); });
 
-  function resetDiagram() {
-    const rocket = document.getElementById('svg-rocket');
-    const rocketY = parseFloat(rocket.getAttribute('y')) || 50;
-    rocket.style.transition = 'none';
-    rocket.style.transform = `translateY(${220 - rocketY}px) rotate(-45deg)`;
-    document.getElementById('svg-altitude').classList.remove('visible');
-    document.getElementById('svg-sight').classList.remove('visible');
-    ['svg-arc', 'svg-angle-label', 'svg-dist-value', 'svg-alt-value'].forEach(id => {
-      const el = document.getElementById(id);
-      el.style.transition = 'none'; el.style.opacity = '0';
-    });
-    document.getElementById('svg-dist-value').textContent = '';
-    document.getElementById('svg-alt-value').textContent = '';
-    document.querySelectorAll('.smoke').forEach(s => s.classList.remove('puff'));
-  }
+  function resetDiagram() { drawDiagram(null); }
 
-  function updateArc(svgRocketY, inputAngle) {
-    const R = 28, cx = 60, cy = 220;
-    const visualAngle = Math.atan2(cy - svgRocketY, 260 - cx);
-    const endX = cx + R * Math.cos(visualAngle);
-    const endY = cy - R * Math.sin(visualAngle);
-    document.getElementById('svg-arc').setAttribute('d', `M ${cx + R},${cy} A ${R},${R} 0 0,0 ${endX.toFixed(1)},${endY.toFixed(1)}`);
-    const midAngle = visualAngle / 2, labelR = R + 12;
-    const label = document.getElementById('svg-angle-label');
-    label.setAttribute('x', (cx + labelR * Math.cos(midAngle)).toFixed(1));
-    label.setAttribute('y', (cy - labelR * Math.sin(midAngle)).toFixed(1));
-    label.textContent = inputAngle + '°';
-  }
-
-  document.getElementById('distance').addEventListener('input', invalidateResult);
-  document.getElementById('angle').addEventListener('input', invalidateResult);
+  $('distance').addEventListener('input', function() { pickedStation = ''; renderStations(); invalidateResult(); });
+  $('angle').addEventListener('input', function() { updateProtractor(); invalidateResult(); });
+  $('eye-height').addEventListener('input', function() { rememberEye(); invalidateResult(); });
   $('student-class').addEventListener('change', function() {
     try { if (this.value) localStorage.setItem(CLASS_PICK_KEY, this.value); } catch (e) {}
   });
   // Enter runs the calculation only from the measurement boxes (not from buttons, tabs or the password box)
-  ['student-name', 'distance', 'angle'].forEach(function(id) {
+  ['student-name', 'distance', 'angle', 'eye-height'].forEach(function(id) {
     document.getElementById(id).addEventListener('keydown', function(e) { if (e.key === 'Enter') calculate(); });
   });
+  // first paint: remembered angle mode and eye height, protractor, example diagram
+  (function() {
+    let m = 'string';
+    try { if (localStorage.getItem(ANGLE_MODE_KEY) === 'elev') m = 'elev'; } catch (e) {}
+    restoreEye();
+    setAngleMode(m);
+    drawDiagram(null);
+  })();
 </script>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>

@@ -79,6 +79,12 @@
     .launch-btn:hover { box-shadow:0 6px 34px rgba(255,45,120,0.7); }
     .launch-btn:active { transform:scale(0.98); }
     .launch-btn:disabled { opacity:0.5; cursor:default; }
+    .build-btn { display:block; width:100%; max-width:420px; margin:12px auto 0; padding:12px; border-radius:10px; background:transparent; border:1px solid rgba(0,245,255,0.5); color:#00f5ff; font-family:'Orbitron',sans-serif; font-weight:700; font-size:0.8rem; letter-spacing:1.5px; cursor:pointer; }
+    .build-btn:hover { background:rgba(0,245,255,0.08); }
+    .build-msg { max-width:520px; margin:6px auto 0; text-align:center; font-size:0.8rem; color:#9080b0; line-height:1.5; }
+    .build-msg.ok { color:#40e080; }
+    .build-msg.err { color:#ff8080; }
+    body.light-mode .build-msg { color:#5a4a8a; }
 
     /* Launch sky (follow-camera world) */
     .sky { position:relative; height:440px; margin:26px 0 0; border-radius:16px; overflow:hidden; background:linear-gradient(180deg, #2a3a7a 0%, #3a2a74 32%, #46205c 60%, #2a0a30 85%, #1a0010 100%); border:1px solid rgba(255,45,120,0.2); }
@@ -265,6 +271,8 @@
   </div>
 
   <button class="launch-btn" id="launch-btn" onclick="launch()">🚀 LAUNCH</button>
+  <button class="build-btn" id="build-btn" onclick="saveBuild()">🛠️ I'm building this one</button>
+  <div class="build-msg" id="build-msg" role="status">Building this rocket for real? Save it here — after launch day the Altitude Calculator compares your real flight with this prediction.</div>
 
   <div class="sky" id="sky">
     <div class="space-layer" id="space-layer"></div>
@@ -712,6 +720,7 @@
     if (nm && user.displayName) { nm.value = user.displayName; nm.readOnly = true; nm.style.opacity='0.85'; nm.title='From your school account'; }
     subscribeRockets();
     subscribeClasses();
+    showSavedBuild(user.uid);
     try { if (typeof setupClassPicker === 'function') setupClassPicker('player-class','player-period'); } catch (e) { console.error(e); }
   });
 
@@ -723,6 +732,36 @@
     return g || typed || 'Anonymous';
   }
   function rEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // ── The rocket I'm really building (read by the Altitude Calculator: predicted vs. measured) ──
+  function buildSummary(b) {
+    const fins = Number(b.finCount) ? b.finCount + ' ' + b.finSize + ' fins' : 'no fins';
+    return b.bottle + ' oz · ' + b.waterPct + '% water · ' + b.psi + ' psi · ' + b.nose + ' nose · ' + fins;
+  }
+  function setBuildMsg(text, cls) { const m = document.getElementById('build-msg'); m.textContent = text; m.className = 'build-msg' + (cls ? ' ' + cls : ''); }
+  function showSavedBuild(uid) {
+    firebase.firestore().collection('rocket_builds').doc(uid).get().then(function(doc) {
+      if (!doc.exists) return;
+      const b = doc.data();
+      setBuildMsg('Your build on file: ' + buildSummary(b) + ' → predicted ' + Math.round(b.predictedFt) + ' ft (' + b.apogeeM + ' m). Press the button again to replace it.');
+    }).catch(function() {});
+  }
+  function saveBuild() {
+    const u = firebase.auth().currentUser;
+    if (!u) return;
+    const c = compute();
+    const rec = { bottle: state.bottle, waterPct: state.waterPct, psi: state.psi, nose: state.nose, finCount: state.finCount,
+                  finSize: state.finSize, ballast: state.ballast, stability: c.stab, apogeeM: c.apogee,
+                  predictedFt: Math.round(c.apogee * 3.28084 * 10) / 10, name: rName(), userEmail: u.email || '',
+                  savedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    setBuildMsg('Saving…');
+    firebase.firestore().collection('rocket_builds').doc(u.uid).set(rec).then(function() {
+      setBuildMsg('✓ Saved as your build: ' + buildSummary(rec) + ' → predicted ' + Math.round(rec.predictedFt) + ' ft (' + c.apogee + ' m). The Altitude Calculator will compare your real flight with this.', 'ok');
+    }, function(err) {
+      console.error('Build save failed:', err);
+      setBuildMsg(err && err.code === 'permission-denied' ? 'Could not save yet — ask your teacher to update the database rules.' : 'Could not save — check your connection and try again.', 'err');
+    });
+  }
 
   function submitFlight() {
     if (state.lastApogee == null || typeof firebase === 'undefined') return;

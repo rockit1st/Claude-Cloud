@@ -346,7 +346,7 @@
             const alt = parseFloat(r.altitude);
             return `<tr>
               <td>${i+1}</td>
-              <td>${esc(r.name || 'Anonymous')}</td>
+              <td>${esc(r.name || 'Anonymous')}${r.review === 'pending' ? ' <span title="Waiting for your check on the Altitude Calculator page">⏳</span>' : ''}</td>
               <td>${esc(r.distance)} ${esc(r.unit)}</td>
               <td>${esc(r.angle)}°</td>
               <td class="altitude-val">${isFinite(alt) ? alt.toFixed(1) : '—'} ${esc(r.unit)}</td>

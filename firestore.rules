@@ -16,6 +16,9 @@
 //    student may read. "settings/altitude-rankings" (the lock) is teacher-only.
 //  - Only verified Google accounts @hhh.k12.ny.us can read or write anything.
 //  - A student can only join a class with its join code (no back-door joins).
+//  - A student's altitude above the teacher's limit (Launch-Day Setup, 300 ft
+//    by default) is saved as "waiting for teacher check" and stays off the boards.
+//  - rocket_builds: each student's "I'm building this one" design from Rocket Lab.
 //  - Everything else behaves as before.
 
 rules_version = '2';
@@ -43,6 +46,16 @@ service cloud.firestore {
              && exists(/databases/$(database)/documents/classes/$(d.classId))
              && d.code == get(/databases/$(database)/documents/classes/$(d.classId)).data.code;
     }
+    // Highest believable altitude in feet, from the teacher's launch-day setup
+    // (settings/altitude-setup); 300 ft until the teacher sets one.
+    function maxFt() {
+      return exists(/databases/$(database)/documents/settings/altitude-setup)
+             ? get(/databases/$(database)/documents/settings/altitude-setup).data.get('maxFt', 300)
+             : 300;
+    }
+    function altitudeFt(d) {
+      return d.unit == 'm' ? d.altitude * 3.28084 : d.altitude;
+    }
     // True when the signed-in student has joined the class (classes.html
     // stores each enrollment at enrollments/{classId}_{uid}).
     function inClass(classId) {
@@ -62,6 +75,10 @@ service cloud.firestore {
                         && request.resource.data.altitude is number
                         && request.resource.data.altitude > 0
                         && request.resource.data.unit in ['ft', 'm']
+                        // above the limit it must wait for the teacher's check
+                        && (request.resource.data.get('review', '') == 'pending'
+                            || (!('review' in request.resource.data)
+                                && altitudeFt(request.resource.data) <= maxFt()))
                         && (request.resource.data.get('classId', '') == ''
                             || inClass(request.resource.data.classId)));
       allow update, delete: if isTeacher();
@@ -85,6 +102,11 @@ service cloud.firestore {
     }
     match /rocket_results/{id} {
       allow read, write: if signedIn();
+    }
+    // Rocket Lab: the design a student says they are really building
+    match /rocket_builds/{uid} {
+      allow read: if isTeacher() || (signedIn() && request.auth.uid == uid);
+      allow write: if signedIn() && request.auth.uid == uid;
     }
 
     // ── Classes and rosters (unchanged) ─────────────────────────────────────
