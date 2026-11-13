@@ -149,7 +149,7 @@
         svg('circle', { cx: cx, cy: floorY - r, r: r, fill: '#222', stroke: '#888', 'stroke-width': Math.max(1, s * 0.6) }, g);
         svg('circle', { cx: cx, cy: floorY - r, r: Math.max(1, r * 0.3), fill: '#ccc' }, g);
       });
-      const mastX = x + o.length * s * 0.45, mastTop = deckY - o.mastH * s;
+      const mastX = x + o.length * s * (o.mastAt != null ? o.mastAt : 0.45), mastTop = deckY - o.mastH * s;   // mastAt: 0 = back … 1 = front
       svg('line', { x1: mastX, y1: deckY, x2: mastX, y2: mastTop, stroke: '#c8a060', 'stroke-width': Math.max(1.5, s * 0.8) }, g);
       // The sail faces the fan (to the left). Drawn turned a little toward us so you can see its face;
       // a cupped sail bulges away from the wind.
@@ -591,9 +591,13 @@
       renderHub();
       if (state.isTeacher) renderTeacher();
       // deep link: sail-car-lab.html#studio opens that module if it is unlocked
-      const want = (location.hash || '').slice(1);
-      const i = modules.findIndex(function (m) { return m.id === want; });
-      if (i >= 0 && unlocked(i)) openModule(i);
+      function follow() {
+        const want = (location.hash || '').slice(1);
+        const i = modules.findIndex(function (m) { return m.id === want; });
+        if (i >= 0 && unlocked(i) && state.current !== i) openModule(i);
+      }
+      follow();
+      window.addEventListener('hashchange', follow);
     });
   }
 
