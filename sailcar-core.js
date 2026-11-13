@@ -78,10 +78,12 @@
   const STICKY = 1.3;   // it takes a bit more push to START rolling than to KEEP rolling
   // The hallway: the ONE place its size lives (simulate() reads it every run). A car that rolls
   // `length` metres has reached the far end; it hits a wall 10 cm before it drifts `width` / 2 sideways.
-  const HALL = { length: 30, width: 2.4 };
+  // The real hallway (the teacher: about 60–80 ft long from the fans, 10–12 ft wide) → 70 ft × 11 ft.
+  // Change it here if the hallway is measured; every simulator and the Studio read it from here.
+  const HALL = { length: 21.3, width: 3.35 };
   // Names this calibration (FAN, STICKY, the crawl rule, DEFAULT_CAR, HALL). The Design Studio stores it
   // with each prediction and ignores predictions made with a different one — change it whenever any of those change.
-  const MODEL_VERSION = 'two-fans-1';
+  const MODEL_VERSION = 'two-fans-2';   // 2 = the 70 ft × 11 ft hallway
 
   // Simulate one run down the hallway. Returns distance travelled and why it stopped.
   function simulate(carIn, optsIn) {

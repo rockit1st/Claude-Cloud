@@ -393,6 +393,7 @@
     const btn = h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: 'Loading your classes…', disabled: true });
     const retry = h('button', { type: 'button', class: 'sl-btn', text: '↻ Retry', style: 'display:none;margin-left:8px' });
     const msg = h('div', { class: 'sl-ctrl', 'aria-live': 'polite' });
+    function say(text, warn) { msg.textContent = text; msg.style.color = warn ? '#ffd070' : ''; }
     el.appendChild(h('div', null, [btn, retry])); el.appendChild(msg);
     const mine = h('div');
     el.appendChild(mine);
@@ -401,7 +402,7 @@
     let classesOk = false, myClasses = [];
     function loadClasses() {
       classesOk = false; btn.disabled = true; btn.textContent = 'Loading your classes…'; retry.style.display = 'none';
-      if (/Couldn’t load your classes/.test(msg.textContent)) msg.textContent = '';
+      if (/Couldn’t load your classes/.test(msg.textContent)) say('');
       db().collection('enrollments').where('uid', '==', me.uid).get().then(function (snap) {
         if (life.left) return;
         // offline, Firestore answers from its (empty) cache: that is not "no classes"
@@ -419,7 +420,7 @@
         if (life.left) return;
         classesOk = false; btn.disabled = true; btn.textContent = LOG_TEXT;
         retry.style.display = '';
-        msg.textContent = 'Couldn’t load your classes — check Wi-Fi and tap Retry.';
+        say('Couldn’t load your classes — check Wi-Fi and tap Retry.', true);
       });
     }
     retry.addEventListener('click', loadClasses);
@@ -438,7 +439,9 @@
       const tb = h('tbody');
       runs.forEach(function (r, i) {
         const pct = r.predictedM > 0 ? Math.round(r.distanceM / r.predictedM * 100) + '%' : '—';
-        tb.appendChild(h('tr', null, [h('td', { text: String(i + 1) }), h('td', { text: api.fmt(r.distanceM, 2) + ' m (' + api.fmt(r.distanceM * FT_PER_M, 1) + ' ft)' }),
+        // in the unit it was measured in first: "13.5 ft (4.11 m)"
+        const real = typeof r.distance === 'number' && (r.unit === 'ft' || r.unit === 'm') ? bothUnits(r.distance, r.unit) : bothUnits(r.distanceM, 'm');
+        tb.appendChild(h('tr', null, [h('td', { text: String(i + 1) }), h('td', { text: real }),
           h('td', { text: r.predictedM > 0 ? mWhole(r.predictedM) + ' m' : '—' }), h('td', { text: pct }), h('td', { text: String(r.note || ''), style: 'text-align:left;white-space:normal' })]));
       });
       t.appendChild(tb);
@@ -463,31 +466,31 @@
         queued = true;
         btn.disabled = !classesOk; btn.textContent = LOG_TEXT;
         distIn.value = ''; noteIn.value = '';
-        msg.textContent = '📶 ' + bothUnits(rec.distance, rec.unit) + ' saved on this device — it will upload when Wi-Fi is back. Keep this page open until you see ✓.';
+        say('📶 ' + bothUnits(rec.distance, rec.unit) + ' saved on this device — it will upload when Wi-Fi is back. Keep this page open until you see ✓.', true);
       }, SAVE_WAIT_MS);
       db().collection('sailcar_runs').add(rec).then(function () {
         settled = true;
         if (life.left) return;
         if (!queued) { btn.disabled = !classesOk; btn.textContent = LOG_TEXT; distIn.value = ''; noteIn.value = ''; }
-        msg.textContent = loggedText(rec) + (queued ? ' (Uploaded now that Wi-Fi is back.)' : '');
+        say(loggedText(rec) + (queued ? ' (Uploaded now that Wi-Fi is back.)' : ''));
       }, function (err) {
         settled = true;
         if (life.left) return;
         btn.disabled = !classesOk; btn.textContent = LOG_TEXT;
         const why = err && err.code === 'permission-denied' ? 'run logging isn’t switched on in the class database yet — ask your teacher.' : 'check your connection and try again.';
-        msg.textContent = queued ? 'Your ' + bothUnits(rec.distance, rec.unit) + ' run was NOT saved: ' + why : 'Not saved: ' + why;
+        say(queued ? 'Your ' + bothUnits(rec.distance, rec.unit) + ' run was NOT saved: ' + why : 'Not saved: ' + why, true);
       });
     }
     btn.addEventListener('click', function () {
       if (!classesOk) return;
-      msg.textContent = '';
+      say('');
       const v = parseFloat(distIn.value), u = unit;
       const m = u === 'ft' ? v / FT_PER_M : v;
-      if (!(v >= 0) || !(m <= 100)) { msg.textContent = 'Type the distance your car went (0 to ' + (u === 'ft' ? '328 ft' : '100 m') + ').'; return; }
+      if (!(v >= 0) || !(m <= 100)) { say('Type the distance your car went (0 to ' + (u === 'ft' ? '328 ft' : '100 m') + ').', true); return; }
       let cls = { id: '', name: '' };
       if (myClasses.length === 1) cls = myClasses[0];
       else if (myClasses.length > 1) {
-        if (!classSel.value) { msg.textContent = 'Choose your class first.'; return; }
+        if (!classSel.value) { say('Choose your class first.', true); return; }
         cls = myClasses.find(function (c) { return c.id === classSel.value; }) || cls;
       }
       // a typo (an extra digit, or metres typed as feet) gets a second look before it goes on the board
@@ -496,7 +499,7 @@
                 : pred > 0 && m > 2.5 * pred ? 'more than 2.5 times your prediction (' + aboutText(pred) + ')' : '';
       if (why && confirmKey !== key) {
         confirmKey = key;
-        msg.textContent = 'That’s ' + (u === 'ft' ? trimNum(v) + ' ft (' + Math.round(m) + ' m)' : trimNum(v) + ' m (' + ftWhole(v) + ' ft)') + ' — ' + why + '. Tap Log again if that’s right.';
+        say('That’s ' + (u === 'ft' ? trimNum(v) + ' ft (' + Math.round(m) + ' m)' : trimNum(v) + ' m (' + ftWhole(v) + ' ft)') + ' — ' + why + '. Tap Log again if that’s right.', true);
         return;
       }
       confirmKey = null;
@@ -587,12 +590,17 @@
     }
     db().collection('enrollments').where('uid', '==', me.uid).get().then(function (s) {
       if (life.left) return;
+      if (s.metadata && s.metadata.fromCache) throw Object.assign(new Error('offline'), { code: 'unavailable' });   // offline: not "no classes"
       classes = s.docs.map(function (d) { return d.data(); }).filter(function (x) { return x.classId; })
         .map(function (x) { return { id: String(x.classId), name: String(x.className || 'Class') }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
       active = classes.length ? classes[0].id : null;
       classes.forEach(function (c) { watchClass(c.id); });
       draw();
-    }).catch(function () { classes = []; draw(); });
+    }).catch(function () {
+      if (life.left) return;
+      box.textContent = '';
+      box.appendChild(h('p', { class: 'sl-muted', text: 'Couldn’t load your classes — check Wi-Fi, then tap ← Back and Next → to try again.' }));
+    });
   }
 
   SailLab.register({
