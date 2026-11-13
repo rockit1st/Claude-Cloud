@@ -76,11 +76,17 @@
   }
   function rollingFriction(mass, crr) { return crr * mass * G; }
   const STICKY = 1.3;   // it takes a bit more push to START rolling than to KEEP rolling
+  // The hallway: the ONE place its size lives (simulate() reads it every run). A car that rolls
+  // `length` metres has reached the far end; it hits a wall 10 cm before it drifts `width` / 2 sideways.
+  const HALL = { length: 30, width: 2.4 };
+  // Names this calibration (FAN, STICKY, the crawl rule, DEFAULT_CAR, HALL). The Design Studio stores it
+  // with each prediction and ignores predictions made with a different one — change it whenever any of those change.
+  const MODEL_VERSION = 'two-fans-1';
 
   // Simulate one run down the hallway. Returns distance travelled and why it stopped.
   function simulate(carIn, optsIn) {
     const car = Object.assign({}, DEFAULT_CAR, carIn || {});
-    const o = Object.assign({ fan: FAN, startX: 0.3, hallLength: 30, hallWidth: 2.4, dt: 0.004, maxTime: 240, recordEvery: 0.04 }, optsIn || {});
+    const o = Object.assign({ fan: FAN, startX: 0.3, hallLength: HALL.length, hallWidth: HALL.width, dt: 0.004, maxTime: 240, recordEvery: 0.04 }, optsIn || {});
     let x = o.startX, v = 0, t = 0, moving = false, top = 0, reason = 'coasted to a stop', recT = 0;
     let path = 0, lateral = 0;                       // distance rolled along its own path, and sideways drift
     const trace = [];
@@ -110,6 +116,7 @@
       if (v > top) top = v;
       if (t >= recT) { rec(fs, fb, moving ? fr : 0); recT += o.recordEvery; }
       if (lateral > o.hallWidth / 2 - 0.1) { reason = 'hit the wall'; break; }
+      // (other modules compare against this exact reason; the hall's length is in opts.hallLength)
       if (x - o.startX >= o.hallLength) { reason = 'reached the end of the hall'; break; }
     }
     rec(0, 0, 0);
@@ -118,6 +125,7 @@
   }
 
   const physics = { AIR: AIR, G: G, FAN: FAN, SLED_FRICTION: SLED_FRICTION, DEFAULT_CAR: DEFAULT_CAR, STICKY: STICKY,
+                    HALL: HALL, MODEL_VERSION: MODEL_VERSION,
                     windAt: windAt, airForce: airForce, rollingFriction: rollingFriction, simulate: simulate };
 
   // ── DRAWING ───────────────────────────────────────────────────────────────
@@ -224,7 +232,9 @@
       const readout = h('div', { class: 'sl-readout', 'aria-live': 'polite' });
       const runBtn = h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '▶ Run' });
       const resetBtn = h('button', { type: 'button', class: 'sl-btn', text: '↺ Reset' });
-      box.appendChild(h('div', { class: 'sl-track-bar' }, [runBtn, resetBtn, readout]));
+      // shown while a run plays sped up, so nobody expects a real car to be this quick
+      const speedTag = h('span', { class: 'sl-speed', hidden: true });
+      box.appendChild(h('div', { class: 'sl-track-bar' }, [runBtn, resetBtn, speedTag, readout]));
       let raf = null, last = null, scaleM = 8;
       function pxOf(m) { return X0 + 18 + m / scaleM * (XEND - X0 - 40); }
       function scene(distM, carState) {
@@ -266,9 +276,12 @@
         }
       }
       function show(text) { readout.textContent = text; }
-      function reset() {
+      function stop() {
         if (raf) cancelAnimationFrame(raf);
-        raf = null; runBtn.disabled = false;
+        raf = null; runBtn.disabled = false; speedTag.hidden = true;
+      }
+      function reset() {
+        stop();
         scaleM = opts.scaleM || 8;
         scene(null, null);
         show('Press ▶ Run to send your car down the hallway.');
@@ -280,8 +293,13 @@
         scaleM = opts.scaleM || Math.max(6, Math.ceil(res.distance * 1.15));
         runBtn.disabled = true;
         const speedUp = opts.playSpeed || Math.max(2, res.time / 9), t0 = performance.now(), tr = res.trace;
+        const times = Math.round(speedUp);
+        speedTag.textContent = '▶▶ ×' + times + ' speed';
+        speedTag.title = 'Playing ' + times + ' times faster than real life. The real run takes about ' + fmt(res.time, 0) + ' s.';
+        speedTag.hidden = times <= 1;
         let i = 0;
         function frame(now) {
+          if (!box.isConnected) { raf = null; return; }   // the step was closed mid-run
           const tt = (now - t0) / 1000 * speedUp;
           while (i < tr.length - 1 && tr[i + 1].t <= tt) i++;
           const p = tr[i], done = i >= tr.length - 1;
@@ -289,9 +307,9 @@
           scene(done ? res.distance : null, { x: p.x, tilt: tipped ? 35 : 0, forces: done ? null : { thrust: p.thrust, body: p.body, friction: p.friction } });
           show((done ? '🏁 ' : '') + fmt(p.x, 2) + ' m · speed ' + fmt(p.v, 2) + ' m/s · wind ' + fmt(p.wind, 2) + ' m/s');
           if (!done) { raf = requestAnimationFrame(frame); return; }
-          raf = null; runBtn.disabled = false;
+          stop();
           const why = { 'never moved': '😴 It never moved — the wind’s push was smaller than friction.', 'tipped over': '🤸 It tipped over! The push high on the sail flipped it forward.',
-                        'hit the wall': '🧱 It veered into the wall.', 'reached the end of the hall': '🏆 It made it to the end of the hall!', 'coasted to a stop': '🛑 It coasted to a stop.' }[res.reason] || '';
+                        'hit the wall': '🧱 It veered into the wall.', 'reached the end of the hall': '🏆 It made it to the end of the ' + Number(res.opts.hallLength.toFixed(1)) + ' m hall!', 'coasted to a stop': '🛑 It coasted to a stop.' }[res.reason] || '';
           show('📏 ' + fmt(res.distance, 2) + ' m in ' + fmt(res.time, 1) + ' s · top speed ' + fmt(res.topSpeed, 2) + ' m/s — ' + why);
           if (opts.onResult) opts.onResult(res);
         }
@@ -300,54 +318,220 @@
       runBtn.addEventListener('click', run);
       resetBtn.addEventListener('click', reset);
       reset();
-      return { run: run, reset: reset, last: function () { return last; }, stop: function () { if (raf) cancelAnimationFrame(raf); raf = null; } };
+      return { run: run, reset: reset, last: function () { return last; }, stop: stop };
     }
   };
 
   // ── PROGRESS ──────────────────────────────────────────────────────────────
+  // sailcar_progress/{uid} = { uid, name, email, updatedAt,
+  //                            modules: { <moduleId>: { attempts, best, total, passed, passedAt } },
+  //                            design }   ← written only by the Design Studio; never touched here
+  // The database copy is the truth. Every save is a TRANSACTION that reads the database copy and adds
+  // this device's news to it (a pass never goes backwards, best = highest, attempts add up), so a
+  // second Chromebook or an old tab can never erase a pass. This browser keeps a backup copy
+  // (localStorage): quiz attempts that haven't reached the database yet wait there as "pending" and
+  // upload on the next try — after each quiz, on a timer, when the network comes back, and on the
+  // next visit.
+  const PROGRESS_FIELDS = ['uid', 'name', 'email', 'updatedAt', 'modules'];   // the only fields this file writes
+  const RETRY_S = [5, 15, 60, 120, 300];                                      // seconds between tries after a failure
+
+  function count(v) { v = Math.floor(Number(v)); return isFinite(v) && v > 0 ? v : 0; }
+  function earliest(a, b) { return a && b ? Math.min(a, b) : (a || b || null); }
+  // one module's record, cleaned to exactly the five fields the database expects (null if it isn't one)
+  function cleanRec(r) {
+    if (!r || typeof r !== 'object') return null;
+    const passed = r.passed === true, at = Number(r.passedAt);
+    return { attempts: count(r.attempts), best: count(r.best), total: count(r.total) || QUIZ_SIZE, passed: passed,
+             passedAt: passed && isFinite(at) && at > 0 ? at : null };
+  }
+  // two copies of the SAME history (e.g. the database's and this device's): keep the most of each
+  function mergeRec(a, b) {
+    a = cleanRec(a); b = cleanRec(b);
+    if (!a || !b) return a || b;
+    const passed = a.passed || b.passed;
+    return { attempts: Math.max(a.attempts, b.attempts), best: Math.max(a.best, b.best), total: Math.max(a.total, b.total),
+             passed: passed, passedAt: passed ? earliest(a.passedAt, b.passedAt) : null };
+  }
+  // NEW attempts (d) on top of a record (r): attempts add up
+  function addAttempts(r, d) {
+    d = cleanRec(d);
+    r = cleanRec(r) || { attempts: 0, best: 0, total: d.total, passed: false, passedAt: null };
+    const passed = r.passed || d.passed;
+    return { attempts: r.attempts + d.attempts, best: Math.max(r.best, d.best), total: d.total || r.total,
+             passed: passed, passedAt: passed ? earliest(r.passedAt, d.passedAt) : null };
+  }
+  function mergeMods(a, b) {
+    const out = {};
+    [a, b].forEach(function (src) {
+      if (src && typeof src === 'object') Object.keys(src).forEach(function (k) { const r = mergeRec(out[k], src[k]); if (r) out[k] = r; });
+    });
+    return out;
+  }
+  function isGraded(id) { return modules.some(function (m) { return m.id === id && !m.noQuiz; }); }
+  // the database copy (every module kept) + attempts not uploaded yet + this device's copy
+  function combine(serverMods, localMods, pending) {
+    const out = mergeMods(serverMods, null);
+    Object.keys(pending || {}).forEach(function (k) { if (isGraded(k) && cleanRec(pending[k])) out[k] = addAttempts(out[k], pending[k]); });
+    Object.keys(localMods || {}).forEach(function (k) { if (isGraded(k)) { const r = mergeRec(out[k], localMods[k]); if (r) out[k] = r; } });
+    return out;
+  }
+  function modsSig(mods) {
+    return JSON.stringify(Object.keys(mods || {}).sort().map(function (k) { return [k, cleanRec(mods[k])]; }));
+  }
+
+  // This device's backup: { modules: what this device knows, pending: attempts not in the database yet }.
+  // Shared by every tab of this browser; kept in memory instead if the browser blocks storage.
+  let memLocal = null, storageOk = true;
+  function readLocal() {
+    let raw = null, l = memLocal;
+    if (storageOk) {
+      try { raw = localStorage.getItem(progress.key()); } catch (e) { storageOk = false; }
+      if (storageOk) { try { l = JSON.parse(raw || 'null'); } catch (e) { l = null; } }
+    }
+    l = l && typeof l === 'object' ? l : {};
+    return { modules: l.modules && typeof l.modules === 'object' ? l.modules : {},
+             pending: l.pending && typeof l.pending === 'object' ? l.pending : {} };
+  }
+  function writeLocal(change) {
+    const l = readLocal();
+    change(l);
+    memLocal = l;
+    if (storageOk) { try { localStorage.setItem(progress.key(), JSON.stringify({ v: 2, modules: l.modules, pending: l.pending })); } catch (e) { storageOk = false; } }
+    return l;
+  }
+
+  // One upload at a time across this browser's tabs (where the browser supports it), so two tabs
+  // never add the same pending attempts twice.
+  function withLock(name, fn) {
+    const L = typeof navigator !== 'undefined' && navigator.locks;
+    if (!L || typeof L.request !== 'function' || typeof AbortController === 'undefined') return fn();
+    let entered = false;
+    const ac = new AbortController(), t = setTimeout(function () { ac.abort(); }, 20000);
+    return L.request(name, { signal: ac.signal }, function () { entered = true; clearTimeout(t); return fn(); })
+      .catch(function (e) {
+        if (entered || (e && e.name === 'AbortError')) throw e;
+        clearTimeout(t);
+        return fn();                          // this page may not use locks: go without
+      });
+  }
+  function withTimeout(p, ms) {
+    return new Promise(function (resolve, reject) {
+      const t = setTimeout(function () { reject({ code: 'timeout' }); }, ms);
+      p.then(function (v) { clearTimeout(t); resolve(v); }, function (e) { clearTimeout(t); reject(e); });
+    });
+  }
+
+  // Read the database copy, add this device's news, write it back — all in one transaction.
+  function upload(u) {
+    const db = firebase.firestore(), ref = db.collection('sailcar_progress').doc(u.uid);
+    let server = null, out = null, sent = {};
+    const tx = db.runTransaction(function (t) {
+      return t.get(ref).then(function (snap) {
+        const l = readLocal();             // read here: another tab may have added attempts meanwhile
+        server = snap.exists ? (snap.data() || {}) : null;
+        sent = l.pending;
+        out = combine(server && server.modules, l.modules, l.pending);
+        if (server ? modsSig(out) === modsSig(server.modules) : !Object.keys(out).length) return;   // nothing new
+        t.set(ref, { uid: u.uid, name: String(u.displayName || u.email || '').slice(0, 100), email: String(u.email || '').slice(0, 100),
+                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(), modules: out },
+              { mergeFields: PROGRESS_FIELDS });   // 'design' (the Studio's) is left exactly as it is
+      });
+    });
+    // runs whenever the write lands, even if we stopped waiting for it
+    return tx.then(function () {
+      const l = writeLocal(function (l) {
+        Object.keys(sent).forEach(function (k) {          // those attempts are in the database now
+          const p = l.pending[k], left = p ? count(p.attempts) - count(sent[k] && sent[k].attempts) : 0;
+          if (left > 0) p.attempts = left; else delete l.pending[k];
+        });
+        l.modules = mergeMods(l.modules, out);
+      });
+      return { server: server || {}, modules: out, local: l };
+    });
+  }
+
+  let running = null, queued = null, retryTimer = null, failures = 0, lastSig = '', onlineHooked = false;
+  function changed() {
+    const s = progress.mode + '|' + modsSig(progress.data.modules);
+    if (s === lastSig) return;
+    lastSig = s;
+    if (typeof progress.onChange === 'function') { try { progress.onChange(); } catch (e) { console.error(e); } }
+  }
+  function syncOnce() {
+    const u = progress.user;
+    clearTimeout(retryTimer); retryTimer = null;
+    if (!u || typeof firebase === 'undefined' || !firebase.firestore) return Promise.resolve(false);
+    return Promise.resolve().then(function () {       // (a throw anywhere below becomes a failed try, never an exception)
+      return withLock('sailcar-progress-' + u.uid, function () { return withTimeout(upload(u), 30000); });
+    }).then(function (res) {
+      if (progress.user !== u) return false;
+      failures = 0;
+      progress.mode = 'cloud';
+      progress.data = Object.assign({}, res.server, {
+        modules: mergeMods(combine(res.modules, res.local.modules, res.local.pending), progress.data.modules) });
+      changed();
+      return true;
+    }, function (err) {
+      if (progress.user !== u) return false;
+      failures++;
+      progress.mode = 'local';
+      console.warn('Sail Car Lab: progress kept on this device for now (' + ((err && (err.code || err.name)) || err) + '); trying again soon.');
+      retryTimer = setTimeout(sync, RETRY_S[Math.min(failures, RETRY_S.length) - 1] * 1000);
+      changed();
+      return false;
+    });
+  }
+  // Upload now (or right after the upload already running). Resolves true once the database has
+  // everything, false if it couldn't be reached (it tries again by itself). Never rejects.
+  function sync() {
+    if (running) {
+      if (!queued) queued = running.then(function () { queued = null; return sync(); });
+      return queued;
+    }
+    running = syncOnce().then(function (ok) { running = null; return ok; }, function () { running = null; return false; });
+    return running;
+  }
+
   const progress = {
     user: null, mode: 'loading', data: { modules: {} },
+    lastSync: Promise.resolve(false),
+    onChange: null,                        // called when the passes or the cloud/device mode change
     key: function () { return 'sailcar-progress-' + (progress.user ? progress.user.uid : 'anon'); },
+    // Resolves once the database copy is in (or after 10 s on a very slow network: then this
+    // device's copy is shown and the database copy arrives through onChange).
     load: function (user) {
       progress.user = user;
-      let local = null;
-      try { local = JSON.parse(localStorage.getItem(progress.key()) || 'null'); } catch (e) {}
-      return firebase.firestore().collection('sailcar_progress').doc(user.uid).get().then(function (doc) {
-        progress.mode = 'cloud';
-        progress.data = doc.exists ? doc.data() : { modules: {} };
-        if (!progress.data.modules) progress.data.modules = {};
-        // anything passed on this device while the database was unavailable is kept
-        if (local && local.modules) Object.keys(local.modules).forEach(function (k) {
-          const a = local.modules[k], b = progress.data.modules[k];
-          if (a && a.passed && !(b && b.passed)) progress.data.modules[k] = a;
-        });
-      }).catch(function (err) {
-        console.warn('Sail Car Lab progress is saved on this device only:', err && err.code);
-        progress.mode = 'local';
-        progress.data = local && local.modules ? local : { modules: {} };
+      memLocal = null; storageOk = true;
+      progress.mode = 'loading';
+      progress.data = { modules: combine(null, readLocal().modules, null) };
+      if (!onlineHooked && typeof window.addEventListener === 'function') {
+        onlineHooked = true;
+        window.addEventListener('online', function () { if (progress.user && progress.mode !== 'cloud') sync(); });
+      }
+      return new Promise(function (resolve) {
+        const slow = setTimeout(function () { if (progress.mode === 'loading') progress.mode = 'local'; resolve(); }, 10000);
+        progress.lastSync = sync();
+        progress.lastSync.then(function () { clearTimeout(slow); resolve(); });
       });
     },
     passed: function (id) { const m = progress.data.modules[id]; return !!(m && m.passed); },
     get: function (id) { return progress.data.modules[id] || null; },
+    // Saves on this device at once and resolves with passed-or-not straight away; the upload runs
+    // in the background (progress.lastSync tells how it went).
     record: function (id, score, total) {
-      const prev = progress.data.modules[id] || { attempts: 0, best: 0, passed: false };
       const passedNow = score >= Math.ceil(total * PASS_COUNT / QUIZ_SIZE);
-      const next = { attempts: (prev.attempts || 0) + 1, best: Math.max(prev.best || 0, score), total: total, passed: prev.passed || passedNow };
-      next.passedAt = prev.passedAt || (passedNow ? Date.now() : null);
-      progress.data.modules[id] = next;
-      return progress.save().then(function () { return passedNow; });
-    },
-    save: function () {
-      const u = progress.user;
-      try { localStorage.setItem(progress.key(), JSON.stringify({ modules: progress.data.modules })); } catch (e) {}
-      if (!u || progress.mode !== 'cloud') return Promise.resolve();
-      const doc = { uid: u.uid, name: u.displayName || u.email, email: u.email || '', modules: progress.data.modules,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-      return firebase.firestore().collection('sailcar_progress').doc(u.uid).set(doc).catch(function (err) {
-        console.warn('Progress saved on this device only:', err && err.code);
-        progress.mode = 'local';
+      const d = { attempts: 1, best: count(score), total: count(total) || QUIZ_SIZE, passed: passedNow, passedAt: passedNow ? Date.now() : null };
+      progress.data.modules[id] = addAttempts(progress.data.modules[id], d);
+      writeLocal(function (l) {
+        l.pending[id] = addAttempts(l.pending[id], d);
+        l.modules[id] = mergeRec(l.modules[id], progress.data.modules[id]);
       });
-    }
+      progress.lastSync = sync();
+      return Promise.resolve(passedNow);
+    },
+    save: function () { progress.lastSync = sync(); return progress.lastSync; },
+    sync: sync,
+    pendingCount: function () { const p = readLocal().pending; return Object.keys(p).reduce(function (n, k) { return n + count(p[k] && p[k].attempts); }, 0); }
   };
 
   // ── LAB SHELL (hub, module player, quiz) ──────────────────────────────────
@@ -374,7 +558,7 @@
       h('div', { class: 'sl-progress-txt', text: state.isTeacher ? 'Teacher view: every module is open so you can preview it.' : doneN + ' of ' + graded.length + ' modules passed' + (doneN === graded.length ? ' — the Design Studio is open! 🏁' : '') }),
       h('div', { class: 'sl-progress-bar' }, [h('div', { class: 'sl-progress-fill', style: 'width:' + (graded.length ? doneN / graded.length * 100 : 0) + '%' })])
     ]));
-    if (progress.mode === 'local' && !state.isTeacher) ui.note(hub, 'warn', '⚠️ Your progress is being saved on <strong>this device only</strong> (the class database isn’t set up for the Sail Car Lab yet). Use the same Chromebook until your teacher fixes it.');
+    if (progress.mode === 'local' && !state.isTeacher) ui.note(hub, 'warn', '⚠️ Couldn’t reach the class database, so your progress is kept on <strong>this device only</strong> for now. It will upload to your class account by itself as soon as the database can be reached — until then, keep using this device.');
     const grid = h('div', { class: 'sl-grid' });
     modules.forEach(function (m, i) {
       const open = unlocked(i), rec = progress.get(m.id), passed = progress.passed(m.id);
@@ -506,6 +690,7 @@
         li.querySelector('.sl-q-why').textContent = (right ? '✓ ' : '✗ Correct answer: ' + item.q.options[item.q.answer] + '. ') + (item.q.why || '');
       });
       submit.disabled = true;
+      // saved on this device at once, so the result shows straight away; the upload runs in the background
       progress.record(m.id, score, qs.length).then(function (passedNow) {
         result.textContent = '';
         const nextIdx = state.current + 1, hasNext = nextIdx < modules.length;
@@ -520,12 +705,19 @@
           result.appendChild(h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '↻ Try again', onclick: function () { renderStep(); } }));
           result.appendChild(h('button', { type: 'button', class: 'sl-btn', text: 'Review the lesson', onclick: function () { state.step = 0; renderStep(); } }));
         }
+        const saved = h('div', { class: 'sl-save-note', text: '☁️ Saving to your class account…' });
+        result.appendChild(saved);
+        progress.lastSync.then(function (ok) {
+          saved.textContent = ok ? '☁️ Saved to your class account.'
+                                 : '💾 Saved on this device. It will upload to your class account by itself when the class database can be reached.';
+        });
         result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
     });
   }
 
   function confetti() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const colors = ['#b44fff', '#00f5ff', '#ff2d78', '#f0c040', '#40e080'];
     for (let i = 0; i < 40; i++) {
       const d = document.createElement('div');
@@ -544,25 +736,37 @@
     box.textContent = '';
     box.appendChild(h('h2', { class: 'sl-teacher-title', text: '👩‍🏫 Class progress' }));
     const sel = h('select', { id: 'sl-class', 'aria-label': 'Class' }, [h('option', { value: '', text: 'Loading classes…' })]);
+    const status = h('div');                       // a problem loading everyone's progress stays visible here
     const table = h('div', { class: 'sl-table-wrap' });
-    box.appendChild(sel); box.appendChild(table);
+    box.appendChild(sel); box.appendChild(status); box.appendChild(table);
     const db = firebase.firestore();
-    let all = {};
+    const all = {};
+    let classes = [], ticket = 0;
     db.collection('sailcar_progress').get().then(function (snap) {
       snap.docs.forEach(function (d) { all[d.id] = d.data(); });
-    }).catch(function (err) { table.appendChild(h('p', { class: 'sl-muted', text: 'Progress can’t be loaded yet (' + (err && err.code) + '). Publish the new Firestore rules first.' })); })
+    }).catch(function (err) { status.appendChild(h('p', { class: 'sl-muted', text: 'Progress can’t be loaded yet (' + (err && err.code) + '). Publish the new Firestore rules first.' })); })
       .then(function () { return db.collection('classes').where('teacherEmail', '==', TEACHER_EMAIL).get(); })
       .then(function (snap) {
         sel.textContent = '';
-        const classes = snap.docs.map(function (d) { return { id: d.id, name: d.data().name || 'Class' }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+        classes = snap.docs.map(function (d) { return { id: d.id, name: String(d.data().name || 'Class') }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
         if (!classes.length) { sel.appendChild(h('option', { value: '', text: 'No classes yet — create one on the Classes page' })); return; }
         classes.forEach(function (c) { sel.appendChild(h('option', { value: c.id, text: c.name })); });
         sel.addEventListener('change', function () { showClass(sel.value); });
         showClass(classes[0].id);
-      }).catch(function (err) { console.error(err); });
+      }).catch(function (err) {
+        console.error(err);
+        sel.textContent = '';
+        sel.appendChild(h('option', { value: '', text: 'Couldn’t load your classes' }));
+        status.appendChild(h('p', { class: 'sl-muted', text: 'Could not load your classes (' + (err && err.code) + '). Reload the page to try again.' }));
+      });
     function showClass(classId) {
+      const mine = ++ticket, cls = classes.filter(function (c) { return c.id === classId; })[0], name = cls ? cls.name : 'Class';
       table.textContent = '';
+      table.appendChild(h('p', { class: 'sl-muted', text: 'Loading ' + name + '…' }));
       db.collection('enrollments').where('classId', '==', classId).get().then(function (snap) {
+        if (mine !== ticket) return;             // another class was picked while this one loaded
+        table.textContent = '';
+        table.appendChild(h('h3', { class: 'sl-class-name', text: name }));
         const kids = snap.docs.map(function (d) { return d.data(); }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
         if (!kids.length) { table.appendChild(h('p', { class: 'sl-muted', text: 'No students have joined this class yet.' })); return; }
         const graded = modules.filter(function (m) { return !m.noQuiz; });
@@ -574,8 +778,8 @@
           let n = 0;
           const cells = graded.map(function (m) {
             const r = p[m.id];
-            if (r && r.passed) { n++; return h('td', { class: 'ok', title: 'Best ' + r.best + '/' + (r.total || QUIZ_SIZE) + ', ' + r.attempts + ' attempt(s)', text: '✓' }); }
-            if (r && r.attempts) return h('td', { class: 'try', title: 'Best ' + r.best + '/' + (r.total || QUIZ_SIZE) + ', ' + r.attempts + ' attempt(s)', text: r.best + '/' + (r.total || QUIZ_SIZE) });
+            if (r && r.passed) { n++; return h('td', { class: 'ok', title: 'Best ' + (r.best || 0) + '/' + (r.total || QUIZ_SIZE) + ', ' + (r.attempts || 0) + ' attempt(s)', text: '✓' }); }
+            if (r && r.attempts) return h('td', { class: 'try', title: 'Best ' + (r.best || 0) + '/' + (r.total || QUIZ_SIZE) + ', ' + r.attempts + ' attempt(s)', text: (r.best || 0) + '/' + (r.total || QUIZ_SIZE) });
             return h('td', { class: 'none', text: '·' });
           });
           tb.appendChild(h('tr', null, [h('td', { text: k.name || k.email })].concat(cells).concat([h('td', { text: n + '/' + graded.length })])));
@@ -583,13 +787,19 @@
         t.appendChild(tb);
         table.appendChild(t);
         table.appendChild(h('p', { class: 'sl-muted', text: '✓ = passed · 3/5 = best score so far (not passed yet) · · = not started. Hover a cell to see attempts.' }));
-      }).catch(function (err) { table.appendChild(h('p', { class: 'sl-muted', text: 'Could not load this class (' + (err && err.code) + ').' })); });
+      }).catch(function (err) {
+        if (mine !== ticket) return;
+        table.textContent = '';
+        table.appendChild(h('p', { class: 'sl-muted', text: 'Could not load ' + name + ' (' + (err && err.code) + ').' }));
+      });
     }
   }
 
   // ── START ─────────────────────────────────────────────────────────────────
   function start(user) {
     state.isTeacher = (user.email || '') === TEACHER_EMAIL;
+    // a background upload finished (or failed): refresh the hub if it is on screen
+    progress.onChange = function () { if (state.current == null && $('sl-hub-wrap').style.display === 'block') renderHub(); };
     progress.load(user).then(function () {
       $('sl-loading').style.display = 'none';
       $('sl-hub-wrap').style.display = 'block';
