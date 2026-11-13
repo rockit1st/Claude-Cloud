@@ -15,6 +15,7 @@
   const STICK = 0.0005;                                 // a longer chassis needs more stick and glue: about 0.5 g per cm
   const HALL_GOAL = 20;                                 // step 3: metres without flipping (only a fixed 30 cm-sail car gets there)
   const STRAIGHT_GOAL = 12;                             // step 4: metres down the hall without hitting a wall
+  const MAP_M = 18;                                     // step 4: the top-down map shows the first 18 m (the longest run, 0°, is ≈ 16 m)
   // A car built from the default one: a wb-cm wheelbase, a side × side cm paper sail whose bottom sits gap cm above the
   // chassis (so its middle is 3 cm + gap + half the sail above the floor), and nickels taped over the back axle.
   // Chassis, wheels, mast and sail sit mid-way between the axles. cgCm (optional) sets the balance point directly.
@@ -55,7 +56,9 @@
   const RED = '#ff6060', BLUE = '#7ad7ff', MUTED = '#9080b0';
   // numbers quoted in the text, straight from simulate()
   const f1 = function (v) { return SailLab.fmt(v, 1); };
-  const STRAIGHT_RUN = P.simulate({}).distance;                     // a square-axled default car (≈ 16 m)
+  const DEFAULT_RUN = P.simulate({});
+  const STRAIGHT_RUN = DEFAULT_RUN.distance;                        // a square-axled default car (≈ 16 m)
+  const HALL_W = DEFAULT_RUN.opts.hallWidth;                        // 2.4 m; simulate() calls it a wall hit 10 cm (half a car) before the wall
   const WALL_AT = function (a) { return P.simulate({ veerDeg: a }).distance; };
 
   SailLab.register({
@@ -89,7 +92,8 @@
             // the car rests on the fingertip; if the balance point isn't right above it, the heavy end drops
             const g = api.svg('g', { transform: 'rotate(' + (ok ? 0 : cg > f ? -8 : 8) + ',' + fx + ',' + PY + ')' }, s);
             api.draw.car(g, FA - 17.5 * K, PY + 2 * K, { scale: K, length: 19, wheelR: 1.5, sailW: 20, sailH: 20, mastH: 20, mastAt: 0.5 });
-            for (let i = 0; i < n; i++) api.svg('rect', { x: FA - 16 * K - 8, y: PY - 2 * K - 4 * (i + 1), width: 17, height: 3.5, rx: 1, fill: '#c8c8d0', stroke: '#80808a', 'stroke-width': 0.8 }, g);
+            for (let i = 0; i < n; i++) api.svg('rect', { x: FA - 16 * K - 9, y: PY - 2 * K - 4.5 * (i + 1), width: 19, height: 4, rx: 1, fill: '#c8c8d0', stroke: '#80808a', 'stroke-width': 0.8 }, g);
+            if (n) label(api, g, FA - 16 * K - 14, PY - 2 * K - 4.5 * n + 4, n + ' nickel' + (n === 1 ? ' →' : 's →'), { anchor: 'end', color: '#c8c8d0' });   // the coins hide behind the sail's corner
             if (ok) {
               api.svg('circle', { cx: FA - cg * K, cy: PY - K, r: 6, fill: '#00a8ff', stroke: '#fff', 'stroke-width': 1.5 }, g);
               label(api, s, FA - cg * K + 14, PY - 30, 'balance point', { color: BLUE });
@@ -137,7 +141,7 @@
             clear(api, s, H);
             api.svg('line', { x1: 10, y1: FL, x2: 325, y2: FL, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
             api.draw.fan(s, 14, FL, 70, ' ');
-            label(api, s, 6, FL - 80, '2 fans', { color: MUTED, bold: false });
+            label(api, s, 4, FL + 22, '2 fans', { color: MUTED, bold: false });   // under the floor: a low, big sail's push arrow passes above the fans
             // the car (sail bottom 3 cm + gap off the floor); a faint copy shows where it goes if it flips
             const carO = { scale: K, length: 19, wheelR: 1.5, sailW: side, sailH: side, mastH: gap.get() + side - 1, mastAt: 0.5 };
             if (flips) api.draw.car(s, FA - 17.5 * K, FL, Object.assign({ tilt: 24 }, carO)).setAttribute('opacity', 0.3);
@@ -232,9 +236,9 @@
           '<p>Wheels roll the way they point. An axle is <span class="key">square</span> when it sits at a perfect right angle (90°) across the chassis. ' +
           'If your two axles aren’t <span class="key">parallel</span> (lined up the same way), the front wheels point a little to one side. ' +
           'Then the car doesn’t go straight: it drives around a giant circle.</p>' +
-          '<p>The hallway is 2.4 m wide and your car starts in the middle, so it has only about 1.1 m of room on each side. ' +
+          '<p>The hallway is ' + HALL_W + ' m wide and your car starts in the middle, so it has only about ' + f1(HALL_W / 2 - 0.1) + ' m of room on each side. ' +
           'With two box fans, a typical car rolls about ' + Math.round(STRAIGHT_RUN) + ' m, so even a crooked axle you can barely see has plenty of time to steer it into the wall!</p>' +
-          '<p>The map below is squeezed from end to end so 18 m of hallway fits on your screen. That makes the drift look steeper than it really is, but the distances are real.</p>',
+          '<p>The map below shows the first ' + MAP_M + ' m of the hallway, squeezed from end to end so it fits on your screen. That makes the drift look steeper than it really is, but the distances are real.</p>',
         challenge: 'Fix the front axle so the car rolls at least ' + STRAIGHT_GOAL + ' metres (about 40 ft) down the hall without hitting a wall. Press ▶ Roll to test.',
         render: function (el, api) {
           const TH = 160, top = board(api, el, TH, 'Your car seen from above, with its two axles');
@@ -247,9 +251,9 @@
           const HH = 274, hs = board(api, el, HH, 'Map of the hallway seen from above, with your car’s path');
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          // fan face · px per metre down the hall (0–18 m shown) · px per metre across it · middle of the hall
-          const X0 = 30, KX = 27.5, KY = 80, YC = 140, SHOW = 18, ghosts = [];
-          const WT = YC - 1.2 * KY, WB = YC + 1.2 * KY, SX = X0 + START * KX;   // the walls (1.2 m each side of the middle) · start line
+          // fan face · px per metre down the hall (MAP_M shown) · px per metre across it · middle of the hall
+          const X0 = 30, KX = 503 / (MAP_M + START), KY = 80, YC = 140, SHOW = MAP_M, ghosts = [];   // 27.5 px per m: 18 m ends at x 533
+          const WT = YC - HALL_W / 2 * KY, WB = YC + HALL_W / 2 * KY, SX = X0 + START * KX;   // the walls (1.2 m each side of the middle) · start line
           let raf = null;
           // simulate()'s trace: x = metres down the hall from the start line, lateral = metres sideways from the middle
           function pt(p) { return [X0 + (START + p.x) * KX, YC - p.lateral * KY]; }
@@ -278,13 +282,13 @@
           function hall(pts, res) {
             clear(api, hs, HH);
             [WT - 3, WB + 3].forEach(function (y) { api.svg('line', { x1: 0, y1: y, x2: 560, y2: y, stroke: '#6a5a8a', 'stroke-width': 6 }, hs); });
-            label(api, hs, 552, WT - 12, 'wall — the hall is 2.4 m wide', { anchor: 'end', bold: false, color: MUTED });
+            label(api, hs, 552, WT - 12, 'wall — the hall is ' + HALL_W + ' m wide', { anchor: 'end', bold: false, color: MUTED });
             label(api, hs, SX + 2, WT - 12, 'start', { anchor: 'middle', color: '#f0c040' });
             api.svg('line', { x1: SX, y1: WT, x2: SX, y2: WB, stroke: '#f0c040', 'stroke-width': 1.5, 'stroke-dasharray': '4,4', opacity: 0.6 }, hs);
             api.svg('line', { x1: SX, y1: YC, x2: 556, y2: YC, stroke: '#4a3a6a', 'stroke-width': 2, 'stroke-dasharray': '6,8' }, hs);
             // two box fans side by side, about 50 cm wide each, facing down the hall
             [YC - 41, YC + 1].forEach(function (y) { api.svg('rect', { x: X0 - 14, y: y, width: 14, height: 40, rx: 3, fill: '#3a2a5a', stroke: MUTED, 'stroke-width': 2 }, hs); });
-            label(api, hs, 6, YC + 64, '2 fans', { bold: false, color: MUTED });
+            label(api, hs, SX + 8, YC + 28, '← 2 fans', { bold: false, color: MUTED });   // lower half: paths only ever drift up, and this clears the start line
             for (let m = 2; m <= SHOW; m += 2) {
               const x = SX + m * KX;
               api.svg('line', { x1: x, y1: WB + 6, x2: x, y2: WB + 14, stroke: '#6a5a8a', 'stroke-width': 1.5 }, hs);
@@ -346,7 +350,7 @@
         html:
           '<p>Use these tricks to keep your real car on its wheels and rolling straight:</p>' +
           '<ul><li><strong>Mount the sail low.</strong> Glue or tape the bottom edge of the sail close to the chassis. No big gap under it! A low sail has a short tip lever.</li>' +
-          '<li><strong>Tall sail? Brace the mast.</strong> Twist pipe cleaners from the top of the mast down to the two back corners of the chassis (sailors call these guy lines). They stop the mast bending forward and keep the sail upright.</li>' +
+          '<li><strong>Tall sail? Brace the mast.</strong> Twist pipe cleaners from the top of the mast down to the two back corners of the chassis (braces like these are called guy lines). They stop the mast bending forward and keep the sail upright.</li>' +
           '<li><strong>Stretch the chassis.</strong> Hot-glue two popsicle sticks end-to-end (overlap them about 3 cm) to make the car longer. The balance point ends up farther behind the front wheels.</li>' +
           '<li><strong>Weight at the back, only if needed.</strong> If it still flips, tape a coin or two flat on the chassis right over the back axle, or put your extra hot glue there. Every gram adds friction, so add just enough.</li>' +
           '<li><strong>Square the axles.</strong> Before the glue sets, line up each straw straight across the chassis using a ruler or the corner of a sheet of paper (a perfect 90° corner). Check that both axles are parallel.</li></ul>' +
@@ -386,6 +390,6 @@
         why: 'Back wheels lifting means the wind’s turn is winning. Lower the sail, lengthen the chassis or move weight to the back before race day.' }
     ],
     // for the check script only: the module's own car builder and turn maths
-    _calc: { makeCar: makeCar, turns: turns, fewestNickels: fewestNickels, HALL_GOAL: HALL_GOAL, STRAIGHT_GOAL: STRAIGHT_GOAL }
+    _calc: { makeCar: makeCar, turns: turns, fewestNickels: fewestNickels, HALL_GOAL: HALL_GOAL, STRAIGHT_GOAL: STRAIGHT_GOAL, MAP_M: MAP_M }
   });
 })();
