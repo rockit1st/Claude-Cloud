@@ -29,7 +29,7 @@
           'That backward push is called <span class="key">drag</span>, or <span class="key">air resistance</span>.</p>' +
           '<p>You’ve felt it. Run while holding a big piece of cardboard: the faster you run, the harder the air pushes back.</p>' +
           '<p>Here your sail car rolls through <strong>still air</strong> (the fans are off). Change its speed and watch the red drag arrow.</p>',
-        challenge: 'Find the speed where the drag is exactly 4 times bigger than it is at 1 m/s.',
+        challenge: 'Find the speed where the drag is exactly 4 times as big as it is at 1 m/s.',
         render: function (el, api) {
           const P = api.physics, C = P.DEFAULT_CAR;
           // still air: wind = 0, so the relative wind is (0 − speed) and airForce comes out backward
@@ -125,7 +125,7 @@
                 'The air’s force on the body is so small that in the simulator, changing the body’s shape or size changes the standard car’s 16-metre run by <strong>less than 60 cm</strong>. ' +
                 '(Wheels that spin freely add about 11 m!)'
               : '🚀 The rounded nose has <strong>half</strong> the drag of the flat front (Cd ' + SHAPES[2].cd.toFixed(1) + ' vs ' + SHAPES[0].cd.toFixed(1) + '). ' +
-                'But look how small these numbers are: even the flat box only feels <strong>' + nf(flat) + '</strong> at ' + ms(v) + '. Tap “+ the sail” to compare.';
+                'But look how small these numbers are: even the flat box only feels <strong>' + nf(flat) + '</strong> at ' + ms(v) + '. Tap “+ the 20 × 20 cm sail” to compare.';
           }
           draw();
         }
@@ -215,16 +215,16 @@
       {
         title: 'Spot the parachute in the hallway',
         html:
-          '<p>Back to the real hallway, with the two box fans side by side at the start. Right in front of the fans the wind is about 3.3 m/s — much faster than your car. ' +
+          '<p>Back to the real hallway, with the two box fans side by side at the start. At the start line, 30 cm in front of the fans, the wind is about 3.3 m/s — much faster than your car. ' +
           'But the wind spreads out and fades as it goes down the hall: about 1.7 m/s at 5 m, 1.1 m/s at 10 m, and only 0.5 m/s at the end of the 30 m hallway.</p>' +
-          '<p>A light car with wheels that spin freely can zoom into that weaker wind and end up <strong>faster than the wind</strong>. While it is faster, its sail is a parachute. ' +
+          '<p>A car with wheels that spin freely (a light one works best) can zoom into that weaker wind and end up <strong>faster than the wind</strong>. While it is faster, its sail is a parachute. ' +
           '(Later the car slows down below the wind speed, and the wind gently pushes it again.)</p>' +
           '<p>Run the car, then read the graph under the hallway: the <span style="color:#7ad7ff">blue line</span> is the wind speed and the <span style="color:#f0c040">yellow line</span> is your car’s speed. ' +
           'Where the yellow line climbs above the blue one, the graph turns <span style="color:#ff5050">red</span>.</p>',
         challenge: 'Make a run where your car outruns the wind (a red zone appears on the graph). Then answer the question about the red zone.',
         render: function (el, api) {
           const P = api.physics, START = 0.3;     // simulate() starts the car 30 cm in front of the fans
-          // 50 g is the lightest choice on purpose: a 30–40 g car with this sail tips forward in the two fans' strong start push
+          // 50 g is the lightest choice on purpose: a car under 40 g with this sail tips forward in the two fans' strong start push
           const MASS = { 50: 0.05, 70: 0.07, 100: 0.1 }, CRR = { rub: 0.05, ok: 0.025, free: 0.01 };
           const EPS = 0.01;      // m/s — "faster than the wind" means the same thing on the graph and for the challenge
           let outran = false;    // did the run now on screen outrun the wind?
@@ -237,7 +237,7 @@
           api.onLeave(sim.stop);
           const g = api.svg('svg', { viewBox: '0 0 560 262', role: 'img', 'aria-label': 'Graph of wind speed and car speed along the hallway' }, el);
           const TIP = '💡 The run plays sped up, so watch closely: when “speed” in the readout is bigger than “wind”, the car has outrun the wind. ' +
-            'The green arrow on the car shrinks as the car’s speed gets close to the wind’s speed. When the car stops, the graph shows the whole trip.';
+            'The green arrow on the car shrinks as the car’s speed gets close to the wind’s speed. When the run ends, the graph shows the whole trip.';
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite', text: TIP });
           const ask = api.h('div', { style: 'display:none' });
           el.appendChild(out); el.appendChild(ask);
@@ -256,7 +256,8 @@
                 if (f && from == null) from = p.x;
                 if (!f && from != null) {
                   api.svg('rect', { x: X(from), y: T, width: Math.max(2, X(p.x) - X(from)), height: B - T, fill: '#ff5050', opacity: 0.25 }, g);
-                  if (X(p.x) - X(from) > 150) api.svg('text', { x: (X(from) + X(p.x)) / 2, y: T + 24, 'text-anchor': 'middle', fill: '#ffb0b0', 'font-size': 17, 'font-weight': 700 }, g, '🪂 parachute zone');
+                  // label sits between the 2 and 3 m/s grid lines, clear of the lines (the car is never that fast out here)
+                  if (X(p.x) - X(from) > 110) api.svg('text', { x: (X(from) + X(p.x)) / 2, y: Y(2.45), 'text-anchor': 'middle', fill: '#ffb0b0', 'font-size': 17, 'font-weight': 700, class: 'sl-lbl' }, g, '🪂 parachute zone');
                   from = null;
                 }
               });
@@ -274,8 +275,8 @@
             for (let m = 0; m <= scale; m += step) api.svg('text', { x: X(m), y: B + 20, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 16 }, g, String(m));
             api.svg('text', { x: (L + R) / 2, y: B + 46, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 16 }, g, 'distance down the hallway (m)');
             api.svg('text', { x: 10, y: T - 16, fill: '#9080b0', 'font-size': 16 }, g, 'm/s');
-            const wpts = [];
-            for (let i = 0; i <= 100; i++) { const m = scale * i / 100; wpts.push(X(m) + ',' + Y(P.windAt(sx + m))); }
+            const wpts = [], wEnd = Math.min(scale, r ? r.opts.hallLength : scale);   // no wind line past the end of the hall
+            for (let i = 0; i <= 100; i++) { const m = wEnd * i / 100; wpts.push(X(m) + ',' + Y(P.windAt(sx + m))); }
             api.svg('polyline', { points: wpts.join(' '), fill: 'none', stroke: '#7ad7ff', 'stroke-width': 3 }, g);
             [['wind', '#7ad7ff', 90], ['car', '#f0c040', 190]].forEach(function (lg) {
               api.svg('line', { x1: lg[2], y1: T - 22, x2: lg[2] + 24, y2: T - 22, stroke: lg[1], 'stroke-width': 4 }, g);
@@ -328,7 +329,7 @@
           }
           function changed() { sim.reset(); clearRun(); }
           const btns = el.querySelectorAll('.sl-track-bar .sl-btn');
-          btns[0].addEventListener('click', function () { clearRun('Running… the graph comes when the car stops'); });
+          btns[0].addEventListener('click', function () { clearRun('Running… the graph comes when the run ends'); });
           btns[1].addEventListener('click', function () { clearRun(); });
           plot(null);
         }
@@ -339,7 +340,7 @@
           '<p>Here’s the honest truth about drag on <strong>your</strong> car:</p>' +
           '<ul><li>For most of the run, the wind from the fans is faster than your car, so the air comes from <strong>behind</strong> and pushes. ' +
           'Drag only slows your car where the car is faster than the air around it — like in the red zone.</li>' +
-          '<li>The <strong>body’s</strong> drag is tiny. Even at 2 m/s (about as fast as sail cars go in our hallway) it’s about 0.007 N — less than the weight of one paper clip. ' +
+          '<li>The <strong>body’s</strong> drag is tiny. Even at 2 m/s (about the top speed of the fastest cars in our hallway) it’s about 0.007 N — less than the weight of one paper clip. ' +
           'In the simulator, changing the body’s shape or size changes the standard car’s 16 m run by less than 60 cm.</li>' +
           '<li>The <strong>sail</strong> makes the most drag — but it’s also your engine. <strong>Don’t shrink it</strong> to beat drag: you’d lose far more push near the fans than you’d save.</li></ul>' +
           '<p><strong>Tidy up</strong> (small wins — and they save weight too):</p>' +
@@ -349,9 +350,9 @@
           '<li><strong>Tight sail, not floppy.</strong> Tape the paper’s edges to a frame of skewers or straws, or use cardstock. A sail that flaps wastes the wind’s energy.</li></ol>' +
           '<p><strong>Test drag in the hallway:</strong></p>' +
           '<ol><li><strong>Ramp test (fans OFF).</strong> Prop up a binder to make a little ramp. Let the car roll down from the same spot and measure how far it coasts — ' +
-          'once with the sail facing forward, once with it turned edge-on. In still air, the air hits the sail from the front. The difference in distance shows how much the sail’s drag slows the car.</li>' +
-          '<li><strong>Wind-strip test (fans ON).</strong> Tape a thin 5 cm strip of paper to the top of the mast. It blows the way the relative wind blows. ' +
-          'Walk beside the car: if the strip goes limp, your car has caught up with the wind. If it flips back toward the fans, your car has outrun the wind!</li>' +
+          'once with the sail up as usual (its flat side facing the way the car rolls), once with the sail turned edge-on. In still air, the air hits the sail from the front. The difference in distance shows how much the sail’s drag slows the car.</li>' +
+          '<li><strong>Wind-strip test (fans ON).</strong> Tape a thin strip of paper, about 5 cm long, to the top of the mast. It blows the way the relative wind blows. ' +
+          'Walk beside the car and watch it. Near the fans it streams forward, away from the fans. If it goes limp — or even leans back toward the fans — your car has caught up with the wind, or outrun it!</li>' +
           '<li><strong>Flutter check.</strong> Hold the car in front of the fans and look at the sail from the side. If it flaps or ripples, tighten it.</li></ol>',
         render: function (el, api) {
           api.ui.note(el, 'build', '🛠️ <strong>Remember the order:</strong> a tight sail of a good size (about 20 × 20 cm) for push and wheels that spin freely matter much more than a streamlined body. ' +
@@ -362,11 +363,11 @@
     quiz: [
       { q: 'What is drag?', options: ['The air pushing back on something that moves through it', 'The wind from the fans pushing the car forward', 'The rubbing between the wheels and the axles', 'The pull of gravity on the car'], answer: 0,
         why: 'Anything moving through air has to push the air out of the way, and the air pushes back. That backward push is drag (air resistance).' },
-      { q: 'Your car moves through still air. If its speed doubles, what happens to the drag?', options: ['It stays the same', 'It becomes 2 times bigger', 'It becomes 4 times bigger', 'It becomes half as big'], answer: 2,
+      { q: 'Your car moves through still air. If its speed doubles, what happens to the drag?', options: ['It stays the same', 'It becomes 2 times as big', 'It becomes 4 times as big', 'It becomes half as big'], answer: 2,
         why: 'Drag grows with speed × speed. Twice as fast means 2 × 2 = 4 times the drag.' },
       { q: 'Three car bodies have the same front size and go the same speed. Which one has the MOST drag?', options: ['The one with a rounded nose', 'The one with a flat box front', 'The one with a pointed wedge front', 'They all have exactly the same drag'], answer: 1,
         why: 'A flat front slams into the air (Cd about 1.0). Wedge and rounded fronts let air slide around them, so they have less drag.' },
-      { q: 'Car B has a front twice as big as car A. Same shape, same speed. How does car B’s drag compare?', options: ['About half as big', 'About the same', 'About 2 times bigger', 'About 4 times bigger'], answer: 2,
+      { q: 'Car B has a front twice as big as car A. Same shape, same speed. How does car B’s drag compare?', options: ['About half as big', 'About the same', 'About 2 times as big', 'About 4 times as big'], answer: 2,
         why: 'Drag grows in step with the front area: twice the area means twice the drag. (It’s speed that counts twice, not area.)' },
       { q: 'The wind from the two box fans is 2.3 m/s where your car is, and the car is rolling at 1.6 m/s. What does the sail feel?', options: ['3.9 m/s of wind from behind', '0.7 m/s of wind from behind, so it pushes the car forward', '0.7 m/s of wind from the front, so it slows the car', 'No wind at all'], answer: 1,
         why: 'Relative wind = wind speed − car speed = 2.3 − 1.6 = 0.7 m/s. It’s positive, so the air hits the sail from behind and pushes. (In the simulator, the standard car is at about these speeds 2 m down the hall.)' },
