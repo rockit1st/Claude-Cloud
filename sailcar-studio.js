@@ -24,8 +24,8 @@
   const MAST_POS = { front: 0.3, middle: 0.5, back: 0.7 };     // fraction of the wheelbase behind the front axle
 
   // a sensible, ordinary first car — students improve it from here
-  const DEFAULT = { chassis: 'jumbo', rails: 3, bearing: 'taped', wobbly: false, rubbing: false, bigWheels: false, square: true,
-                    sailMat: 'paper', sailW: 20, sailH: 20, cupped: false, sailGap: 1, mastPos: 'middle', guys: 0, pennies: 1, glue: 'normal' };
+  const DEFAULT = { chassis: 'double', rails: 3, bearing: 'taped', wobbly: false, rubbing: false, bigWheels: false, square: true,
+                    sailMat: 'paper', sailW: 20, sailH: 16, cupped: false, sailGap: 1, mastPos: 'middle', guys: 0, pennies: 1, glue: 'normal' };
   let design = Object.assign({}, DEFAULT);
   try { const saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved) design = Object.assign({}, DEFAULT, saved); } catch (e) {}
   function saveDesign() { try { localStorage.setItem(KEY, JSON.stringify(design)); } catch (e) {} }
@@ -104,7 +104,7 @@
       card.textContent = '';
       function line(label, value, color) { card.appendChild(h('div', null, [h('strong', { text: label + ': ' }), h('span', { text: value, style: color ? 'color:' + color : '' })])); }
       line('Mass', api.fmt(a.grams, 0) + ' g');
-      line('Starting push from the fan', api.fmt(a.push, 3) + ' N');
+      line('Starting push from the fans', api.fmt(a.push, 3) + ' N');
       line('Friction', api.fmt(a.friction, 3) + ' N', a.friction > a.push / api.physics.STICKY ? '#ff8080' : '');
       line('Tipping safety', a.tipMargin >= 1.25 ? 'Safe (' + api.fmt(a.tipMargin, 1) + '× what it needs)' : a.tipMargin >= 1 ? 'Close to tipping! (' + api.fmt(a.tipMargin, 2) + '×)' : 'TIPS OVER — lower the sail, move weight back, or use a smaller sail',
            a.tipMargin >= 1.25 ? '#40e080' : a.tipMargin >= 1 ? '#f0c040' : '#ff8080');
@@ -130,7 +130,7 @@
   function renderPredict(el, api) {
     const a = analyse(design);
     el.appendChild(api.h('p', { text: 'Your design: ' + summary(design) + ' — ' + api.fmt(a.grams, 0) + ' g.' }));
-    el.appendChild(api.h('p', { html: 'In the simulator the car starts <strong>30 cm</strong> in front of a box fan on high. Run it, then go back and change one thing at a time to see what helps most.' }));
+    el.appendChild(api.h('p', { html: 'In the simulator the car starts <strong>30 cm</strong> in front of two box fans on high, side by side — like the real hallway. Run it, then go back and change one thing at a time to see what helps most.' }));
     const best = api.h('div', { class: 'sl-note sl-note-good', 'aria-live': 'polite' });
     const sim = api.ui.trackSim(el, function () { return analyse(design).car; }, {
       onResult: function (r) {

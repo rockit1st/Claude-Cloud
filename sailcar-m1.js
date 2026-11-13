@@ -17,7 +17,7 @@ SailLab.register({
       html:
         '<p>A <span class="key">force</span> is a push or a pull. Forces are measured in <strong>newtons (N)</strong>. ' +
         'One newton is about the weight of a small apple.</p>' +
-        '<p>When your sail car sits in front of the box fan, <strong>five forces</strong> act on it at the same time:</p>',
+        '<p>When your sail car sits in front of the box fans, <strong>five forces</strong> act on it at the same time:</p>',
       render: function (el, api) {
         const s = api.svg('svg', { viewBox: '0 0 560 270', role: 'img', 'aria-label': 'A sail car with five force arrows' }, el);
         api.svg('rect', { x: 0, y: 0, width: 560, height: 270, rx: 12, fill: '#120826' }, s);
@@ -77,20 +77,20 @@ SailLab.register({
     {
       title: 'Try it in the hallway',
       html:
-        '<p>Here’s a real-size hallway with a box fan. The car only <strong>starts</strong> rolling if the wind’s push beats friction. ' +
-        'Then it keeps going until the wind gets too weak (it fades the farther you are from the fan) and friction wins.</p>' +
+        '<p>Here’s a real-size hallway with two box fans side by side — just like ours. The car only <strong>starts</strong> rolling if the wind’s push beats friction. ' +
+        'Then it keeps going until the wind gets too weak (it fades the farther you are from the fans) and friction wins.</p>' +
         '<p>Watch the arrows on the car while it rolls: <span style="color:#40e080">green</span> = wind push, <span style="color:#ff5050">red</span> = air drag, <span style="color:#ffa040">orange</span> = friction.</p>',
-      challenge: 'Get the car to roll at least 3 metres.',
+      challenge: 'Get the car to roll at least 12 metres (about 40 ft).',
       render: function (el, api) {
         const row = api.h('div', { class: 'sl-row' });
         el.appendChild(row);
         const fan = api.ui.choice(row, { label: 'Fan speed', value: 'high', options: [{ value: 'low', label: 'Low' }, { value: 'med', label: 'Medium' }, { value: 'high', label: 'High' }] });
         const fric = api.ui.choice(row, { label: 'Wheels', value: 'sticky', options: [{ value: 'sticky', label: 'Rubbing & sticky' }, { value: 'ok', label: 'OK' }, { value: 'smooth', label: 'Spin freely' }] });
-        const FAN_V = { low: 1.8, med: 2.6, high: 3.5 }, CRR = { sticky: 0.09, ok: 0.03, smooth: 0.015 };
+        const FAN_V = { low: 1.8, med: 2.6, high: 3.5 }, CRR = { sticky: 0.12, ok: 0.03, smooth: 0.015 };
         const sim = api.ui.trackSim(el, function () { return { crr: CRR[fric.get()] }; }, {
           getOpts: function () { return { fan: { v0: FAN_V[fan.get()], L: api.physics.FAN.L } }; },
           onResult: function (r) {
-            if (r.distance >= 3) api.done('It rolled ' + api.fmt(r.distance, 1) + ' m! More push and less friction = a bigger net force for longer.');
+            if (r.distance >= 12) api.done('It rolled ' + api.fmt(r.distance, 1) + ' m! More push and less friction = a bigger net force for longer.');
           }
         });
         api.onLeave(sim.stop);
