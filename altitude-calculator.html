@@ -297,6 +297,8 @@
     .final-badge.show { display:inline-block; }
     .board-note { font-size:0.8rem; color:#a8d8f0; margin:-6px 0 12px; line-height:1.5; min-height:1.2em; }
     .board-note a { color:#f0c040; }
+    .adopt-btn { margin-left:6px; background:rgba(240,192,64,0.15); border:1px solid rgba(240,192,64,0.5); color:#f0c040; border-radius:6px; padding:4px 12px; font-size:0.78rem; font-weight:700; cursor:pointer; }
+    .adopt-btn:hover { background:rgba(240,192,64,0.28); }
     .board-note strong { color:#f0c040; }
     .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .alt-conv { color:#9080b0; font-size:0.78rem; font-weight:400; white-space:nowrap; }
@@ -841,6 +843,7 @@
     activeBoard = id;
     const b = currentBoard();
     if (isTeacher && b.classId) loadRoster(b.classId);
+    if (isTeacher && b.id === 'none') myClasses.forEach(function(c) { loadRoster(c.classId); });
     renderBoards();
   }
 
@@ -956,7 +959,15 @@
     if (state === 'error') { emptyRow('This class board could not be loaded. Refresh the page to try again.', span); return; }
 
     if (noClass) {
-      note.textContent = 'Results saved without a class (older results, or students who have not joined a class yet). Only you can see this list.';
+      note.textContent = 'Results saved without a class (older results, or students who have not joined a class yet). Only you can see this list. ';
+      const movable = adoptable();
+      if (movable.length) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.id = 'adopt-btn'; b.className = 'adopt-btn';
+        b.textContent = 'Move ' + movable.length + ' result' + (movable.length === 1 ? '' : 's') + ' to ' + (movable.length === 1 ? 'its class board' : 'their class boards');
+        b.addEventListener('click', function() { adoptResults(movable); });
+        note.appendChild(b);
+      }
     } else if (isTeacher) {
       const list = roster[board.classId];
       const tail = ' Only you and the members of this class can see this board.';
@@ -1022,6 +1033,38 @@
       box.appendChild(nm); box.appendChild(al); row.appendChild(medal); row.appendChild(box); places.appendChild(row);
     });
     if (places.childNodes.length) $('podium-overlay').classList.add('show');
+  }
+
+  // Older results were saved with only a period. If that student has since joined exactly one of
+  // the teacher's classes, the result can be moved onto that class's board (nothing else changes).
+  function adoptable() {
+    const byEmail = {};
+    myClasses.forEach(function(c) {
+      (roster[c.classId] || []).forEach(function(s) {
+        const e = String(s.email || '').toLowerCase();
+        if (e) (byEmail[e] = byEmail[e] || []).push(c);
+      });
+    });
+    return allResults.filter(function(r) { return !r.classId && !r._pending; }).map(function(r) {
+      const m = byEmail[String(r.userEmail || '').toLowerCase()];
+      return m && m.length === 1 ? { id: r.id, classId: m[0].classId, className: m[0].className } : null;
+    }).filter(Boolean);
+  }
+  function adoptResults(list) {
+    if (!isTeacher || !list.length) return;
+    if (!confirm('Move ' + list.length + ' result' + (list.length === 1 ? '' : 's') + ' onto the board of the class each student has joined?')) return;
+    const jobs = [];
+    for (let i = 0; i < list.length; i += 400) {
+      const batch = db().batch();
+      list.slice(i, i + 400).forEach(function(x) {
+        batch.update(db().collection('results').doc(x.id), { classId: x.classId, className: x.className });
+      });
+      jobs.push(batch.commit());
+    }
+    Promise.all(jobs).catch(function(err) {
+      console.error('Move failed:', err);
+      alert('Some results could not be moved. Check your connection and try again.');
+    });
   }
 
   function loadRoster(classId) {
@@ -1176,8 +1219,7 @@
       okEl.textContent = '✓ Saved! ' + shown + ' is on the ' + (grp.classId ? grp.className + ' board' : 'leaderboard') + '.';
       okEl.classList.add('show');
       if (isTeacher) $('student-name').value = '';
-      activeBoard = grp.classId ? 'c:' + grp.classId : 'top';
-      renderBoards();
+      selectBoard(grp.classId ? 'c:' + grp.classId : 'top');
       setTimeout(function() { $('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 300);
     }, function(err) {
       clearTimeout(slow);
