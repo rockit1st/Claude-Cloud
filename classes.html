@@ -87,6 +87,10 @@
     .leave-btn { background: none; border: 1px solid rgba(255,96,96,0.35); color: #ff8080; border-radius: 6px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; font-family: 'Exo 2', sans-serif; margin-top: 12px; }
     .leave-btn:hover { background: rgba(255,96,96,0.1); }
 
+    .rules-note { background: rgba(255,190,60,0.08); border: 1px solid rgba(255,190,60,0.45); border-radius: 12px; padding: 12px 16px; margin-bottom: 26px; color: #ffcf6a; font-size: 0.9rem; font-weight: 600; line-height: 1.5; }
+    .rules-note .hint { margin-top: 4px; font-weight: 400; }
+    body.light-mode .rules-note { color: #8a5a00; background: rgba(255,190,60,0.15); }
+
     .empty { text-align: center; padding: 32px 20px; background: rgba(180,79,255,0.03); border: 1px dashed rgba(180,79,255,0.25); border-radius: 14px; color: #6050a0; font-size: 0.9rem; line-height: 1.7; }
 
     /* Full-screen "Present" code display (for projecting one class's code) */
@@ -145,6 +149,11 @@
 
   <!-- TEACHER VIEW -->
   <div id="teacher-view" style="display:none">
+    <div class="rules-note" id="rules-note" style="display:none">
+      Paste the new database rules to protect your join codes.
+      <div class="hint">Until then everything keeps working the old way. Open this page again after you publish them.</div>
+    </div>
+    <div class="rules-note" id="code-note" style="display:none"></div>
     <div class="section-label">Create a Class</div>
     <div class="panel">
       <div class="panel-row">
@@ -200,8 +209,21 @@
   const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
   let me = null, isTeacher = false;
   let rosterUnsubs = [];
+  // Join codes live in joinCodes/{CODE} = {classId, className, teacherEmail, createdAt}.
+  // Students can look up one code but cannot list them; only the teacher can.
+  // A class this page has not moved over yet still has its code on the class doc.
+  let classDocs = {};         // teacher: classId -> class data
+  let joinCodeByClass = {};   // teacher: classId -> code from joinCodes
+  let shownCodes = {};        // teacher: classId -> true while "Show code" is on
+  let openRosters = {};       // teacher: classId -> true while the roster is open
+  let oldRules = false;       // the database refused joinCodes: the old rules are still published
+  let migrating = {};         // teacher: classId -> true while its code is being moved
+  let joinCodesUnsub = null;
+  const SAFE_CODE = /^[A-Z0-9]{1,20}$/;
 
   function db() { return firebase.firestore(); }
+  function joinCodesCol() { return db().collection('joinCodes'); }
+  function isDenied(e) { return !!e && e.code === 'permission-denied'; }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   // Safe to embed as a single-quoted JS string inside a double-quoted HTML attribute.
   function attrJs(s) {
@@ -214,16 +236,22 @@
     for (let i = 0; i < 6; i++) s += A[Math.floor(Math.random() * A.length)];
     return s;
   }
-  // Generate a join code that isn't already in use (so two classes can't share
-  // a code and send a student to the wrong class).
-  function makeUniqueCode(attempt) {
+  // A join code no class uses yet: not in joinCodes, and not on a class this page
+  // has not moved over yet. Resolves { code, newRules }; newRules is false when the
+  // database refuses to look in joinCodes (the old rules are still published).
+  function pickUnusedCode(attempt) {
     attempt = attempt || 0;
+    if (attempt >= 8) return Promise.reject(new Error('could not find an unused join code. Please try again.'));
     const code = code6();
-    return db().collection('classes').where('code', '==', code).limit(1).get()
-      .then(function(rs) {
-        if (rs.empty || attempt >= 6) return code;
-        return makeUniqueCode(attempt + 1);
+    return db().collection('classes').where('code', '==', code).limit(1).get().then(function(rs) {
+      if (!rs.empty) return pickUnusedCode(attempt + 1);
+      return joinCodesCol().doc(code).get().then(function(s) {
+        return s.exists ? pickUnusedCode(attempt + 1) : { code: code, newRules: true };
+      }, function(e) {
+        if (isDenied(e)) return { code: code, newRules: false };
+        throw e;
       });
+    });
   }
 
   // ── Teacher ──────────────────────────────────────────────
@@ -233,6 +261,87 @@
         console.error(e);
         document.getElementById('class-list').innerHTML = '<div class="empty">Could not load classes. (A Firestore rule for "classes" may be needed.)</div>';
       });
+    listenJoinCodes();
+  }
+
+  function listenJoinCodes() {
+    if (joinCodesUnsub) joinCodesUnsub();
+    joinCodesUnsub = joinCodesCol().where('teacherEmail', '==', me.email).onSnapshot(function(snap) {
+      const m = {};
+      snap.forEach(function(d) { const j = d.data(); if (j.classId) m[j.classId] = d.id; });
+      joinCodeByClass = m;
+      paintCodes();
+    }, function(e) {
+      joinCodesUnsub = null;
+      if (isDenied(e)) setOldRules(true); else console.error(e);
+    });
+  }
+
+  function setOldRules(on) {
+    const was = oldRules;
+    oldRules = on;
+    document.getElementById('rules-note').style.display = on ? '' : 'none';
+    if (was && !on) { listenJoinCodes(); migrateAll(); }   // the new rules were just published
+  }
+
+  // The code to show for a class: its joinCodes entry, else the code still on the class.
+  // (While a class is being moved over, its code can leave the class a moment before
+  // the joinCodes entry arrives: keep showing the last code seen meanwhile.)
+  let lastCode = {};
+  function codeFor(id) {
+    const c = classDocs[id] || {};
+    const code = joinCodeByClass[id] || (typeof c.code === 'string' ? c.code : '') || lastCode[id] || '';
+    if (code) lastCode[id] = code;
+    return code;
+  }
+
+  // Move each class's code off the class (where every student could read it) into
+  // joinCodes/{CODE}. If the database refuses, the old rules are still published:
+  // leave everything as it is and ask the teacher to paste the new rules.
+  function migrateAll() {
+    if (oldRules) return;
+    Object.keys(classDocs).forEach(function(id) {
+      const c = classDocs[id];
+      if (typeof c.code === 'string' && c.code && !migrating[id]) migrateOne(id, 0);
+    });
+  }
+
+  function migrateOne(id, attempt) {
+    migrating[id] = true;
+    const classRef = db().collection('classes').doc(id);
+    // attempt > 0: the class's code already belongs to another class, so give it a new one
+    const fresh = attempt > 0 ? pickUnusedCode() : Promise.resolve(null);
+    return fresh.then(function(p) {
+      return db().runTransaction(function(tx) {
+        return tx.get(classRef).then(function(cs) {
+          const c = cs.exists ? cs.data() : null;
+          if (!c || typeof c.code !== 'string' || !c.code) return null;   // deleted, or already moved
+          const code = p ? p.code : c.code;
+          if (!SAFE_CODE.test(code)) throw { taken: true };
+          const codeRef = joinCodesCol().doc(code);
+          return tx.get(codeRef).then(function(s) {
+            if (s.exists && s.data().classId !== id) throw { taken: true };
+            if (!s.exists) tx.set(codeRef, { classId: id, className: c.name || '', teacherEmail: me.email,
+                                             createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            tx.update(classRef, { code: firebase.firestore.FieldValue.delete() });
+            return { from: c.code, to: code, name: c.name || '' };
+          });
+        });
+      });
+    }).then(function(r) {
+      delete migrating[id];
+      if (r && r.from !== r.to) {
+        const note = document.getElementById('code-note');
+        note.textContent = (note.textContent ? note.textContent + ' ' : '') +
+          '"' + r.name + '" had the same join code as another class, so its new code is ' + r.to + '.';
+        note.style.display = '';
+      }
+    }, function(e) {
+      delete migrating[id];
+      if (e && e.taken && attempt < 3) return migrateOne(id, attempt + 1);
+      if (isDenied(e)) setOldRules(true);
+      else console.error('Could not move the join code of class ' + id, e);
+    });
   }
 
   function createClass() {
@@ -241,44 +350,68 @@
     const msg = document.getElementById('create-msg');
     if (!name) { msg.textContent = 'Enter a class name.'; msg.className = 'msg err'; return; }
     msg.textContent = 'Creating…'; msg.className = 'msg';
-    makeUniqueCode().then(function(code) {
-      return db().collection('classes').add({
-        name: name, code: code, teacherEmail: me.email,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }).then(function() {
+    addClass(name, 0).then(function() {
       nameEl.value = ''; msg.textContent = 'Class created ✓'; msg.className = 'msg ok';
-    }).catch(function(e) { msg.textContent = 'Error: ' + e.message; msg.className = 'msg err'; });
+    }).catch(function(e) { console.error(e); msg.textContent = 'Could not create the class: ' + (e && e.message || e); msg.className = 'msg err'; });
+  }
+
+  // New rules: the class (no code on it) and its joinCodes entry are written together.
+  // Old rules (joinCodes refused): the class is created the old way, with its code.
+  function addClass(name, attempt) {
+    return pickUnusedCode().then(function(p) {
+      const now = firebase.firestore.FieldValue.serverTimestamp();
+      function oldWay() {
+        setOldRules(true);
+        return db().collection('classes').add({ name: name, code: p.code, teacherEmail: me.email, createdAt: now });
+      }
+      if (!p.newRules) return oldWay();
+      const classRef = db().collection('classes').doc();
+      const codeRef = joinCodesCol().doc(p.code);
+      return db().runTransaction(function(tx) {
+        return tx.get(codeRef).then(function(s) {
+          if (s.exists) throw { taken: true };          // taken a moment ago: never overwrite a code
+          tx.set(classRef, { name: name, teacherEmail: me.email, createdAt: now });
+          tx.set(codeRef, { classId: classRef.id, className: name, teacherEmail: me.email, createdAt: now });
+        });
+      }).then(function() { setOldRules(false); }, function(e) {
+        if (e && e.taken && attempt < 3) return addClass(name, attempt + 1);
+        if (isDenied(e)) return oldWay();
+        throw e;
+      });
+    });
   }
 
   function renderClasses(snap) {
     rosterUnsubs.forEach(function(u) { u(); });
     rosterUnsubs = [];
+    classDocs = {};
+    snap.forEach(function(d) { classDocs[d.id] = d.data(); });
     const wrap = document.getElementById('class-list');
     if (snap.empty) { wrap.innerHTML = '<div class="empty">No classes yet. Create one above.</div>'; return; }
     wrap.innerHTML = '';
     const docs = snap.docs.slice().sort(function(a, b) { return (a.data().name || '').localeCompare(b.data().name || ''); });
     docs.forEach(function(doc) {
-      const c = doc.data(), id = doc.id;
+      const c = doc.data(), id = doc.id, jid = attrJs(id);
+      const shown = !!shownCodes[id], open = !!openRosters[id];
       const card = document.createElement('div');
       card.className = 'class-card';
       card.innerHTML =
         '<div class="cc-top">' +
           '<span class="cc-name">' + esc(c.name) + '</span>' +
           '<span class="cc-code">' +
-            '<span class="code-wrap" id="codewrap-' + id + '" style="display:none">' +
-              '<span class="code-label">Join code</span><br><span class="code-chip">' + esc(c.code) + '</span>' +
+            '<span class="code-wrap" id="codewrap-' + esc(id) + '"' + (shown ? '' : ' style="display:none"') + '>' +
+              '<span class="code-label">Join code</span><br><span class="code-chip" id="code-' + esc(id) + '"></span>' +
             '</span>' +
-            '<button class="mini-btn" id="codetoggle-' + id + '" onclick="toggleCode(\'' + id + '\', this)">👁 Show code</button>' +
-            '<button class="mini-btn" id="present-' + id + '" style="display:none" onclick="presentCode(\'' + attrJs(c.name) + '\', \'' + esc(c.code) + '\')">📺 Present</button>' +
-            '<button class="mini-btn" id="copy-' + id + '" style="display:none" onclick="copyCode(\'' + esc(c.code) + '\', this)">Copy</button>' +
+            '<button class="mini-btn" id="codetoggle-' + esc(id) + '" onclick="toggleCode(\'' + jid + '\', this)">' + (shown ? '🙈 Hide code' : '👁 Show code') + '</button>' +
+            '<button class="mini-btn" id="present-' + esc(id) + '"' + (shown ? '' : ' style="display:none"') + ' onclick="presentCode(\'' + jid + '\')">📺 Present</button>' +
+            '<button class="mini-btn" id="copy-' + esc(id) + '"' + (shown ? '' : ' style="display:none"') + ' onclick="copyCode(\'' + jid + '\', this)">Copy</button>' +
           '</span>' +
         '</div>' +
-        '<div class="cc-meta" id="count-' + id + '">…</div>' +
-        '<ul class="roster" id="roster-' + id + '"></ul>' +
+        '<div class="cc-meta" id="count-' + esc(id) + '">…</div>' +
+        '<ul class="roster' + (open ? ' open' : '') + '" id="roster-' + esc(id) + '"></ul>' +
         '<div class="cc-actions">' +
-          '<button class="mini-btn" onclick="toggleRoster(\'' + id + '\', this)">View roster</button>' +
-          '<button class="mini-btn del-btn" onclick="deleteClass(\'' + id + '\', \'' + attrJs(c.name) + '\')">Delete class</button>' +
+          '<button class="mini-btn" onclick="toggleRoster(\'' + jid + '\', this)">' + (open ? 'Hide roster' : 'View roster') + '</button>' +
+          '<button class="mini-btn del-btn" onclick="deleteClass(\'' + jid + '\', \'' + attrJs(c.name) + '\')">Delete class</button>' +
         '</div>';
       wrap.appendChild(card);
       const u = db().collection('enrollments').where('classId', '==', id)
@@ -294,43 +427,61 @@
         }, console.error);
       rosterUnsubs.push(u);
     });
+    paintCodes();
+    migrateAll();
+  }
+
+  // Fill in each card's code (codes can arrive after the cards are drawn).
+  function paintCodes() {
+    Object.keys(classDocs).forEach(function(id) {
+      const el = document.getElementById('code-' + id);
+      if (el) el.textContent = codeFor(id) || '—';
+    });
   }
 
   function toggleRoster(id, btn) {
     const el = document.getElementById('roster-' + id);
     const open = el.classList.toggle('open');
+    if (open) openRosters[id] = true; else delete openRosters[id];
     btn.textContent = open ? 'Hide roster' : 'View roster';
   }
 
   function toggleCode(id, btn) {
     const shown = document.getElementById('codewrap-' + id).style.display !== 'none';
     const next = !shown;
+    if (next) shownCodes[id] = true; else delete shownCodes[id];
     document.getElementById('codewrap-' + id).style.display = next ? '' : 'none';
     document.getElementById('present-' + id).style.display = next ? '' : 'none';
     document.getElementById('copy-' + id).style.display = next ? '' : 'none';
     btn.textContent = next ? '🙈 Hide code' : '👁 Show code';
   }
 
-  function presentCode(name, code) {
-    document.getElementById('present-name').textContent = name;
-    document.getElementById('present-code').textContent = code;
+  function presentCode(id) {
+    document.getElementById('present-name').textContent = (classDocs[id] || {}).name || '';
+    document.getElementById('present-code').textContent = codeFor(id) || '—';
     document.getElementById('present-overlay').classList.add('open');
   }
   function closePresent() {
     document.getElementById('present-overlay').classList.remove('open');
   }
 
-  function copyCode(code, btn) {
-    if (navigator.clipboard) navigator.clipboard.writeText(code).catch(function(){});
-    const t = btn.textContent; btn.textContent = 'Copied!';
+  function copyCode(id, btn) {
+    const code = codeFor(id);
+    if (code && navigator.clipboard) navigator.clipboard.writeText(code).catch(function(){});
+    const t = btn.textContent; btn.textContent = code ? 'Copied!' : 'No code';
     setTimeout(function() { btn.textContent = t; }, 1200);
   }
 
+  // Deletes the class, its roster and its join code(s). (Under the old rules there
+  // are no joinCodes entries, and the database refuses to list them: skip them.)
   function deleteClass(id, name) {
     if (!confirm('Delete class "' + name + '" and its roster? This cannot be undone.')) return;
-    db().collection('enrollments').where('classId', '==', id).get().then(function(rs) {
+    const codes = joinCodesCol().where('classId', '==', id).get()
+      .then(function(rs) { return rs.docs; }, function(e) { if (isDenied(e)) return []; throw e; });
+    Promise.all([db().collection('enrollments').where('classId', '==', id).get(), codes]).then(function(r) {
       const batch = db().batch();
-      rs.forEach(function(d) { batch.delete(d.ref); });
+      r[0].forEach(function(d) { batch.delete(d.ref); });
+      r[1].forEach(function(d) { batch.delete(d.ref); });
       batch.delete(db().collection('classes').doc(id));
       return batch.commit();
     }).catch(function(e) { alert('Delete failed: ' + e.message); });
@@ -351,20 +502,49 @@
       });
   }
 
+  // The class for a join code, or null: first joinCodes/{CODE}; if it is not there
+  // (a class the teacher's Classes page has not moved over yet) or the database
+  // refuses (the old rules are still published), the class that still has the code.
+  function findClassByCode(code) {
+    function onClass() {
+      return db().collection('classes').where('code', '==', code).limit(1).get().then(function(rs) {
+        return rs.empty ? null : { classId: rs.docs[0].id, className: rs.docs[0].data().name || 'Class' };
+      });
+    }
+    if (!SAFE_CODE.test(code)) return onClass();
+    return joinCodesCol().doc(code).get().then(function(s) {
+      const j = s.exists ? s.data() : null;
+      if (!j || typeof j.classId !== 'string' || !j.classId) return onClass();
+      return db().collection('classes').doc(j.classId).get().then(function(cs) {
+        if (!cs.exists) return onClass();            // that class has been deleted
+        return { classId: j.classId, className: cs.data().name || j.className || 'Class' };
+      });
+    }, function(e) {
+      if (isDenied(e)) return onClass();
+      throw e;
+    });
+  }
+
   function joinClass() {
     const el = document.getElementById('join-code');
     const code = el.value.trim().toUpperCase();
     const msg = document.getElementById('join-msg');
     if (!code) { msg.textContent = 'Enter a join code.'; msg.className = 'msg err'; return; }
-    db().collection('classes').where('code', '==', code).limit(1).get().then(function(rs) {
-      if (rs.empty) { msg.textContent = 'No class found with that code. Double-check with your teacher.'; msg.className = 'msg err'; return; }
-      const cdoc = rs.docs[0], c = cdoc.data();
-      return db().collection('enrollments').doc(cdoc.id + '_' + me.uid).set({
-        classId: cdoc.id, className: c.name, code: c.code,
+    msg.textContent = 'Looking up that code…'; msg.className = 'msg';
+    findClassByCode(code).then(function(c) {
+      if (!c) { msg.textContent = 'No class found with that code. Double-check with your teacher.'; msg.className = 'msg err'; return; }
+      return db().collection('enrollments').doc(c.classId + '_' + me.uid).set({
+        classId: c.classId, className: c.className, code: code,
         uid: me.uid, email: me.email, name: me.displayName || me.email,
         joinedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function() { el.value = ''; msg.textContent = 'Joined ' + c.name + ' ✓'; msg.className = 'msg ok'; });
-    }).catch(function(e) { msg.textContent = 'Error: ' + e.message; msg.className = 'msg err'; });
+      }).then(function() { el.value = ''; msg.textContent = 'Joined ' + c.className + ' ✓'; msg.className = 'msg ok'; });
+    }).catch(function(e) {
+      console.error(e);
+      msg.textContent = isDenied(e)
+        ? 'That code did not work. Double-check it with your teacher.'
+        : 'Could not join right now. Check your connection and try again.';
+      msg.className = 'msg err';
+    });
   }
 
   function renderMyClasses(snap) {
