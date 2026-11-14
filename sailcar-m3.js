@@ -14,6 +14,39 @@
   function ms(v) { return v.toFixed(1) + ' m/s'; }
   function bg(api, s, w, hgt) { api.svg('rect', { x: 0, y: 0, width: w, height: hgt, rx: 12, fill: '#120826' }, s); }
 
+  // The hallway's size lives ONLY in sailcar-core.js (SailLab.physics.HALL). Every hallway number and
+  // every simulator result quoted below is worked out from it and from simulate(), so measuring the
+  // hallway again needs no edit here.
+  const PHYS = SailLab.physics, HALL = PHYS.HALL;
+  const END = 'reached the end of the hall';               // simulate()'s reason when a car rolls the whole hallway
+  // wheels: Rubbing, OK (the standard car) and Spin freely mean the SAME stickiness (crr) in Modules 1, 3 and 4
+  const CRR = { rub: 0.07, ok: PHYS.DEFAULT_CAR.crr, free: 0.012 };
+  function ft(m) { return Math.round(m / 0.3048); }        // metres → whole feet
+  const HALL_TXT = 'about ' + ft(HALL.length) + ' ft (' + Math.round(HALL.length) + ' m)';   // "about 70 ft (21 m)"
+  // the same run in a hall far too long to reach the end of: how far a car that reached the end would have rolled
+  function longRun(car, opts) { return PHYS.simulate(car, Object.assign({}, opts, { hallLength: 1000 })); }
+  const STD = PHYS.simulate({});                            // the standard 70 g car: about 16 m, then it coasts to a stop
+  const START = STD.opts.startX;                            // simulate() starts every car 30 cm in front of the fans
+  const STD_M = Math.round(STD.distance);
+  const FREE = PHYS.simulate({ crr: CRR.free }), FREE_LONG = longRun({ crr: CRR.free });   // …with wheels that spin freely
+  const FREE_TXT = FREE.reason === END
+    ? '(Wheels that spin freely carry the same car all the way to the end of our ' + ft(HALL.length) + ' ft hallway — in a longer hall they’d add about ' + Math.round(FREE_LONG.distance - STD.distance) + ' m!)'
+    : '(Wheels that spin freely add about ' + Math.round(FREE.distance - STD.distance) + ' m!)';
+  // the most any body shape and front size from step 2 changes the standard car's run, rounded UP to 10 cm
+  const BODY_CM = (function () {
+    let worst = 0;
+    SHAPES.forEach(function (sh) {
+      [0.0015, 0.003, 0.006].forEach(function (a) { worst = Math.max(worst, Math.abs(PHYS.simulate({ bodyArea: a, bodyCd: sh.cd }).distance - STD.distance)); });
+    });
+    return Math.ceil(worst * 10) * 10;
+  })();
+  const BODY_TXT = 'In the simulator, changing the body’s shape or size changes the standard car’s ' + STD_M + ' m run by less than ' + BODY_CM + ' cm.';
+  const SMALL_SAIL_M = PHYS.simulate({ sailArea: 0.01 }).distance;   // the standard car with a 10 × 10 cm sail
+  function windDown(m) { return PHYS.windAt(START + m).toFixed(1); }   // the wind m metres down the hall from the start line
+  // The hallway graph is drawn at its real on-screen width (300–560 px) and shown 1 : 1, so its labels
+  // are as big on a phone as on a laptop (a fixed 560-wide drawing shrank them to about 9 px there).
+  function boardWidth(el) { return Math.max(300, Math.min(560, Math.round(el.clientWidth || 560))); }
+
   SailLab.register({
     id: 'drag',
     num: 3,
@@ -122,8 +155,8 @@
             const flat = rows[0].f;
             out.innerHTML = cmp.get() === 'sail'
               ? '⛵ The sail has about <strong>' + api.fmt(rows[3].f / flat, 0) + ' times</strong> as much drag as even the flat box body. On a sail car, the sail is the big drag maker. ' +
-                'The air’s force on the body is so small that in the simulator, changing the body’s shape or size changes the standard car’s 16-metre run by <strong>less than 60 cm</strong>. ' +
-                '(Wheels that spin freely add about 11 m!)'
+                'The air’s force on the body is so small that in the simulator, changing the body’s shape or size changes the standard car’s ' + STD_M + '-metre run by <strong>less than ' + BODY_CM + ' cm</strong>. ' +
+                FREE_TXT
               : '🚀 The rounded nose has <strong>half</strong> the drag of the flat front (Cd ' + SHAPES[2].cd.toFixed(1) + ' vs ' + SHAPES[0].cd.toFixed(1) + '). ' +
                 'But look how small these numbers are: even the flat box only feels <strong>' + nf(flat) + '</strong> at ' + ms(v) + '. Tap “+ the 20 × 20 cm sail” to compare.';
           }
@@ -215,95 +248,123 @@
       {
         title: 'Spot the parachute in the hallway',
         html:
-          '<p>Back to the real hallway, with the two box fans side by side at the start. At the start line, 30 cm in front of the fans, the wind is about 3.3 m/s — much faster than your car. ' +
-          'But the wind spreads out and fades as it goes down the hall: about 1.7 m/s at 5 m, 1.1 m/s at 10 m, and only 0.5 m/s at the end of the 30 m hallway.</p>' +
-          '<p>A car with wheels that spin freely (a light one works best) can zoom into that weaker wind and end up <strong>faster than the wind</strong>. While it is faster, its sail is a parachute. ' +
+          '<p>Back to the real hallway, ' + HALL_TXT + ' long, with the two box fans side by side at the start. At the start line, ' + Math.round(START * 100) + ' cm in front of the fans, ' +
+          'the wind is about ' + windDown(0) + ' m/s — much faster than your car. ' +
+          'But the wind spreads out and fades as it goes down the hall: about ' + windDown(5) + ' m/s 5 m down the hall, ' + windDown(10) + ' m/s at 10 m, ' +
+          'and only ' + windDown(HALL.length) + ' m/s at the far end of the hallway.</p>' +
+          '<p>A car that isn’t too heavy, with wheels that spin freely, can zoom into that weaker wind and end up <strong>faster than the wind</strong>. While it is faster, its sail is a parachute. ' +
           '(Later the car slows down below the wind speed, and the wind gently pushes it again.)</p>' +
-          '<p>Run the car, then read the graph under the hallway: the <span style="color:#7ad7ff">blue line</span> is the wind speed and the <span style="color:#f0c040">yellow line</span> is your car’s speed. ' +
+          '<p>Run the car, then read the graph under the hallway. Like the hallway picture, it shows the whole hallway, from the start line (0 m) to the far end. ' +
+          'The <span style="color:#7ad7ff">blue line</span> is the wind speed and the <span style="color:#f0c040">yellow line</span> is your car’s speed. ' +
           'Where the yellow line climbs above the blue one, the graph turns <span style="color:#ff5050">red</span>.</p>',
         challenge: 'Make a run where your car outruns the wind (a red zone appears on the graph). Then answer the question about the red zone.',
         render: function (el, api) {
-          const P = api.physics, START = 0.3;     // simulate() starts the car 30 cm in front of the fans
+          const P = api.physics;
           // 50 g is the lightest choice on purpose: a car under 40 g with this sail tips forward in the two fans' strong start push
-          const MASS = { 50: 0.05, 70: 0.07, 100: 0.1 }, CRR = { rub: 0.05, ok: 0.025, free: 0.01 };
+          const MASS = { 50: 0.05, 70: 0.07, 100: 0.1 };
           const EPS = 0.01;      // m/s — "faster than the wind" means the same thing on the graph and for the challenge
           let outran = false;    // did the run now on screen outrun the wind?
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
           const wt = api.ui.choice(row, { label: 'Car weight', value: 70, onChange: changed, options: [{ value: 50, label: '50 g (light)' }, { value: 70, label: '70 g' }, { value: 100, label: '100 g (heavy)' }] });
           const wh = api.ui.choice(row, { label: 'Wheels', value: 'ok', onChange: changed, options: [{ value: 'rub', label: 'Rubbing' }, { value: 'ok', label: 'OK' }, { value: 'free', label: 'Spin freely' }] });
-          // long runs play faster automatically (the whole run takes about 9 seconds to watch)
-          const sim = api.ui.trackSim(el, function () { return { mass: MASS[wt.get()], crr: CRR[wh.get()] }; }, { onResult: function (r) { plot(r); judge(r); } });
+          // The hallway picture and the graph both always show the whole hallway (start line to far end), so they
+          // line up and runs are easy to compare. Long runs play faster automatically (about 9 seconds to watch).
+          const sim = api.ui.trackSim(el, function () { return { mass: MASS[wt.get()], crr: CRR[wh.get()] }; }, { scaleM: HALL.length, onResult: function (r) { plot(r); judge(r); } });
           api.onLeave(sim.stop);
-          const g = api.svg('svg', { viewBox: '0 0 560 262', role: 'img', 'aria-label': 'Graph of wind speed and car speed along the hallway' }, el);
+          const g = api.svg('svg', { role: 'img', 'aria-label': 'Graph of wind speed and car speed along the whole hallway, from the start line to the far end' }, el);
           const TIP = '💡 The run plays sped up, so watch closely: when “speed” in the readout is bigger than “wind”, the car has outrun the wind. ' +
             'The green arrow on the car shrinks as the car’s speed gets close to the wind’s speed. When the run ends, the graph shows the whole trip.';
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite', text: TIP });
           const ask = api.h('div', { style: 'display:none' });
           el.appendChild(out); el.appendChild(ask);
-          const L = 50, R = 540, T = 46, B = 204, VMAX = 3.5;
+          const VMAX = 3.5, FS = 14;          // m/s at the top of the graph; label size in real on-screen px
+          let shownRun = null, shownMsg = null, shownW = 0;   // what the graph shows now (redrawn when the screen width changes)
           function fast(p, i, tr) { return i < tr.length - 1 && p.v - p.wind > EPS; }   // the last trace point is the "stopped" marker
+          function text(x, y, str, color, o) {
+            o = o || {};
+            return api.svg('text', { x: x, y: y, 'text-anchor': o.anchor || 'start', fill: color, 'font-size': o.size || FS, 'font-weight': o.bold ? 700 : 400, class: o.bold ? 'sl-lbl' : null }, g, str);
+          }
           function plot(r, msg) {
-            const scale = r ? Math.max(6, Math.ceil(r.distance * 1.15)) : 8, sx = r ? r.opts.startX : START;   // same scale as the hallway
-            function X(m) { return L + m / scale * (R - L); }
+            shownRun = r; shownMsg = msg;
+            // drawn at its real width; on a phone the legend takes two rows so nothing overlaps
+            const W = shownW = boardWidth(el), narrow = W < 430;
+            const L = 40, R = W - 16, T = narrow ? 76 : 52, B = T + 150, H = B + 54;
+            const scale = HALL.length;        // the x axis is exactly the hallway: 0 m (start line) to the far end
+            function X(m) { return L + Math.min(m, scale) / scale * (R - L); }
             function Y(v) { return B - Math.min(v, VMAX) / VMAX * (B - T); }
             g.textContent = '';
-            bg(api, g, 560, 262);
+            g.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+            g.setAttribute('width', W);
+            bg(api, g, W, H);
             if (r) {     // red zones: wherever the car is faster than the wind
               let from = null;
               r.trace.forEach(function (p, i, tr) {
                 const f = fast(p, i, tr);
                 if (f && from == null) from = p.x;
                 if (!f && from != null) {
-                  api.svg('rect', { x: X(from), y: T, width: Math.max(2, X(p.x) - X(from)), height: B - T, fill: '#ff5050', opacity: 0.25 }, g);
+                  const zw = X(p.x) - X(from);
+                  api.svg('rect', { x: X(from), y: T, width: Math.max(2, zw), height: B - T, fill: '#ff5050', opacity: 0.25 }, g);
                   // label sits between the 2 and 3 m/s grid lines, clear of the lines (the car is never that fast out here)
-                  if (X(p.x) - X(from) > 110) api.svg('text', { x: (X(from) + X(p.x)) / 2, y: Y(2.45), 'text-anchor': 'middle', fill: '#ffb0b0', 'font-size': 17, 'font-weight': 700, class: 'sl-lbl' }, g, '🪂 parachute zone');
+                  if (zw > 24) text((X(from) + X(p.x)) / 2, Y(2.45), zw > 136 ? '🪂 parachute zone' : '🪂', '#ffb0b0', { anchor: 'middle', bold: true });
                   from = null;
                 }
               });
-              const hall = r.opts.hallLength;
-              if (scale > hall) {   // the hallway ends at 30 m
-                api.svg('line', { x1: X(hall), y1: T, x2: X(hall), y2: B, stroke: '#f0c040', 'stroke-width': 1.5, 'stroke-dasharray': '5,4' }, g);
-                api.svg('text', { x: X(hall) - 6, y: T + 20, 'text-anchor': 'end', fill: '#f0c040', 'font-size': 16 }, g, 'end of hall');
-              }
             }
             for (let v = 0; v <= VMAX; v++) {
               api.svg('line', { x1: L, y1: Y(v), x2: R, y2: Y(v), stroke: '#2e2050', 'stroke-width': 1 }, g);
-              api.svg('text', { x: L - 10, y: Y(v) + 6, 'text-anchor': 'end', fill: '#9080b0', 'font-size': 16 }, g, String(v));
+              text(L - 8, Y(v) + 5, String(v), '#a090c0', { anchor: 'end' });
             }
+            text(L - 8, T - 10, 'm/s', '#a090c0', { anchor: 'end' });
             const step = scale <= 8 ? 1 : scale <= 16 ? 2 : 5;
-            for (let m = 0; m <= scale; m += step) api.svg('text', { x: X(m), y: B + 20, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 16 }, g, String(m));
-            api.svg('text', { x: (L + R) / 2, y: B + 46, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 16 }, g, 'distance down the hallway (m)');
-            api.svg('text', { x: 10, y: T - 16, fill: '#9080b0', 'font-size': 16 }, g, 'm/s');
-            const wpts = [], wEnd = Math.min(scale, r ? r.opts.hallLength : scale);   // no wind line past the end of the hall
-            for (let i = 0; i <= 100; i++) { const m = wEnd * i / 100; wpts.push(X(m) + ',' + Y(P.windAt(sx + m))); }
+            for (let m = 0; m <= scale + 1e-9; m += step) text(X(m), B + 20, String(m), '#a090c0', { anchor: 'middle' });
+            text((L + R) / 2, B + 42, 'distance down the hallway (m)', '#a090c0', { anchor: 'middle' });
+            // the far end of the hallway is the right edge of the graph
+            api.svg('line', { x1: R, y1: T - 6, x2: R, y2: B, stroke: '#c8b8ea', 'stroke-width': 1.5, 'stroke-dasharray': '5,4' }, g);
+            text(R - 5, T + 14, 'end of hall · ' + ft(HALL.length) + ' ft', '#c8b8ea', { anchor: 'end', bold: true });
+            const wpts = [];
+            for (let i = 0; i <= 100; i++) { const m = scale * i / 100; wpts.push(X(m).toFixed(1) + ',' + Y(P.windAt(START + m)).toFixed(1)); }
             api.svg('polyline', { points: wpts.join(' '), fill: 'none', stroke: '#7ad7ff', 'stroke-width': 3 }, g);
-            [['wind', '#7ad7ff', 90], ['car', '#f0c040', 190]].forEach(function (lg) {
-              api.svg('line', { x1: lg[2], y1: T - 22, x2: lg[2] + 24, y2: T - 22, stroke: lg[1], 'stroke-width': 4 }, g);
-              api.svg('text', { x: lg[2] + 30, y: T - 16, fill: lg[1], 'font-size': 17, 'font-weight': 700 }, g, lg[0]);
+            // legend
+            [['wind', '#7ad7ff', 56], ['car', '#f0c040', 146]].forEach(function (lg) {
+              api.svg('line', { x1: lg[2], y1: 21, x2: lg[2] + 24, y2: 21, stroke: lg[1], 'stroke-width': 4 }, g);
+              text(lg[2] + 30, 26, lg[0], lg[1], { size: 15, bold: true });
             });
-            api.svg('rect', { x: 270, y: T - 32, width: 18, height: 18, fill: '#ff5050', opacity: 0.5 }, g);
-            api.svg('text', { x: 294, y: T - 16, fill: '#ff8080', 'font-size': 17, 'font-weight': 700 }, g, 'car faster than wind');
-            if (!r) { api.svg('text', { x: 350, y: 84, 'text-anchor': 'middle', fill: '#c8b8ea', 'font-size': 17 }, g, msg || 'Press ▶ Run to draw your car’s speed'); return; }
-            api.svg('polyline', { points: r.trace.map(function (p) { return X(p.x) + ',' + Y(p.v); }).join(' '), fill: 'none', stroke: '#f0c040', 'stroke-width': 3 }, g);
+            const rx = narrow ? 56 : 222, ry = narrow ? 50 : 26;
+            api.svg('rect', { x: rx, y: ry - 14, width: 18, height: 18, fill: '#ff5050', opacity: 0.5 }, g);
+            text(rx + 24, ry, 'car faster than wind', '#ff8080', { size: 15, bold: true });
+            if (!r) {     // a short message in the empty middle of the graph, clear of the wind line
+              const cx = (X(4) + R) / 2;
+              (msg || 'Press ▶ Run to draw\nyour car’s speed').split('\n').forEach(function (line, k) { text(cx, Y(2.4) + k * 20, line, '#c8b8ea', { anchor: 'middle', size: 15 }); });
+              return;
+            }
+            api.svg('polyline', { points: r.trace.map(function (p) { return X(p.x).toFixed(1) + ',' + Y(p.v).toFixed(1); }).join(' '), fill: 'none', stroke: '#f0c040', 'stroke-width': 3 }, g);
           }
+          function onResize() { if (boardWidth(el) !== shownW) plot(shownRun, shownMsg); }   // a turned phone or a resized window
+          window.addEventListener('resize', onResize);
+          api.onLeave(function () { window.removeEventListener('resize', onResize); });
           function judge(r) {
             let over = 0, from = null, to = null, chute = 0;
             r.trace.forEach(function (p, i, tr) { if (fast(p, i, tr)) { over = Math.max(over, p.v - p.wind); if (from == null) from = p.x; to = p.x; chute = Math.min(chute, p.thrust); } });
             const fric = P.rollingFriction(r.car.mass, r.car.crr);
+            // a car that reaches the end of the hall was still rolling: the same run in a longer hall tells the cars apart
+            const longer = r.reason === END ? longRun(r.car, r.opts).distance : 0;
+            const endTxt = 'it reached the end of our ' + ft(HALL.length) + ' ft hallway — in a longer hall it would have rolled about ' + api.fmt(longer, 0) + ' m (' + ft(longer) + ' ft).';
             outran = from != null;
             if (outran) {
               out.className = 'sl-note sl-note-good';
               out.innerHTML = '🪂 From about <strong>' + api.fmt(from, 1) + ' m</strong> to <strong>' + api.fmt(to, 1) + ' m</strong> your car was faster than the wind (by up to ' + api.fmt(over, 2) + ' m/s). ' +
                 'In the red zone the air hit the sail from the front. The biggest drag on the sail there was <strong>' + (-chute < 0.0001 ? 'less than 0.0001 N' : nf(chute)) + '</strong> — ' +
-                (-chute >= 0.8 * fric ? 'about as big as' : 'smaller than') + ' the wheel friction (' + nf(fric) + '). That’s too small to show as an arrow in the hallway picture, but it’s there, and it slows the car down along with friction.';
+                (-chute >= 0.8 * fric ? 'about as big as' : 'smaller than') + ' the wheel friction (' + nf(fric) + '). That’s too small to show as an arrow in the hallway picture, but it’s there, and it slows the car down along with friction.' +
+                (r.reason === END ? ' Even so, ' + endTxt : '');
               ask.style.display = 'block';
             } else {
               out.className = 'sl-note sl-note-tip';
               out.textContent = r.reason === 'tipped over' ? '🤸 The car tipped over at the start, so it never got going.'
                 : '🔵 The yellow line stayed under the blue line the whole way: the wind was always faster than the car, so it pushed the car the whole time. ' +
-                  (r.reason === 'reached the end of the hall' ? 'It still made it to the end of the hall.'
-                    : 'The car stopped because the push got weaker than friction. To outrun the wind, a car must keep its speed as it rolls into the weaker wind. Try wheels that spin freely.');
+                  (r.reason === END ? 'And ' + endTxt
+                    : 'The car stopped because the push got weaker than friction. To outrun the wind, a car must keep its speed as it rolls into the weaker wind. ' +
+                      (r.car.crr <= CRR.free ? 'Try a lighter car.' : 'Try wheels that spin freely.'));
             }
           }
           ask.appendChild(api.h('p', { html: '<strong>Now think:</strong> inside the red zone, which way does the air push on the sail?' }));
@@ -329,7 +390,7 @@
           }
           function changed() { sim.reset(); clearRun(); }
           const btns = el.querySelectorAll('.sl-track-bar .sl-btn');
-          btns[0].addEventListener('click', function () { clearRun('Running… the graph comes when the run ends'); });
+          btns[0].addEventListener('click', function () { clearRun('Running… the graph\ncomes when the run ends'); });
           btns[1].addEventListener('click', function () { clearRun(); });
           plot(null);
         }
@@ -341,7 +402,7 @@
           '<ul><li>For most of the run, the wind from the fans is faster than your car, so the air comes from <strong>behind</strong> and pushes. ' +
           'Drag only slows your car where the car is faster than the air around it — like in the red zone.</li>' +
           '<li>The <strong>body’s</strong> drag is tiny. Even at 2 m/s (about the top speed of the fastest cars in our hallway) it’s about 0.007 N — less than the weight of one paper clip. ' +
-          'In the simulator, changing the body’s shape or size changes the standard car’s 16 m run by less than 60 cm.</li>' +
+          BODY_TXT + '</li>' +
           '<li>The <strong>sail</strong> makes the most drag — but it’s also your engine. <strong>Don’t shrink it</strong> to beat drag: you’d lose far more push near the fans than you’d save.</li></ul>' +
           '<p><strong>Tidy up</strong> (small wins — and they save weight too):</p>' +
           '<ol><li><strong>Trim and tape.</strong> Cut cardstock edges neatly. Tape down loose flaps and corners so they can’t flutter.</li>' +
@@ -376,11 +437,13 @@
       { q: 'About 10 m down the hall, your car is going 1.3 m/s, but the wind from the fans there is only 1.1 m/s. What does the air do to the sail?', options: ['Pushes it forward and speeds the car up', 'Nothing, because there is still some wind', 'Hits it from the front and slows the car down', 'Lifts the car off the floor'], answer: 2,
         why: 'Relative wind = 1.1 − 1.3 = −0.2 m/s. The car is faster than the wind, so the sail runs into the air and acts like a parachute.' },
       { q: 'At 1 m/s, a sail car’s sail has about 0.03 N of drag and its flat-front body has about 0.002 N. What does that tell you?', options: ['Streamlining the body makes only a small difference — the sail makes most of the drag', 'The body makes most of the drag, so streamlining it is the most important job', 'The body and the sail make the same amount of drag', 'The sail has no drag because it is made of paper'], answer: 0,
-        why: 'The sail’s drag is about 16 times the body’s. The body’s air force is so small that in the simulator, changing the body’s shape or size changes the standard car’s 16 m run by less than 60 cm.' },
+        why: 'The sail’s drag is about 16 times the body’s. The body’s air force is so small that it hardly matters. ' + BODY_TXT },
       { q: 'Which change to your real car cuts down extra drag on the body?', options: ['Glue a wide, flat cardstock bumper across the front', 'Add pipe-cleaner antennas for style', 'Tape down loose flaps and cut long skewer ends short', 'Leave long skewer ends sticking out past the wheels'], answer: 2,
         why: 'Loose flaps flutter and long ends stick out into the air. Trimming them removes drag makers and saves a little weight too.' },
       { q: 'A classmate wants to cut their sail much smaller to get rid of drag. Good idea?', options: ['Yes — the smallest sail always wins', 'No — the sail is also the engine, and a smaller sail loses much more push near the fans than it saves in drag', 'Yes — take the sail off completely', 'It makes no difference either way'], answer: 1,
-        why: 'In the simulator the standard car goes about 16 m with a 20 cm sail but only about 7.4 m with a 10 cm sail. The push near the fans matters far more than the drag later.' }
-    ]
+        why: 'In the simulator the standard car goes about ' + STD_M + ' m with a 20 cm sail but only about ' + SMALL_SAIL_M.toFixed(1) + ' m with a 10 cm sail. The push near the fans matters far more than the drag later.' }
+    ],
+    // the wheel table and a computed sentence, for the node check script (not used by the page)
+    _model: { CRR: CRR, FREE_TXT: FREE_TXT, BODY_TXT: BODY_TXT }
   });
 })();

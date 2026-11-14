@@ -103,6 +103,8 @@
     .sl-track-svg { width: 100%; height: auto; display: block; }
     .sl-track-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 12px; border-top: 1px solid rgba(180,79,255,0.2); }
     .sl-readout { font-size: 0.88rem; color: #d8ccf0; flex: 1; min-width: 200px; }
+    .sl-speed { font-size: 0.75rem; font-weight: 700; color: #f0c040; border: 1px solid rgba(240,192,64,0.45); border-radius: 99px; padding: 3px 9px; white-space: nowrap; }
+    .sl-speed[hidden] { display: none; }
     .sl-lbl { paint-order: stroke; stroke: #120826; stroke-width: 3px; stroke-linejoin: round; }
 
     /* quiz */
@@ -123,6 +125,7 @@
     .sl-quiz-score { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.1rem; width: 100%; }
     .sl-quiz-result.pass .sl-quiz-score { color: #40e080; }
     .sl-quiz-result.fail .sl-quiz-score { color: #ffb060; }
+    .sl-save-note { width: 100%; font-size: 0.85rem; color: #b0a0d0; }
 
     /* teacher */
     #sl-teacher { display: none; margin-top: 34px; padding: 20px; border-radius: 16px; border: 1px solid rgba(0,245,255,0.3); background: rgba(0,245,255,0.04); }
@@ -130,6 +133,7 @@
     #sl-class { padding: 8px 12px; background: rgba(255,255,255,0.08); color: #f0e6ff; border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; font-family: inherit; font-size: 0.92rem; margin-bottom: 12px; }
     #sl-class option { background: #1a0035; }
     .sl-table-wrap { overflow-x: auto; }
+    .sl-class-name { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: #d8a8ff; letter-spacing: 1px; margin: 2px 0 10px; }
     .sl-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
     .sl-table th, .sl-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: center; white-space: nowrap; }
     .sl-table th:first-child, .sl-table td:first-child { text-align: left; }

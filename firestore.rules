@@ -8,6 +8,32 @@
 // on the website (pull request merged and deployed). Then ask students to
 // refresh any copy of the page they already have open.
 //
+// AFTER PUBLISHING: open the Classes page once, signed in as the teacher. It
+// moves every class's join code into the new protected "joinCodes" list and
+// takes it off the class. The codes stay the same, so nothing has to be handed
+// out again, and joining keeps working before, during and after that step.
+// Every student could see those old codes, though, so then check each roster;
+// "New code" on a class gives it a fresh code and the old one stops working
+// (students already in the class stay in it).
+//
+// AFTER OPENING CLASSES, NEVER GO BACK to an older version of these rules (the
+// console's revert button, or pasting an older copy of this file): no student
+// could join a class, and the codes would show as "hidden", until these rules
+// are published again.
+//
+// What changed most recently (join codes):
+//  - Before, every signed-in student could list all the classes WITH their
+//    join codes from the browser console, then join any class and read its
+//    boards. Now each code is kept in "joinCodes/{CODE}". A student can look up
+//    only the one code they type; only the teacher can list the codes.
+//  - Class names stay readable to every signed-in student (the game pages and
+//    the boards need them), but the classes no longer carry their codes.
+//  - A class the Classes page has not moved over yet keeps working with the
+//    code still stored on it, so the order of publishing does not matter.
+//  - "New code" on the Classes page replaces a class's code. New codes have 8
+//    characters, which makes guessing one hopeless; older 6-character codes
+//    keep working until they are replaced.
+//
 // What these rules do:
 //  - Altitude Calculator results ("results"): a student can read only their own
 //    results and the results of a class they have joined. Only the teacher can
@@ -15,12 +41,17 @@
 //  - "settings/altitude-top20" is the public Top 20 board every signed-in
 //    student may read. "settings/altitude-rankings" (the lock) is teacher-only.
 //  - Only verified Google accounts @hhh.k12.ny.us can read or write anything.
-//  - A student can only join a class with its join code (no back-door joins).
+//  - A student can only join a class with its join code (no back-door joins),
+//    and cannot list the join codes ("joinCodes": only the teacher can).
 //  - A student's altitude above the teacher's limit (Launch-Day Setup, 300 ft
 //    by default) is saved as "waiting for teacher check" and stays off the boards.
 //  - rocket_builds: each student's "I'm building this one" design from Rocket Lab.
-//  - Sail Car Lab: sailcar_progress (each student's modules) and sailcar_runs
-//    (real hallway runs, private to the class like the altitude boards).
+//  - Sail Car Lab: sailcar_progress (each student's modules and Design Studio
+//    design; only the student and the teacher can read or save it) and
+//    sailcar_runs (real hallway runs, private to the class like the altitude
+//    boards). A student can save only their own progress and runs, only in the
+//    shape the lab saves them and under their own Google name, and only the
+//    teacher can change or delete a run.
 //  - Everything else behaves as before.
 
 rules_version = '2';
@@ -39,14 +70,28 @@ service cloud.firestore {
       return signedIn() && request.auth.token.email == 'ncapellini@hhh.k12.ny.us';
     }
     // A student may only add themselves to a class with that class's join code,
-    // exactly as the Join form on classes.html does it.
+    // exactly as the Join form on classes.html does it. The code must be the
+    // class's entry in joinCodes, or (for a class the Classes page has not moved
+    // over yet) the code still stored on the class itself.
     function validJoin(id) {
       let d = request.resource.data;
       return d.uid == request.auth.uid
              && d.classId is string
              && id == d.classId + '_' + request.auth.uid
              && exists(/databases/$(database)/documents/classes/$(d.classId))
-             && d.code == get(/databases/$(database)/documents/classes/$(d.classId)).data.code;
+             && d.code is string
+             && (joinCodeOpens(d) || classCodeOpens(d));
+    }
+    // joinCodes/{CODE} exists and points at this class.
+    function joinCodeOpens(d) {
+      return d.code.matches('^[A-Z0-9]{1,20}$')
+             && exists(/databases/$(database)/documents/joinCodes/$(d.code))
+             && get(/databases/$(database)/documents/joinCodes/$(d.code)).data.classId == d.classId;
+    }
+    // Not moved over yet: the class still has a non-empty 'code' equal to d.code.
+    function classCodeOpens(d) {
+      let c = get(/databases/$(database)/documents/classes/$(d.classId)).data.get('code', '');
+      return c is string && c != '' && d.code == c;
     }
     // Highest believable altitude in feet, from the teacher's launch-day setup
     // (settings/altitude-setup); 300 ft until the teacher sets one.
@@ -107,26 +152,63 @@ service cloud.firestore {
       allow read, write: if signedIn();
     }
     // ── Sail Car Lab ────────────────────────────────────────────────────────
-    // Each student's module progress (the teacher reads everyone's)
+    // A student's own progress doc, exactly as the lab saves it: the modules
+    // (sailcar-core.js writes uid, name, email, updatedAt, modules) and the
+    // Design Studio's design (sailcar-studio.js writes design + updatedAt).
+    // Both save with "merge", and the rules check the whole document as it
+    // will be after the merge, so each save must leave the whole doc valid.
+    function validProgress(id) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['uid', 'name', 'email', 'updatedAt', 'modules', 'design'])
+             && d.get('uid', id) == id
+             && d.get('name', '') is string && d.get('name', '').size() <= 100
+             && d.get('email', '') is string && d.get('email', '').size() <= 100
+             && d.get('modules', {}) is map && d.get('modules', {}).size() <= 12
+             && d.get('design', {}) is map && d.get('design', {}).size() <= 40;
+    }
+    // A real hallway run, exactly as the Design Studio logs it: only these
+    // fields, under the student's own account, stamped with the server's time.
+    // The name on the board is the student's own Google name (the sign-in's
+    // "name"; their email if the account has no name), so nobody can post a
+    // run under a classmate's name.
+    function validRun() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['uid', 'userEmail', 'name', 'classId', 'className', 'distanceM', 'unit',
+                               'distance', 'predictedM', 'model', 'design', 'note', 'savedAt'])
+             && d.keys().hasAll(['uid', 'userEmail', 'name', 'classId', 'distanceM', 'savedAt'])
+             && d.uid == request.auth.uid
+             && d.userEmail == request.auth.token.email
+             && d.name is string && d.name.size() <= 100
+             && d.name == request.auth.token.get('name', request.auth.token.email)
+             && d.get('className', '') is string && d.get('className', '').size() <= 80
+             && d.distanceM is number && d.distanceM >= 0 && d.distanceM <= 100
+             && d.get('unit', 'm') in ['m', 'ft']
+             && d.get('distance', 0) is number && d.get('distance', 0) >= 0
+             && d.get('predictedM', 0) is number && d.get('predictedM', 0) >= 0 && d.get('predictedM', 0) <= 100
+             && d.get('model', '') is string && d.get('model', '').size() <= 24
+             && (!('design' in d)
+                 || (d.design is map
+                     && d.design.keys().hasOnly(['summary', 'grams'])
+                     && d.design.summary is string && d.design.summary.size() <= 160
+                     && d.design.grams is number))
+             && d.get('note', '') is string && d.get('note', '').size() <= 80
+             && d.savedAt == request.time
+             && d.classId is string
+             && (d.classId == '' || inClass(d.classId));
+    }
+    // Each student's module progress and design (the teacher reads everyone's)
     match /sailcar_progress/{uid} {
       allow read: if isTeacher() || (signedIn() && request.auth.uid == uid);
-      allow write: if isTeacher() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if isTeacher()
+                            || (signedIn() && request.auth.uid == uid && validProgress(uid));
+      allow delete: if isTeacher();
     }
     // Real hallway runs: visible to the student, their class, and the teacher
     match /sailcar_runs/{id} {
       allow read: if isTeacher()
                   || (signedIn() && resource.data.userEmail == request.auth.token.email)
                   || (signedIn() && inClass(resource.data.classId));
-      allow create: if isTeacher()
-                    || (signedIn()
-                        && request.resource.data.userEmail == request.auth.token.email
-                        && request.resource.data.name is string
-                        && request.resource.data.name.size() <= 60
-                        && request.resource.data.distanceM is number
-                        && request.resource.data.distanceM >= 0
-                        && request.resource.data.distanceM <= 100
-                        && (request.resource.data.get('classId', '') == ''
-                            || inClass(request.resource.data.classId)));
+      allow create: if isTeacher() || (signedIn() && validRun());
       allow update, delete: if isTeacher();
     }
 
@@ -136,10 +218,21 @@ service cloud.firestore {
       allow write: if signedIn() && request.auth.uid == uid;
     }
 
-    // ── Classes and rosters (unchanged) ─────────────────────────────────────
+    // ── Classes, join codes and rosters ─────────────────────────────────────
+    // Class names: readable to everyone signed in (other pages list them).
+    // classes.html no longer stores the join code here (see joinCodes).
     match /classes/{id} {
       allow read: if signedIn();
       allow write: if isTeacher();
+    }
+    // One doc per join code; the doc id IS the code:
+    // {classId, className, teacherEmail, createdAt}. Anyone signed in may look
+    // up the one code they typed; only the teacher may list or change codes,
+    // so nobody can collect every class's code.
+    match /joinCodes/{code} {
+      allow get: if signedIn();
+      allow list: if isTeacher();
+      allow create, update, delete: if isTeacher();
     }
     match /enrollments/{id} {
       allow read: if isTeacher()

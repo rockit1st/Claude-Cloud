@@ -6,14 +6,36 @@
 (function () {
   'use strict';
   const P = SailLab.physics, D = P.DEFAULT_CAR, G = P.G;
-  const START = 0.3;                                    // the start line: 30 cm from the two fans (simulate's default startX)
+  const START = P.simulate(D, { maxTime: 0 }).opts.startX;   // the start line, metres from the two fans (simulate's own default)
   // the wind's push on the default car (20 × 20 cm sail + chassis) sitting still at the start line
   const SAIL0 = P.airForce(P.windAt(START), D.sailArea, D.sailCd, D.sailAngle);
   const PUSH0 = SAIL0 + P.airForce(P.windAt(START), D.bodyArea, D.bodyCd, 0);
   // the same tipping rule simulate() uses at the start line: the push high on the sail beats the weight holding the back down
   function tips(g) { return SAIL0 * (D.sailHeight - D.cgHeight) > (g / 1000) * G * D.cgToFront; }
   const TIP_G = SAIL0 * (D.sailHeight - D.cgHeight) / (G * D.cgToFront) * 1000;   // ≈ 40 g: lighter than this, the default car flips
-  const HALL_GOAL = 18;                                 // Step 4: metres to beat (about 59 ft)
+  // ── the hallway: its size lives ONLY in SailLab.physics.HALL (sailcar-core.js); nothing below hard-codes it ──
+  const HALL = P.HALL, LONG_HALL = 1000;                // LONG_HALL: "a longer hall", room for any car to coast to a stop
+  function ft(m) { return Math.round(m / 0.3048); }     // metres → whole feet
+  const HALL_TXT = Number(HALL.length.toFixed(1)) + ' m (about ' + ft(HALL.length) + ' ft)';   // "21.3 m (about 70 ft)"
+  function atEnd(r) { return r.reason === 'reached the end of the hall'; }
+  // how far a run would have gone with no end wall (a run that stopped inside the hallway: just its distance)
+  function longer(r) { return atEnd(r) ? P.simulate(r.car, Object.assign({}, r.opts, { hallLength: LONG_HALL })).distance : r.distance; }
+  // Step 4's mass slider, and its goal. The lightest car that doesn't tip goes farthest, but on the slider that car
+  // (40 g today) only just stays down. A real car needs a few grams of safety margin, so the goal is the whole metres
+  // that a car MARGIN_G heavier still reaches (50 g rolls 19.6 m today → at least 19 m: 40, 45 and 50 g pass),
+  // or the end of the hallway if that car makes it all the way.
+  const MASS = { min: 20, max: 200, step: 5, start: 150 };
+  const MARGIN_G = 10;                                  // two nickels
+  let LIGHTEST = null;                                  // the lightest mass on the slider that doesn't tip
+  for (let g = MASS.min; g <= MASS.max && LIGHTEST == null; g += MASS.step) if (P.simulate({ mass: g / 1000 }).reason !== 'tipped over') LIGHTEST = g;
+  const MARGIN_RUN = P.simulate({ mass: (LIGHTEST + MARGIN_G) / 1000 });
+  const HALL_GOAL = Math.min(HALL.length, Math.floor(MARGIN_RUN.distance));
+  const GOAL_IS_END = HALL_GOAL >= HALL.length;
+  function reachedGoal(r) { return r.reason !== 'tipped over' && r.distance >= HALL_GOAL - 1e-9; }   // a car at the end has rolled HALL.length
+  // the masses on the slider that pass, heavier than the lightest safe one: "a few grams of margin" (45 and 50 g today)
+  const MARGIN_PASS = [];
+  for (let g = LIGHTEST + MASS.step; g <= MASS.max; g += MASS.step) if (reachedGoal(P.simulate({ mass: g / 1000 }))) MARGIN_PASS.push(g);
+  function orList(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' or ' + a[a.length - 1]; }
   const grams = function (v) { return v + ' g'; };
   // write a readout from plain strings and ['bold'] pieces — never innerHTML
   function say(api, box, parts) {
@@ -46,6 +68,10 @@
   ];
   const GROUPS = [['Wheels', '#40e080'], ['Sticks', '#d8b070'], ['Sail', '#f0e6ff'], ['Skewers & straws', '#7ad7ff'], ['Glue & tape', '#ff9a70'], ['Pipe cleaners', '#ff5fa0']];
   function tenths(t) { return (t % 10 ? (t / 10).toFixed(1) : String(t / 10)) + ' g'; }   // masses are added up in tenths of a gram (no rounding errors)
+  // the quiz's hallway numbers, straight from simulate(): 150 g → 45 g, and the default car before/after 2 nickels (10 g)
+  const Q_MASS = { heavy: P.simulate({ mass: 0.150 }), light: P.simulate({ mass: 0.045 }) };
+  const Q_NICKEL = { before: P.simulate(D), after: P.simulate({ mass: D.mass + 0.010 }) };
+  function rolls(r) { return atEnd(r) ? 'all the way to the end of the hallway' : 'about ' + SailLab.fmt(r.distance, 1) + ' m'; }
 
   SailLab.register({
     id: 'mass',
@@ -238,10 +264,14 @@
               return api.h('li', { style: 'margin:0;color:' + (r[1] ? '#80f0b0' : '#ffb0b0'), text: (r[1] ? '✓ ' : '✗ ') + r[0] });
             })));
             if (complete) {
-              const r = P.simulate({ mass: tot / 10000 }), flipped = r.reason === 'tipped over';
+              const r = P.simulate({ mass: tot / 10000 }), flipped = r.reason === 'tipped over', far = longer(r);
+              const SIM = '🏁 With a 20 × 20 cm sail and typical wheels, the hallway simulator says this car rolls ';
               say(api, check.appendChild(api.h('div')), flipped
                 ? ['⚠️ With a 20 × 20 cm sail, the hallway simulator says this car ', ['tips onto its nose'], ' at the start line. It’s too light to hold its back end down. Add a few grams back (Step 4 shows why).']
-                : ['🏁 With a 20 × 20 cm sail and typical wheels, the hallway simulator says this car rolls about ', [api.fmt(r.distance, 1) + ' m'], ' (about ' + Math.round(r.distance * 3.281) + ' ft).']);
+                : atEnd(r)
+                  ? [SIM, ['all the way to the end of our ' + ft(HALL.length) + ' ft hallway'], api.fmt(far, 1) === api.fmt(HALL.length, 1) ? '!'
+                    : ' — in a longer hall it would roll about ' + api.fmt(far, 1) + ' m (' + ft(far) + ' ft).']
+                  : [SIM + 'about ', [api.fmt(r.distance, 1) + ' m'], ' (about ' + ft(r.distance) + ' ft).']);
               if (tot <= 500 && !flipped) api.done('A complete car at 50 g or less that stays on its wheels! Small swaps (jumbo → popsicle sticks, cardstock → paper, fewer glue dots) add up — and the lighter car rolls farther.');
             }
           }
@@ -255,41 +285,66 @@
           '<ul><li><strong>Faster speed-up:</strong> the same wind push gives a light car more acceleration (force ÷ mass).</li>' +
           '<li><strong>Less friction:</strong> far from the fans the wind gets weak. A light car has so little friction that even weak wind keeps pushing it.</li></ul>' +
           '<p>But watch out! The wind pushes <strong>high</strong> on the sail, and two box fans push hard right at the start line. That push tries to flip the car forward over its front wheels. ' +
-          'The car’s <strong>weight</strong> is what holds its back end down. Make the car too light and the push wins: it <strong>tips over</strong>.</p>',
-        challenge: 'Find a mass that rolls FARTHER than ' + HALL_GOAL + ' metres (about 59 ft) without tipping over.',
+          'The car’s <strong>weight</strong> is what holds its back end down. Make the car too light and the push wins: it <strong>tips over</strong>.</p>' +
+          (GOAL_IS_END ? '' : '<p>The goal is ' + HALL_GOAL + ' m (' + ft(HALL_GOAL) + ' ft), a little short of the end of the hall. That leaves room for a <strong>safety margin</strong>: ' +
+            'a car a few grams heavier than the lightest one that stays on its wheels can still make it.</p>'),
+        challenge: GOAL_IS_END ? 'Find a mass that rolls all the way to the end of the hallway — ' + HALL_TXT + ' — without tipping over.'
+                               : 'Find a mass that rolls at least ' + HALL_GOAL + ' metres (about ' + ft(HALL_GOAL) + ' ft) without tipping over.',
         render: function (el, api) {
           const log = [];
           // changing the mass clears the hallway, so a run with the old mass can't finish (and count) after the slider moves
-          const massS = api.ui.slider(el, { label: 'Total mass of the car (20 × 20 cm sail, typical wheels)', min: 20, max: 200, step: 5, value: 150, format: grams, onInput: function () { sim.reset(); } });
+          const massS = api.ui.slider(el, { label: 'Total mass of the car (20 × 20 cm sail, typical wheels)', min: MASS.min, max: MASS.max, step: MASS.step, value: MASS.start, format: grams, onInput: function () { sim.reset(); } });
           const sim = api.ui.trackSim(el, function () { return { mass: massS.get() / 1000 }; }, {
-            scaleM: 25,                                     // same scale every run (the hallway is 30 m), so runs are easy to compare
+            scaleM: HALL.length,                            // the whole hallway, start line to end wall, every run — easy to compare
             onResult: function (r) {
               const g = Math.round(r.car.mass * 1000), flipped = r.reason === 'tipped over';
               log.push({ g: g, d: r.distance, tipped: flipped });
               if (log.length > 30) log.shift();
               chart();
-              if (!flipped && r.distance > HALL_GOAL) api.done('It rolled ' + api.fmt(r.distance, 1) + ' m (about ' + Math.round(r.distance * 3.281) + ' ft) at ' + g + ' g! Lighter = farther… but below about ' + Math.round(TIP_G) + ' g this car flips. That’s its lightest safe mass.');
+              if (!reachedGoal(r)) return;
+              const far = longer(r);
+              api.done((atEnd(r) ? 'At ' + g + ' g it rolled all the way to the end of our ' + ft(HALL.length) + ' ft hallway' +
+                  (api.fmt(far, 1) !== api.fmt(HALL.length, 1) ? ' — in a longer hall it would roll about ' + api.fmt(far, 1) + ' m (' + ft(far) + ' ft)!' : '!')
+                : 'It rolled ' + api.fmt(r.distance, 1) + ' m (about ' + ft(r.distance) + ' ft) at ' + g + ' g!') +
+                ' Lighter = farther… but below about ' + Math.round(TIP_G) + ' g this car flips. In the simulator, ' + LIGHTEST + ' g is the lightest mass that doesn’t flip' +
+                (LIGHTEST - TIP_G < 1 ? ', but only just. ' : '. ') +
+                (g === LIGHTEST
+                  ? 'A real car is never exactly like the model: a gust of wind, a sail that’s a bit bigger or extra glue near the front could flip it. ' +
+                    (MARGIN_PASS.length ? 'So build yours a few grams heavier, like ' + orList(MARGIN_PASS) + ' g. That still makes ' + HALL_GOAL + ' m, with a safety margin.'
+                                        : 'So build yours a few grams heavier: that’s your safety margin.')
+                  : 'Your ' + g + ' g car has ' + (g - LIGHTEST) + ' g to spare: a smart safety margin. A real car is never exactly like the model, ' +
+                    'and a gust of wind, a sail that’s a bit bigger or extra glue near the front could flip a car that’s right at the limit.'));
             }
           });
           api.onLeave(sim.stop);
-          const H = 250, s = board(api, el, H, 'Chart of your runs: car mass and how far it rolled');
-          function X(g) { return 75 + (g - 20) / 180 * 455; }
-          function Y(m) { return 205 - m / 25 * 160; }
+          // the chart's top line is the end of the hallway: a run can't go past it
+          const H = 270, s = board(api, el, H, 'Chart of your runs: car mass and how far it rolled, up to the end of the hallway');
+          const XL = 98, XR = 522, YB = 222, YT = 72, FS = 21;       // big labels: on a phone this 560-wide chart shows about 300 px wide
+          function X(g) { return XL + (g - MASS.min) / (MASS.max - MASS.min) * (XR - XL); }
+          function Y(m) { return YB - Math.min(m, HALL.length) / HALL.length * (YB - YT); }
           function chart() {
             clear(api, s, H);
-            label(api, s, 20, 28, 'Your runs', { color: '#f0e6ff', size: 19 });
-            api.svg('circle', { cx: 300, cy: 22, r: 7, fill: '#40e080' }, s);
-            label(api, s, 313, 28, 'rolled', { size: 17, bold: false });
-            api.svg('path', { d: 'M 392,16 l 12,12 m 0,-12 l -12,12', stroke: '#ff5050', 'stroke-width': 3 }, s);
-            label(api, s, 412, 28, 'tipped over', { size: 17, bold: false });
-            for (let m = 0; m <= 25; m += 5) {
-              api.svg('line', { x1: X(20), y1: Y(m), x2: X(200), y2: Y(m), stroke: m ? '#2a1a4a' : '#4a3a6a', 'stroke-width': m ? 1 : 2 }, s);
-              label(api, s, 64, Y(m) + 6, m + ' m', { anchor: 'end', color: '#9080b0', size: 17, bold: false });
+            label(api, s, 16, 30, 'Your runs', { color: '#f0e6ff', size: FS + 1 });
+            api.svg('circle', { cx: 278, cy: 23, r: 7, fill: '#40e080' }, s);
+            label(api, s, 291, 30, 'rolled', { size: FS, bold: false });
+            api.svg('path', { d: 'M 377,17 l 12,12 m 0,-12 l -12,12', stroke: '#ff5050', 'stroke-width': 3 }, s);
+            label(api, s, 397, 30, 'tipped over', { size: FS, bold: false });
+            // grid every 5 m, leaving room for the labels of the end-of-hall and goal lines
+            for (let m = 0; m < HALL.length; m += 5) {
+              if (m && (Y(m) - YT < 26 || (!GOAL_IS_END && Math.abs(Y(m) - Y(HALL_GOAL)) < 30))) continue;
+              api.svg('line', { x1: XL, y1: Y(m), x2: XR, y2: Y(m), stroke: m ? '#2a1a4a' : '#4a3a6a', 'stroke-width': m ? 1 : 2 }, s);
+              label(api, s, XL - 10, Y(m) + 7, m + ' m', { anchor: 'end', color: '#9080b0', size: FS, bold: false });
             }
-            for (let g = 50; g <= 200; g += 50) label(api, s, X(g), 232, g + ' g', { anchor: 'middle', color: '#9080b0', size: 17, bold: false });
-            api.svg('line', { x1: X(20), y1: Y(HALL_GOAL), x2: X(200), y2: Y(HALL_GOAL), stroke: '#f0c040', 'stroke-width': 2, 'stroke-dasharray': '6,5' }, s);
-            label(api, s, X(200), Y(HALL_GOAL) + 22, 'goal: farther than ' + HALL_GOAL + ' m', { anchor: 'end', color: '#f0c040', size: 17 });
-            if (!log.length) label(api, s, 300, Y(8) + 6, 'Run the car to add a dot here.', { anchor: 'middle', color: '#9080b0', size: 17, bold: false });
+            for (let g = 50; g <= MASS.max; g += 50) label(api, s, X(g), YB + 30, g + ' g', { anchor: 'middle', color: '#9080b0', size: FS, bold: false });
+            // the end of the hallway (the goal, when the best car makes it that far)
+            api.svg('line', { x1: XL, y1: YT, x2: XR, y2: YT, stroke: GOAL_IS_END ? '#f0c040' : '#c8b8ea', 'stroke-width': 2, 'stroke-dasharray': GOAL_IS_END ? '6,5' : null }, s);
+            label(api, s, XL - 10, YT + 7, Number(HALL.length.toFixed(1)) + ' m', { anchor: 'end', color: GOAL_IS_END ? '#f0c040' : '#c8b8ea', size: FS });
+            label(api, s, XR, YT - 10, (GOAL_IS_END ? 'goal: ' : '') + 'end of the hallway (' + ft(HALL.length) + ' ft)', { anchor: 'end', color: GOAL_IS_END ? '#f0c040' : '#c8b8ea', size: FS });
+            if (!GOAL_IS_END) {
+              api.svg('line', { x1: XL, y1: Y(HALL_GOAL), x2: XR, y2: Y(HALL_GOAL), stroke: '#f0c040', 'stroke-width': 2, 'stroke-dasharray': '6,5' }, s);
+              label(api, s, XR, Y(HALL_GOAL) + 26, 'goal: at least ' + HALL_GOAL + ' m (' + ft(HALL_GOAL) + ' ft)', { anchor: 'end', color: '#f0c040', size: FS });
+            }
+            if (!log.length) label(api, s, (XL + XR) / 2, Y(8) + 7, 'Run the car to add a dot here.', { anchor: 'middle', color: '#9080b0', size: FS, bold: false });
             log.forEach(function (r, i) {
               const x = X(r.g), y = Y(r.d), last = i === log.length - 1;
               if (r.tipped) api.svg('path', { d: 'M ' + (x - 6) + ',' + (y - 14) + ' l 12,12 m 0,-12 l -12,12', stroke: '#ff5050', 'stroke-width': last ? 4 : 3 }, s);
@@ -297,7 +352,7 @@
             });
           }
           chart();
-          api.ui.note(el, 'tip', '💡 Start at 150 g and work your way down. Watch the dots: what happens to the distance as the car gets lighter? What happens when it gets <em>too</em> light?');
+          api.ui.note(el, 'tip', '💡 Start at ' + MASS.start + ' g and work your way down. Watch the dots: what happens to the distance as the car gets lighter? What happens when it gets <em>too</em> light?');
           api.ui.note(el, 'good', '🔮 <strong>Coming up in Module 6:</strong> tricks that stop a light car from flipping — so it can be lighter AND safe.');
         }
       },
@@ -313,7 +368,8 @@
           '<li><strong>But don’t go too light!</strong> If the sail flips your car onto its nose, add a little weight near the <strong>back</strong> axle (a coin or a pipe cleaner) or lower the sail. Module 6 shows you more fixes.</li></ul>' +
           '<p><strong>Test it in the hallway:</strong></p>' +
           '<ol><li><strong>Flick test (inertia):</strong> with the fans off, give your car a gentle flick. Tape 2 nickels (about 5 g each) on top and flick it the same way. The heavier car starts slower.</li>' +
-          '<li><strong>Mass test:</strong> run the car 3 times in front of the two box fans and measure each run with a tape measure. Then run it 3 more times with the 2 nickels taped on. Same fans on high, same start line. How much distance did 10 g cost you?</li>' +
+          '<li><strong>Mass test:</strong> run the car 3 times in front of the two box fans and measure each run with a tape measure. Then run it 3 more times with the 2 nickels taped on. Same fans on high, same start line. How much distance did 10 g cost you? ' +
+            '(If a run makes it all the way to the end of our ' + ft(HALL.length) + ' ft hallway, write “end” — then see if it still makes it with the nickels on.)</li>' +
           '<li><strong>Flip check:</strong> watch from the side as you let go in front of the fans. If the back wheels lift off the floor, your car is too light for its sail — add a little weight at the back.</li></ol>',
         render: function (el, api) {
           api.ui.note(el, 'build', '🛠️ <strong>Approximate masses:</strong> popsicle stick ≈ 2 g · jumbo stick ≈ 4 g · plastic wheel ≈ 4 g · skewer ≈ 1 g · straw ≈ 0.5 g · ' +
@@ -334,14 +390,16 @@
         why: 'Rolling friction = friction number × mass × 9.81. Double the mass and you double the friction.' },
       { q: 'Friction by itself slows a 45 g car and a 150 g car. Which one does friction slow down faster?', options: ['The 150 g car, because it has more friction', 'The 45 g car, because it has less inertia', 'Friction stops working once a car is rolling', 'Neither — it slows both at the same rate, about 0.25 m/s every second'], answer: 3,
         why: 'Friction grows with mass, but so does the inertia it has to slow down. Friction ÷ mass = 0.025 × 9.81 ≈ 0.25 m/s² for any mass.' },
-      { q: 'You make your car lighter, from 150 g to 45 g, with the same sail and wheels. What happens in the hallway with the two box fans?', options: ['It rolls the same distance — mass doesn’t matter', 'It rolls much farther — about 9.8 m becomes about 20.8 m', 'It rolls less far, because a light car has less inertia to keep it going', 'It can’t start moving at all'], answer: 1,
+      { q: 'You make your car lighter, from 150 g to 45 g, with the same sail and wheels. What happens in the hallway with the two box fans?', options: ['It rolls the same distance — mass doesn’t matter', 'It rolls much farther — ' + rolls(Q_MASS.heavy) + ' becomes ' + rolls(Q_MASS.light), 'It rolls less far, because a light car has less inertia to keep it going', 'It can’t start moving at all'], answer: 1,
         why: 'A lighter car speeds up faster AND has less friction, so even the weak wind far from the fans keeps pushing it. (45 g is still heavy enough not to tip.)' },
       { q: 'Your super-light 25 g car flips onto its nose as soon as you let it go in front of the two box fans. What is happening?', options: ['Its wheels have too much friction', 'It has too much inertia', 'The wind pushes high on the sail, and the car is too light to hold its back end down', 'The fans are blowing too weakly'], answer: 2,
         why: 'The push high on the sail tries to flip the car forward over its front wheels. The car’s weight holds it down — too little weight and it flips. With a 20 × 20 cm sail, that happens below about ' + Math.round(TIP_G) + ' g.' },
       { q: 'Which change cuts the MOST mass from a sail car?', options: ['Using 4 cm less tape (≈ 0.1 g)', 'Leaving out one straw (≈ 0.5 g)', 'Trimming 1 cm off a skewer (less than 0.1 g)', 'Making the sail from paper (≈ 4.5 g) instead of cardstock (≈ 10 g)'], answer: 3,
         why: 'Swapping cardstock for paper saves about 5.5 g. Tiny trims help a little, but the big parts matter most.' },
-      { q: 'Your car averages 16.0 m over 3 runs. You tape on two nickels (about 10 g) and, with the same two fans and start line, it averages 14.7 m. What does this show?', options: ['Extra mass made it roll less far, so trimming mass should help', 'Heavier cars always tip over', 'The nickels helped the sail catch more wind', 'Mass makes no difference to how far a car rolls'], answer: 0,
+      { q: 'Your car averages ' + SailLab.fmt(Q_NICKEL.before.distance, 1) + ' m over 3 runs. You tape on two nickels (about 10 g) and, with the same two fans and start line, it averages ' + SailLab.fmt(Q_NICKEL.after.distance, 1) + ' m. What does this show?', options: ['Extra mass made it roll less far, so trimming mass should help', 'Heavier cars always tip over', 'The nickels helped the sail catch more wind', 'Mass makes no difference to how far a car rolls'], answer: 0,
         why: 'Only the mass changed, so the extra 10 g caused the shorter runs. Taking grams off your car should make it roll farther (as long as it doesn’t tip).' }
-    ]
+    ],
+    // the numbers behind the text, for checking (not used by the page)
+    _calc: { HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END, LIGHTEST: LIGHTEST, MARGIN_G: MARGIN_G, MARGIN_RUN: MARGIN_RUN, MARGIN_PASS: MARGIN_PASS, TIP_G: TIP_G, MASS: MASS, START: START, Q_MASS: Q_MASS, Q_NICKEL: Q_NICKEL }
   });
 })();
