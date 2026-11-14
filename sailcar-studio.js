@@ -23,6 +23,11 @@
   const END_REASON = 'reached the end of the hall';   // simulate()'s exact reason
   // a run logged by hand within about half a foot of the hallway's length made it to the end
   const END_SLACK_M = 0.15;
+  // how the last simulator run ended, kept with the design (design.predictedWhy): a car that tips over or
+  // never moves has predictedM 0, and this says why instead of "no prediction yet"
+  const WHY = { 'tipped over': 'tipped', 'never moved': 'never moved', 'hit the wall': 'wall', 'reached the end of the hall': 'end', 'coasted to a stop': 'stopped' };
+  const WHY_NOW = { tipped: 'tips over at the start', 'never moved': 'never starts rolling' };
+  const WHY_SAID = { tipped: 'would tip over at the start', 'never moved': 'would never start rolling' };
 
   // Part data (approximate masses of the classroom materials)
   const CHASSIS = {
@@ -137,27 +142,41 @@
   function trimNum(v) { return String(Math.round(v * 100) / 100); }
   // a real distance in the unit it was measured in, then the other unit: "52 ft (15.85 m)" / "4.20 m (13.8 ft)"
   function bothUnits(v, unit) { return unit === 'ft' ? trimNum(v) + ' ft (' + fmt(v / FT_PER_M, 2) + ' m)' : fmt(v, 2) + ' m (' + fmt(v * FT_PER_M, 1) + ' ft)'; }
+  // a logged run's real distance as the student typed it (the unit they measured in first). distanceM is what the
+  // board ranks by (and the database caps at 100 m); the typed number is only shown when it agrees with it, so a
+  // hand-made run can't show a different distance from the one it is ranked by. Otherwise distanceM is shown.
+  function realRunText(r) {
+    const typed = typeof r.distance === 'number' && isFinite(r.distance) && (r.unit === 'ft' || r.unit === 'm') &&
+      Math.abs((r.unit === 'ft' ? r.distance / FT_PER_M : r.distance) - r.distanceM) < 0.01;
+    return typed ? bothUnits(r.distance, r.unit) : bothUnits(r.distanceM, 'm');
+  }
 
   // ── the design store: one design per account ──
   function clamp(v, lo, hi) { v = Number(v); return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : lo; }
   // only known keys with sensible values get in, so a damaged copy can't break the maths
   function clean(raw) {
-    const d = Object.assign({}, DEFAULT, { predictedM: 0, bestM: 0, model: modelVersion(), savedMs: 0 });
+    const d = Object.assign({}, DEFAULT, { predictedM: 0, predictedWhy: '', bestM: 0, model: modelVersion(), savedMs: 0 });
     if (!raw || typeof raw !== 'object') return d;
     Object.keys(CHOICES).forEach(function (k) { if (typeof raw[k] === 'string' && Object.prototype.hasOwnProperty.call(CHOICES[k], raw[k])) d[k] = raw[k]; });
     Object.keys(RANGES).forEach(function (k) { if (typeof raw[k] === 'number' && isFinite(raw[k])) d[k] = Math.round(clamp(raw[k], RANGES[k][0], RANGES[k][1])); });
     FLAGS.forEach(function (k) { if (typeof raw[k] === 'boolean') d[k] = raw[k]; });
     d.savedMs = clamp(raw.savedMs, 0, 1e15);
     // a prediction made with a different physics model (e.g. the old one-fan wind) no longer counts
-    if (raw.model === d.model) { d.predictedM = clamp(raw.predictedM, 0, 100); d.bestM = clamp(raw.bestM, 0, 100); }
+    if (raw.model === d.model) {
+      d.predictedM = clamp(raw.predictedM, 0, 100); d.bestM = clamp(raw.bestM, 0, 100);
+      const why = raw.predictedWhy;
+      if (typeof why === 'string' && Object.keys(WHY).some(function (k) { return WHY[k] === why; })) d.predictedWhy = why;
+    }
     return d;
   }
   function cloudCopy(d) {
     const o = {};
     Object.keys(DEFAULT).forEach(function (k) { o[k] = d[k]; });
-    o.predictedM = d.predictedM || 0; o.bestM = d.bestM || 0; o.model = modelVersion(); o.savedMs = d.savedMs || 0;
+    o.predictedM = d.predictedM || 0; o.predictedWhy = d.predictedWhy || ''; o.bestM = d.bestM || 0; o.model = modelVersion(); o.savedMs = d.savedMs || 0;
     return o;
   }
+  // 'tipped' / 'never moved' when the last simulator run of this design had no distance, else ''
+  function noDistanceWhy(d) { return !(d.predictedM > 0) && WHY_NOW[d.predictedWhy] ? d.predictedWhy : ''; }
   function db() { return firebase.firestore(); }
   function currentUser() { try { return firebase.auth().currentUser; } catch (e) { return null; } }
 
@@ -274,7 +293,7 @@
       root.appendChild(wrap);
       const left = h('div'), right = h('div');
       wrap.appendChild(left); wrap.appendChild(right);
-      function set(k) { return function (v) { design[k] = v; design.predictedM = 0; touch(); refresh(); }; }
+      function set(k) { return function (v) { design[k] = v; design.predictedM = 0; design.predictedWhy = ''; touch(); refresh(); }; }
       left.appendChild(h('h3', { class: 'sl-step-title', style: 'font-size:0.9rem;margin:6px 0', text: '🪵 Chassis & wheels' }));
       ui.choice(left, { label: 'Chassis', value: design.chassis, options: Object.keys(CHASSIS).map(function (k) { return { value: k, label: CHASSIS[k].label }; }), onChange: set('chassis') });
       ui.slider(left, { label: 'Sticks along the chassis', min: 2, max: 5, step: 1, value: design.rails, format: function (v) { return v + ' (+2 cross pieces)'; }, onInput: set('rails') });
@@ -360,9 +379,13 @@
       best.appendChild(h('div', null, [main, strongText ? h('strong', { text: strongText }) : null, rest || null]));
       if (strongText) best.appendChild(h('div', { style: 'margin-top:6px;font-size:0.85rem;color:#c8b8ea', text: TUNED_NOTE }));
     }
+    const TIP_TEXT = '🤸 In the simulator this design tips over at the start line. Go back, lower the sail, or tape a penny low at the back.';
+    const STUCK_TEXT = '😴 In the simulator this design never starts rolling: friction beats the fans’ push. Go back and fix the axles or use a bigger sail.';
     function showLast() {
       // the longer-hall distance isn't stored: the same design in the same model always rolls the same, so work it out again
       if (design.predictedM > 0) say('🔮 Your last prediction for this design: ', predictionText(design.predictedM, atEnd(design.predictedM) ? forecast(design).longer : 0), '.');
+      else if (design.predictedWhy === 'tipped') say(TIP_TEXT);            // the simulator was run: it just has no distance
+      else if (design.predictedWhy === 'never moved') say(STUCK_TEXT);
       else say('🔮 Run the simulator to get your prediction.');
     }
     const sim = api.ui.trackSim(el, function () { return analyse(design).car; }, {
@@ -371,10 +394,11 @@
       onResult: function (res) {
         const r = judge(res);
         design.predictedM = Math.round(r.distance * 100) / 100;                 // in OUR hallway: what race day compares with
+        design.predictedWhy = WHY[r.reason] || '';                               // so a tip or a car that never moves is remembered too
         design.bestM = Math.max(design.bestM || 0, Math.round(r.longer * 100) / 100);   // compared in a longer hall, so designs that reach the end still rank
         touch(); flushCloud();          // the prediction goes to the account straight away, ready for race day
-        if (r.reason === 'tipped over') say('🤸 In the simulator this design tips over at the start line. Go back, lower the sail, or tape a penny low at the back.');
-        else if (r.reason === 'never moved') say('😴 In the simulator this design never starts rolling: friction beats the fans’ push. Go back and fix the axles or use a bigger sail.');
+        if (r.reason === 'tipped over') say(TIP_TEXT);
+        else if (r.reason === 'never moved') say(STUCK_TEXT);
         else say('🔮 Prediction for this design: ', predictionText(design.predictedM, r.longer),
                  '.' + (r.reason === 'hit the wall' ? ' (It veered into the wall — square the axles with a ruler.)' : '') + ' Your best design so far: ' + bestText(design.bestM) + '.');
       }
@@ -403,8 +427,11 @@
     function showDesignLine() {
       designLine.textContent = '';
       designLine.appendChild(h('strong', { text: 'Design being logged: ' }));
+      const why = noDistanceWhy(design);
       designLine.appendChild(document.createTextNode(summary(design) + ' · ' + Math.round(analyse(design).grams) + ' g · ' +
-        (design.predictedM > 0 ? 'predicted ' + predictedText(design.predictedM) : 'no prediction yet (run the simulator in step 2)') + '. Not the car you raced? Go back to step 1 and set it up.'));
+        (design.predictedM > 0 ? 'predicted ' + predictedText(design.predictedM)
+          : why ? 'the simulator says this design ' + WHY_NOW[why] + ', so there is no predicted distance to compare with. Log what your real car does'
+          : 'no prediction yet (run the simulator in step 2)') + '. Not the car you raced? Go back to step 1 and set it up.'));
     }
     showDesignLine();
     el.appendChild(designLine);
@@ -436,6 +463,19 @@
     const mine = h('div');
     el.appendChild(mine);
     if (!me) return;
+
+    // The name on the class board must be exactly the sign-in's own name (the database checks it against the
+    // "name" in the student's Google sign-in, or their email if the account has none), so it is never cut short.
+    // currentUser.displayName is that same Google profile name; the sign-in token is asked for it too, in case
+    // the two ever differ. Offline with an old token, displayName is used.
+    let runName = String(me.displayName || me.email || '');
+    try {
+      Promise.resolve(me.getIdTokenResult()).then(function (t) {
+        const c = (t && t.claims) || {};
+        if (typeof c.name === 'string') runName = c.name;                         // exactly what the database compares with
+        else if (typeof c.email === 'string' && c.email) runName = c.email;
+      }).catch(function () {});
+    } catch (e) {}
 
     let classesOk = false, myClasses = [];
     function loadClasses() {
@@ -477,28 +517,30 @@
       const tb = h('tbody');
       runs.forEach(function (r, i) {
         const pct = r.predictedM > 0 ? Math.round(r.distanceM / r.predictedM * 100) + '%' : '—';
-        // in the unit it was measured in first: "13.5 ft (4.11 m)"
-        const real = typeof r.distance === 'number' && (r.unit === 'ft' || r.unit === 'm') ? bothUnits(r.distance, r.unit) : bothUnits(r.distanceM, 'm');
+        const real = realRunText(r);          // in the unit it was measured in first: "13.5 ft (4.11 m)"
         tb.appendChild(h('tr', null, [h('td', { text: String(i + 1) }), h('td', { text: real }),
           h('td', { text: predictedCell(r) }), h('td', { text: pct }), h('td', { text: String(r.note || ''), style: 'text-align:left;white-space:normal;min-width:' + (r.note ? 140 : 0) + 'px' })]));
       });
       t.appendChild(tb);
       mine.appendChild(h('div', { class: 'sl-table-wrap' }, [t]));
+      if (runs.some(function (r) { return !(r.predictedM > 0); })) mine.appendChild(h('p', { class: 'sl-muted', style: 'font-size:0.8rem',
+        text: '— = no predicted distance for that run: the simulator said the design tips over or never starts rolling, or it hadn’t been run yet.' }));
     }, function (err) {
       if (life.left) return;
       mine.textContent = '';
       if (err && err.code === 'permission-denied') api.ui.note(mine, 'warn', '⚠️ Run logging isn’t switched on in the class database yet — ask your teacher.');
     }));
 
-    function loggedText(rec) {
+    // why = 'tipped' / 'never moved' when the design had no predicted distance (see noDistanceWhy)
+    function loggedText(rec, why) {
       const pct = rec.predictedM > 0 ? Math.round(rec.distanceM / rec.predictedM * 100) : 0;
       return '✓ Logged ' + bothUnits(rec.distance, rec.unit) +
-        (!(rec.predictedM > 0) ? '.'
+        (!(rec.predictedM > 0) ? (WHY_SAID[why] ? '. The simulator said this design ' + WHY_SAID[why] + ', so there is no predicted distance to compare it with.' : '.')
           : atEnd(rec.predictedM) ? ' — you predicted it would reach the end of the hallway' + (realAtEnd(rec.distanceM) ? ', and it did!' : ', and this run went ' + pct + '% of the way there.')
           : ' — your prediction was ' + aboutText(rec.predictedM) + ', so this run went ' + pct + '% of it.') +
         (rec.classId ? '' : ' Join your class on the Classes page so it shows on the class board.');
     }
-    function save(rec) {
+    function save(rec, why) {
       btn.disabled = true; btn.textContent = 'Saving…';
       let settled = false, queued = false;
       // offline the write waits in Firestore's queue and its promise only settles once it reaches the server
@@ -513,7 +555,7 @@
         settled = true;
         if (life.left) return;
         if (!queued) { btn.disabled = !classesOk; btn.textContent = LOG_TEXT; distIn.value = ''; noteIn.value = ''; }
-        say(loggedText(rec) + (queued ? ' (Uploaded now that Wi-Fi is back.)' : ''));
+        say(loggedText(rec, why) + (queued ? ' (Uploaded now that Wi-Fi is back.)' : ''));
       }, function (err) {
         settled = true;
         if (life.left) return;
@@ -546,14 +588,14 @@
       }
       confirmKey = null;
       const rec = {
-        uid: me.uid, userEmail: me.email || '', name: String(me.displayName || me.email || '').slice(0, 60),
+        uid: me.uid, userEmail: me.email || '', name: runName,           // never shortened: it must match the sign-in's name exactly
         classId: cls.id, className: String(cls.name || '').slice(0, 80),
         distanceM: Math.round(m * 100) / 100, unit: u, distance: Math.round(v * 100) / 100,
         predictedM: Math.min(100, Math.max(0, pred)), model: modelVersion(),
         design: { summary: summary(design).slice(0, 160), grams: Math.round(analyse(design).grams) },
         note: noteIn.value.trim().slice(0, 80), savedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
-      save(rec);
+      save(rec, noDistanceWhy(design));
     });
   }
 
@@ -603,13 +645,17 @@
       t.appendChild(h('thead', null, [h('tr', null, head)]));
       const tb = h('tbody');
       rows.forEach(function (r) {
-        const cells = [h('td', { text: r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : String(r.rank) }), h('td', { text: String(r.name || 'Anonymous') }),
-          h('td', { text: (r.atEnd ? '🏁 ' : '') + api.fmt(r.distanceM, 2) + ' m (' + api.fmt(r.distanceM * FT_PER_M, 1) + ' ft)' }),
+        const name = String(r.name || 'Anonymous'), email = String(r.userEmail || '');
+        // the teacher (only) sees whose account posted each row: hover the name, and in the delete question
+        const cells = [h('td', { text: r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : String(r.rank) }),
+          h('td', { text: name, title: isTeacher && email ? 'Posted by ' + email : null }),
+          h('td', { text: (r.atEnd ? '🏁 ' : '') + realRunText(r) }),          // the unit it was measured in first, like "My runs"
           h('td', { text: predictedCell(r) }),
           h('td', { text: String((r.design && r.design.summary) || ''), style: 'text-align:left;white-space:normal;font-size:0.8rem;min-width:170px' })];
         if (isTeacher) {
-          const del = h('button', { type: 'button', class: 'sl-btn', text: '✕', 'aria-label': 'Delete the run for ' + r.name, style: 'padding:4px 10px' });
-          del.addEventListener('click', function () { if (confirm('Delete this run for ' + r.name + '?')) db().collection('sailcar_runs').doc(r.id).delete().catch(function () { alert('Could not delete — check your connection.'); }); });
+          const who = name + (email ? ' (' + email + ')' : '');
+          const del = h('button', { type: 'button', class: 'sl-btn', text: '✕', 'aria-label': 'Delete the run for ' + who, title: 'Delete the run for ' + who, style: 'padding:4px 10px' });
+          del.addEventListener('click', function () { if (confirm('Delete this run for ' + who + '?')) db().collection('sailcar_runs').doc(r.id).delete().catch(function () { alert('Could not delete — check your connection.'); }); });
           cells.push(h('td', null, [del]));
         }
         tb.appendChild(h('tr', null, cells));
@@ -618,7 +664,7 @@
       box.appendChild(t);
       if (rows.some(function (r) { return r.atEnd; })) box.appendChild(h('p', { class: 'sl-muted', text: '🏁 = made it all the way to the end of the ' + hallLenText() + ' hallway. ' +
         'No car can go farther than that here, so those runs tie and share the same place. In step 2 the simulator’s “longer hall” number shows which of those designs would roll farthest.' }));
-      box.appendChild(h('p', { class: 'sl-muted', text: isTeacher ? 'Best real run per student. Only you and this class can see this board. (✕ deletes that run.)' : 'Best real run per student. Only your class and your teacher can see this board.' }));
+      box.appendChild(h('p', { class: 'sl-muted', text: isTeacher ? 'Best real run per student. Only you and this class can see this board. Hover a name to see which account posted it. (✕ deletes that run.)' : 'Best real run per student. Only your class and your teacher can see this board.' }));
     }
     function watchClass(classId) {
       life.keep(db().collection('sailcar_runs').where('classId', '==', classId).onSnapshot(function (snap) {
@@ -626,37 +672,48 @@
         draw();
       }, function () { if (life.left) return; box.textContent = ''; api.ui.note(box, 'warn', '⚠️ The class board isn’t switched on in the class database yet — ask your teacher.'); }));
     }
+    // a problem loading the classes: say so, with a Retry button, instead of an empty or wrong board
+    function problem(text, retryFn) {
+      if (life.left) return;
+      tabs.textContent = ''; box.textContent = '';
+      const again = h('button', { type: 'button', class: 'sl-btn', text: '↻ Retry', style: 'margin-left:8px' });
+      again.addEventListener('click', function () { box.textContent = ''; box.appendChild(h('p', { class: 'sl-muted', text: 'Loading your classes…' })); retryFn(); });
+      box.appendChild(h('p', { class: 'sl-muted' }, [text, again]));
+    }
+    const NO_CLASSES = 'Couldn’t load your classes — check Wi-Fi and tap Retry.';
+    // offline, Firestore answers from its (empty) cache: that is not "no classes"
+    function fromServer(s) { if (s.metadata && s.metadata.fromCache) throw Object.assign(new Error('offline'), { code: 'unavailable' }); return s; }
     if (isTeacher) {
-      db().collection('classes').where('teacherEmail', '==', TEACHER_EMAIL).get().then(function (s) {
-        if (life.left) return;
-        const known = s.docs.map(function (d) { return { id: d.id, name: d.data().name || 'Class' }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
-        life.keep(db().collection('sailcar_runs').onSnapshot(function (snap) {
-          runsByClass = {};
-          snap.docs.forEach(function (d) {
-            const r = row(d);
-            const k = known.some(function (c) { return c.id === r.classId; }) ? r.classId : '';
-            (runsByClass[k] = runsByClass[k] || []).push(r);
-          });
-          classes = known.concat(runsByClass[''] ? [{ id: '', name: 'No class' }] : []);
-          if (active == null || !classes.some(function (c) { return c.id === active; })) active = classes.length ? classes[0].id : null;
-          draw();
-        }, function () { if (life.left) return; box.textContent = ''; api.ui.note(box, 'warn', '⚠️ Runs can’t be loaded yet — publish the new Firestore rules.'); }));
-      }).catch(function () { classes = []; draw(); });
+      // the runs are sorted into the teacher's classes, so they are only listened to once the classes came from the server
+      (function loadTeacher() {
+        db().collection('classes').where('teacherEmail', '==', TEACHER_EMAIL).get().then(fromServer).then(function (s) {
+          if (life.left) return;
+          const known = s.docs.map(function (d) { return { id: d.id, name: d.data().name || 'Class' }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+          life.keep(db().collection('sailcar_runs').onSnapshot(function (snap) {
+            runsByClass = {};
+            snap.docs.forEach(function (d) {
+              const r = row(d);
+              const k = known.some(function (c) { return c.id === r.classId; }) ? r.classId : '';
+              (runsByClass[k] = runsByClass[k] || []).push(r);
+            });
+            classes = known.concat(runsByClass[''] ? [{ id: '', name: 'No class' }] : []);
+            if (active == null || !classes.some(function (c) { return c.id === active; })) active = classes.length ? classes[0].id : null;
+            draw();
+          }, function () { if (life.left) return; box.textContent = ''; api.ui.note(box, 'warn', '⚠️ Runs can’t be loaded yet — publish the new Firestore rules.'); }));
+        }).catch(function () { problem(NO_CLASSES, loadTeacher); });
+      })();
       return;
     }
-    db().collection('enrollments').where('uid', '==', me.uid).get().then(function (s) {
-      if (life.left) return;
-      if (s.metadata && s.metadata.fromCache) throw Object.assign(new Error('offline'), { code: 'unavailable' });   // offline: not "no classes"
-      classes = s.docs.map(function (d) { return d.data(); }).filter(function (x) { return x.classId; })
-        .map(function (x) { return { id: String(x.classId), name: String(x.className || 'Class') }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
-      active = classes.length ? classes[0].id : null;
-      classes.forEach(function (c) { watchClass(c.id); });
-      draw();
-    }).catch(function () {
-      if (life.left) return;
-      box.textContent = '';
-      box.appendChild(h('p', { class: 'sl-muted', text: 'Couldn’t load your classes — check Wi-Fi, then tap ← Back and Next → to try again.' }));
-    });
+    (function loadStudent() {
+      db().collection('enrollments').where('uid', '==', me.uid).get().then(fromServer).then(function (s) {
+        if (life.left) return;
+        classes = s.docs.map(function (d) { return d.data(); }).filter(function (x) { return x.classId; })
+          .map(function (x) { return { id: String(x.classId), name: String(x.className || 'Class') }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+        active = classes.length ? classes[0].id : null;
+        classes.forEach(function (c) { watchClass(c.id); });
+        draw();
+      }).catch(function () { problem(NO_CLASSES, loadStudent); });
+    })();
   }
 
   SailLab.register({

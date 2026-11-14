@@ -93,6 +93,15 @@
     return r.car.sailArea >= BIG_AREA - 1e-6 && r.reason !== 'tipped over' &&
            (GOAL_IS_END ? r.reason === 'reached the end of the hall' : r.distance >= HALL_GOAL);
   }
+  // The builds that pass, and whether every one of them uses all three fixes (a lower sail than the 10 cm gap it starts
+  // with, a longer chassis than 16 cm, and nickels). Today: gap 0 + 22 cm + 2 or 3 nickels, so the page says "all three".
+  const BIG_WINNERS = [];
+  [0, 5, 10].forEach(function (gap) {
+    [12, 16, 22].forEach(function (wb) {
+      for (let n = 0; n <= 4; n++) if (tamed(P.simulate(makeCar(BIG, gap, wb, n)))) BIG_WINNERS.push({ gap: gap, wb: wb, n: n });
+    });
+  });
+  const ALL_THREE = BIG_WINNERS.length > 0 && BIG_WINNERS.every(function (w) { return w.gap < 10 && w.wb > 16 && w.n > 0; });
 
   SailLab.register({
     id: 'balance',
@@ -221,11 +230,16 @@
         title: 'Hallway challenge: tame the big sail',
         html:
           '<p>This car has a big <strong>30 × 30 cm</strong> sail on a tall mast, 10 cm above the chassis. A big sail catches lots of wind from the two box fans… but press ▶ Run and watch what happens at the start line.</p>' +
-          '<p>Fix it with <strong>balance</strong>, not by giving up the big sail! You can mount the sail lower, use a longer chassis, or tape nickels over the back axle. A sail this big needs <strong>more than one</strong> fix. ' +
+          '<p>Fix it with <strong>balance</strong>, not by giving up the big sail! You can mount the sail lower, use a longer chassis, or tape nickels over the back axle. ' +
+          (ALL_THREE ? 'A sail this big needs <strong>all three</strong> fixes: a low sail, a long chassis <em>and</em> a little weight at the back. '
+                     : 'A sail this big needs <strong>more than one</strong> fix. ') +
+          'Watch the tip turn and the hold turn (in the box just above the hallway) change as you try each one. ' +
           'But remember Module 5: extra mass means extra friction, so add only as much weight as you need.</p>' +
           (GOAL_IS_END
-            ? '<p>Tamed, this sail can push a car all the way to the far end of our ' + HALL_TXT + ' hallway. More than one fix can get there, and on race day ' +
-              'they would tie at the end wall. So when your car reaches the end, the simulator also tells you how far it would have rolled in a <strong>longer</strong> hall. That shows which fix is really best.</p>'
+            ? '<p>Tamed, this sail can push a car all the way to the far end of our ' + HALL_TXT + ' hallway. ' +
+              (BIG_WINNERS.length > 1 ? 'More than one build can get there, and on race day they would tie at the end wall. So when' : 'When') +
+              ' your car reaches the end, the simulator also tells you how far it would have rolled in a <strong>longer</strong> hall.' +
+              (BIG_WINNERS.length > 1 ? ' That shows which build is really best.' : '') + '</p>'
             : '<p>Our hallway is ' + HALL_TXT + ' long, so there’s room to show what a tamed big sail can do.</p>'),
         challenge: GOAL_IS_END ? 'Keep the 30 × 30 cm sail and get the car all the way to the end of the ' + HALL_TXT + ' hallway without flipping.'
                                : 'Keep the 30 × 30 cm sail and get the car to roll at least ' + HALL_GOAL + ' metres (about ' + ft(HALL_GOAL) + ' ft) without flipping.',
@@ -257,7 +271,11 @@
               const d = api.fmt(r.distance, 2) + ' m', end = r.reason === 'reached the end of the hall';
               // a car that reached the end was still rolling: how far it would have gone in a longer hall
               const far = end ? longer(r.car, r.opts) : r.distance, farTxt = 'about ' + m1(far) + ' m (' + ft(far) + ' ft)';
-              if (r.reason === 'tipped over') say(api, fb, ['🤸 ', ['Flipped!'], ' The tip turn beat the hold turn. Shrink the tip lever (lower the sail) or grow the hold turn (longer chassis, nickels at the back).']);
+              if (r.reason === 'tipped over') {
+                const three = ALL_THREE && r.car.sailArea >= BIG_AREA - 1e-6;
+                say(api, fb, ['🤸 ', ['Flipped!'], ' The tip turn beat the hold turn. Shrink the tip lever (lower the sail) ' + (three ? 'and' : 'or') +
+                  ' grow the hold turn (longer chassis, nickels at the back)' + (three ? ': this big sail needs all three fixes.' : '.')]);
+              }
               else if (r.car.sailArea < BIG_AREA - 1e-6) say(api, fb, end
                 ? ['No flip, and it reached the end — but with a smaller sail. This challenge is to tame the BIG sail: put the 30 × 30 cm sail back and fix the balance instead.']
                 : ['No flip — but it stopped at ', [d], '. A smaller sail catches less wind. Keep the 30 cm sail and fix the balance instead.']);
@@ -449,6 +467,6 @@
     ],
     // for the check script only: the module's own car builder and turn maths
     _calc: { makeCar: makeCar, turns: turns, fewestNickels: fewestNickels, tamed: tamed, longer: longer, HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END,
-             BIG_BEST: BIG_BEST, STRAIGHT_GOAL: STRAIGHT_GOAL, MAP_M: MAP_M, ROOM: ROOM }
+             BIG_BEST: BIG_BEST, BIG_WINNERS: BIG_WINNERS, ALL_THREE: ALL_THREE, STRAIGHT_GOAL: STRAIGHT_GOAL, MAP_M: MAP_M, ROOM: ROOM }
   });
 })();

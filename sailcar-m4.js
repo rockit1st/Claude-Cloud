@@ -68,6 +68,17 @@
   const GOAL_IS_END = HALL_GOAL >= HALL.length;
   const VEER = P.simulate({ veerDeg: 1.5 });
   const SPOT_MAX = Math.min(20, Math.floor(END_X));                     // step 3's slider and picture: metres from the fans, inside the hall
+  // step 3's text: the push on a car sitting where the wind is half as fast (FAN.L from the fans) and a quarter as fast
+  // (3 × FAN.L), as a part of the push right at the fans — push grows with speed × speed, so "1/4" and "1/16"
+  const PART_HALF = '1/' + Math.round(pushAt(0) / pushAt(P.FAN.L)), PART_QUARTER = '1/' + Math.round(pushAt(0) / pushAt(3 * P.FAN.L));
+  // Step 3 shows its three forces (the push, friction, friction × 1.3) to 4 decimals. Where the push would still look
+  // equal to a line it is compared with (0.0223 N vs 0.0223 N at 14.9 m), all three get one more decimal, so the
+  // numbers always show which one is bigger (0.02225 N < 0.02232 N).
+  function spotPlaces(p) {
+    let d = 4;
+    while (d < 6 && (p.toFixed(d) === FR.toFixed(d) || p.toFixed(d) === (FR * P.STICKY).toFixed(d))) d++;
+    return d;
+  }
 
   // ── the challenge rules: the steps call these before api.done(), and the node check script tests them ──
   // where the starting car is set down (x m from the fans): 'start' it starts by itself; 'keep' it can't start, but the
@@ -317,8 +328,9 @@
           'In our hallway model, it takes about <strong>1.3 times</strong> as much push (30% more) to START rolling as to KEEP rolling:</p>' +
           '<ul><li>To <strong>start</strong>: the push must be bigger than friction × 1.3.</li>' +
           '<li>To <strong>keep rolling</strong>: the push must be bigger than friction.</li></ul>' +
-          '<p>The wind from the two fans fades as it spreads out: about ' + P.FAN.L.toFixed(1) + ' m from the fans it’s half as strong, and about ' + (3 * P.FAN.L).toFixed(1) + ' m away only a quarter. ' +
-          'So the push gets smaller the farther you go. Set the starting car (70 g, OK wheels) down at different spots and compare.</p>',
+          '<p>The wind from the two fans fades as it spreads out: about ' + P.FAN.L.toFixed(1) + ' m from the fans it’s half as fast, and about ' + (3 * P.FAN.L).toFixed(1) + ' m away only a quarter as fast. ' +
+          'Remember Module 2: the push grows with wind speed × wind speed. So a car sitting ' + P.FAN.L.toFixed(1) + ' m away gets only ' + PART_HALF + ' of the push it would get right at the fans, ' +
+          'and at ' + (3 * P.FAN.L).toFixed(1) + ' m only ' + PART_QUARTER + '. Set the starting car (70 g, OK wheels) down at different spots and compare.</p>',
         challenge: 'Find a spot where the wind is too weak to START the car sitting still, but the same car rolling in from the start line keeps going right past it.',
         render: function (el, api) {
           const H = 290, s = board(api, el, H, 'A hallway with the fans and your car, and a bar comparing the wind push with the push needed to start and to keep rolling');
@@ -329,7 +341,8 @@
           const FL = 116, BX = 30, MAXP = 0.04, BW = 500;               // floor; push bar: 0 to 0.04 N across 500 px
           function px(m) { return 60 + m / SPOT_MAX * 480; }             // 0–SPOT_MAX m (20 m, inside the hallway) across 480 px
           function draw() {
-            const x = d.get(), w = P.windAt(x), p = pushAt(x), where = spot(x);
+            const x = d.get(), w = P.windAt(x), p = pushAt(x), where = spot(x), dp = spotPlaces(p);
+            function n(f) { return f.toFixed(dp) + ' N'; }               // 4 decimals (5 where 4 would make two of them look equal)
             clear(api, s, H);
             // the hallway: fans, metre marks, fading wind, where the rolling car stops, the car
             api.svg('line', { x1: 10, y1: FL, x2: 550, y2: FL, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
@@ -343,17 +356,19 @@
             label(api, s, px(STOP_X) + 6, 22, 'rolling in from the start line, the car stops at ' + STOP_X.toFixed(1) + ' m', { anchor: 'end', color: '#f0c040', size: 16, bold: false });
             api.draw.car(s, px(x) - 6, FL, { scale: 1.5, length: 26 });
             // push bar against two lines: keep rolling (friction) and start (friction × 1.3)
-            label(api, s, BX, 168, 'Wind ' + w.toFixed(2) + ' m/s → push on the car: ' + N(p), { color: '#40e080', size: 18 });
+            label(api, s, BX, 168, 'Wind ' + w.toFixed(2) + ' m/s → push on the car: ' + n(p), { color: '#40e080', size: 18 });
             bar(api, s, BX, 178, p, MAXP, BW, '#40e080');
-            [[FR, '#ffa040', 'keep rolling: ' + N(FR), 'end', -6], [st, '#f0c040', 'start: ' + N(st), 'start', 6]].forEach(function (b) {
+            [[FR, '#ffa040', 'keep rolling: ' + n(FR), 'end', -6], [st, '#f0c040', 'start: ' + n(st), 'start', 6]].forEach(function (b) {
               const lx = BX + b[0] / MAXP * BW;
               api.svg('line', { x1: lx, y1: 172, x2: lx, y2: 210, stroke: b[1], 'stroke-width': 3 }, s);
               label(api, s, lx + b[4], 230, b[2], { anchor: b[3], color: b[1] });
             });
             label(api, s, BX, 266, { start: 'It STARTS rolling here.', keep: 'Can’t START here, but a rolling car keeps going!', crawl: 'The rolling car has already stopped before here.', weak: 'Too weak to even keep a car rolling.' }[where],
               { color: { start: '#40e080', keep: '#f0c040', crawl: '#ff8060', weak: '#ff8060' }[where], size: 19 });
-            const parts = ['📍 ' + x.toFixed(1) + ' m from the fans: wind ' + w.toFixed(2) + ' m/s, push ', [N(p)], '. To keep rolling it needs more than ', [N(FR)],
-              ' (the friction). To start, it needs more than ', [N(st)], ' (friction × 1.3).'];
+            // the two comparisons, with > or < worked out from the real forces (not the rounded ones)
+            function vs(a, b) { return n(a) + (a > b ? ' > ' : ' < ') + n(b); }
+            const parts = ['📍 ' + x.toFixed(1) + ' m from the fans: wind ' + w.toFixed(2) + ' m/s. To keep rolling, the push must be bigger than the friction: ', [vs(p, FR)], p > FR ? ' ✔' : ' ✘',
+              '. To start, it must be bigger than friction × 1.3: ', [vs(p, st)], p > st ? ' ✔.' : ' ✘.'];
             if (where === 'keep') parts.push(' The car rolling in from the start line goes right past this spot (it stops at ' + STOP_X.toFixed(1) + ' m) — but set down here, it never moves!');
             if (where === 'crawl') parts.push(' A car sitting here gets just a hair more push than friction. But a moving car feels a little less wind (it’s moving along with the wind), so the car from the start line slowed to a crawl and stopped at ' + STOP_X.toFixed(1) + ' m.');
             say(api, out, parts);
@@ -573,6 +588,7 @@
     // the model's numbers and the challenge rules, for the node check script (not used by the page)
     _model: { WHEELS: WHEELS, SLED: SLED, BEARING: BEARING, WOBBLY: WOBBLY, RUBBING: RUBBING, axleCrr: axleCrr, coast: coast, pushAt: pushAt, farStart: farStart,
               spot: spot, STOP_X: STOP_X, ZONE_LO: ZONE_LO, HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END, ONLY_FULL_FIX: ONLY_FULL_FIX, TERRIBLE: TERRIBLE,
-              RUN: RUN, END_X: END_X, SPOT_MAX: SPOT_MAX, LONG_HALL: LONG_HALL, checks: checks }
+              RUN: RUN, END_X: END_X, SPOT_MAX: SPOT_MAX, LONG_HALL: LONG_HALL, checks: checks,
+              spotPlaces: spotPlaces, PART_HALF: PART_HALF, PART_QUARTER: PART_QUARTER }
   });
 })();

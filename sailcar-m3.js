@@ -19,7 +19,8 @@
   // hallway again needs no edit here.
   const PHYS = SailLab.physics, HALL = PHYS.HALL;
   const END = 'reached the end of the hall';               // simulate()'s reason when a car rolls the whole hallway
-  const CRR = { rub: 0.05, ok: 0.025, free: 0.01 };        // wheels: rubbing, OK (the standard car), spin freely
+  // wheels: Rubbing, OK (the standard car) and Spin freely mean the SAME stickiness (crr) in Modules 1, 3 and 4
+  const CRR = { rub: 0.07, ok: PHYS.DEFAULT_CAR.crr, free: 0.012 };
   function ft(m) { return Math.round(m / 0.3048); }        // metres → whole feet
   const HALL_TXT = 'about ' + ft(HALL.length) + ' ft (' + Math.round(HALL.length) + ' m)';   // "about 70 ft (21 m)"
   // the same run in a hall far too long to reach the end of: how far a car that reached the end would have rolled
@@ -251,7 +252,7 @@
           'the wind is about ' + windDown(0) + ' m/s — much faster than your car. ' +
           'But the wind spreads out and fades as it goes down the hall: about ' + windDown(5) + ' m/s 5 m down the hall, ' + windDown(10) + ' m/s at 10 m, ' +
           'and only ' + windDown(HALL.length) + ' m/s at the far end of the hallway.</p>' +
-          '<p>A car with wheels that spin freely (a light one works best) can zoom into that weaker wind and end up <strong>faster than the wind</strong>. While it is faster, its sail is a parachute. ' +
+          '<p>A car that isn’t too heavy, with wheels that spin freely, can zoom into that weaker wind and end up <strong>faster than the wind</strong>. While it is faster, its sail is a parachute. ' +
           '(Later the car slows down below the wind speed, and the wind gently pushes it again.)</p>' +
           '<p>Run the car, then read the graph under the hallway. Like the hallway picture, it shows the whole hallway, from the start line (0 m) to the far end. ' +
           'The <span style="color:#7ad7ff">blue line</span> is the wind speed and the <span style="color:#f0c040">yellow line</span> is your car’s speed. ' +
@@ -362,7 +363,8 @@
               out.textContent = r.reason === 'tipped over' ? '🤸 The car tipped over at the start, so it never got going.'
                 : '🔵 The yellow line stayed under the blue line the whole way: the wind was always faster than the car, so it pushed the car the whole time. ' +
                   (r.reason === END ? 'And ' + endTxt
-                    : 'The car stopped because the push got weaker than friction. To outrun the wind, a car must keep its speed as it rolls into the weaker wind. Try wheels that spin freely.');
+                    : 'The car stopped because the push got weaker than friction. To outrun the wind, a car must keep its speed as it rolls into the weaker wind. ' +
+                      (r.car.crr <= CRR.free ? 'Try a lighter car.' : 'Try wheels that spin freely.'));
             }
           }
           ask.appendChild(api.h('p', { html: '<strong>Now think:</strong> inside the red zone, which way does the air push on the sail?' }));
@@ -440,6 +442,8 @@
         why: 'Loose flaps flutter and long ends stick out into the air. Trimming them removes drag makers and saves a little weight too.' },
       { q: 'A classmate wants to cut their sail much smaller to get rid of drag. Good idea?', options: ['Yes — the smallest sail always wins', 'No — the sail is also the engine, and a smaller sail loses much more push near the fans than it saves in drag', 'Yes — take the sail off completely', 'It makes no difference either way'], answer: 1,
         why: 'In the simulator the standard car goes about ' + STD_M + ' m with a 20 cm sail but only about ' + SMALL_SAIL_M.toFixed(1) + ' m with a 10 cm sail. The push near the fans matters far more than the drag later.' }
-    ]
+    ],
+    // the wheel table and a computed sentence, for the node check script (not used by the page)
+    _model: { CRR: CRR, FREE_TXT: FREE_TXT, BODY_TXT: BODY_TXT }
   });
 })();

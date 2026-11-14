@@ -381,7 +381,8 @@
     return JSON.stringify(Object.keys(mods || {}).sort().map(function (k) { return [k, cleanRec(mods[k])]; }));
   }
 
-  // This device's backup: { modules: what this device knows, pending: attempts not in the database yet }.
+  // This device's backup: { modules: what this device knows, pending: attempts not in the database yet,
+  // sending: writes whose answer hasn't come back yet — [{ id, sig: the modules it wrote, pending: the attempts it carried }] }.
   // Shared by every tab of this browser; kept in memory instead if the browser blocks storage.
   let memLocal = null, storageOk = true;
   function readLocal() {
@@ -392,14 +393,24 @@
     }
     l = l && typeof l === 'object' ? l : {};
     return { modules: l.modules && typeof l.modules === 'object' ? l.modules : {},
-             pending: l.pending && typeof l.pending === 'object' ? l.pending : {} };
+             pending: l.pending && typeof l.pending === 'object' ? l.pending : {},
+             sending: Array.isArray(l.sending) ? l.sending.filter(function (f) { return f && typeof f.id === 'string' && typeof f.sig === 'string' && f.pending && typeof f.pending === 'object'; }) : [] };
   }
   function writeLocal(change) {
     const l = readLocal();
     change(l);
     memLocal = l;
-    if (storageOk) { try { localStorage.setItem(progress.key(), JSON.stringify({ v: 2, modules: l.modules, pending: l.pending })); } catch (e) { storageOk = false; } }
+    if (storageOk) { try { localStorage.setItem(progress.key(), JSON.stringify({ v: 2, modules: l.modules, pending: l.pending, sending: l.sending })); } catch (e) { storageOk = false; } }
     return l;
+  }
+  // The write f reached the database: the attempts it carried are not pending any more. Every other write
+  // still listed was worked out from an older copy of the database, so the database turns it down: forget it.
+  function landed(l, f) {
+    Object.keys(f.pending).forEach(function (k) {
+      const p = l.pending[k], left = p ? count(p.attempts) - count(f.pending[k] && f.pending[k].attempts) : 0;
+      if (left > 0) p.attempts = left; else delete l.pending[k];
+    });
+    l.sending = [];
   }
 
   // One upload at a time across this browser's tabs (where the browser supports it), so two tabs
@@ -424,27 +435,43 @@
   }
 
   // Read the database copy, add this device's news, write it back — all in one transaction.
+  // A write can reach the database and still look failed, when the Wi-Fi drops before the answer comes
+  // back. The database library then runs the transaction again (or the next upload does), and adding the
+  // pending attempts a second time would count them twice. So each write is listed first (local.sending:
+  // exactly what it writes and which pending attempts it carries). A later read that finds exactly that
+  // in the database knows the write landed: those attempts come out of pending before anything is added.
+  // (The progress doc has no room for a device mark, so if another device of the same student wrote exactly
+  // the same records a moment earlier, that looks the same: those attempts count once instead of twice.
+  // A pass is never lost: passes are also kept in local.modules.)
   function upload(u) {
     const db = firebase.firestore(), ref = db.collection('sailcar_progress').doc(u.uid);
-    let server = null, out = null, sent = {};
+    let server = null, out = null, id = null;
     const tx = db.runTransaction(function (t) {
       return t.get(ref).then(function (snap) {
-        const l = readLocal();             // read here: another tab may have added attempts meanwhile
         server = snap.exists ? (snap.data() || {}) : null;
-        sent = l.pending;
+        let l = readLocal();             // read here: another tab may have added attempts meanwhile
+        const sig = server ? modsSig(server.modules) : null;
+        if (server && l.sending.some(function (f) { return f.sig === sig; })) {
+          l = writeLocal(function (x) { const f = x.sending.filter(function (f) { return f.sig === sig; })[0]; if (f) landed(x, f); });
+        }
+        id = null;
         out = combine(server && server.modules, l.modules, l.pending);
-        if (server ? modsSig(out) === modsSig(server.modules) : !Object.keys(out).length) return;   // nothing new
+        if (server ? modsSig(out) === sig : !Object.keys(out).length) return;   // nothing new
+        const entry = { id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10), sig: modsSig(out), pending: l.pending };
+        id = entry.id;
+        writeLocal(function (x) { x.sending = x.sending.concat([entry]).slice(-8); });
         t.set(ref, { uid: u.uid, name: String(u.displayName || u.email || '').slice(0, 100), email: String(u.email || '').slice(0, 100),
                      updatedAt: firebase.firestore.FieldValue.serverTimestamp(), modules: out },
               { mergeFields: PROGRESS_FIELDS });   // 'design' (the Studio's) is left exactly as it is
       });
     });
-    // runs whenever the write lands, even if we stopped waiting for it
+    // runs whenever the transaction ends well, even if we stopped waiting for it
     return tx.then(function () {
       const l = writeLocal(function (l) {
-        Object.keys(sent).forEach(function (k) {          // those attempts are in the database now
-          const p = l.pending[k], left = p ? count(p.attempts) - count(sent[k] && sent[k].attempts) : 0;
-          if (left > 0) p.attempts = left; else delete l.pending[k];
+        const mine = id && l.sending.filter(function (f) { return f.id === id; })[0];
+        if (mine) landed(l, mine);       // (not listed any more: a later read already found it and took it out)
+        Object.keys(l.pending).forEach(function (k) {     // tidy: nothing here can ever upload
+          if (!isGraded(k) || !count(l.pending[k] && l.pending[k].attempts)) delete l.pending[k];
         });
         l.modules = mergeMods(l.modules, out);
       });
@@ -742,30 +769,54 @@
     const table = h('div', { class: 'sl-table-wrap' });
     box.appendChild(sel); box.appendChild(status); box.appendChild(table);
     const db = firebase.firestore();
-    const all = {};
-    let classes = [], ticket = 0;
-    db.collection('sailcar_progress').get().then(function (snap) {
-      snap.docs.forEach(function (d) { all[d.id] = d.data(); });
-    }).catch(function (err) { status.appendChild(h('p', { class: 'sl-muted', text: 'Progress can’t be loaded yet (' + (err && err.code) + '). Publish the new Firestore rules first.' })); })
-      .then(function () { return db.collection('classes').where('teacherEmail', '==', TEACHER_EMAIL).get(); })
-      .then(function (snap) {
-        sel.textContent = '';
-        classes = snap.docs.map(function (d) { return { id: d.id, name: String(d.data().name || 'Class') }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
-        if (!classes.length) { sel.appendChild(h('option', { value: '', text: 'No classes yet — create one on the Classes page' })); return; }
-        classes.forEach(function (c) { sel.appendChild(h('option', { value: c.id, text: c.name })); });
-        sel.addEventListener('change', function () { showClass(sel.value); });
-        showClass(classes[0].id);
-      }).catch(function (err) {
-        console.error(err);
-        sel.textContent = '';
-        sel.appendChild(h('option', { value: '', text: 'Couldn’t load your classes' }));
-        status.appendChild(h('p', { class: 'sl-muted', text: 'Could not load your classes (' + (err && err.code) + '). Reload the page to try again.' }));
-      });
+    let all = {}, classes = [], ticket = 0, loads = 0;
+    // Offline, Firestore answers a read from its (often empty) cache. That is not "no classes" or "nobody has
+    // started", so a cached answer counts as a failed read: the teacher gets a Retry instead of a wrong table.
+    function fromServer(snap) { if (snap.metadata && snap.metadata.fromCache) throw { code: 'unavailable' }; return snap; }
+    function retryNote(where, text, again) {
+      const b = h('button', { type: 'button', class: 'sl-btn', text: '↻ Retry', style: 'margin-left:8px' });
+      b.addEventListener('click', again);
+      where.appendChild(h('p', { class: 'sl-muted' }, [text, b]));
+    }
+    sel.addEventListener('change', function () { showClass(sel.value); });
+    function load() {
+      const run = ++loads;
+      all = {}; classes = []; ++ticket;
+      status.textContent = ''; table.textContent = '';
+      sel.textContent = ''; sel.appendChild(h('option', { value: '', text: 'Loading classes…' }));
+      db.collection('sailcar_progress').get().then(fromServer).then(function (snap) {
+        snap.docs.forEach(function (d) { all[d.id] = d.data(); });
+      }, function (err) {
+        if (err && err.code === 'permission-denied') {   // today's rules: show the rosters anyway
+          status.appendChild(h('p', { class: 'sl-muted', text: 'Progress can’t be loaded yet (' + err.code + '). Publish the new Firestore rules first.' }));
+          return;
+        }
+        throw err;
+      })
+        .then(function () { return db.collection('classes').where('teacherEmail', '==', TEACHER_EMAIL).get(); })
+        .then(fromServer)
+        .then(function (snap) {
+          if (run !== loads) return;
+          sel.textContent = '';
+          classes = snap.docs.map(function (d) { return { id: d.id, name: String(d.data().name || 'Class') }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+          if (!classes.length) { sel.appendChild(h('option', { value: '', text: 'No classes yet — create one on the Classes page' })); return; }
+          classes.forEach(function (c) { sel.appendChild(h('option', { value: c.id, text: c.name })); });
+          showClass(classes[0].id);
+        }).catch(function (err) {
+          if (run !== loads) return;
+          console.warn('Sail Car Lab: class progress not loaded (' + ((err && err.code) || err) + ')');
+          sel.textContent = '';
+          sel.appendChild(h('option', { value: '', text: 'Couldn’t load your classes' }));
+          status.textContent = '';
+          retryNote(status, err && err.code === 'permission-denied' ? 'Couldn’t load your classes (permission-denied). Tap Retry to try again.' : 'Couldn’t load your classes — check Wi-Fi and tap Retry.', load);
+        });
+    }
+    load();
     function showClass(classId) {
       const mine = ++ticket, cls = classes.filter(function (c) { return c.id === classId; })[0], name = cls ? cls.name : 'Class';
       table.textContent = '';
       table.appendChild(h('p', { class: 'sl-muted', text: 'Loading ' + name + '…' }));
-      db.collection('enrollments').where('classId', '==', classId).get().then(function (snap) {
+      db.collection('enrollments').where('classId', '==', classId).get().then(fromServer).then(function (snap) {
         if (mine !== ticket) return;             // another class was picked while this one loaded
         table.textContent = '';
         table.appendChild(h('h3', { class: 'sl-class-name', text: name }));
@@ -792,7 +843,8 @@
       }).catch(function (err) {
         if (mine !== ticket) return;
         table.textContent = '';
-        table.appendChild(h('p', { class: 'sl-muted', text: 'Could not load ' + name + ' (' + (err && err.code) + ').' }));
+        retryNote(table, err && err.code === 'unavailable' ? 'Couldn’t load ' + name + ' — check Wi-Fi and tap Retry.' : 'Could not load ' + name + ' (' + (err && err.code) + ').',
+                  function () { showClass(classId); });
       });
     }
   }

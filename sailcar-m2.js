@@ -30,6 +30,12 @@
   }
   // push on a sail sitting still x metres from the fans
   function push(x, area, cd, ang) { return P.airForce(P.windAt(x), area, cd, ang || 0); }
+  // the hallway step's sail-size slider, and the biggest square sail on it that doesn't flip the car, flat OR cupped (20 cm today)
+  const SIZES = { min: 10, max: 40, step: 5, start: 15 };
+  let BIGGEST_SAFE = 0;
+  for (let s = SIZES.min; s <= SIZES.max; s += SIZES.step) {
+    if ([FLAT, CUPPED].every(function (cd) { return P.simulate(sailCar(s, s, cd, 0)).reason !== 'tipped over'; })) BIGGEST_SAFE = s;
+  }
   function nice(v) { return String(Math.round(v * 100) / 100); }
   // a force in newtons with 3 significant figures (0.353 N, 0.0882 N), so a weak push is easy to tell apart from friction
   function newtons(api, v) { return (v < 0.1 ? api.fmt(v, 4) : api.fmt(v, 3)) + ' N'; }
@@ -254,8 +260,8 @@
       {
         title: 'Hallway challenge: catch the wind',
         html:
-          '<p>Time to put it all together! Choose your sail’s size, shape and angle, then send the car down the hallway. ' +
-          'It starts at the start line, 30 cm from the two fans.</p>' +
+          '<p>Time to put it all together! Choose your sail’s size and shape, then send the car down the hallway. ' +
+          'It starts at the start line, 30 cm from the two fans. The sail stays square to the fans, the way you’ll build it: Step 3 showed that turning it away only loses push.</p>' +
           '<p>A bigger sail catches more wind… but watch out. Right at the start line, two fans push hard, and the wind pushes on the middle of the sail, high above the wheels. ' +
           'Too much push up there can flip the car onto its nose.</p>' +
           '<p>Your goal is ' + GOAL + ' m — about ' + Math.round(GOAL * FT / 10) * 10 + ' ft. That’s twice as far as the paper sleds from past years usually slid (about 25 ft), ' +
@@ -264,13 +270,13 @@
         render: function (el, api) {
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const size = api.ui.slider(row, { label: 'Sail size (square)', min: 10, max: 40, step: 5, value: 15, format: function (v) { return v + ' × ' + v + ' cm'; }, onInput: info });
+          const size = api.ui.slider(row, { label: 'Sail size (square)', min: SIZES.min, max: SIZES.max, step: SIZES.step, value: SIZES.start, format: function (v) { return v + ' × ' + v + ' cm'; }, onInput: info });
           const shape = api.ui.choice(row, { label: 'Sail shape', value: FLAT, options: [{ value: FLAT, label: 'Flat' }, { value: CUPPED, label: 'Cupped' }], onChange: info });
-          const ang = api.ui.slider(row, { label: 'Angle away from the fans', min: 0, max: 60, step: 15, value: 30, format: function (v) { return v + '°'; }, onInput: info });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
           let sim = null;
-          function car() { return sailCar(size.get(), size.get(), shape.get(), ang.get()); }
+          // no angle control here: a real sail is built square to the fans (Step 3 is where the angle lesson lives)
+          function car() { return sailCar(size.get(), size.get(), shape.get(), 0); }
           function info() {
             const c = car();
             say(api, out, ['⛵ Sail area ', [Math.round(c.sailArea * 10000) + ' cm²'], ' · car mass ', [Math.round(c.mass * 1000) + ' g'],
@@ -285,7 +291,8 @@
               api.done((r.reason === 'reached the end of the hall'
                 ? 'It rolled all the way to the end of the ' + HALL_TXT + ' hallway without tipping — the most any car can do in our hall! '
                 : 'It rolled ' + api.fmt(r.distance, 1) + ' m (about ' + Math.round(r.distance * FT) + ' ft) without tipping! ') +
-                'A bigger sail catches more wind and goes farther — until the push gets so strong, so high up, that it flips the car.');
+                'A bigger sail catches more wind and goes farther — until the push gets so strong, so high up, that it flips the car. ' +
+                'Here, ' + BIGGEST_SAFE + ' × ' + BIGGEST_SAFE + ' cm is the biggest square sail that stays on its wheels. Modules 5 and 6 show how to tame a bigger one.');
             }
           });
           api.onLeave(sim.stop);

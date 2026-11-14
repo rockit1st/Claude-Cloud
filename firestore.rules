@@ -23,7 +23,8 @@
 //    design; only the student and the teacher can read or save it) and
 //    sailcar_runs (real hallway runs, private to the class like the altitude
 //    boards). A student can save only their own progress and runs, only in the
-//    shape the lab saves them, and only the teacher can change or delete a run.
+//    shape the lab saves them and under their own Google name, and only the
+//    teacher can change or delete a run.
 //  - Everything else behaves as before.
 
 rules_version = '2';
@@ -126,6 +127,9 @@ service cloud.firestore {
     }
     // A real hallway run, exactly as the Design Studio logs it: only these
     // fields, under the student's own account, stamped with the server's time.
+    // The name on the board is the student's own Google name (the sign-in's
+    // "name"; their email if the account has no name), so nobody can post a
+    // run under a classmate's name.
     function validRun() {
       let d = request.resource.data;
       return d.keys().hasOnly(['uid', 'userEmail', 'name', 'classId', 'className', 'distanceM', 'unit',
@@ -133,7 +137,8 @@ service cloud.firestore {
              && d.keys().hasAll(['uid', 'userEmail', 'name', 'classId', 'distanceM', 'savedAt'])
              && d.uid == request.auth.uid
              && d.userEmail == request.auth.token.email
-             && d.name is string && d.name.size() <= 60
+             && d.name is string && d.name.size() <= 100
+             && d.name == request.auth.token.get('name', request.auth.token.email)
              && d.get('className', '') is string && d.get('className', '').size() <= 80
              && d.distanceM is number && d.distanceM >= 0 && d.distanceM <= 100
              && d.get('unit', 'm') in ['m', 'ft']

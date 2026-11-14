@@ -20,17 +20,22 @@
   function atEnd(r) { return r.reason === 'reached the end of the hall'; }
   // how far a run would have gone with no end wall (a run that stopped inside the hallway: just its distance)
   function longer(r) { return atEnd(r) ? P.simulate(r.car, Object.assign({}, r.opts, { hallLength: LONG_HALL })).distance : r.distance; }
-  // Step 4's mass slider, and its goal: the lightest car that doesn't tip goes farthest, so the goal is how far
-  // that car gets — the end of the hallway when it makes it that far (today: 40 g), else its whole metres.
+  // Step 4's mass slider, and its goal. The lightest car that doesn't tip goes farthest, but on the slider that car
+  // (40 g today) only just stays down. A real car needs a few grams of safety margin, so the goal is the whole metres
+  // that a car MARGIN_G heavier still reaches (50 g rolls 19.6 m today → at least 19 m: 40, 45 and 50 g pass),
+  // or the end of the hallway if that car makes it all the way.
   const MASS = { min: 20, max: 200, step: 5, start: 150 };
-  let BEST = null;
-  for (let g = MASS.min; g <= MASS.max; g += MASS.step) {
-    const r = P.simulate({ mass: g / 1000 });
-    if (r.reason !== 'tipped over' && (!BEST || longer(r) > BEST.far)) BEST = { g: g, far: longer(r) };
-  }
-  const HALL_GOAL = Math.min(HALL.length, Math.floor(BEST.far));
+  const MARGIN_G = 10;                                  // two nickels
+  let LIGHTEST = null;                                  // the lightest mass on the slider that doesn't tip
+  for (let g = MASS.min; g <= MASS.max && LIGHTEST == null; g += MASS.step) if (P.simulate({ mass: g / 1000 }).reason !== 'tipped over') LIGHTEST = g;
+  const MARGIN_RUN = P.simulate({ mass: (LIGHTEST + MARGIN_G) / 1000 });
+  const HALL_GOAL = Math.min(HALL.length, Math.floor(MARGIN_RUN.distance));
   const GOAL_IS_END = HALL_GOAL >= HALL.length;
   function reachedGoal(r) { return r.reason !== 'tipped over' && r.distance >= HALL_GOAL - 1e-9; }   // a car at the end has rolled HALL.length
+  // the masses on the slider that pass, heavier than the lightest safe one: "a few grams of margin" (45 and 50 g today)
+  const MARGIN_PASS = [];
+  for (let g = LIGHTEST + MASS.step; g <= MASS.max; g += MASS.step) if (reachedGoal(P.simulate({ mass: g / 1000 }))) MARGIN_PASS.push(g);
+  function orList(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' or ' + a[a.length - 1]; }
   const grams = function (v) { return v + ' g'; };
   // write a readout from plain strings and ['bold'] pieces — never innerHTML
   function say(api, box, parts) {
@@ -280,7 +285,9 @@
           '<ul><li><strong>Faster speed-up:</strong> the same wind push gives a light car more acceleration (force ÷ mass).</li>' +
           '<li><strong>Less friction:</strong> far from the fans the wind gets weak. A light car has so little friction that even weak wind keeps pushing it.</li></ul>' +
           '<p>But watch out! The wind pushes <strong>high</strong> on the sail, and two box fans push hard right at the start line. That push tries to flip the car forward over its front wheels. ' +
-          'The car’s <strong>weight</strong> is what holds its back end down. Make the car too light and the push wins: it <strong>tips over</strong>.</p>',
+          'The car’s <strong>weight</strong> is what holds its back end down. Make the car too light and the push wins: it <strong>tips over</strong>.</p>' +
+          (GOAL_IS_END ? '' : '<p>The goal is ' + HALL_GOAL + ' m (' + ft(HALL_GOAL) + ' ft), a little short of the end of the hall. That leaves room for a <strong>safety margin</strong>: ' +
+            'a car a few grams heavier than the lightest one that stays on its wheels can still make it.</p>'),
         challenge: GOAL_IS_END ? 'Find a mass that rolls all the way to the end of the hallway — ' + HALL_TXT + ' — without tipping over.'
                                : 'Find a mass that rolls at least ' + HALL_GOAL + ' metres (about ' + ft(HALL_GOAL) + ' ft) without tipping over.',
         render: function (el, api) {
@@ -299,7 +306,14 @@
               api.done((atEnd(r) ? 'At ' + g + ' g it rolled all the way to the end of our ' + ft(HALL.length) + ' ft hallway' +
                   (api.fmt(far, 1) !== api.fmt(HALL.length, 1) ? ' — in a longer hall it would roll about ' + api.fmt(far, 1) + ' m (' + ft(far) + ' ft)!' : '!')
                 : 'It rolled ' + api.fmt(r.distance, 1) + ' m (about ' + ft(r.distance) + ' ft) at ' + g + ' g!') +
-                ' Lighter = farther… but below about ' + Math.round(TIP_G) + ' g this car flips. ' + (g - MASS.step < TIP_G ? 'That’s its lightest safe mass.' : 'Its lightest safe mass is about ' + Math.ceil(TIP_G / MASS.step) * MASS.step + ' g.'));
+                ' Lighter = farther… but below about ' + Math.round(TIP_G) + ' g this car flips. In the simulator, ' + LIGHTEST + ' g is the lightest mass that doesn’t flip' +
+                (LIGHTEST - TIP_G < 1 ? ', but only just. ' : '. ') +
+                (g === LIGHTEST
+                  ? 'A real car is never exactly like the model: a gust of wind, a sail that’s a bit bigger or extra glue near the front could flip it. ' +
+                    (MARGIN_PASS.length ? 'So build yours a few grams heavier, like ' + orList(MARGIN_PASS) + ' g. That still makes ' + HALL_GOAL + ' m, with a safety margin.'
+                                        : 'So build yours a few grams heavier: that’s your safety margin.')
+                  : 'Your ' + g + ' g car has ' + (g - LIGHTEST) + ' g to spare: a smart safety margin. A real car is never exactly like the model, ' +
+                    'and a gust of wind, a sail that’s a bit bigger or extra glue near the front could flip a car that’s right at the limit.'));
             }
           });
           api.onLeave(sim.stop);
@@ -386,6 +400,6 @@
         why: 'Only the mass changed, so the extra 10 g caused the shorter runs. Taking grams off your car should make it roll farther (as long as it doesn’t tip).' }
     ],
     // the numbers behind the text, for checking (not used by the page)
-    _calc: { HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END, BEST: BEST, TIP_G: TIP_G, MASS: MASS, START: START, Q_MASS: Q_MASS, Q_NICKEL: Q_NICKEL }
+    _calc: { HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END, LIGHTEST: LIGHTEST, MARGIN_G: MARGIN_G, MARGIN_RUN: MARGIN_RUN, MARGIN_PASS: MARGIN_PASS, TIP_G: TIP_G, MASS: MASS, START: START, Q_MASS: Q_MASS, Q_NICKEL: Q_NICKEL }
   });
 })();

@@ -11,6 +11,23 @@
   const HALL = SailLab.physics.HALL;
   function ft(m) { return Math.round(m / 0.3048); }      // metres → whole feet (students measure in both)
   const GOAL_M = 12;                                      // the hallway challenge (M2 asks for more)
+  // Fan speeds for the hallway step (High = the real fans, SailLab.physics.FAN.v0 = 3.5 m/s at the grilles).
+  const FAN_V = { low: 1.8, med: 2.6, high: SailLab.physics.FAN.v0 };
+  // Wheel stickiness (crr). Rubbing / OK / Spin freely mean the SAME numbers in Modules 1, 3 and 4
+  // (OK = the lab's standard car, DEFAULT_CAR.crr), so a "Rubbing" car rolls the same distance everywhere.
+  // Jammed is an extra, worse choice only here: on the Low fan its push (≈ 0.088 N) is smaller than even
+  // its rolling friction (≈ 0.089 N), so the car never starts — the "balanced, nothing moves" demo.
+  const WHEELS = { jam: 0.13, rub: 0.07, ok: SailLab.physics.DEFAULT_CAR.crr, free: 0.012 };
+  const WHEEL_OPTS = [{ value: 'jam', label: 'Jammed (rubbing hard)' }, { value: 'rub', label: 'Rubbing' }, { value: 'ok', label: 'OK' }, { value: 'free', label: 'Spin freely' }];
+  const START = { fan: 'high', wheels: 'rub' };           // the hallway step's starting settings (7.8 m: short of the goal)
+  // Can any car on the hallway step catch up with the fading wind? (High fan + Spin freely does, for a few metres.)
+  // The step's text says so only when simulate() agrees. The trace's last point is the "stopped" marker, so it is skipped.
+  const CATCHES_UP = Object.keys(FAN_V).some(function (f) {
+    return Object.keys(WHEELS).some(function (w) {
+      const tr = SailLab.physics.simulate({ crr: WHEELS[w] }, { fan: { v0: FAN_V[f], L: SailLab.physics.FAN.L } }).trace;
+      return tr.some(function (p, i) { return i < tr.length - 1 && p.v > p.wind; });
+    });
+  });
   // The picture shows the whole hallway, plus half a metre of floor past its far end so a car that
   // reaches the end still fits in the picture (no metre mark falls in that half metre for today's hallway).
   const TRACK_M = HALL.length + 0.5;
@@ -155,16 +172,17 @@
           'Then it keeps going until the wind gets too weak (it fades the farther you are from the fans) and friction wins — or until it reaches the far end of the hall.</p>' +
           '<p>Watch the arrows on the car while it rolls: <span style="color:#40e080">green</span> = the wind’s push, <span style="color:#ffa040">orange</span> = friction. ' +
           'While the green arrow is longer, the net force points forward and the car speeds up. Down the hall the wind fades and the green arrow shrinks; ' +
-          'once it is shorter than the orange one, the car slows down. (In this hallway the car never catches up with the wind, so the air only ever pushes it forward.)</p>',
+          'once it is shorter than the orange one, the car slows down. ' +
+          (CATCHES_UP ? '(Near the fans the wind is much faster than the car, so the air pushes it forward. A car with wheels that spin freely can catch up with the fading wind for a few metres. ' +
+                        'Then the air pushes back on it a tiny bit — Module 3 shows how.)</p>'
+                      : '(In this hallway the car never catches up with the wind, so the air only ever pushes it forward.)</p>'),
         challenge: 'Get the car to roll at least ' + GOAL_M + ' metres (about ' + ft(GOAL_M) + ' ft).',
         render: function (el, api) {
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const fan = api.ui.choice(row, { label: 'Fan speed', value: 'high', options: [{ value: 'low', label: 'Low' }, { value: 'med', label: 'Medium' }, { value: 'high', label: 'High' }] });
-          const fric = api.ui.choice(row, { label: 'Wheels', value: 'sticky', options: [{ value: 'sticky', label: 'Rubbing & sticky' }, { value: 'ok', label: 'OK' }, { value: 'smooth', label: 'Spin freely' }] });
-          // sticky 0.13: on the low fan the push (≈ 0.088 N) is less than rolling friction (≈ 0.089 N), so it never starts
-          const FAN_V = { low: 1.8, med: 2.6, high: 3.5 }, CRR = { sticky: 0.13, ok: 0.03, smooth: 0.015 };
-          const sim = api.ui.trackSim(el, function () { return { crr: CRR[fric.get()] }; }, {
+          const fan = api.ui.choice(row, { label: 'Fan speed', value: START.fan, options: [{ value: 'low', label: 'Low' }, { value: 'med', label: 'Medium' }, { value: 'high', label: 'High' }] });
+          const fric = api.ui.choice(row, { label: 'Wheels', value: START.wheels, options: WHEEL_OPTS });
+          const sim = api.ui.trackSim(el, function () { return { crr: WHEELS[fric.get()] }; }, {
             getOpts: function () { return { fan: { v0: FAN_V[fan.get()], L: api.physics.FAN.L } }; },
             scaleM: TRACK_M,
             onResult: function (r) {
@@ -180,7 +198,7 @@
             }
           });
           api.onLeave(sim.stop);
-          api.ui.note(el, 'tip', '💡 Try the sticky wheels on a low fan: the car never moves, because the wind’s push is smaller than friction. ' +
+          api.ui.note(el, 'tip', '💡 Try <strong>Jammed</strong> wheels on the <strong>Low</strong> fan: the car never moves, because the wind’s push is smaller than friction. ' +
             'Friction holds the car still, so the forces are <strong>balanced</strong> — no motion.');
         }
       },
@@ -206,7 +224,7 @@
       { q: 'What happens to a sail car when the forces on it are balanced?', options: ['It speeds up', 'It slows down', 'Its motion doesn’t change — still stays still, moving keeps the same speed', 'It tips over'], answer: 2,
         why: 'Balanced forces (net force = 0) don’t change motion. That’s Newton’s First Law.' },
       { q: 'The fans are on, but the car doesn’t move at all. What is the most likely reason?', options: ['Gravity is too strong', 'The wind’s push is smaller than the friction holding it', 'The car is too fast', 'The wind is pushing too hard'], answer: 1,
-        why: 'A car only starts rolling when the push beats friction. Weak wind or sticky wheels = no motion.' },
+        why: 'A car only starts rolling when the push beats friction. Weak wind or jammed wheels = no motion.' },
       { q: 'Which two forces cancel each other out, so the car doesn’t sink into the floor or float up?', options: ['Thrust and drag', 'Friction and thrust', 'Gravity and the floor pushing up', 'Drag and friction'], answer: 2,
         why: 'Gravity pulls the car down and the floor pushes up exactly as hard — they’re balanced.' },
       { q: 'A rolling car leaves the fans’ wind. Which forces slow it down?', options: ['Gravity only', 'Friction and air drag', 'Thrust', 'Nothing — it keeps rolling forever'], answer: 1,
@@ -219,6 +237,8 @@
         why: 'The fans’ wind is strongest near the fans and fades down the hall. Once its push is smaller than friction, the net force points backward, so the car slows down and stops.' },
       { q: 'Which change would most likely make your sail car roll farther down the hallway?', options: ['A stronger push from the wind and wheels that spin more freely', 'A weaker push from the wind and wheels that rub more', 'Wheels that rub more, so the car grips the floor better', 'Nothing — every sail car rolls the same distance'], answer: 0,
         why: 'More push and less friction make a bigger forward net force that lasts farther down the hall, so the car speeds up more and goes farther.' }
-    ]
+    ],
+    // the hallway step's settings, for the node check script (not used by the page)
+    _model: { GOAL_M: GOAL_M, FAN_V: FAN_V, WHEELS: WHEELS, START: START }
   });
 })();
