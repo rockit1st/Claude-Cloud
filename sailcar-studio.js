@@ -480,7 +480,7 @@
         // in the unit it was measured in first: "13.5 ft (4.11 m)"
         const real = typeof r.distance === 'number' && (r.unit === 'ft' || r.unit === 'm') ? bothUnits(r.distance, r.unit) : bothUnits(r.distanceM, 'm');
         tb.appendChild(h('tr', null, [h('td', { text: String(i + 1) }), h('td', { text: real }),
-          h('td', { text: predictedCell(r) }), h('td', { text: pct }), h('td', { text: String(r.note || ''), style: 'text-align:left;white-space:normal' })]));
+          h('td', { text: predictedCell(r) }), h('td', { text: pct }), h('td', { text: String(r.note || ''), style: 'text-align:left;white-space:normal;min-width:' + (r.note ? 140 : 0) + 'px' })]));
       });
       t.appendChild(tb);
       mine.appendChild(h('div', { class: 'sl-table-wrap' }, [t]));
@@ -606,7 +606,7 @@
         const cells = [h('td', { text: r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : String(r.rank) }), h('td', { text: String(r.name || 'Anonymous') }),
           h('td', { text: (r.atEnd ? '🏁 ' : '') + api.fmt(r.distanceM, 2) + ' m (' + api.fmt(r.distanceM * FT_PER_M, 1) + ' ft)' }),
           h('td', { text: predictedCell(r) }),
-          h('td', { text: String((r.design && r.design.summary) || ''), style: 'text-align:left;white-space:normal;font-size:0.8rem' })];
+          h('td', { text: String((r.design && r.design.summary) || ''), style: 'text-align:left;white-space:normal;font-size:0.8rem;min-width:170px' })];
         if (isTeacher) {
           const del = h('button', { type: 'button', class: 'sl-btn', text: '✕', 'aria-label': 'Delete the run for ' + r.name, style: 'padding:4px 10px' });
           del.addEventListener('click', function () { if (confirm('Delete this run for ' + r.name + '?')) db().collection('sailcar_runs').doc(r.id).delete().catch(function () { alert('Could not delete — check your connection.'); }); });

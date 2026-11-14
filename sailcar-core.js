@@ -311,7 +311,7 @@
           if (!done) { raf = requestAnimationFrame(frame); return; }
           stop();
           const why = { 'never moved': '😴 It never moved — the wind’s push was smaller than friction.', 'tipped over': '🤸 It tipped over! The push high on the sail flipped it forward.',
-                        'hit the wall': '🧱 It veered into the wall.', 'reached the end of the hall': '🏆 It made it to the end of the ' + Number(res.opts.hallLength.toFixed(1)) + ' m hall!', 'coasted to a stop': '🛑 It coasted to a stop.' }[res.reason] || '';
+                        'hit the wall': '🧱 It veered into the wall.', 'reached the end of the hall': '🏆 It made it to the end of the ' + Number(res.opts.hallLength.toFixed(1)) + ' m (' + Math.round(res.opts.hallLength * 3.28084) + ' ft) hall!', 'coasted to a stop': '🛑 It coasted to a stop.' }[res.reason] || '';
           show('📏 ' + fmt(res.distance, 2) + ' m in ' + fmt(res.time, 1) + ' s · top speed ' + fmt(res.topSpeed, 2) + ' m/s — ' + why);
           if (opts.onResult) opts.onResult(res);
         }
