@@ -271,7 +271,7 @@
                 api.done((end ? 'It rolled all the way to the end of the ' + HALL_TXT + ' hallway without flipping, and in a longer hall it would have kept going to ' + farTxt + '! '
                               : 'It rolled ' + d + ' without flipping! ') +
                   'A low sail, a long chassis and a little weight over the back axle let a big sail push hard without tipping — and the lighter your fix, the farther it goes.');
-              } else say(api, fb, ['No flip — nice! But it stopped at ', [d], GOAL_IS_END ? ', short of the end of the hall (' + HALL_TXT + ').' : ', short of ' + HALL_GOAL + ' m.',
+              } else say(api, fb, ['No flip — nice! But it stopped at ', [d], GOAL_IS_END ? ', short of the end of our ' + HALL_TXT + ' hallway.' : ', short of ' + HALL_GOAL + ' m.',
                 ' Every nickel and every extra cm of chassis adds weight, and weight adds friction. Can you stop the flip with less weight?']);
             }
           });
@@ -393,7 +393,7 @@
               if (ghosts.length > 3) ghosts.shift();
               explain(r);
               if (r.reason !== 'hit the wall' && r.distance >= STRAIGHT_GOAL) api.done('Square axles = a straight run! At ' + deg(r.car.veerDeg) + ' your car rolled ' + api.fmt(r.distance, 2) + ' m. ' +
-                'In our ' + ft(HALL_W) + ' ft-wide hall, just 1° off hits the wall after about ' + f1(WALL_AT(1)) + ' m (' + ft(WALL_AT(1)) + ' ft), and even ½° off after about ' +
+                'Our hall is only ' + ft(HALL_W) + ' ft wide: just 1° off hits the wall after about ' + f1(WALL_AT(1)) + ' m (' + ft(WALL_AT(1)) + ' ft), and even ½° off after about ' +
                 f1(WALL_AT(0.5)) + ' m (' + ft(WALL_AT(0.5)) + ' ft) — so square your axles with a ruler.');
             }
             raf = requestAnimationFrame(frame);
@@ -440,7 +440,7 @@
         options: ['Car A, because extra weight always makes a car faster', 'Car B, because it stayed light, so it has less friction to fight', 'They tie: once a car doesn’t flip, its mass doesn’t matter', 'Car A, because the nickels catch extra wind'], answer: 1,
         why: 'Both cars stay on their wheels, but Car A carries 20 g more. More mass means more friction, so the lighter Car B rolls farther. Lowering the sail is a free fix!' },
       { q: 'In the simulator, a car whose front axle is turned 3° off square…', options: ['goes perfectly straight, just a little slower', 'flips over at the start line', 'curves sideways and hits the hallway wall before it gets even ' + (Math.floor(WALL_AT(3)) + 1) + ' m down the hall', 'rolls farther, because it zig-zags'], answer: 2,
-        why: 'Wheels roll the way they point. A 3° crooked axle steers the car around a circle, so it hits the wall of our ' + ft(HALL_W) + ' ft-wide hall after only about ' + f1(WALL_AT(3)) + ' m. ' +
+        why: 'Wheels roll the way they point. A 3° crooked axle steers the car around a circle. Our hall is only ' + ft(HALL_W) + ' ft wide, so it hits the wall after only about ' + f1(WALL_AT(3)) + ' m. ' +
           'With square axles the same car rolls about ' + f1(STRAIGHT_RUN) + ' m.' },
       { q: 'What’s the best way to make sure your two axles are square and parallel?', options: ['Spin each wheel and see how long it spins', 'Line them up with a ruler or the corner of a sheet of paper, then check that a gentle push rolls the car straight', 'Use a bigger sail', 'Put the heaviest parts on the front'], answer: 1,
         why: 'A ruler or a paper corner gives you a perfect right angle for lining up each axle. A gentle push along a straight line shows whether the car really rolls straight.' },

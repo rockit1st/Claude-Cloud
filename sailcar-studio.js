@@ -13,8 +13,16 @@
   const SAVE_WAIT_MS = 4000;                    // after this long without the server's OK, the write is waiting for Wi-Fi
   const START_X = 0.3;                          // simulate()'s start line: 30 cm in front of the fans
   const LOG_TEXT = '🏁 Log this run';
-  function modelVersion() { return String(SailLab.physics.MODEL_VERSION || 'two-fans-1').slice(0, 24); }
-  function hall() { return SailLab.physics.HALL || { length: 30, width: 2.4 }; }
+  function modelVersion() { return String(SailLab.physics.MODEL_VERSION || 'unversioned').slice(0, 24); }
+  // The hallway's size lives ONLY in sailcar-core.js (SailLab.physics.HALL, 70 ft × 11 ft today):
+  // every hallway number below is worked out from it, so changing it there needs no edits here.
+  function hall() { return SailLab.physics.HALL; }
+  // "A longer hall" (same width): room for any design to coast to a stop. It is also the most a stored
+  // prediction may be (the database's 100 m cap), so a longer-hall distance always fits in bestM.
+  const LONG_HALL_M = 100;
+  const END_REASON = 'reached the end of the hall';   // simulate()'s exact reason
+  // a run logged by hand within about half a foot of the hallway's length made it to the end
+  const END_SLACK_M = 0.15;
 
   // Part data (approximate masses of the classroom materials)
   const CHASSIS = {
@@ -96,12 +104,36 @@
   function mWhole(m) { return m >= 5 ? String(Math.round(m)) : fmt(m, 1); }
   function ftWhole(m) { return String(Math.round(m * FT_PER_M)); }
   function aboutText(m) { return 'about ' + mWhole(m) + ' m (' + ftWhole(m) + ' ft)'; }
-  function predictionText(m) {
+  function hallLenText() { const L = hall().length; return ftWhole(L) + ' ft (' + mWhole(L) + ' m)'; }         // "70 ft (21 m)"
+  function hallWideText() { const W = hall().width; return ftWhole(W) + ' ft (' + fmt(W, 1) + ' m)'; }        // "11 ft (3.4 m)"
+  // a predicted (simulated) distance that is the whole hallway: simulate() stops every such car at exactly HALL.length
+  function atEnd(m) { return m >= hall().length - 0.005; }
+
+  // A design's run in our hallway. A car that reaches the far end stops there in the simulator, tied with
+  // every other car that gets there, so it is also run in a longer hall of the same width: that distance
+  // ('longer') is what designs are compared by. For a car that stops inside the hallway, longer = distance.
+  function longerRun(car) { return SailLab.physics.simulate(car, { hallLength: LONG_HALL_M, hallWidth: hall().width }).distance; }
+  function judge(r) { const end = r.reason === END_REASON; return { distance: r.distance, reason: r.reason, end: end, longer: end ? longerRun(r.car) : r.distance }; }
+  function forecast(d) { const H = hall(); return judge(SailLab.physics.simulate(analyse(d).car, { hallLength: H.length, hallWidth: H.width })); }
+
+  // m = the simulated distance in the hallway; longer = the same car in a longer hall (only used when m is the whole hallway)
+  function predictionText(m, longer) {
     const H = hall().length;
-    if (m >= H - 0.05) return 'all the way to the end of the ' + H + ' m (' + ftWhole(H) + ' ft) hallway';
-    const lo = m * 0.8, hi = Math.min(H, m * 1.2);
-    return aboutText(m) + ' — likely ' + mWhole(lo) + '–' + mWhole(hi) + ' m (' + ftWhole(lo) + '–' + ftWhole(hi) + ' ft)';
+    if (atEnd(m)) return 'all the way to the end of our ' + hallLenText() + ' hallway' +
+      (longer >= H + 0.5 ? ' — in a longer hall it would roll ' + aboutText(longer) : ', right about where it would stop anyway');
+    // the real car can't go past the end of the hallway, so the likely range stops there
+    const lo = m * 0.8, hi = m * 1.2;
+    return aboutText(m) + ' — likely ' + (hi >= H ? mWhole(lo) + ' m (' + ftWhole(lo) + ' ft) up to the end of the hallway'
+                                                 : mWhole(lo) + '–' + mWhole(hi) + ' m (' + ftWhole(lo) + '–' + ftWhole(hi) + ' ft)');
   }
+  // bestM is a longer-hall distance: more than the hallway means that design reaches the end of ours
+  function bestText(m) { return aboutText(m) + (m >= hall().length + 0.5 ? ' in a longer hall (it reaches the end of ours)' : ''); }
+  // a stored prediction, short: "to reach the end of the 70 ft (21 m) hallway" / "about 16 m (52 ft)"
+  function predictedText(m) { return atEnd(m) ? 'to reach the end of the ' + hallLenText() + ' hallway' : aboutText(m); }
+  // a prediction in a table cell; one made with another physics model (another hallway) is shown as it was
+  function predictedCell(r) { return r.predictedM > 0 ? (r.model === modelVersion() && atEnd(r.predictedM) ? 'end of hall' : mWhole(r.predictedM) + ' m') : '—'; }
+  // a real, hand-measured run that made it to the far end of the hallway
+  function realAtEnd(m) { return m >= hall().length - END_SLACK_M; }
   function trimNum(v) { return String(Math.round(v * 100) / 100); }
   // a real distance in the unit it was measured in, then the other unit: "52 ft (15.85 m)" / "4.20 m (13.8 ft)"
   function bothUnits(v, unit) { return unit === 'ft' ? trimNum(v) + ' ft (' + fmt(v / FT_PER_M, 2) + ' m)' : fmt(v, 2) + ' m (' + fmt(v * FT_PER_M, 1) + ' ft)'; }
@@ -319,7 +351,9 @@
     function showDesign() { about.textContent = 'Your design: ' + summary(design) + ' — ' + api.fmt(analyse(design).grams, 0) + ' g.'; }
     showDesign();
     el.appendChild(about);
-    el.appendChild(h('p', { html: 'In the simulator the car starts <strong>30 cm</strong> in front of two box fans on high, side by side, in a hallway ' + hall().length + ' m long — like the real one. Run it, then go back and change one thing at a time to see what helps most.' }));
+    el.appendChild(h('p', { html: 'In the simulator the car starts <strong>' + Math.round(START_X * 100) + ' cm</strong> in front of two box fans on high, side by side, at the start of a hallway ' +
+      hallLenText() + ' long and ' + hallWideText() + ' wide — like ours. Run it, then go back and change one thing at a time to see what helps most.' }));
+    el.appendChild(h('p', { class: 'sl-muted', text: 'A car that reaches the far end can’t go any farther, so every car that gets there ties. When yours does, the simulator also works out how far it would roll in a longer hall — use that number to compare designs that all reach the end.' }));
     const best = h('div', { class: 'sl-note sl-note-good', 'aria-live': 'polite' });
     function say(main, strongText, rest) {
       best.textContent = '';
@@ -327,19 +361,22 @@
       if (strongText) best.appendChild(h('div', { style: 'margin-top:6px;font-size:0.85rem;color:#c8b8ea', text: TUNED_NOTE }));
     }
     function showLast() {
-      if (design.predictedM > 0) say('🔮 Your last prediction for this design: ', predictionText(design.predictedM), '.');
+      // the longer-hall distance isn't stored: the same design in the same model always rolls the same, so work it out again
+      if (design.predictedM > 0) say('🔮 Your last prediction for this design: ', predictionText(design.predictedM, atEnd(design.predictedM) ? forecast(design).longer : 0), '.');
       else say('🔮 Run the simulator to get your prediction.');
     }
     const sim = api.ui.trackSim(el, function () { return analyse(design).car; }, {
+      scaleM: hall().length,            // the whole hallway, start line to far end, the same view every run so designs are easy to compare
       getOpts: function () { const H = hall(); return { hallLength: H.length, hallWidth: H.width }; },
-      onResult: function (r) {
-        design.predictedM = Math.round(r.distance * 100) / 100;
-        design.bestM = Math.max(design.bestM || 0, design.predictedM);
+      onResult: function (res) {
+        const r = judge(res);
+        design.predictedM = Math.round(r.distance * 100) / 100;                 // in OUR hallway: what race day compares with
+        design.bestM = Math.max(design.bestM || 0, Math.round(r.longer * 100) / 100);   // compared in a longer hall, so designs that reach the end still rank
         touch(); flushCloud();          // the prediction goes to the account straight away, ready for race day
         if (r.reason === 'tipped over') say('🤸 In the simulator this design tips over at the start line. Go back, lower the sail, or tape a penny low at the back.');
         else if (r.reason === 'never moved') say('😴 In the simulator this design never starts rolling: friction beats the fans’ push. Go back and fix the axles or use a bigger sail.');
-        else say('🔮 Prediction for this design: ', predictionText(design.predictedM),
-                 '.' + (r.reason === 'hit the wall' ? ' (It veered into the wall — square the axles with a ruler.)' : '') + ' Your best design so far: ' + aboutText(design.bestM) + '.');
+        else say('🔮 Prediction for this design: ', predictionText(design.predictedM, r.longer),
+                 '.' + (r.reason === 'hit the wall' ? ' (It veered into the wall — square the axles with a ruler.)' : '') + ' Your best design so far: ' + bestText(design.bestM) + '.');
       }
     });
     el.appendChild(best);
@@ -360,13 +397,14 @@
     useDesignFor(me);
     const life = lifetime(api);
     el.appendChild(h('p', { html: 'After each real run in the hallway, measure from the start line to where the car <strong>stopped</strong> and log it here. ' +
+      'If it made it all the way to the far end of the hallway, about ' + hallLenText() + ' away, measure to the end — every car that gets there ties. ' +
       'Your teacher and your class will see your best run on the class board.' }));
     const designLine = h('div', { class: 'sl-note sl-note-tip' });
     function showDesignLine() {
       designLine.textContent = '';
       designLine.appendChild(h('strong', { text: 'Design being logged: ' }));
       designLine.appendChild(document.createTextNode(summary(design) + ' · ' + Math.round(analyse(design).grams) + ' g · ' +
-        (design.predictedM > 0 ? 'predicted ' + aboutText(design.predictedM) : 'no prediction yet (run the simulator in step 2)') + '. Not the car you raced? Go back to step 1 and set it up.'));
+        (design.predictedM > 0 ? 'predicted ' + predictedText(design.predictedM) : 'no prediction yet (run the simulator in step 2)') + '. Not the car you raced? Go back to step 1 and set it up.'));
     }
     showDesignLine();
     el.appendChild(designLine);
@@ -442,7 +480,7 @@
         // in the unit it was measured in first: "13.5 ft (4.11 m)"
         const real = typeof r.distance === 'number' && (r.unit === 'ft' || r.unit === 'm') ? bothUnits(r.distance, r.unit) : bothUnits(r.distanceM, 'm');
         tb.appendChild(h('tr', null, [h('td', { text: String(i + 1) }), h('td', { text: real }),
-          h('td', { text: r.predictedM > 0 ? mWhole(r.predictedM) + ' m' : '—' }), h('td', { text: pct }), h('td', { text: String(r.note || ''), style: 'text-align:left;white-space:normal' })]));
+          h('td', { text: predictedCell(r) }), h('td', { text: pct }), h('td', { text: String(r.note || ''), style: 'text-align:left;white-space:normal' })]));
       });
       t.appendChild(tb);
       mine.appendChild(h('div', { class: 'sl-table-wrap' }, [t]));
@@ -453,8 +491,11 @@
     }));
 
     function loggedText(rec) {
+      const pct = rec.predictedM > 0 ? Math.round(rec.distanceM / rec.predictedM * 100) : 0;
       return '✓ Logged ' + bothUnits(rec.distance, rec.unit) +
-        (rec.predictedM > 0 ? ' — your prediction was ' + aboutText(rec.predictedM) + ', so this run went ' + Math.round(rec.distanceM / rec.predictedM * 100) + '% of it.' : '.') +
+        (!(rec.predictedM > 0) ? '.'
+          : atEnd(rec.predictedM) ? ' — you predicted it would reach the end of the hallway' + (realAtEnd(rec.distanceM) ? ', and it did!' : ', and this run went ' + pct + '% of the way there.')
+          : ' — your prediction was ' + aboutText(rec.predictedM) + ', so this run went ' + pct + '% of it.') +
         (rec.classId ? '' : ' Join your class on the Classes page so it shows on the class board.');
     }
     function save(rec) {
@@ -494,8 +535,9 @@
         cls = myClasses.find(function (c) { return c.id === classSel.value; }) || cls;
       }
       // a typo (an extra digit, or metres typed as feet) gets a second look before it goes on the board
+      // (5 % slack: the hallway is "about" that long, and a car that reaches the end is measured by hand)
       const H = hall().length, pred = design.predictedM > 0 ? design.predictedM : 0, key = u + ':' + v;
-      const why = m > H ? 'longer than the hallway (' + H + ' m, ' + ftWhole(H) + ' ft)'
+      const why = m > H * 1.05 ? 'longer than our ' + hallLenText() + ' hallway'
                 : pred > 0 && m > 2.5 * pred ? 'more than 2.5 times your prediction (' + aboutText(pred) + ')' : '';
       if (why && confirmKey !== key) {
         confirmKey = key;
@@ -516,6 +558,18 @@
   }
 
   // ── Step 4: class board ──
+  // Farthest first. Runs that made it to the end of the hallway can't be beaten here, so they all tie (🏁);
+  // equal distances tie too. rank = 1 + the number of runs that went strictly farther ("1, 1, 3").
+  function rankRows(rows) {
+    const endM = hall().length - END_SLACK_M;
+    function score(r) { return realAtEnd(r.distanceM) ? endM : Math.round(r.distanceM * 100) / 100; }
+    rows.sort(function (a, b) { return score(b) - score(a) || b.distanceM - a.distanceM; });
+    rows.forEach(function (r, i) {
+      r.atEnd = realAtEnd(r.distanceM);
+      r.rank = i > 0 && score(r) === score(rows[i - 1]) ? rows[i - 1].rank : i + 1;
+    });
+    return rows;
+  }
   function renderBoard(el, api) {
     const h = api.h;
     const me = currentUser();
@@ -541,17 +595,17 @@
       const runs = runsByClass[active] || [];
       const best = {};
       runs.forEach(function (r) { const k = r.uid || r.userEmail; if (!best[k] || r.distanceM > best[k].distanceM) best[k] = r; });
-      const rows = Object.keys(best).map(function (k) { return best[k]; }).sort(function (a, b) { return b.distanceM - a.distanceM; });
+      const rows = rankRows(Object.keys(best).map(function (k) { return best[k]; }));
       if (!rows.length) { box.appendChild(h('p', { class: 'sl-muted', text: 'No runs logged for this class yet.' })); return; }
       const t = h('table', { class: 'sl-table' });
       const head = [h('th', { text: '#' }), h('th', { text: 'Name' }), h('th', { text: 'Best real run' }), h('th', { text: 'Predicted' }), h('th', { text: 'Design' })];
       if (isTeacher) head.push(h('th', { 'aria-label': 'Delete' }));
       t.appendChild(h('thead', null, [h('tr', null, head)]));
       const tb = h('tbody');
-      rows.forEach(function (r, i) {
-        const cells = [h('td', { text: i < 3 ? ['🥇', '🥈', '🥉'][i] : String(i + 1) }), h('td', { text: String(r.name || 'Anonymous') }),
-          h('td', { text: api.fmt(r.distanceM, 2) + ' m (' + api.fmt(r.distanceM * FT_PER_M, 1) + ' ft)' }),
-          h('td', { text: r.predictedM > 0 ? mWhole(r.predictedM) + ' m' : '—' }),
+      rows.forEach(function (r) {
+        const cells = [h('td', { text: r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : String(r.rank) }), h('td', { text: String(r.name || 'Anonymous') }),
+          h('td', { text: (r.atEnd ? '🏁 ' : '') + api.fmt(r.distanceM, 2) + ' m (' + api.fmt(r.distanceM * FT_PER_M, 1) + ' ft)' }),
+          h('td', { text: predictedCell(r) }),
           h('td', { text: String((r.design && r.design.summary) || ''), style: 'text-align:left;white-space:normal;font-size:0.8rem' })];
         if (isTeacher) {
           const del = h('button', { type: 'button', class: 'sl-btn', text: '✕', 'aria-label': 'Delete the run for ' + r.name, style: 'padding:4px 10px' });
@@ -562,6 +616,8 @@
       });
       t.appendChild(tb);
       box.appendChild(t);
+      if (rows.some(function (r) { return r.atEnd; })) box.appendChild(h('p', { class: 'sl-muted', text: '🏁 = made it all the way to the end of the ' + hallLenText() + ' hallway. ' +
+        'No car can go farther than that here, so those runs tie and share the same place. In step 2 the simulator’s “longer hall” number shows which of those designs would roll farthest.' }));
       box.appendChild(h('p', { class: 'sl-muted', text: isTeacher ? 'Best real run per student. Only you and this class can see this board. (✕ deletes that run.)' : 'Best real run per student. Only your class and your teacher can see this board.' }));
     }
     function watchClass(classId) {
@@ -617,6 +673,7 @@
       { title: 'Class board', render: renderBoard }
     ],
     _analyse: analyse,
-    _studio: { clean: clean, predictionText: predictionText, state: function () { return { design: design, uid: designUid, status: cloudStatus }; } }
+    _studio: { clean: clean, predictionText: predictionText, forecast: forecast, rankRows: rankRows, LONG_HALL_M: LONG_HALL_M,
+               state: function () { return { design: design, uid: designUid, status: cloudStatus }; } }
   });
 })();
