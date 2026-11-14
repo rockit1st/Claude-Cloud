@@ -6,6 +6,14 @@
 //          `answer` is the index of the right option in `options`; `why` explains it.
 (function () {
   'use strict';
+  // The hallway's size lives ONLY in sailcar-core.js (SailLab.physics.HALL); every hallway number
+  // below is worked out from it, so measuring the real hallway again needs no edit here.
+  const HALL = SailLab.physics.HALL;
+  function ft(m) { return Math.round(m / 0.3048); }      // metres → whole feet (students measure in both)
+  const GOAL_M = 12;                                      // the hallway challenge (M2 asks for more)
+  // The picture shows the whole hallway, plus half a metre of floor past its far end so a car that
+  // reaches the end still fits in the picture (no metre mark falls in that half metre for today's hallway).
+  const TRACK_M = HALL.length + 0.5;
   // The pictures are drawn at their real on-screen width (300–560 px) and shown 1 : 1, so a 15 px
   // label is 15 px on a phone too (a fixed 560-wide drawing shrank the labels to about 6 px there).
   function boardWidth(el) { return Math.max(300, Math.min(560, Math.round(el.clientWidth || 560))); }
@@ -142,12 +150,13 @@
       {
         title: 'Try it in the hallway',
         html:
-          '<p>Here’s a real-size hallway with two box fans side by side — just like ours. The car only <strong>starts</strong> rolling if the wind’s push beats friction. ' +
-          'Then it keeps going until the wind gets too weak (it fades the farther you are from the fans) and friction wins.</p>' +
+          '<p>Here’s a real-size hallway, about ' + ft(HALL.length) + ' ft (' + Math.round(HALL.length) + ' m) long like ours, with two box fans side by side at the start. ' +
+          'The picture shows all of it, from where the car starts (0 m) to the far end. The car only <strong>starts</strong> rolling if the wind’s push beats friction. ' +
+          'Then it keeps going until the wind gets too weak (it fades the farther you are from the fans) and friction wins — or until it reaches the far end of the hall.</p>' +
           '<p>Watch the arrows on the car while it rolls: <span style="color:#40e080">green</span> = the wind’s push, <span style="color:#ffa040">orange</span> = friction. ' +
           'While the green arrow is longer, the net force points forward and the car speeds up. Down the hall the wind fades and the green arrow shrinks; ' +
           'once it is shorter than the orange one, the car slows down. (In this hallway the car never catches up with the wind, so the air only ever pushes it forward.)</p>',
-        challenge: 'Get the car to roll at least 12 metres (about 40 ft).',
+        challenge: 'Get the car to roll at least ' + GOAL_M + ' metres (about ' + ft(GOAL_M) + ' ft).',
         render: function (el, api) {
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
@@ -157,8 +166,17 @@
           const FAN_V = { low: 1.8, med: 2.6, high: 3.5 }, CRR = { sticky: 0.13, ok: 0.03, smooth: 0.015 };
           const sim = api.ui.trackSim(el, function () { return { crr: CRR[fric.get()] }; }, {
             getOpts: function () { return { fan: { v0: FAN_V[fan.get()], L: api.physics.FAN.L } }; },
+            scaleM: TRACK_M,
             onResult: function (r) {
-              if (r.distance >= 12) api.done('It rolled ' + api.fmt(r.distance, 1) + ' m! More push and less friction = a bigger net force for longer.');
+              if (r.distance < GOAL_M) return;
+              if (r.reason === 'reached the end of the hall') {
+                // it was still rolling: the same run in a much longer hall shows how far it would have gone
+                const longer = api.physics.simulate(r.car, Object.assign({}, r.opts, { hallLength: 1000 })).distance;
+                api.done('It rolled all the way to the end of the hallway (' + api.fmt(r.distance, 1) + ' m, about ' + ft(r.distance) + ' ft) and was still moving — ' +
+                  'in a longer hall it would have rolled about ' + api.fmt(longer, 1) + ' m. More push and less friction = a bigger net force for longer.');
+              } else {
+                api.done('It rolled ' + api.fmt(r.distance, 1) + ' m (about ' + ft(r.distance) + ' ft)! More push and less friction = a bigger net force for longer.');
+              }
             }
           });
           api.onLeave(sim.stop);

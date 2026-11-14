@@ -10,12 +10,19 @@
   const FRAME = P.DEFAULT_CAR.mass - P.DEFAULT_CAR.sailArea * PAPER;   // the default car without its 20 × 20 cm paper sail
   const FLAT = 1.2, CUPPED = 1.4;                       // drag coefficients ("catch numbers") of a flat and a cupped sail
   const FT = 3.281;                                     // feet in a metre
+  // The real hallway lives in ONE place (SailLab.physics.HALL, 70 ft × 11 ft today); everything here reads it from there.
+  const HALL_M = P.HALL.length;                         // metres a car can roll from the start line before it reaches the far end
+  const HALL_FT = Math.round(HALL_M * FT);              // …in feet (70)
+  const END_X = START + HALL_M;                         // the far end of the hall, measured from the fans (simulate() starts cars at START)
   // Numbers the text quotes, worked out from the wind model so they always match it:
   const HALF_X = P.FAN.L;                               // wind(x) = v0 / (1 + x / L) is half of v0 at x = L
   const ONE_X = P.FAN.L * (P.FAN.v0 - 1);               // …and down to 1 m/s here
-  const TYPICAL = P.simulate({}).distance;              // how far the typical 70 g car with a 20 × 20 cm sail rolls
-  const GOAL = 15;                                      // hallway challenge, metres (about 50 ft: twice a paper sled's 25 ft)
+  const TYPICAL_RUN = P.simulate({});                   // the typical 70 g car with a 20 × 20 cm sail…
+  const TYPICAL = TYPICAL_RUN.distance;                 // …rolls this far (16 m) and coasts to a stop, short of the end of the hall
+  const GOAL = 15;                                      // hallway challenge, metres (about 50 ft: twice a paper sled's 25 ft; M1 asks 12 m)
+  const FAR_TEST = Math.floor(HALL_M / 5) * 5;          // the farthest "feel the fade" spot that is still inside the hall (20 m)
   function m(v) { return String(Math.round(v * 10) / 10); }
+  const HALL_TXT = m(HALL_M) + ' m (' + HALL_FT + ' ft)';   // "21.3 m (70 ft)"
   // A w × h cm paper sail mounted low on the mast: its middle sits 3 cm + half its height above the floor.
   function sailCar(w, h, cd, ang) {
     const area = w * h / 10000;
@@ -112,11 +119,12 @@
           'Our two box fans on high blow about ' + P.FAN.v0 + ' metres per second (m/s) right at the grilles. ' +
           'Side by side, they make a wide stream of air, and a wide stream fades slowly — but it does fade. Farther away:</p>' +
           '<p style="text-align:center"><strong>wind = ' + P.FAN.v0 + ' m/s ÷ (1 + distance ÷ ' + P.FAN.L + ' m)</strong></p>' +
-          '<p>Slide the wind gauge (the yellow dot) down the 30 m hallway. Watch the wind speed and the push on a 20 cm × 20 cm sail.</p>',
+          '<p>Slide the wind gauge (the yellow dot) down our ' + HALL_TXT + ' hallway. Watch the wind speed and the push on a 20 cm × 20 cm sail.</p>',
         challenge: 'Find the spot where the wind is HALF as fast as right at the fans (50%). Then look at what happened to the push.',
         render: function (el, api) {
-          const s = board(api, el, 316, 'Graph of wind speed getting weaker with distance from the fans, along a 30 metre hallway');
-          const d = api.ui.slider(el, { label: 'Distance from the fans', min: 0, max: 30, step: 0.4, value: 0, format: function (v) { return v.toFixed(1) + ' m'; }, onInput: draw });
+          const s = board(api, el, 316, 'Graph of wind speed getting weaker with distance from the fans, along the ' + m(HALL_M) + ' metre hallway');
+          // step 0.4 m lands exactly on the half-speed spot (L = 4.8 m); the gauge stops at the last step inside the hall
+          const d = api.ui.slider(el, { label: 'Distance from the fans', min: 0, max: END_X, step: 0.4, value: 0, format: function (v) { return v.toFixed(1) + ' m'; }, onInput: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
           const AREA = 0.04, V0 = P.FAN.v0, p0 = push(0, AREA, FLAT), fr = P.rollingFriction(P.DEFAULT_CAR.mass, P.DEFAULT_CAR.crr);
@@ -125,9 +133,12 @@
           api.ui.note(el, 'good', '🏁 <strong>This is why your car stops.</strong> Far down the hall the wind is weak: past ' + m(ONE_X) + ' m it’s under 1 m/s, ' +
             'and past about ' + Math.round(STILL_X) + ' m its push on a 20 × 20 cm sail is smaller than friction (the gauge tells you). ' +
             'A rolling car feels even less push, because it’s moving along with the air (more about that in Module 3). ' +
-            'So the car slowly loses speed and stops: a typical car stops around ' + Math.round(TYPICAL) + ' m (about ' + Math.round(TYPICAL * FT) + ' ft). ' +
+            'So the car slowly loses speed and stops: a typical car stops around ' + Math.round(TYPICAL) + ' m (about ' + Math.round(TYPICAL * FT) + ' ft)' +
+            (TYPICAL_RUN.reason === 'reached the end of the hall' ? ', right at the end of our ' + HALL_FT + ' ft hallway. '
+              : ', with about ' + Math.round((HALL_M - TYPICAL) * FT) + ' ft of our ' + HALL_FT + ' ft hallway still ahead of it. ') +
             'It also means the <strong>start line matters</strong>: closer to the fans = faster wind = much more push.');
-          const X0 = 70, X1 = 532, Y0 = 196, YT = 50, VMAX = 4, MMAX = 30, PSC = 370 / p0;
+          // the graph's distance axis is exactly the hallway: from the fans to the far end (start line + the hall), nothing past it
+          const X0 = 70, X1 = 532, Y0 = 196, YT = 50, VMAX = 4, MMAX = END_X, PSC = 370 / p0;
           function gx(mm) { return X0 + mm / MMAX * (X1 - X0); }
           function gy(v) { return Y0 - v / VMAX * (Y0 - YT); }
           function draw() {
@@ -141,6 +152,9 @@
             }
             for (let mm = 0; mm <= MMAX; mm += 5) label(api, s, gx(mm), Y0 + 22, mm + ' m', { anchor: 'middle', color: '#a090c0', bold: false, size: 17 });
             label(api, s, gx(MMAX / 2), Y0 + 45, 'distance from the fans', { anchor: 'middle', color: '#a090c0', bold: false, size: 17 });
+            // the far end of the hallway is the right edge of the graph
+            api.svg('line', { x1: X1, y1: YT - 10, x2: X1, y2: Y0, stroke: '#c8b8ea', 'stroke-width': 2, 'stroke-dasharray': '6,4' }, s);
+            label(api, s, X1 - 6, YT - 16, 'end of the hall (' + HALL_FT + ' ft)', { anchor: 'end', color: '#c8b8ea', bold: false, size: 17 });
             const pts = [];
             for (let i = 0; i <= MMAX * 10; i++) pts.push(gx(i / 10).toFixed(1) + ',' + gy(P.windAt(i / 10)).toFixed(1));
             api.svg('polygon', { points: gx(0) + ',' + Y0 + ' ' + pts.join(' ') + ' ' + gx(MMAX) + ',' + Y0, fill: '#7ad7ff', opacity: 0.1 }, s);
@@ -148,7 +162,7 @@
             // the meter
             api.svg('line', { x1: gx(x), y1: Y0, x2: gx(x), y2: gy(v), stroke: '#f0c040', 'stroke-width': 2, 'stroke-dasharray': '5,4' }, s);
             api.svg('circle', { cx: gx(x), cy: gy(v), r: 7, fill: '#f0c040' }, s);
-            const right = x < 23;
+            const right = gx(x) < X1 - 100;                 // keep the speed label inside the picture near the far end
             label(api, s, gx(x) + (right ? 14 : -14), gy(v) - 12, api.fmt(v, 2) + ' m/s', { anchor: right ? 'start' : 'end', color: '#f0c040', size: 19 });
             // push bar, with friction marked
             label(api, s, 14, 280, 'push', { color: '#40e080', size: 17 });
@@ -244,7 +258,8 @@
           'It starts at the start line, 30 cm from the two fans.</p>' +
           '<p>A bigger sail catches more wind… but watch out. Right at the start line, two fans push hard, and the wind pushes on the middle of the sail, high above the wheels. ' +
           'Too much push up there can flip the car onto its nose.</p>' +
-          '<p>Your goal is ' + GOAL + ' m — about ' + Math.round(GOAL * FT / 10) * 10 + ' ft. That’s twice as far as the paper sleds from past years usually slid (about 25 ft).</p>',
+          '<p>Your goal is ' + GOAL + ' m — about ' + Math.round(GOAL * FT / 10) * 10 + ' ft. That’s twice as far as the paper sleds from past years usually slid (about 25 ft), ' +
+          'and most of the way down our ' + HALL_TXT + ' hallway.</p>',
         challenge: 'Get the car to roll at least ' + GOAL + ' metres (about ' + Math.round(GOAL * FT / 10) * 10 + ' ft) without tipping over.',
         render: function (el, api) {
           const row = api.h('div', { class: 'sl-row' });
@@ -264,9 +279,12 @@
           }
           info();
           sim = api.ui.trackSim(el, car, {
-            scaleM: 20,                                         // the same 20 m view every run, so runs are easy to compare
+            scaleM: HALL_M,                                     // the whole hallway, the same view every run, so runs are easy to compare
             onResult: function (r) {
-              if (r.reason !== 'tipped over' && r.distance >= GOAL) api.done('It rolled ' + api.fmt(r.distance, 1) + ' m (about ' + Math.round(r.distance * FT) + ' ft) without tipping! ' +
+              if (r.reason === 'tipped over' || r.distance < GOAL) return;
+              api.done((r.reason === 'reached the end of the hall'
+                ? 'It rolled all the way to the end of the ' + HALL_TXT + ' hallway without tipping — the most any car can do in our hall! '
+                : 'It rolled ' + api.fmt(r.distance, 1) + ' m (about ' + Math.round(r.distance * FT) + ' ft) without tipping! ') +
                 'A bigger sail catches more wind and goes farther — until the push gets so strong, so high up, that it flips the car.');
             }
           });
@@ -289,7 +307,8 @@
           '<li><strong>No flapping:</strong> a flapping sail wastes wind. Tape a popsicle stick or straw across the bottom edge to hold it steady.</li>' +
           '<li><strong>Square to the fans:</strong> crouch down right next to the fans and look down the hall at your car. You should see the whole face of the sail, not its edge.</li></ul>' +
           '<p><strong>Test it in the hallway:</strong></p>' +
-          '<ol><li><strong>Feel the fade:</strong> hold a strip of paper in front of the fans at 1 m, 5 m, 10 m and 20 m. Watch it flutter less and less as you move away.</li>' +
+          '<ol><li><strong>Feel the fade:</strong> hold a strip of paper in front of the fans at 1 m, 5 m, 10 m and ' + FAR_TEST + ' m ' +
+          '(about 3, 16, 33 and ' + Math.round(FAR_TEST * FT) + ' ft — the hallway is ' + HALL_FT + ' ft long). Watch it flutter less and less as you move away.</li>' +
           '<li><strong>Sail swap test:</strong> run your car with two different sails (for example 15 cm and 20 cm). Same start line, same fan setting. ' +
           'Do 3 runs each and measure with a tape measure. Change only ONE thing at a time, so you know what made the difference.</li>' +
           '<li><strong>Angle test:</strong> run once with the sail square to the fans, and once turned about 45°. How much shorter is the turned run? ' +
