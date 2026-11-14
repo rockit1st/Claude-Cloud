@@ -12,6 +12,14 @@
 // moves every class's join code into the new protected "joinCodes" list and
 // takes it off the class. The codes stay the same, so nothing has to be handed
 // out again, and joining keeps working before, during and after that step.
+// Every student could see those old codes, though, so then check each roster;
+// "New code" on a class gives it a fresh code and the old one stops working
+// (students already in the class stay in it).
+//
+// AFTER OPENING CLASSES, NEVER GO BACK to an older version of these rules (the
+// console's revert button, or pasting an older copy of this file): no student
+// could join a class, and the codes would show as "hidden", until these rules
+// are published again.
 //
 // What changed most recently (join codes):
 //  - Before, every signed-in student could list all the classes WITH their
@@ -22,6 +30,9 @@
 //    the boards need them), but the classes no longer carry their codes.
 //  - A class the Classes page has not moved over yet keeps working with the
 //    code still stored on it, so the order of publishing does not matter.
+//  - "New code" on the Classes page replaces a class's code. New codes have 8
+//    characters, which makes guessing one hopeless; older 6-character codes
+//    keep working until they are replaced.
 //
 // What these rules do:
 //  - Altitude Calculator results ("results"): a student can read only their own
