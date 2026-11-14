@@ -7,15 +7,23 @@
 (function () {
   'use strict';
   const P = SailLab.physics, D = P.DEFAULT_CAR, G = P.G;
+  // The hallway's size lives ONLY in sailcar-core.js (SailLab.physics.HALL: 70 ft × 11 ft today). Every hallway number
+  // below — the goals, the map, the text — is worked out from it and from simulate(), so re-measuring the hall needs no edit here.
+  const HALL = P.HALL;
+  const LONG_HALL = 1000;                               // "in a longer hall": the same run with no end wall, so cars that reach the end can still be compared
+  function ft(v) { return Math.round(v / 0.3048); }     // metres → whole feet (students measure in both)
+  function m1(v) { return String(Number(SailLab.fmt(v, 1))); }          // 21.3 · 3.4 · 16
+  const HALL_TXT = m1(HALL.length) + ' m (' + ft(HALL.length) + ' ft)';  // "21.3 m (70 ft)"
+  const WIDE_TXT = m1(HALL.width) + ' m (' + ft(HALL.width) + ' ft)';    // "3.4 m (11 ft)"
   const START = 0.3;                                    // the start line: 30 cm from the fans (simulate's default startX)
   const PAPER = 0.08;                                   // printer paper weighs about 80 g per square metre
   const FRAME = D.mass - D.sailArea * PAPER;            // the default 70 g car without its 20 × 20 cm paper sail (66.8 g)
   const FRAME_H = 0.025;                                // its balance point is 2.5 cm up (3 cm with the sail, like DEFAULT_CAR)
   const NICKEL = 0.005, COIN_H = 0.03;                  // a US nickel is 5 g; taped flat on the chassis, 3 cm off the floor
   const STICK = 0.0005;                                 // a longer chassis needs more stick and glue: about 0.5 g per cm
-  const HALL_GOAL = 20;                                 // step 3: metres without flipping (only a fixed 30 cm-sail car gets there)
-  const STRAIGHT_GOAL = 12;                             // step 4: metres down the hall without hitting a wall
-  const MAP_M = 18;                                     // step 4: the top-down map shows the first 18 m (the longest run, 0°, is ≈ 16 m)
+  const STRAIGHT_GOAL = 12;                             // step 4: metres down the hall without hitting a wall (¼° off, the least crooked
+                                                        // axle on the slider, hits the wall before this; square axles roll ≈ 16 m)
+  const MAP_M = HALL.length;                            // step 4: the top-down map shows the whole hallway, start line to far end
   // A car built from the default one: a wb-cm wheelbase, a side × side cm paper sail whose bottom sits gap cm above the
   // chassis (so its middle is 3 cm + gap + half the sail above the floor), and nickels taped over the back axle.
   // Chassis, wheels, mast and sail sit mid-way between the axles. cgCm (optional) sets the balance point directly.
@@ -57,9 +65,34 @@
   // numbers quoted in the text, straight from simulate()
   const f1 = function (v) { return SailLab.fmt(v, 1); };
   const DEFAULT_RUN = P.simulate({});
-  const STRAIGHT_RUN = DEFAULT_RUN.distance;                        // a square-axled default car (≈ 16 m)
-  const HALL_W = DEFAULT_RUN.opts.hallWidth;                        // 2.4 m; simulate() calls it a wall hit 10 cm (half a car) before the wall
+  const STRAIGHT_RUN = DEFAULT_RUN.distance;                        // a square-axled default car (≈ 16 m: it coasts to a stop inside the hall)
+  const HALL_W = DEFAULT_RUN.opts.hallWidth;                        // = HALL.width (3.35 m today)
+  const ROOM = HALL_W / 2 - 0.1;                                    // simulate() calls it a wall hit 10 cm (half a car) before the wall
   const WALL_AT = function (a) { return P.simulate({ veerDeg: a }).distance; };
+  // how far a car would roll in a hall with no end (for a run that reached the end of the real one, still rolling)
+  function longer(car, opts) { return P.simulate(car, Object.assign({}, opts || {}, { hallLength: LONG_HALL })).distance; }
+
+  // Step 3: tame the big 30 × 30 cm sail. Its farthest non-flipping run with the step's controls (gap 0/5/10 cm, chassis
+  // 12/16/22 cm, 0–4 nickels), in a hall with no end: only a low sail + long chassis + 2–3 nickels gets past the end of our hall.
+  const BIG = 30, BIG_AREA = BIG * BIG / 10000;
+  const BIG_BEST = (function () {
+    let best = 0;
+    [0, 5, 10].forEach(function (gap) {
+      [12, 16, 22].forEach(function (wb) {
+        for (let n = 0; n <= 4; n++) { const r = P.simulate(makeCar(BIG, gap, wb, n), { hallLength: LONG_HALL }); if (r.reason !== 'tipped over') best = Math.max(best, r.distance); }
+      });
+    });
+    return best;
+  })();
+  // The goal: all the way to the END of the hallway (4 nickels is too heavy to get there). If the hall is ever made longer than
+  // even the best big-sail car can roll, the goal becomes the whole metres that car can still reach.
+  const HALL_GOAL = Math.min(HALL.length, Math.floor(BIG_BEST));
+  const GOAL_IS_END = HALL_GOAL >= HALL.length;
+  // the challenge rule (the step calls it before api.done(); the check script tests it): the big sail, no flip, goal reached
+  function tamed(r) {
+    return r.car.sailArea >= BIG_AREA - 1e-6 && r.reason !== 'tipped over' &&
+           (GOAL_IS_END ? r.reason === 'reached the end of the hall' : r.distance >= HALL_GOAL);
+  }
 
   SailLab.register({
     id: 'balance',
@@ -189,8 +222,13 @@
         html:
           '<p>This car has a big <strong>30 × 30 cm</strong> sail on a tall mast, 10 cm above the chassis. A big sail catches lots of wind from the two box fans… but press ▶ Run and watch what happens at the start line.</p>' +
           '<p>Fix it with <strong>balance</strong>, not by giving up the big sail! You can mount the sail lower, use a longer chassis, or tape nickels over the back axle. A sail this big needs <strong>more than one</strong> fix. ' +
-          'But remember Module 5: extra mass means extra friction, so add only as much weight as you need.</p>',
-        challenge: 'Get the car to roll at least ' + HALL_GOAL + ' metres (about 66 ft) without flipping.',
+          'But remember Module 5: extra mass means extra friction, so add only as much weight as you need.</p>' +
+          (GOAL_IS_END
+            ? '<p>Tamed, this sail can push a car all the way to the far end of our ' + HALL_TXT + ' hallway. More than one fix can get there, and on race day ' +
+              'they would tie at the end wall. So when your car reaches the end, the simulator also tells you how far it would have rolled in a <strong>longer</strong> hall. That shows which fix is really best.</p>'
+            : '<p>Our hallway is ' + HALL_TXT + ' long, so there’s room to show what a tamed big sail can do.</p>'),
+        challenge: GOAL_IS_END ? 'Keep the 30 × 30 cm sail and get the car all the way to the end of the ' + HALL_TXT + ' hallway without flipping.'
+                               : 'Keep the 30 × 30 cm sail and get the car to roll at least ' + HALL_GOAL + ' metres (about ' + ft(HALL_GOAL) + ' ft) without flipping.',
         render: function (el, api) {
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
@@ -214,16 +252,27 @@
           }
           info();
           sim = api.ui.trackSim(el, car, {
+            scaleM: HALL.length,                              // the whole hallway, start line to far end, the same view every run
             onResult: function (r) {
-              const d = api.fmt(r.distance, 2) + ' m';
+              const d = api.fmt(r.distance, 2) + ' m', end = r.reason === 'reached the end of the hall';
+              // a car that reached the end was still rolling: how far it would have gone in a longer hall
+              const far = end ? longer(r.car, r.opts) : r.distance, farTxt = 'about ' + m1(far) + ' m (' + ft(far) + ' ft)';
               if (r.reason === 'tipped over') say(api, fb, ['🤸 ', ['Flipped!'], ' The tip turn beat the hold turn. Shrink the tip lever (lower the sail) or grow the hold turn (longer chassis, nickels at the back).']);
-              else if (r.distance >= HALL_GOAL) {
-                const need = fewestNickels(side.get(), gap.get(), wb.get());
-                say(api, fb, ['🏆 ', [d], ' and no flip!'].concat(need != null && coins.get() > need
-                  ? [' Can you do it with fewer nickels? ' + need + ' ' + (need === 1 ? 'is' : 'are') + ' enough to stop the flip here, and a lighter car rolls farther.'] : []));
-                api.done('It rolled ' + d + ' without flipping! A low sail, a long chassis and a little weight over the back axle let a big sail push hard without tipping — and the lighter your fix, the farther it goes.');
-              } else if (r.car.sailArea < 0.09 - 1e-6) say(api, fb, ['No flip — but it stopped at ', [d], '. A smaller sail catches less wind. Keep the 30 cm sail and fix the balance instead.']);
-              else say(api, fb, ['No flip — nice! But it stopped at ', [d], '. Every nickel and every extra cm of chassis adds weight, and weight adds friction. Can you stop the flip with less weight?']);
+              else if (r.car.sailArea < BIG_AREA - 1e-6) say(api, fb, end
+                ? ['No flip, and it reached the end — but with a smaller sail. This challenge is to tame the BIG sail: put the 30 × 30 cm sail back and fix the balance instead.']
+                : ['No flip — but it stopped at ', [d], '. A smaller sail catches less wind. Keep the 30 cm sail and fix the balance instead.']);
+              else if (tamed(r)) {
+                const need = fewestNickels(side.get(), gap.get(), wb.get()), fewer = need != null && coins.get() > need;
+                const lightFar = fewer ? longer(makeCar(side.get(), gap.get(), wb.get(), need), r.opts) : 0;
+                say(api, fb, ['🏆 ', [end ? 'All the way to the end of the hallway' : d], ' and no flip!']
+                  .concat(end ? [' It was still rolling: in a longer hall it would have gone ', [farTxt], '.'] : [])
+                  .concat(fewer ? [' Can you do it with fewer nickels? ' + need + ' ' + (need === 1 ? 'is' : 'are') + ' enough to stop the flip here, and a lighter car rolls farther' +
+                    (end ? ': about ' + m1(lightFar) + ' m in that longer hall. On race day both would tie at the end wall, but a lighter car has speed to spare.' : '.')] : []));
+                api.done((end ? 'It rolled all the way to the end of the ' + HALL_TXT + ' hallway without flipping, and in a longer hall it would have kept going to ' + farTxt + '! '
+                              : 'It rolled ' + d + ' without flipping! ') +
+                  'A low sail, a long chassis and a little weight over the back axle let a big sail push hard without tipping — and the lighter your fix, the farther it goes.');
+              } else say(api, fb, ['No flip — nice! But it stopped at ', [d], GOAL_IS_END ? ', short of the end of the hall (' + HALL_TXT + ').' : ', short of ' + HALL_GOAL + ' m.',
+                ' Every nickel and every extra cm of chassis adds weight, and weight adds friction. Can you stop the flip with less weight?']);
             }
           });
           api.onLeave(sim.stop);
@@ -236,10 +285,10 @@
           '<p>Wheels roll the way they point. An axle is <span class="key">square</span> when it sits at a perfect right angle (90°) across the chassis. ' +
           'If your two axles aren’t <span class="key">parallel</span> (lined up the same way), the front wheels point a little to one side. ' +
           'Then the car doesn’t go straight: it drives around a giant circle.</p>' +
-          '<p>The hallway is ' + HALL_W + ' m wide and your car starts in the middle, so it has only about ' + f1(HALL_W / 2 - 0.1) + ' m of room on each side. ' +
-          'With two box fans, a typical car rolls about ' + Math.round(STRAIGHT_RUN) + ' m, so even a crooked axle you can barely see has plenty of time to steer it into the wall!</p>' +
-          '<p>The map below shows the first ' + MAP_M + ' m of the hallway, squeezed from end to end so it fits on your screen. That makes the drift look steeper than it really is, but the distances are real.</p>',
-        challenge: 'Fix the front axle so the car rolls at least ' + STRAIGHT_GOAL + ' metres (about 40 ft) down the hall without hitting a wall. Press ▶ Roll to test.',
+          '<p>Our hallway is about ' + WIDE_TXT + ' wide and your car starts in the middle, so it has only about ' + m1(ROOM) + ' m (' + ft(ROOM) + ' ft) of room on each side. ' +
+          'With two box fans, a typical car rolls about ' + Math.round(STRAIGHT_RUN) + ' m (' + ft(STRAIGHT_RUN) + ' ft), so even a crooked axle you can barely see has plenty of time to steer it into the wall!</p>' +
+          '<p>The map below shows the whole ' + HALL_TXT + ' hallway, squeezed from end to end so it fits on your screen. That makes the drift look steeper than it really is, but the distances are real.</p>',
+        challenge: 'Fix the front axle so the car rolls at least ' + STRAIGHT_GOAL + ' metres (about ' + ft(STRAIGHT_GOAL) + ' ft) down the hall without hitting a wall. Press ▶ Roll to test.',
         render: function (el, api) {
           const TH = 160, top = board(api, el, TH, 'Your car seen from above, with its two axles');
           const row = api.h('div', { class: 'sl-row' });
@@ -248,12 +297,13 @@
             onInput: function () { stop(); carTop(); hall([], null); explain(null); } });
           const go = api.h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '▶ Roll' });
           row.appendChild(api.h('div', { class: 'sl-ctrl' }, [go]));
-          const HH = 274, hs = board(api, el, HH, 'Map of the hallway seen from above, with your car’s path');
+          const HH = 280, hs = board(api, el, HH, 'Map of the whole hallway seen from above, with your car’s path');
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          // fan face · px per metre down the hall (MAP_M shown) · px per metre across it · middle of the hall
-          const X0 = 30, KX = 503 / (MAP_M + START), KY = 80, YC = 140, SHOW = MAP_M, ghosts = [];   // 27.5 px per m: 18 m ends at x 533
-          const WT = YC - HALL_W / 2 * KY, WB = YC + HALL_W / 2 * KY, SX = X0 + START * KX;   // the walls (1.2 m each side of the middle) · start line
+          // fan face · px per metre down the hall (the whole hall: its far end lands at x 533) · half the hall's width in px, so
+          // px per metre across it (any hall width fills 192 px) · middle of the hall
+          const X0 = 30, KX = 503 / (MAP_M + START), HALF = 96, KY = HALF / (HALL_W / 2), YC = 140, ghosts = [];
+          const WT = YC - HALF, WB = YC + HALF, SX = X0 + START * KX, EX = X0 + (START + MAP_M) * KX;   // the side walls · start line · far end
           let raf = null;
           // simulate()'s trace: x = metres down the hall from the start line, lateral = metres sideways from the middle
           function pt(p) { return [X0 + (START + p.x) * KX, YC - p.lateral * KY]; }
@@ -281,18 +331,24 @@
           }
           function hall(pts, res) {
             clear(api, hs, HH);
-            [WT - 3, WB + 3].forEach(function (y) { api.svg('line', { x1: 0, y1: y, x2: 560, y2: y, stroke: '#6a5a8a', 'stroke-width': 6 }, hs); });
-            label(api, hs, 552, WT - 12, 'wall — the hall is ' + HALL_W + ' m wide', { anchor: 'end', bold: false, color: MUTED });
-            label(api, hs, SX + 2, WT - 12, 'start', { anchor: 'middle', color: '#f0c040' });
+            // the two side walls and the far end of the hall
+            [WT - 3, WB + 3].forEach(function (y) { api.svg('line', { x1: 0, y1: y, x2: EX + 6, y2: y, stroke: '#6a5a8a', 'stroke-width': 6 }, hs); });
+            api.svg('line', { x1: EX + 3, y1: WT - 6, x2: EX + 3, y2: WB + 6, stroke: '#6a5a8a', 'stroke-width': 6 }, hs);
+            label(api, hs, EX, WT - 14, 'wall — the hall is ' + WIDE_TXT + ' wide', { anchor: 'end', bold: false, color: MUTED, size: 18 });
+            label(api, hs, EX - 8, WB - 12, 'end of the hall', { anchor: 'end', bold: false, color: MUTED, size: 18 });   // lower half: paths only ever drift up
+            label(api, hs, SX + 2, WT - 14, 'start', { anchor: 'middle', color: '#f0c040', size: 18 });
             api.svg('line', { x1: SX, y1: WT, x2: SX, y2: WB, stroke: '#f0c040', 'stroke-width': 1.5, 'stroke-dasharray': '4,4', opacity: 0.6 }, hs);
-            api.svg('line', { x1: SX, y1: YC, x2: 556, y2: YC, stroke: '#4a3a6a', 'stroke-width': 2, 'stroke-dasharray': '6,8' }, hs);
+            api.svg('line', { x1: SX, y1: YC, x2: EX, y2: YC, stroke: '#4a3a6a', 'stroke-width': 2, 'stroke-dasharray': '6,8' }, hs);
             // two box fans side by side, about 50 cm wide each, facing down the hall
-            [YC - 41, YC + 1].forEach(function (y) { api.svg('rect', { x: X0 - 14, y: y, width: 14, height: 40, rx: 3, fill: '#3a2a5a', stroke: MUTED, 'stroke-width': 2 }, hs); });
-            label(api, hs, SX + 8, YC + 28, '← 2 fans', { bold: false, color: MUTED });   // lower half: paths only ever drift up, and this clears the start line
-            for (let m = 2; m <= SHOW; m += 2) {
+            const FW = 0.5 * KY;
+            [YC - FW - 1, YC + 1].forEach(function (y) { api.svg('rect', { x: X0 - 14, y: y, width: 14, height: FW, rx: 3, fill: '#3a2a5a', stroke: MUTED, 'stroke-width': 2 }, hs); });
+            label(api, hs, SX + 8, YC + 30, '← 2 fans', { bold: false, color: MUTED, size: 18 });   // lower half: paths only ever drift up, and this clears the start line
+            // a tick every 2 m inside the hall, labelled every 4 m (big enough to read on a phone), none crowding the end wall
+            for (let m = 2; m < MAP_M; m += 2) {
               const x = SX + m * KX;
+              if (EX - x < 12) break;
               api.svg('line', { x1: x, y1: WB + 6, x2: x, y2: WB + 14, stroke: '#6a5a8a', 'stroke-width': 1.5 }, hs);
-              label(api, hs, x, WB + 32, m + ' m', { anchor: 'middle', bold: false, color: MUTED });
+              if (m % 4 === 0 && EX - x > 28) label(api, hs, x, WB + 36, m + ' m', { anchor: 'middle', bold: false, color: MUTED, size: 20 });
             }
             ghosts.forEach(function (gh) {
               line(gh.pts, MUTED, 2, 0.55);
@@ -337,7 +393,8 @@
               if (ghosts.length > 3) ghosts.shift();
               explain(r);
               if (r.reason !== 'hit the wall' && r.distance >= STRAIGHT_GOAL) api.done('Square axles = a straight run! At ' + deg(r.car.veerDeg) + ' your car rolled ' + api.fmt(r.distance, 2) + ' m. ' +
-                'In the model, just 1° off hits the wall after about ' + f1(WALL_AT(1)) + ' m, and even ½° off after about ' + f1(WALL_AT(0.5)) + ' m — so square your axles with a ruler.');
+                'In our ' + ft(HALL_W) + ' ft-wide hall, just 1° off hits the wall after about ' + f1(WALL_AT(1)) + ' m (' + ft(WALL_AT(1)) + ' ft), and even ½° off after about ' +
+                f1(WALL_AT(0.5)) + ' m (' + ft(WALL_AT(0.5)) + ' ft) — so square your axles with a ruler.');
             }
             raf = requestAnimationFrame(frame);
           });
@@ -382,14 +439,16 @@
       { q: 'Car A stopped flipping by taping 4 nickels (20 g) on the back. Car B has the same sail and stopped flipping by mounting its sail lower instead. Which will probably roll farther?',
         options: ['Car A, because extra weight always makes a car faster', 'Car B, because it stayed light, so it has less friction to fight', 'They tie: once a car doesn’t flip, its mass doesn’t matter', 'Car A, because the nickels catch extra wind'], answer: 1,
         why: 'Both cars stay on their wheels, but Car A carries 20 g more. More mass means more friction, so the lighter Car B rolls farther. Lowering the sail is a free fix!' },
-      { q: 'In the simulator, a car whose front axle is turned 3° off square…', options: ['goes perfectly straight, just a little slower', 'flips over at the start line', 'curves sideways and hits the hallway wall before it gets even 3 m down the hall', 'rolls farther, because it zig-zags'], answer: 2,
-        why: 'Wheels roll the way they point. A 3° crooked axle steers the car around a circle, so it hits the wall after only about ' + f1(WALL_AT(3)) + ' m. With square axles the same car rolls about ' + f1(STRAIGHT_RUN) + ' m.' },
+      { q: 'In the simulator, a car whose front axle is turned 3° off square…', options: ['goes perfectly straight, just a little slower', 'flips over at the start line', 'curves sideways and hits the hallway wall before it gets even ' + (Math.floor(WALL_AT(3)) + 1) + ' m down the hall', 'rolls farther, because it zig-zags'], answer: 2,
+        why: 'Wheels roll the way they point. A 3° crooked axle steers the car around a circle, so it hits the wall of our ' + ft(HALL_W) + ' ft-wide hall after only about ' + f1(WALL_AT(3)) + ' m. ' +
+          'With square axles the same car rolls about ' + f1(STRAIGHT_RUN) + ' m.' },
       { q: 'What’s the best way to make sure your two axles are square and parallel?', options: ['Spin each wheel and see how long it spins', 'Line them up with a ruler or the corner of a sheet of paper, then check that a gentle push rolls the car straight', 'Use a bigger sail', 'Put the heaviest parts on the front'], answer: 1,
         why: 'A ruler or a paper corner gives you a perfect right angle for lining up each axle. A gentle push along a straight line shows whether the car really rolls straight.' },
       { q: 'You set your car at the start line in front of the two box fans and see its back wheels lift off the floor a little. What does that tell you?', options: ['It is starting to flip forward: the tip turn is beating the hold turn', 'The wheels have too much friction', 'The sail is too small to catch the wind', 'The axles are crooked'], answer: 0,
         why: 'Back wheels lifting means the wind’s turn is winning. Lower the sail, lengthen the chassis or move weight to the back before race day.' }
     ],
     // for the check script only: the module's own car builder and turn maths
-    _calc: { makeCar: makeCar, turns: turns, fewestNickels: fewestNickels, HALL_GOAL: HALL_GOAL, STRAIGHT_GOAL: STRAIGHT_GOAL, MAP_M: MAP_M }
+    _calc: { makeCar: makeCar, turns: turns, fewestNickels: fewestNickels, tamed: tamed, longer: longer, HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END,
+             BIG_BEST: BIG_BEST, STRAIGHT_GOAL: STRAIGHT_GOAL, MAP_M: MAP_M, ROOM: ROOM }
   });
 })();
