@@ -269,7 +269,7 @@
           '<ul><li><strong>Weight.</strong> A heavier car presses down harder. Twice as heavy means about twice the friction.</li>' +
           '<li><strong>The wheels.</strong> Wheels that spin freely have about half the friction of OK wheels. Rubbing wheels have about 3 times as much.</li></ul>' +
           '<p>The starting car weighs ' + kid.force(WEIGHT) + '. Its friction is only ' + kid.force(FR) + '. That is tiny! ' +
-          'But far down the hall, the wind is weak too. ' + FAR_FT + ' ft from the fans, it pushes with only ' + kid.force(FAR_PUSH) + '.</p>',
+          'But far down the hall, the wind is weak too. ' + kid.dist(ftToM(FAR_FT)) + ' from the fans, it pushes with only ' + kid.force(FAR_PUSH) + '.</p>',
         challenge: 'Build a car that weighs at least 100 g. It must have less friction than the starting car (70 g, OK wheels).',
         render: function (el, api) {
           wordFirst(api, el, 'friction', 'a force that rubs against motion and slows things down.');

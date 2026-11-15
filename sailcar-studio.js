@@ -1,14 +1,17 @@
 // Sail Car Lab — Design Studio (the final step, no check)
 // 1. Design: real parts → mass, balance, friction, sail push (all fed into SailLab.physics)
-// 2. Predict: run the design down the simulated hallway
-// 3. Race day: log real hallway runs (sailcar_runs) and compare with the prediction
+// 2. Test it: the student guesses first (predict-first), then runs the design down the simulated hallway
+// 3. Race day: log real hallway runs (sailcar_runs) and compare with the simulator's prediction
 // 4. Class board: best real run per student, visible only to the class and the teacher
 // Each student's design + prediction is kept with their account (sailcar_progress/{uid}.design,
 // written only here and never touching 'modules') and on this device ('sailcar-design-v2-<uid>');
 // whichever copy was saved last (savedMs) wins.
+// Written for 6th graders: short sentences, forces in paper clips (SailLab.kid.force), distances in feet
+// first (SailLab.kid.dist), no formulas. Every number a student reads is worked out from simulate().
 (function () {
   const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
-  const FT_PER_M = 3.28084;
+  const kid = SailLab.kid;
+  const FT_PER_M = kid.FT_PER_M;
   const UNIT_KEY = 'sailcar-run-unit';          // the unit this device last logged a run in
   const SAVE_WAIT_MS = 4000;                    // after this long without the server's OK, the write is waiting for Wi-Fi
   const START_X = 0.3;                          // simulate()'s start line: 30 cm in front of the fans
@@ -28,6 +31,10 @@
   const WHY = { 'tipped over': 'tipped', 'never moved': 'never moved', 'hit the wall': 'wall', 'reached the end of the hall': 'end', 'coasted to a stop': 'stopped' };
   const WHY_NOW = { tipped: 'tips over at the start', 'never moved': 'never starts rolling' };
   const WHY_SAID = { tipped: 'would tip over at the start', 'never moved': 'would never start rolling' };
+  // Last year's paper-sail SLEDS (no wheels) slid about 25 ft in this hallway (the teacher's results; the same
+  // runs the wind in sailcar-core.js is tuned to). The predict-first question and its answer compare with it.
+  const SLED_FT = 25;
+  const MID_FT = 50;                            // the predict-first question's other edge: "25 to 50 ft"
 
   // Part data (approximate masses of the classroom materials)
   const CHASSIS = {
@@ -42,9 +49,11 @@
     hole:  { label: 'Skewer through a cardstock hole', crr: 0.03 }
   };
   const SMALL_R = 0.015, BIG_R = 0.025;                       // wheel radius, m (3 cm and 5 cm wheels)
+  const SMALL_G = 3, BIG_G = 5;                               // grams per wheel
   const GLUE = { light: 3, normal: 6, heavy: 10 };            // grams of hot glue
   const SAIL_GSM = { paper: 80, cardstock: 200 };             // grams per square metre
   const MAST_POS = { front: 0.3, middle: 0.5, back: 0.7 };     // fraction of the wheelbase behind the front axle
+  const PENNY_G = 2.5;
 
   // a sensible, ordinary first car — students improve it from here
   const DEFAULT = { chassis: 'double', rails: 3, bearing: 'taped', wobbly: false, rubbing: false, bigWheels: false, square: true,
@@ -65,7 +74,7 @@
     add('Cross pieces (2)', 2 * ch.cross, wb / 2, deck);
     add('Axles (2 skewers)', 2, wb / 2, wheelR);
     if (d.bearing === 'straw') add('Straw bearings', 1, wb / 2, wheelR);
-    add('Wheels (4)', 4 * (d.bigWheels ? 5 : 3), wb / 2, wheelR);
+    add('Wheels (4)', 4 * (d.bigWheels ? BIG_G : SMALL_G), wb / 2, wheelR);
     add('Hot glue', GLUE[d.glue], wb / 2, deck);
     add('Tape', 1, wb / 2, deck);
     const mastLen = (d.sailGap + d.sailH) / 100, mastX = wb * MAST_POS[d.mastPos];
@@ -73,7 +82,7 @@
     add('Sail (' + d.sailMat + ')', sailArea * SAIL_GSM[d.sailMat], mastX, deck + d.sailGap / 100 + d.sailH / 200);
     if (d.cupped) add('Pipe-cleaner sail frame', 1.5, mastX, deck + d.sailGap / 100 + d.sailH / 200);
     if (d.guys) add('Pipe-cleaner braces', d.guys * 1.5, mastX, deck + mastLen / 3);
-    if (d.pennies) add('Pennies at the back', d.pennies * 2.5, wb * 0.95, deck);
+    if (d.pennies) add('Pennies at the back', d.pennies * PENNY_G, wb * 0.95, deck);
     const grams = parts.reduce(function (s, p) { return s + p.g; }, 0);
     const cgToFront = parts.reduce(function (s, p) { return s + p.g * p.pos; }, 0) / grams;
     const cgHeight = parts.reduce(function (s, p) { return s + p.g * p.h; }, 0) / grams;
@@ -95,6 +104,7 @@
     return { car: car, parts: parts, grams: grams, push: push, startPush: startPush, friction: friction,
              canStart: startPush > friction * P.STICKY, tipMargin: holdMoment / tipMoment };
   }
+  // the design in a few words; it is also stored with each logged run (design.summary)
   function summary(d) {
     return (CHASSIS[d.chassis] || CHASSIS.jumbo).label.replace(/ \(.*/, '') + ' · ' + d.sailW + '×' + d.sailH + ' cm ' + (d.cupped ? 'cupped ' : '') + d.sailMat + ' sail · ' +
       (BEARING[d.bearing] || BEARING.straw).label.toLowerCase() + (d.bigWheels ? ' · big wheels' : '') +
@@ -102,15 +112,37 @@
   }
 
   // ── numbers for people ──
+  // "about 30 times" / "twice" / "1.7 times": one decimal under 3, whole numbers above (like kid.clips)
+  function times(r) { const n = r < 3 ? Math.round(r * 10) / 10 : Math.round(r); return n === 2 ? 'twice' : n + ' times'; }
+  // What the design card says, as plain rows (label, text, colour). Every number comes from analyse(),
+  // the same sums simulate() uses: the card shows "TIPS OVER" exactly when simulate() says 'tipped over'
+  // and "too much" friction exactly when it says 'never moved'.
+  function designFacts(d) {
+    const P = SailLab.physics, a = analyse(d), rows = [];
+    // grams are shown whole (as on race day and in the run log); 1 paper clip ≈ 1 g, so the weight in clips is the same number
+    const g = Math.round(a.grams);
+    rows.push({ label: 'Mass', text: g + ' g (it weighs about as much as ' + kid.force(g * kid.CLIP_N).replace(/^about /, '') + ')' });
+    rows.push({ label: 'Sail', text: d.sailW + ' cm × ' + d.sailH + ' cm = ' + (d.sailW * d.sailH) + ' square cm' });
+    rows.push({ label: 'Wind’s push (thrust) at the start', text: kid.force(a.startPush) });
+    const r = a.startPush / a.friction;
+    rows.push({ label: 'Friction', text: kid.force(a.friction) + '. ' + (!a.canStart ? 'Too much! It holds the car still, so the wind can’t start it.'
+                                                                     : r < 2 ? 'The push is only a little bigger. The car barely gets going.'
+                                                                     : 'The push is about ' + times(r) + ' as big, so friction can’t hold the car still.'),
+                color: a.canStart ? '' : '#ff8080' });
+    const tm = a.tipMargin;
+    rows.push({ label: 'Tipping', text: tm >= 1.5 ? '✅ Safe. Holding down is about ' + times(tm) + ' as strong as tipping.'
+                                  : tm >= 1 ? '⚠️ Close to tipping! Lower the sail, or tape a penny low at the back.'
+                                  : '🤸 TIPS OVER! Tipping is stronger than holding down. Lower the sail, add weight at the back, or use a smaller sail.',
+                color: tm >= 1.5 ? '#40e080' : tm >= 1 ? '#f0c040' : '#ff8080' });
+    return rows;
+  }
+
   // The model is calibrated only from past years' sled runs, so predictions are shown as a rounded
   // range (about ±20 %), never to the centimetre. predictedM itself stays exact for the % comparison.
-  const TUNED_NOTE = 'The simulator was tuned with the paper sleds from past years (no wheels), so this is a good guess, not a promise — your real run in the hallway is the true test.';
-  function fmt(v, d) { return SailLab.fmt(v, d); }
-  function mWhole(m) { return m >= 5 ? String(Math.round(m)) : fmt(m, 1); }
-  function ftWhole(m) { return String(Math.round(m * FT_PER_M)); }
-  function aboutText(m) { return 'about ' + mWhole(m) + ' m (' + ftWhole(m) + ' ft)'; }
-  function hallLenText() { const L = hall().length; return ftWhole(L) + ' ft (' + mWhole(L) + ' m)'; }         // "70 ft (21 m)"
-  function hallWideText() { const W = hall().width; return ftWhole(W) + ' ft (' + fmt(W, 1) + ' m)'; }        // "11 ft (3.4 m)"
+  const TUNED_NOTE = 'The simulator was set up using last year’s paper sleds, which had no wheels. So its number is a good guess, not a promise. Your real run in the hallway is the true test.';
+  function aboutText(m) { return 'about ' + kid.dist(m); }                       // "about 53 ft (16 m)"
+  function hallLenText() { return kid.dist(hall().length); }                     // "70 ft (21 m)"
+  function hallWideText() { return kid.dist(hall().width); }                     // "11 ft (3.4 m)"
   // a predicted (simulated) distance that is the whole hallway: simulate() stops every such car at exactly HALL.length
   function atEnd(m) { return m >= hall().length - 0.005; }
 
@@ -122,24 +154,29 @@
   function forecast(d) { const H = hall(); return judge(SailLab.physics.simulate(analyse(d).car, { hallLength: H.length, hallWidth: H.width })); }
 
   // m = the simulated distance in the hallway; longer = the same car in a longer hall (only used when m is the whole hallway)
+  // "about 53 ft (16 m). A real car will likely go 42 to 64 ft (13 to 19 m)"
   function predictionText(m, longer) {
     const H = hall().length;
-    if (atEnd(m)) return 'all the way to the end of our ' + hallLenText() + ' hallway' +
-      (longer >= H + 0.5 ? ' — in a longer hall it would roll ' + aboutText(longer) : ', right about where it would stop anyway');
+    if (atEnd(m)) return 'all the way to the end of our ' + hallLenText() + ' hallway. ' +
+      (longer >= H + 0.5 ? 'In a longer hall, it would roll ' + aboutText(longer) : 'It would stop right about there anyway');
     // the real car can't go past the end of the hallway, so the likely range stops there
     const lo = m * 0.8, hi = m * 1.2;
-    return aboutText(m) + ' — likely ' + (hi >= H ? mWhole(lo) + ' m (' + ftWhole(lo) + ' ft) up to the end of the hallway'
-                                                 : mWhole(lo) + '–' + mWhole(hi) + ' m (' + ftWhole(lo) + '–' + ftWhole(hi) + ' ft)');
+    return aboutText(m) + '. A real car will likely go ' + (hi >= H ? kid.dist(lo) + ' up to the end of the hall'
+                                                                    : kid.ft(lo) + ' to ' + kid.ft(hi) + ' ft (' + kid.m(lo) + ' to ' + kid.m(hi) + ' m)');
   }
   // bestM is a longer-hall distance: more than the hallway means that design reaches the end of ours
-  function bestText(m) { return aboutText(m) + (m >= hall().length + 0.5 ? ' in a longer hall (it reaches the end of ours)' : ''); }
-  // a stored prediction, short: "to reach the end of the 70 ft (21 m) hallway" / "about 16 m (52 ft)"
+  function bestLine(m) {
+    return m >= hall().length + 0.5 ? 'Your best design so far makes it to the end. In a longer hall, it would roll ' + aboutText(m) + '.'
+                                    : 'Your best design so far: ' + aboutText(m) + '.';
+  }
+  // a stored prediction, short: "to reach the end of the 70 ft (21 m) hallway" / "about 53 ft (16 m)"
   function predictedText(m) { return atEnd(m) ? 'to reach the end of the ' + hallLenText() + ' hallway' : aboutText(m); }
   // a prediction in a table cell; one made with another physics model (another hallway) is shown as it was
-  function predictedCell(r) { return r.predictedM > 0 ? (r.model === modelVersion() && atEnd(r.predictedM) ? 'end of hall' : mWhole(r.predictedM) + ' m') : '—'; }
+  function predictedCell(r) { return r.predictedM > 0 ? (r.model === modelVersion() && atEnd(r.predictedM) ? 'end of hall' : kid.dist(r.predictedM)) : '—'; }
   // a real, hand-measured run that made it to the far end of the hallway
   function realAtEnd(m) { return m >= hall().length - END_SLACK_M; }
   function trimNum(v) { return String(Math.round(v * 100) / 100); }
+  function fmt(v, d) { return SailLab.fmt(v, d); }
   // a real distance in the unit it was measured in, then the other unit: "52 ft (15.85 m)" / "4.20 m (13.8 ft)"
   function bothUnits(v, unit) { return unit === 'ft' ? trimNum(v) + ' ft (' + fmt(v / FT_PER_M, 2) + ' m)' : fmt(v, 2) + ' m (' + fmt(v * FT_PER_M, 1) + ' ft)'; }
   // a logged run's real distance as the student typed it (the unit they measured in first). distanceM is what the
@@ -149,6 +186,79 @@
     const typed = typeof r.distance === 'number' && isFinite(r.distance) && (r.unit === 'ft' || r.unit === 'm') &&
       Math.abs((r.unit === 'ft' ? r.distance / FT_PER_M : r.distance) - r.distanceM) < 0.01;
     return typed ? bothUnits(r.distance, r.unit) : bothUnits(r.distanceM, 'm');
+  }
+
+  // ── predict first (step 2): how far will this design go? ──
+  // The buckets are read off the distance as the student sees it (kid.ft rounds it), so "25 ft" on the readout is "25 to 50 ft".
+  function guessQuestion() {
+    return {
+      question: 'How far will your car go in our ' + kid.ft(hall().length) + ' ft hallway?',
+      choices: [{ value: 'short', label: 'Less than ' + SLED_FT + ' ft, or not at all' },
+                { value: 'mid', label: SLED_FT + ' to ' + MID_FT + ' ft' },
+                { value: 'long', label: 'More than ' + MID_FT + ' ft, but not to the end' },
+                { value: 'end', label: 'All the way to the end (' + kid.ft(hall().length) + ' ft)' }],
+      hint: 'Last year’s paper sleds slid about ' + SLED_FT + ' ft. Pick one, then press ▶ Run.'
+    };
+  }
+  function guessOutcome(r) {
+    if (r.reason === END_REASON) return 'end';
+    if (r.reason === 'tipped over' || r.reason === 'never moved') return 'short';
+    const ft = kid.ft(r.distance);
+    return ft < SLED_FT ? 'short' : ft <= MID_FT ? 'mid' : 'long';
+  }
+  // compared with last year's sleds, from the distance as shown
+  function sledLine(distM) {
+    const x = kid.ft(distM) / SLED_FT;
+    if (x >= 1.75) return ' That’s about ' + times(Math.round(x)) + ' as far as last year’s sleds!';
+    if (x >= 1.2) return ' That’s farther than last year’s sleds!';
+    if (x >= 0.8) return ' That’s about as far as last year’s sleds.';
+    return '';
+  }
+  // the answer shown under the guess after each run: { text, right, why }. r = simulate()'s result in our hallway.
+  const GUESS_ORDER = ['short', 'mid', 'long', 'end'];
+  function guessJudge(r, v) {
+    const got = guessOutcome(r), d = r.distance, L = hall().length;
+    const off = GUESS_ORDER.indexOf(got) - GUESS_ORDER.indexOf(v);
+    const vs = v == null || !off ? '' : off > 0 ? ' It went farther than you guessed.' : ' It did not go as far as you guessed.';
+    let text, why;
+    if (r.reason === 'tipped over') {
+      text = 'Your car tipped over at the start line.';
+      why = 'The wind pushed high on the sail and flipped the car forward. A lower sail or pennies at the back can help.';
+    } else if (r.reason === 'never moved') {
+      text = 'Your car did not move at all.';
+      why = 'Friction held it still. It was bigger than the wind’s push. Make the wheels spin freely, or use a bigger sail.';
+    } else if (r.reason === 'hit the wall') {
+      text = 'Your car rolled ' + kid.dist(d) + ', then hit the wall.';
+      why = 'Its axles were not lined up, so it curved off course. Line them up with a ruler.';
+    } else if (r.reason === END_REASON) {
+      const longer = longerRun(r.car);
+      text = 'Your car made it to the end of the ' + kid.dist(L) + ' hall!';
+      why = longer >= L + 0.5 ? 'It was still rolling at the end. In a longer hall, it would roll ' + aboutText(longer) + '.'
+                              : 'It would have stopped right about there anyway.';
+    } else {
+      text = 'Your car rolled ' + kid.dist(d) + ', then stopped.' + sledLine(d);
+      why = 'The wind fades as it spreads down the hall. When the push got smaller than friction, the car slowed down and stopped.';
+    }
+    return { text: text + vs, right: got === v, why: why };
+  }
+
+  // ── race day messages ──
+  // the design line above the race form
+  function designLineText(d) {
+    const why = noDistanceWhy(d);
+    return summary(d) + ' · ' + Math.round(analyse(d).grams) + ' g · ' +
+      (d.predictedM > 0 ? 'predicted ' + predictedText(d.predictedM)
+        : why ? 'the simulator says this design ' + WHY_NOW[why] + '. So there is no predicted distance to compare with. Log what your real car does'
+        : 'no prediction yet (test it in the simulator in step 2)') + '. Not the car you raced? Go back to step 1 and set it up.';
+  }
+  // after a run is saved. why = 'tipped' / 'never moved' when the design had no predicted distance (see noDistanceWhy)
+  function loggedText(rec, why) {
+    const pct = rec.predictedM > 0 ? Math.round(rec.distanceM / rec.predictedM * 100) : 0;
+    return '✓ Logged ' + bothUnits(rec.distance, rec.unit) + '.' +
+      (!(rec.predictedM > 0) ? (WHY_SAID[why] ? ' The simulator said this design ' + WHY_SAID[why] + '. So there is no predicted distance to compare.' : '')
+        : atEnd(rec.predictedM) ? ' The simulator predicted it would reach the end of the hall' + (realAtEnd(rec.distanceM) ? ', and it did!' : '. This run went ' + pct + '% of the way there.')
+        : ' The simulator predicted ' + aboutText(rec.predictedM) + '. This run went ' + pct + '% of that.') +
+      (rec.classId ? '' : ' Join your class on the Classes page so it shows on the class board.');
   }
 
   // ── the design store: one design per account ──
@@ -189,10 +299,10 @@
   function watch(api, fn) { watchers.push(fn); api.onLeave(function () { const i = watchers.indexOf(fn); if (i >= 0) watchers.splice(i, 1); }); }
   function setStatus(s) { cloudStatus = s; notify('status'); }
   const STATUS_TEXT = {
-    cloud: '💾 Saved to your account — it follows you to any Chromebook or phone you sign in on.',
+    cloud: '💾 Saved to your account. It follows you to any Chromebook or phone you sign in on.',
     saving: '💾 Saving to your account…',
-    offline: '💾 Saved on this device — it will go to your account when Wi-Fi is back.',
-    local: '💾 Saved on this device only (the class database isn’t taking designs yet).'
+    offline: '💾 Saved on this device. It will go to your account when the Wi-Fi is back.',
+    local: '💾 Saved on this device only. The class database isn’t saving designs yet.'
   };
   // a cloud copy wins only if it was saved later than the one we have
   function adoptCloud(cd) {
@@ -294,46 +404,40 @@
       const left = h('div'), right = h('div');
       wrap.appendChild(left); wrap.appendChild(right);
       function set(k) { return function (v) { design[k] = v; design.predictedM = 0; design.predictedWhy = ''; touch(); refresh(); }; }
-      left.appendChild(h('h3', { class: 'sl-step-title', style: 'font-size:0.9rem;margin:6px 0', text: '🪵 Chassis & wheels' }));
-      ui.choice(left, { label: 'Chassis', value: design.chassis, options: Object.keys(CHASSIS).map(function (k) { return { value: k, label: CHASSIS[k].label }; }), onChange: set('chassis') });
-      ui.slider(left, { label: 'Sticks along the chassis', min: 2, max: 5, step: 1, value: design.rails, format: function (v) { return v + ' (+2 cross pieces)'; }, onInput: set('rails') });
+      function tip(parent, text) { parent.appendChild(h('p', { class: 'sl-muted', style: 'margin:-6px 0 10px;font-size:0.85rem;line-height:1.45', text: text })); }
+      left.appendChild(h('h3', { class: 'sl-step-title', style: 'font-size:0.9rem;margin:6px 0', text: '🪵 Frame & wheels' }));
+      ui.choice(left, { label: 'Frame (popsicle sticks)', value: design.chassis, options: Object.keys(CHASSIS).map(function (k) { return { value: k, label: CHASSIS[k].label }; }), onChange: set('chassis') });
+      ui.slider(left, { label: 'Sticks along the frame', min: 2, max: 5, step: 1, value: design.rails, format: function (v) { return v + ' (plus 2 across)'; }, onInput: set('rails') });
       ui.choice(left, { label: 'Axles', value: design.bearing, options: Object.keys(BEARING).map(function (k) { return { value: k, label: BEARING[k].label }; }), onChange: set('bearing') });
       ui.choice(left, { label: 'Wheels', value: design.bigWheels ? 'big' : 'small', options: [{ value: 'small', label: 'Small (3 cm)' }, { value: 'big', label: 'Big (5 cm)' }], onChange: function (v) { set('bigWheels')(v === 'big'); } });
-      left.appendChild(h('p', { class: 'sl-muted', style: 'margin:-6px 0 10px;font-size:0.8rem;line-height:1.45',
-        text: 'Why big wheels roll easier: the axle rubs at a tiny radius, and the wheel works like a lever that turns that rubbing into a smaller drag at the floor. A 5 cm wheel has about 3/5 of the axle drag of a 3 cm wheel — but 4 big wheels weigh 8 g more.' }));
-      ui.choice(left, { label: 'Do the wheels wobble?', value: design.wobbly ? 'y' : 'n', options: [{ value: 'n', label: 'Spin true' }, { value: 'y', label: 'Wobbly' }], onChange: function (v) { set('wobbly')(v === 'y'); } });
-      ui.choice(left, { label: 'Gap between wheels and chassis', value: design.rubbing ? 'y' : 'n', options: [{ value: 'n', label: 'Gap / spacer' }, { value: 'y', label: 'Rubbing' }], onChange: function (v) { set('rubbing')(v === 'y'); } });
-      ui.choice(left, { label: 'Axles lined up', value: design.square ? 'y' : 'n', options: [{ value: 'y', label: 'Squared with a ruler' }, { value: 'n', label: 'Eyeballed' }], onChange: function (v) { set('square')(v === 'y'); } });
+      tip(left, 'Big wheels roll more easily. The axle’s rubbing slows them less. But 4 big wheels add ' + (4 * (BIG_G - SMALL_G)) + ' g.');
+      ui.choice(left, { label: 'Do the wheels wobble?', value: design.wobbly ? 'y' : 'n', options: [{ value: 'n', label: 'They spin straight' }, { value: 'y', label: 'Wobbly' }], onChange: function (v) { set('wobbly')(v === 'y'); } });
+      ui.choice(left, { label: 'Do the wheels rub the frame?', value: design.rubbing ? 'y' : 'n', options: [{ value: 'n', label: 'No, there’s a gap' }, { value: 'y', label: 'Yes, they rub' }], onChange: function (v) { set('rubbing')(v === 'y'); } });
+      ui.choice(left, { label: 'Are the axles lined up?', value: design.square ? 'y' : 'n', options: [{ value: 'y', label: 'Lined up with a ruler' }, { value: 'n', label: 'Just by eye' }], onChange: function (v) { set('square')(v === 'y'); } });
       right.appendChild(h('h3', { class: 'sl-step-title', style: 'font-size:0.9rem;margin:6px 0', text: '⛵ Sail & balance' }));
       ui.choice(right, { label: 'Sail material', value: design.sailMat, options: [{ value: 'paper', label: 'Paper' }, { value: 'cardstock', label: 'Cardstock' }], onChange: set('sailMat') });
       ui.slider(right, { label: 'Sail width', min: 8, max: 35, step: 1, value: design.sailW, unit: 'cm', onInput: set('sailW') });
       ui.slider(right, { label: 'Sail height', min: 8, max: 35, step: 1, value: design.sailH, unit: 'cm', onInput: set('sailH') });
-      ui.choice(right, { label: 'Sail shape', value: design.cupped ? 'cup' : 'flat', options: [{ value: 'flat', label: 'Flat' }, { value: 'cup', label: 'Cupped (pipe-cleaner frame)' }], onChange: function (v) { set('cupped')(v === 'cup'); } });
+      ui.choice(right, { label: 'Sail shape', value: design.cupped ? 'cup' : 'flat', options: [{ value: 'flat', label: 'Flat' }, { value: 'cup', label: 'Cupped (bent with a pipe cleaner)' }], onChange: function (v) { set('cupped')(v === 'cup'); } });
       ui.slider(right, { label: 'Gap under the sail', min: 0, max: 15, step: 1, value: design.sailGap, unit: 'cm', onInput: set('sailGap') });
-      ui.choice(right, { label: 'Mast position', value: design.mastPos, options: [{ value: 'front', label: 'Front' }, { value: 'middle', label: 'Middle' }, { value: 'back', label: 'Back' }], onChange: set('mastPos') });
-      ui.slider(right, { label: 'Pennies taped low at the back', min: 0, max: 6, step: 1, value: design.pennies, format: function (v) { return v + ' (' + (v * 2.5) + ' g)'; }, onInput: set('pennies') });
-      ui.slider(right, { label: 'Pipe-cleaner mast braces', min: 0, max: 2, step: 1, value: design.guys, onInput: set('guys') });
+      ui.choice(right, { label: 'Mast (the stick that holds the sail)', value: design.mastPos, options: [{ value: 'front', label: 'Front' }, { value: 'middle', label: 'Middle' }, { value: 'back', label: 'Back' }], onChange: set('mastPos') });
+      ui.slider(right, { label: 'Pennies taped low at the back', min: 0, max: 6, step: 1, value: design.pennies, format: function (v) { return v + ' (' + (v * PENNY_G) + ' g)'; }, onInput: set('pennies') });
+      ui.slider(right, { label: 'Pipe cleaners to brace the mast', min: 0, max: 2, step: 1, value: design.guys, onInput: set('guys') });
       ui.choice(right, { label: 'Hot glue', value: design.glue, options: [{ value: 'light', label: 'Just enough' }, { value: 'normal', label: 'Normal' }, { value: 'heavy', label: 'Lots' }], onChange: set('glue') });
 
       const card = h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
       root.appendChild(card);
-      const pic = api.svg('svg', { viewBox: '0 0 560 200', role: 'img', 'aria-label': 'Your car' }, root);
+      const pic = api.svg('svg', { viewBox: '0 0 560 200', role: 'img', 'aria-label': 'Your car from the side. The wind pushes on the sail. A blue dot shows the balance point.' }, root);
       refresh = function () {
         const a = analyse(design);
         card.textContent = '';
-        function line(label, value, color) { card.appendChild(h('div', null, [h('strong', { text: label + ': ' }), h('span', { text: value, style: color ? 'color:' + color : '' })])); }
-        line('Mass', api.fmt(a.grams, 0) + ' g');
-        line('Starting push from the fans', api.fmt(a.startPush, 3) + ' N');
-        // red exactly when simulate() would say "never moved": the start push can't beat sticky friction
-        line('Friction', api.fmt(a.friction, 3) + ' N' + (a.canStart ? '' : ' — too much: the fans can’t get it rolling'), a.canStart ? '' : '#ff8080');
-        const tm = a.tipMargin;
-        line('Tipping safety', tm >= 1.5 ? 'Safe (' + api.fmt(tm, 1) + '× what it needs)'
-                             : tm >= 1 ? 'Close to tipping (' + api.fmt(tm, 2) + '×) — lower the sail, or tape a penny low at the back'
-                             : 'TIPS OVER — lower the sail, move weight back, or use a smaller sail',
-             tm >= 1.5 ? '#40e080' : tm >= 1 ? '#f0c040' : '#ff8080');
-        // drawn at the real on-screen width (like the hallway simulator), so the label stays readable on a phone
-        const W = Math.max(300, Math.min(560, Math.round(root.clientWidth || 560))), FLOOR = 175;
+        designFacts(design).forEach(function (row) {
+          card.appendChild(h('div', null, [h('strong', { text: row.label + ': ' }), h('span', { text: row.text, style: row.color ? 'color:' + row.color : '' })]));
+        });
+        // drawn at the real on-screen width (like the hallway simulator), so the labels stay readable on a phone
+        const W = Math.max(260, Math.min(560, Math.round(root.clientWidth || 560))), FLOOR = 175;
         pic.setAttribute('viewBox', '0 0 ' + W + ' 200');
+        pic.setAttribute('width', W);           // shown 1 : 1, so a 13 px label is 13 px on screen (CSS max-width: 100% still applies)
         pic.textContent = '';
         api.svg('rect', { x: 0, y: 0, width: W, height: 200, rx: 12, fill: '#120826' }, pic);
         api.svg('line', { x1: 16, y1: FLOOR, x2: W - 16, y2: FLOOR, stroke: '#4a3a6a', 'stroke-width': 3 }, pic);
@@ -344,13 +448,19 @@
         const mastX = frontAxle - MAST_POS[design.mastPos] * a.car.wheelbase * 100 * scale;
         api.draw.car(pic, x0, FLOOR, { scale: scale, length: len, sailW: design.sailW, sailH: design.sailH, mastH: design.sailGap + design.sailH, mastAt: (mastX - x0) / (len * scale),
                                        cupped: design.cupped, wheelR: wr, sailColor: design.sailMat === 'cardstock' ? '#f0d8a0' : '#f0e6ff' });
+        // the wind pushes on the middle of the sail (high up: that is what tips a car forward)
+        const sailFront = mastX - design.sailW * scale * 0.45, sailMidY = FLOOR - (2 * wr + 1 + design.sailGap + design.sailH / 2) * scale + design.sailW * scale * 0.06;
+        if (sailFront - 6 - 16 >= 44) {
+          api.draw.arrow(pic, 16, sailMidY, sailFront - 6, sailMidY, '#40e080', '');
+          api.svg('text', { x: 18, y: sailMidY - 10, 'text-anchor': 'start', fill: '#40e080', 'font-size': 13, 'font-weight': 700, class: 'sl-lbl' }, pic, 'wind');
+        }
         const cgX = frontAxle - a.car.cgToFront * 100 * scale, cgY = FLOOR - a.car.cgHeight * 100 * scale;
         api.svg('circle', { cx: cgX, cy: cgY, r: 6, fill: '#00a8ff', stroke: '#fff', 'stroke-width': 1.5 }, pic);
         const roomRight = cgX + 110 < W;
         api.svg('text', { x: roomRight ? cgX + 10 : cgX - 10, y: cgY - 8, 'text-anchor': roomRight ? 'start' : 'end', fill: '#7ad7ff', 'font-size': 14, 'font-weight': 700, class: 'sl-lbl' }, pic, 'balance point');
       };
       refresh();
-      ui.note(root, 'build', '🛠️ Everything here is a real choice you can make with your materials. The masses are close to real ones — weigh your parts on a kitchen scale to check.');
+      ui.note(root, 'build', '🛠️ Every choice here is something you can really build. The masses are close to real ones. Weigh your parts on a kitchen scale to check.');
       root.appendChild(status);
       showStatus();
     }
@@ -362,35 +472,39 @@
     api.onLeave(function () { window.removeEventListener('resize', onResize); flushCloud(); });
   }
 
-  // ── Step 2: predict ──
+  // ── Step 2: test it in the simulator (predict first) ──
   function renderPredict(el, api) {
     useDesignFor(currentUser());
     const h = api.h;
+    api.ui.word(el, 'prediction', 'a careful guess about what will happen, made <em>before</em> you test it.');
     const about = h('p');
-    function showDesign() { about.textContent = 'Your design: ' + summary(design) + ' — ' + api.fmt(analyse(design).grams, 0) + ' g.'; }
+    function showDesign() { about.textContent = 'Your design: ' + summary(design) + ' · ' + Math.round(analyse(design).grams) + ' g.'; }
     showDesign();
     el.appendChild(about);
-    el.appendChild(h('p', { html: 'In the simulator the car starts <strong>' + Math.round(START_X * 100) + ' cm</strong> in front of two box fans on high, side by side, at the start of a hallway ' +
-      hallLenText() + ' long and ' + hallWideText() + ' wide — like ours. Run it, then go back and change one thing at a time to see what helps most.' }));
-    el.appendChild(h('p', { class: 'sl-muted', text: 'A car that reaches the far end can’t go any farther, so every car that gets there ties. When yours does, the simulator also works out how far it would roll in a longer hall — use that number to compare designs that all reach the end.' }));
+    el.appendChild(h('p', { text: 'In the simulator, your car starts ' + kid.dist(START_X) + ' in front of the two fans. The hallway is ' +
+      hallLenText() + ' long and ' + hallWideText() + ' wide, just like ours.' }));
+    // PREDICT FIRST: the student commits to a guess; ▶ Run stays off until they pick one
+    const q = guessQuestion();
+    const guess = api.ui.predict(el, { question: q.question, choices: q.choices, hint: q.hint, judge: guessJudge });
     const best = h('div', { class: 'sl-note sl-note-good', 'aria-live': 'polite' });
     function say(main, strongText, rest) {
       best.textContent = '';
       best.appendChild(h('div', null, [main, strongText ? h('strong', { text: strongText }) : null, rest || null]));
       if (strongText) best.appendChild(h('div', { style: 'margin-top:6px;font-size:0.85rem;color:#c8b8ea', text: TUNED_NOTE }));
     }
-    const TIP_TEXT = '🤸 In the simulator this design tips over at the start line. Go back, lower the sail, or tape a penny low at the back.';
-    const STUCK_TEXT = '😴 In the simulator this design never starts rolling: friction beats the fans’ push. Go back and fix the axles or use a bigger sail.';
+    const TIP_TEXT = '🤸 In the simulator, this design tips over at the start line. Go back and lower the sail. Or tape a penny low at the back.';
+    const STUCK_TEXT = '😴 In the simulator, this design never starts rolling. Friction is bigger than the wind’s push. Go back and fix the axles, or use a bigger sail.';
     function showLast() {
       // the longer-hall distance isn't stored: the same design in the same model always rolls the same, so work it out again
-      if (design.predictedM > 0) say('🔮 Your last prediction for this design: ', predictionText(design.predictedM, atEnd(design.predictedM) ? forecast(design).longer : 0), '.');
+      if (design.predictedM > 0) say('🔮 The simulator’s last prediction for this design: ', predictionText(design.predictedM, atEnd(design.predictedM) ? forecast(design).longer : 0), '.');
       else if (design.predictedWhy === 'tipped') say(TIP_TEXT);            // the simulator was run: it just has no distance
       else if (design.predictedWhy === 'never moved') say(STUCK_TEXT);
-      else say('🔮 Run the simulator to get your prediction.');
+      else say('🔮 Pick your guess above. Then press ▶ Run to see the simulator’s prediction.');
     }
     const sim = api.ui.trackSim(el, function () { return analyse(design).car; }, {
       scaleM: hall().length,            // the whole hallway, start line to far end, the same view every run so designs are easy to compare
       getOpts: function () { const H = hall(); return { hallLength: H.length, hallWidth: H.width }; },
+      needPrediction: guess,
       onResult: function (res) {
         const r = judge(res);
         design.predictedM = Math.round(r.distance * 100) / 100;                 // in OUR hallway: what race day compares with
@@ -400,12 +514,15 @@
         if (r.reason === 'tipped over') say(TIP_TEXT);
         else if (r.reason === 'never moved') say(STUCK_TEXT);
         else say('🔮 Prediction for this design: ', predictionText(design.predictedM, r.longer),
-                 '.' + (r.reason === 'hit the wall' ? ' (It veered into the wall — square the axles with a ruler.)' : '') + ' Your best design so far: ' + bestText(design.bestM) + '.');
+                 '.' + (r.reason === 'hit the wall' ? ' It curved into the wall. Line up the axles with a ruler.' : '') + ' ' + bestLine(design.bestM));
       }
     });
     el.appendChild(best);
+    el.appendChild(h('p', { text: '💡 Go back, change one thing, and test again. Which change helps the most?' }));
+    el.appendChild(h('p', { class: 'sl-muted', text: 'Every car that reaches the far end ties. So the simulator also says how far it would roll in a longer hall. Use that number to compare.' }));
     showLast();
-    watch(api, function (what) { if (what === 'design') { showDesign(); showLast(); } });
+    // a design that arrives from another device mid-step is a different car: the guess was about the old one
+    watch(api, function (what) { if (what === 'design') { showDesign(); showLast(); guess.reset(); } });
     api.onLeave(function () { sim.stop(); flushCloud(); });
   }
 
@@ -420,18 +537,14 @@
     }
     useDesignFor(me);
     const life = lifetime(api);
-    el.appendChild(h('p', { html: 'After each real run in the hallway, measure from the start line to where the car <strong>stopped</strong> and log it here. ' +
-      'If it made it all the way to the far end of the hallway, about ' + hallLenText() + ' away, measure to the end — every car that gets there ties. ' +
-      'Your teacher and your class will see your best run on the class board.' }));
+    el.appendChild(h('p', { html: 'After each real run, measure from the start line to where your car <strong>stopped</strong>. Then log it here.' }));
+    el.appendChild(h('p', { text: 'Did your car reach the far end, about ' + hallLenText() + ' away? Then measure to the end. Every car that gets there ties.' }));
+    el.appendChild(h('p', { text: 'Your teacher and your class will see your best run on the class board.' }));
     const designLine = h('div', { class: 'sl-note sl-note-tip' });
     function showDesignLine() {
       designLine.textContent = '';
       designLine.appendChild(h('strong', { text: 'Design being logged: ' }));
-      const why = noDistanceWhy(design);
-      designLine.appendChild(document.createTextNode(summary(design) + ' · ' + Math.round(analyse(design).grams) + ' g · ' +
-        (design.predictedM > 0 ? 'predicted ' + predictedText(design.predictedM)
-          : why ? 'the simulator says this design ' + WHY_NOW[why] + ', so there is no predicted distance to compare with. Log what your real car does'
-          : 'no prediction yet (run the simulator in step 2)') + '. Not the car you raced? Go back to step 1 and set it up.'));
+      designLine.appendChild(document.createTextNode(designLineText(design)));
     }
     showDesignLine();
     el.appendChild(designLine);
@@ -444,12 +557,12 @@
     const form = h('div', { class: 'sl-row' });
     el.appendChild(form);
     const distIn = h('input', { type: 'number', min: '0', step: 'any', inputmode: 'decimal', id: 'sl-run-dist', placeholder: placeholder(), style: 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-size:1rem' });
-    form.appendChild(h('div', { class: 'sl-ctrl' }, [h('label', { for: 'sl-run-dist', class: 'sl-ctrl-lbl', text: 'Distance your real car went' }), distIn]));
+    form.appendChild(h('div', { class: 'sl-ctrl' }, [h('label', { for: 'sl-run-dist', class: 'sl-ctrl-lbl', text: 'How far your real car went' }), distIn]));
     let confirmKey = null;          // a surprising distance needs a second tap on Log
     api.ui.choice(form, { label: 'Measured in', value: unit, options: [{ value: 'ft', label: 'feet' }, { value: 'm', label: 'metres' }],
       onChange: function (v) { unit = v; confirmKey = null; distIn.placeholder = placeholder(); try { localStorage.setItem(UNIT_KEY, v); } catch (e) {} } });
     distIn.addEventListener('input', function () { confirmKey = null; });
-    const noteIn = h('input', { type: 'text', maxlength: '80', id: 'sl-run-note', placeholder: 'What did you change? (optional)', style: 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-size:0.95rem' });
+    const noteIn = h('input', { type: 'text', maxlength: '80', id: 'sl-run-note', placeholder: 'What did you change? (you can skip this)', style: 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-size:0.95rem' });
     el.appendChild(h('div', { class: 'sl-ctrl' }, [h('label', { for: 'sl-run-note', class: 'sl-ctrl-lbl', text: 'Note' }), noteIn]));
     const classSel = h('select', { id: 'sl-run-class', style: 'display:none;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.25)' });
     const classLbl = h('label', { for: 'sl-run-class', class: 'sl-ctrl-lbl', style: 'display:none', text: 'Class' });
@@ -477,10 +590,11 @@
       }).catch(function () {});
     } catch (e) {}
 
+    const NO_CLASSES = 'Couldn’t load your classes. Check the Wi-Fi and tap Retry.';
     let classesOk = false, myClasses = [];
     function loadClasses() {
       classesOk = false; btn.disabled = true; btn.textContent = 'Loading your classes…'; retry.style.display = 'none';
-      if (/Couldn’t load your classes/.test(msg.textContent)) say('');
+      if (msg.textContent === NO_CLASSES) say('');
       db().collection('enrollments').where('uid', '==', me.uid).get().then(function (snap) {
         if (life.left) return;
         // offline, Firestore answers from its (empty) cache: that is not "no classes"
@@ -498,7 +612,7 @@
         if (life.left) return;
         classesOk = false; btn.disabled = true; btn.textContent = LOG_TEXT;
         retry.style.display = '';
-        say('Couldn’t load your classes — check Wi-Fi and tap Retry.', true);
+        say(NO_CLASSES, true);
       });
     }
     retry.addEventListener('click', loadClasses);
@@ -513,7 +627,7 @@
       if (!runs.length) return;
       mine.appendChild(h('h3', { class: 'sl-step-title', style: 'font-size:0.9rem;margin-top:14px', text: '📋 My runs' }));
       const t = h('table', { class: 'sl-table' });
-      t.appendChild(h('thead', null, [h('tr', null, [h('th', { text: 'Run' }), h('th', { text: 'Real' }), h('th', { text: 'Predicted' }), h('th', { text: 'Real ÷ predicted' }), h('th', { text: 'Note' })])]));
+      t.appendChild(h('thead', null, [h('tr', null, [h('th', { text: 'Run' }), h('th', { text: 'Real distance' }), h('th', { text: 'Simulator said' }), h('th', { text: '% of prediction' }), h('th', { text: 'Note' })])]));
       const tb = h('tbody');
       runs.forEach(function (r, i) {
         const pct = r.predictedM > 0 ? Math.round(r.distanceM / r.predictedM * 100) + '%' : '—';
@@ -523,23 +637,14 @@
       });
       t.appendChild(tb);
       mine.appendChild(h('div', { class: 'sl-table-wrap' }, [t]));
-      if (runs.some(function (r) { return !(r.predictedM > 0); })) mine.appendChild(h('p', { class: 'sl-muted', style: 'font-size:0.8rem',
-        text: '— = no predicted distance for that run: the simulator said the design tips over or never starts rolling, or it hadn’t been run yet.' }));
+      if (runs.some(function (r) { return !(r.predictedM > 0); })) mine.appendChild(h('p', { class: 'sl-muted', style: 'font-size:0.85rem',
+        text: '— means no predicted distance. The simulator said the car would tip over or not move. Or it wasn’t tested yet.' }));
     }, function (err) {
       if (life.left) return;
       mine.textContent = '';
-      if (err && err.code === 'permission-denied') api.ui.note(mine, 'warn', '⚠️ Run logging isn’t switched on in the class database yet — ask your teacher.');
+      if (err && err.code === 'permission-denied') api.ui.note(mine, 'warn', '⚠️ Logging runs isn’t turned on in the class database yet. Ask your teacher.');
     }));
 
-    // why = 'tipped' / 'never moved' when the design had no predicted distance (see noDistanceWhy)
-    function loggedText(rec, why) {
-      const pct = rec.predictedM > 0 ? Math.round(rec.distanceM / rec.predictedM * 100) : 0;
-      return '✓ Logged ' + bothUnits(rec.distance, rec.unit) +
-        (!(rec.predictedM > 0) ? (WHY_SAID[why] ? '. The simulator said this design ' + WHY_SAID[why] + ', so there is no predicted distance to compare it with.' : '.')
-          : atEnd(rec.predictedM) ? ' — you predicted it would reach the end of the hallway' + (realAtEnd(rec.distanceM) ? ', and it did!' : ', and this run went ' + pct + '% of the way there.')
-          : ' — your prediction was ' + aboutText(rec.predictedM) + ', so this run went ' + pct + '% of it.') +
-        (rec.classId ? '' : ' Join your class on the Classes page so it shows on the class board.');
-    }
     function save(rec, why) {
       btn.disabled = true; btn.textContent = 'Saving…';
       let settled = false, queued = false;
@@ -549,19 +654,19 @@
         queued = true;
         btn.disabled = !classesOk; btn.textContent = LOG_TEXT;
         distIn.value = ''; noteIn.value = '';
-        say('📶 ' + bothUnits(rec.distance, rec.unit) + ' saved on this device — it will upload when Wi-Fi is back. Keep this page open until you see ✓.', true);
+        say('📶 ' + bothUnits(rec.distance, rec.unit) + ' is saved on this device. It will upload when the Wi-Fi is back. Keep this page open until you see ✓.', true);
       }, SAVE_WAIT_MS);
       db().collection('sailcar_runs').add(rec).then(function () {
         settled = true;
         if (life.left) return;
         if (!queued) { btn.disabled = !classesOk; btn.textContent = LOG_TEXT; distIn.value = ''; noteIn.value = ''; }
-        say(loggedText(rec, why) + (queued ? ' (Uploaded now that Wi-Fi is back.)' : ''));
+        say(loggedText(rec, why) + (queued ? ' (It uploaded now that the Wi-Fi is back.)' : ''));
       }, function (err) {
         settled = true;
         if (life.left) return;
         btn.disabled = !classesOk; btn.textContent = LOG_TEXT;
-        const why = err && err.code === 'permission-denied' ? 'run logging isn’t switched on in the class database yet — ask your teacher.' : 'check your connection and try again.';
-        say(queued ? 'Your ' + bothUnits(rec.distance, rec.unit) + ' run was NOT saved: ' + why : 'Not saved: ' + why, true);
+        const why = err && err.code === 'permission-denied' ? 'Logging runs isn’t turned on in the class database yet. Ask your teacher.' : 'Check the Wi-Fi and try again.';
+        say(queued ? 'Your ' + bothUnits(rec.distance, rec.unit) + ' run was NOT saved. ' + why : 'Not saved. ' + why, true);
       });
     }
     btn.addEventListener('click', function () {
@@ -569,7 +674,7 @@
       say('');
       const v = parseFloat(distIn.value), u = unit;
       const m = u === 'ft' ? v / FT_PER_M : v;
-      if (!(v >= 0) || !(m <= 100)) { say('Type the distance your car went (0 to ' + (u === 'ft' ? '328 ft' : '100 m') + ').', true); return; }
+      if (!(v >= 0) || !(m <= 100)) { say('Type how far your car went (0 to ' + (u === 'ft' ? '328 ft' : '100 m') + ').', true); return; }
       let cls = { id: '', name: '' };
       if (myClasses.length === 1) cls = myClasses[0];
       else if (myClasses.length > 1) {
@@ -579,11 +684,11 @@
       // a typo (an extra digit, or metres typed as feet) gets a second look before it goes on the board
       // (5 % slack: the hallway is "about" that long, and a car that reaches the end is measured by hand)
       const H = hall().length, pred = design.predictedM > 0 ? design.predictedM : 0, key = u + ':' + v;
-      const why = m > H * 1.05 ? 'longer than our ' + hallLenText() + ' hallway'
-                : pred > 0 && m > 2.5 * pred ? 'more than 2.5 times your prediction (' + aboutText(pred) + ')' : '';
+      const why = m > H * 1.05 ? 'That’s longer than our ' + hallLenText() + ' hallway!'
+                : pred > 0 && m > 2.5 * pred ? 'That’s more than 2½ times the simulator’s prediction (' + aboutText(pred) + ')!' : '';
       if (why && confirmKey !== key) {
         confirmKey = key;
-        say('That’s ' + (u === 'ft' ? trimNum(v) + ' ft (' + Math.round(m) + ' m)' : trimNum(v) + ' m (' + ftWhole(v) + ' ft)') + ' — ' + why + '. Tap Log again if that’s right.', true);
+        say('You typed ' + (u === 'ft' ? trimNum(v) + ' ft (' + Math.round(m) + ' m)' : trimNum(v) + ' m (' + Math.round(v * FT_PER_M) + ' ft)') + '. ' + why + ' Tap Log again if that’s right.', true);
         return;
       }
       confirmKey = null;
@@ -640,7 +745,7 @@
       const rows = rankRows(Object.keys(best).map(function (k) { return best[k]; }));
       if (!rows.length) { box.appendChild(h('p', { class: 'sl-muted', text: 'No runs logged for this class yet.' })); return; }
       const t = h('table', { class: 'sl-table' });
-      const head = [h('th', { text: '#' }), h('th', { text: 'Name' }), h('th', { text: 'Best real run' }), h('th', { text: 'Predicted' }), h('th', { text: 'Design' })];
+      const head = [h('th', { text: '#' }), h('th', { text: 'Name' }), h('th', { text: 'Best real run' }), h('th', { text: 'Simulator said' }), h('th', { text: 'Car design' })];
       if (isTeacher) head.push(h('th', { 'aria-label': 'Delete' }));
       t.appendChild(h('thead', null, [h('tr', null, head)]));
       const tb = h('tbody');
@@ -651,7 +756,7 @@
           h('td', { text: name, title: isTeacher && email ? 'Posted by ' + email : null }),
           h('td', { text: (r.atEnd ? '🏁 ' : '') + realRunText(r) }),          // the unit it was measured in first, like "My runs"
           h('td', { text: predictedCell(r) }),
-          h('td', { text: String((r.design && r.design.summary) || ''), style: 'text-align:left;white-space:normal;font-size:0.8rem;min-width:170px' })];
+          h('td', { text: String((r.design && r.design.summary) || ''), style: 'text-align:left;white-space:normal;font-size:0.85rem;min-width:170px' })];
         if (isTeacher) {
           const who = name + (email ? ' (' + email + ')' : '');
           const del = h('button', { type: 'button', class: 'sl-btn', text: '✕', 'aria-label': 'Delete the run for ' + who, title: 'Delete the run for ' + who, style: 'padding:4px 10px' });
@@ -662,15 +767,15 @@
       });
       t.appendChild(tb);
       box.appendChild(t);
-      if (rows.some(function (r) { return r.atEnd; })) box.appendChild(h('p', { class: 'sl-muted', text: '🏁 = made it all the way to the end of the ' + hallLenText() + ' hallway. ' +
-        'No car can go farther than that here, so those runs tie and share the same place. In step 2 the simulator’s “longer hall” number shows which of those designs would roll farthest.' }));
-      box.appendChild(h('p', { class: 'sl-muted', text: isTeacher ? 'Best real run per student. Only you and this class can see this board. Hover a name to see which account posted it. (✕ deletes that run.)' : 'Best real run per student. Only your class and your teacher can see this board.' }));
+      if (rows.some(function (r) { return r.atEnd; })) box.appendChild(h('p', { class: 'sl-muted', text: '🏁 means the car made it to the end of the ' + hallLenText() + ' hallway. ' +
+        'No car can go farther here, so those runs tie. In step 2, the simulator’s “longer hall” number shows which would roll farthest.' }));
+      box.appendChild(h('p', { class: 'sl-muted', text: isTeacher ? 'Best real run per student. Only you and this class can see this board. Hover a name to see which account posted it. (✕ deletes that run.)' : 'This shows each student’s best real run. Only your class and your teacher can see it.' }));
     }
     function watchClass(classId) {
       life.keep(db().collection('sailcar_runs').where('classId', '==', classId).onSnapshot(function (snap) {
         runsByClass[classId] = snap.docs.map(row);
         draw();
-      }, function () { if (life.left) return; box.textContent = ''; api.ui.note(box, 'warn', '⚠️ The class board isn’t switched on in the class database yet — ask your teacher.'); }));
+      }, function () { if (life.left) return; box.textContent = ''; api.ui.note(box, 'warn', '⚠️ The class board isn’t turned on in the class database yet. Ask your teacher.'); }));
     }
     // a problem loading the classes: say so, with a Retry button, instead of an empty or wrong board
     function problem(text, retryFn) {
@@ -680,7 +785,7 @@
       again.addEventListener('click', function () { box.textContent = ''; box.appendChild(h('p', { class: 'sl-muted', text: 'Loading your classes…' })); retryFn(); });
       box.appendChild(h('p', { class: 'sl-muted' }, [text, again]));
     }
-    const NO_CLASSES = 'Couldn’t load your classes — check Wi-Fi and tap Retry.';
+    const NO_CLASSES = 'Couldn’t load your classes. Check the Wi-Fi and tap Retry.';
     // offline, Firestore answers from its (empty) cache: that is not "no classes"
     function fromServer(s) { if (s.metadata && s.metadata.fromCache) throw Object.assign(new Error('offline'), { code: 'unavailable' }); return s; }
     if (isTeacher) {
@@ -721,16 +826,21 @@
     num: 7,
     title: 'Design Studio',
     icon: '🏁',
-    blurb: 'Design your car, predict how far it goes, then log your real hallway runs.',
+    blurb: 'Design your own car. Test it in the simulator. Then race it in the real hallway!',
     noQuiz: true,
     steps: [
-      { title: 'Design your car', html: '<p>Use everything you learned. Every choice changes the <span class="key">mass</span>, the <span class="key">push</span> from the fan, the <span class="key">friction</span> and the <span class="key">balance</span>. Your design is saved with your account, so you can pick it up on any Chromebook or phone.</p>', render: renderDesign },
-      { title: 'Predict: run it in the hallway', render: renderPredict },
+      { title: 'Design your car', html: '<p>Now use everything you learned! Pick the parts for your car below.</p>' +
+          '<p>Every choice changes the <span class="key">mass</span>, the wind’s <span class="key">push</span>, the <span class="key">friction</span> and the <span class="key">balance</span>.</p>' +
+          '<p>Your design is saved with your account. You can pick it up on any Chromebook or phone.</p>', render: renderDesign },
+      { title: 'Test it in the simulator', render: renderPredict },
       { title: 'Race day: log your real runs', render: renderRace },
       { title: 'Class board', render: renderBoard }
     ],
     _analyse: analyse,
     _studio: { clean: clean, predictionText: predictionText, forecast: forecast, rankRows: rankRows, LONG_HALL_M: LONG_HALL_M,
+               designFacts: designFacts, guessQuestion: guessQuestion, guessOutcome: guessOutcome, guessJudge: guessJudge,
+               bestLine: bestLine, designLineText: designLineText, loggedText: loggedText, summary: summary,
+               SLED_FT: SLED_FT, MID_FT: MID_FT, START_X: START_X,
                state: function () { return { design: design, uid: designUid, status: cloudStatus }; } }
   });
 })();

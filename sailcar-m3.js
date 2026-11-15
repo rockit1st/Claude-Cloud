@@ -36,7 +36,7 @@
     SHAPES.forEach(function (sh) { FRONTS.forEach(function (a) { worst = Math.max(worst, Math.abs(P.simulate({ bodyArea: a, bodyCd: sh.cd }).distance - STD.distance)); }); });
     return Math.ceil(worst * FT);
   })();
-  const BODY_TXT = 'A typical car rolls ' + KID.ft(STD.distance) + ' ft. Changing its body’s shape or size changes that by less than ' + KID.dist(BODY_FT / FT) + '.';
+  const BODY_TXT = 'A typical car rolls ' + KID.dist(STD.distance) + '. Changing its body’s shape or size changes that by less than ' + KID.dist(BODY_FT / FT) + '.';
   const SMALL_SAIL = P.simulate({ sailArea: 0.01 });           // the typical car with a 10 × 10 cm sail
   // step 4's cars, and the fastest any of them goes (step 2 runs its bodies at about that speed)
   const MASS = { 50: 0.05, 70: 0.07, 100: 0.1 };

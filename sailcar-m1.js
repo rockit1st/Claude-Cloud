@@ -278,7 +278,7 @@
           '<li><strong>Hold test (balance):</strong> hold the car lightly in front of the fans. Feel which way it wants to go. ' +
           'Does the front dip? Does it pull to one side?</li></ol>',
         render: function (el, api) {
-          api.ui.note(el, 'good', '🏁 Last year’s sail sleds slid about 25 ft. The best one went 30 ft. ' +
+          api.ui.note(el, 'good', '🏁 Last year’s sail sleds slid about ' + kid.dist(25 / kid.FT_PER_M) + '. The best one went ' + kid.dist(30 / kid.FT_PER_M) + '. ' +
             'Wheels that spin freely have much less friction than sliding, so your car can beat that!');
           api.ui.note(el, 'build', '🛠️ <strong>Your materials:</strong> popsicle sticks, straws, paper, pipe cleaners, cardstock, plastic wheels, ' +
             'skewers or thin dowels, tape and hot glue. Every module ends with tips for using them well.');

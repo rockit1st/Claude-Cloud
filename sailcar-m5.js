@@ -337,18 +337,18 @@
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
           api.ui.note(el, 'tip', '💡 Near the fans, the wind pushes with ' + kid.force(PUSH0) + '. That is much more than friction. ' +
-            'But the wind fades down the hall. ' + FAR_FT + ' ft from the fans, it can push with only ' + kid.force(FAR_PUSH) + '. ' +
+            'But the wind fades down the hall. ' + kid.dist(FAR_FT / FT).replace(' ft', '&nbsp;ft') + ' from the fans, it can push with only ' + kid.force(FAR_PUSH) + '. ' +
             'Out there, a heavy car’s extra friction stops it sooner.');
           const A_MAX = speedUp(25);                         // the bar's full length: a 25 g car (it would tip, but that's the top of the slider)
           function draw() {
             const g = mS.get(), W = boardWidth(el), FL = 150, H = FL + 100, flip = tips(g);
             startBoard(api, s, W, H);
             line(api, s, 10, FL, W - 10, FL, '#4a3a6a', { 'stroke-width': 3 });
-            api.draw.fan(s, 10, FL, 84, ' ');                // our own, bigger "2 FANS" label above the fans (readable on a phone)
-            label(api, s, 10, FL - 92, '2 FANS', { color: '#9080b0' });
             // the car sits far enough from the fans for the "wind push" label to fit before the sail
             const sc = W < 440 ? 2.2 : 3, len = 30 * sc, carX = Math.round(Math.min(W - len - 24, Math.max(W * 0.45, 200))), r = 3 * sc, deckY = FL - 2 * r - sc;
             const mastX = carX + len * 0.45, sailL = mastX - 20 * sc * 0.45, sailMid = deckY - 30 * sc + 10 * sc;
+            api.draw.fan(s, 10, FL, 84, ' ');                // our own, bigger "2 FANS" label above the fans (readable on a phone),
+            label(api, s, 10, Math.min(FL - 92, sailMid - 32), '2 FANS', { color: '#9080b0' });   // and above the "wind push" label
             api.draw.car(s, carX, FL, { scale: sc, length: 30, sailW: 20, sailH: 20, mastH: 30 });
             const blkW = 4 * sc, blkH = 2.6 * sc, bx0 = mastX + 4 * sc, rows = Math.ceil(Math.ceil(g / 25) / 3);
             blocks(api, s, bx0, deckY, g, blkW, blkH, 3);
@@ -534,8 +534,11 @@
           '<li><strong>Mass test:</strong> Run the car 3 times in front of the fans. Measure each run. Then do 3 more runs with the nickels on. How much distance did 10&nbsp;g cost you?</li>' +
           '<li><strong>Tip check:</strong> Watch from the side as you let go. Do the back wheels lift up? Then the car is too light for its sail. Add a little weight at the back.</li></ol>',
         render: function (el, api) {
-          api.ui.note(el, 'build', '🛠️ <strong>About how much parts weigh:</strong> popsicle stick 2 g · jumbo stick 4 g · plastic wheel 4 g · skewer 1 g · straw 0.5 g · ' +
-            'paper 4.5 g a sheet · cardstock 10 g a sheet · hot glue 0.5 g a dot · pipe cleaner 1.5 g · tape 0.3 g for 10 cm. Weigh yours to be sure!');
+          // one part per line (two columns when there is room)
+          const list = ['Popsicle stick: 2 g', 'Jumbo stick: 4 g', 'Plastic wheel: 4 g', 'Skewer: 1 g', 'Straw: 0.5 g', 'Paper: 4.5 g a sheet',
+                        'Cardstock: 10 g a sheet', 'Hot glue: 0.5 g a dot', 'Pipe cleaner: 1.5 g', 'Tape: 0.3 g for 10 cm'];
+          api.ui.note(el, 'build', '🛠️ <strong>About how much parts weigh.</strong> Weigh yours to be sure!' +
+            '<ul style="margin:6px 0 0 20px;columns:2 150px;column-gap:28px">' + list.map(function (t) { return '<li style="margin:0 0 2px">' + t + '</li>'; }).join('') + '</ul>');
         }
       }
     ],
@@ -554,7 +557,7 @@
         why: 'A heavier car presses harder on its wheels and axles, so they rub more. Twice the mass means twice the friction.' },
       { q: 'You make your car lighter, from 150 g to 45 g. The sail and wheels stay the same. What happens in the hallway?', options: ['It rolls about the same', 'It rolls much farther', 'It rolls less far', 'It can’t start'], answer: 1,
         why: 'In the simulator, it goes from ' + rolls(Q_MASS.heavy) + ' to ' + rolls(Q_MASS.light) + '. A light car speeds up faster and has less friction.' },
-      { q: 'A super-light 25 g car flips onto its nose in front of the fans. Why?', options: ['Its wheels rub too much', 'It has too much inertia', 'It is too light to hold its back end down', 'The fans are too weak'], answer: 2,
+      { q: 'A super-light 25 g car flips onto its nose in front of the fans. Why?', options: ['Its wheels rub too much', 'It has too much inertia', 'It is too light for its sail', 'The fans are too weak'], answer: 2,
         why: 'The wind pushes high on the sail and tries to flip the car forward. With a 20 × 20 cm sail, a car lighter than about ' + Math.round(TIP_G) + ' g flips.' },
       { q: 'Which change takes the MOST mass off a sail car?', options: ['Using a little less tape', 'Leaving out one straw', 'Cutting 1 cm off a skewer', 'A paper sail instead of cardstock'], answer: 3,
         why: 'Paper is about 4.5 g and cardstock is about 10 g. That swap saves about 5.5 g, more than all the others put together.' },
