@@ -97,6 +97,29 @@
     .sl-note-warn { background: rgba(255,160,64,0.1); border-left: 4px solid #ffa040; }
     .sl-note-good { background: rgba(64,224,128,0.08); border-left: 4px solid #40e080; }
     .sl-note-build { background: rgba(240,192,64,0.08); border-left: 4px solid #f0c040; }
+    .sl-note-word { background: rgba(255,111,168,0.07); border-left: 4px solid #ff6fa8; }
+    .sl-word-tag { display: inline-block; font-size: 0.72rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #ffb0d0; margin-right: 8px; }
+    .sl-word { color: #fff; margin-right: 2px; }
+    .sl-word::after { content: ':'; }
+
+    /* predict first */
+    .sl-predict { background: rgba(180,79,255,0.09); border-left: 4px solid #b44fff; }
+    .sl-predict-q { font-weight: 700; color: #fff; margin-bottom: 10px; line-height: 1.5; }
+    .sl-predict-tag { display: inline-block; font-size: 0.72rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #e0c0ff; background: rgba(180,79,255,0.25); border-radius: 99px; padding: 2px 10px; margin-right: 8px; vertical-align: 1px; }
+    .sl-predict-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .sl-predict-opt { flex: 1 1 180px; display: flex; align-items: center; gap: 10px; min-height: 44px; text-align: left; background: rgba(255,255,255,0.04); border: 1px solid rgba(180,79,255,0.45); color: #e0d6f5; border-radius: 10px; padding: 9px 12px; font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.92rem; line-height: 1.35; cursor: pointer; }
+    .sl-predict-opt:hover { background: rgba(180,79,255,0.15); }
+    .sl-predict-opt:focus-visible { outline: 3px solid #00f5ff; outline-offset: 2px; }
+    .sl-predict-opt[aria-checked="true"] { background: rgba(180,79,255,0.34); border-color: #c77dff; color: #fff; }
+    .sl-predict-dot { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #c77dff; }
+    .sl-predict-opt[aria-checked="true"] .sl-predict-dot { background: #c77dff; box-shadow: inset 0 0 0 3px #2a1048; }
+    .sl-predict-hint { margin-top: 8px; font-size: 0.85rem; color: #b8a8d8; }
+    .sl-predict-out { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 4px; }
+    .sl-predict-out[hidden] { display: none; }
+    .sl-predict-yes-txt { color: #80f0b0; font-weight: 700; }
+    .sl-predict-no-txt { color: #ffd080; font-weight: 700; }
+    .sl-predict.sl-predict-yes { border-left-color: #40e080; }
+    .sl-predict.sl-predict-no { border-left-color: #f0c040; }
 
     /* hallway simulator */
     .sl-track { margin: 14px 0; border: 1px solid rgba(180,79,255,0.3); border-radius: 12px; overflow: hidden; background: #120826; }
