@@ -112,7 +112,8 @@
         title: 'Drag: the air pushes back',
         html:
           '<p>Think of your hand out the window of a moving car. The faster the car goes, the harder the air pushes your hand back.</p>' +
-          '<p>Here the fans are <strong>off</strong>. Your car rolls through still air. Change its speed. Watch the red drag arrow.</p>',
+          '<p>Here the fans are <strong>off</strong>. Your car rolls through still air. Change its speed. Watch the red drag arrow. ' +
+          'The yellow arrow shows the drag at 3 ft per second, so you can compare.</p>',
         challenge: 'Find the speed that gives 4 times the drag of 3 ft per second.',
         render: function (el, api) {
           const K = api.kid, REF = 3;
@@ -152,7 +153,7 @@
               label(api, s, x0 - 2, g.sailMid - 14, 'drag', { anchor: 'end', color: '#ff7070', size: 15 });
             }
             api.draw.arrow(s, x0, g.sailMid + 20, x0 - len(ref), g.sailMid + 20, '#f0c040', '', { width: 3, head: 5 });
-            label(api, s, x0 - 2, g.sailMid + 40, REF + ' ft per second', { anchor: 'end', color: '#f0c040', size: 14 });
+            label(api, s, x0 - 2, g.sailMid + 40, 'at ' + REF + ' ft per second', { anchor: 'end', color: '#f0c040', size: 14 });
             if (f === 0) say(api, out, ['🛑 The car is standing still in still air. No air rushes past, so there is ', ['no drag'], ' at all.']);
             else if (f === REF) say(api, out, ['🌬️ ' + K.ftPerSec(fps(f)) + ' is ' + K.speed(fps(f)) + '. The red drag arrow matches the yellow one. This is our starting speed.']);
             else say(api, out, ['🌬️ ' + K.ftPerSec(fps(f)) + ' is ' + K.speed(fps(f)) + '. The drag is ', [cmp(d, ref, 'at ' + REF + ' ft per second', { exact: true, times: fair })], '.']);
@@ -196,10 +197,13 @@
           function draw() {
             const area = size.get() / 10000, hh = HALF[size.get()], W = boardWidth(el);
             const rows = SHAPES.map(function (sh) { return { label: sh.name, kind: sh.kind, f: -P.airForce(-v, area, sh.cd, 0) }; });
-            if (cmpWith.get() === 'sail') rows.push({ label: 'Sail (20 × 20 cm)', kind: 'sail', f: -P.airForce(-v, C.sailArea, C.sailCd, 0) });
-            // the drag bars share ONE honest scale: the biggest drag on the board fills the row (a tiny drag is drawn a bit long)
+            const withSail = cmpWith.get() === 'sail', sailDrag = -P.airForce(-v, C.sailArea, C.sailCd, 0);
+            if (withSail) rows.push({ label: 'Sail (20 × 20 cm)', kind: 'sail', f: sailDrag });
+            // the drag bars share ONE honest scale, fixed for each view, so a bigger front draws a longer bar from one
+            // choice to the next: bodies only → the bulky flat front fills the row; + the sail → the sail fills it
+            // (then a tiny body drag is drawn a bit long)
             const RH = 78, TOP = 30, H = TOP + rows.length * RH + 10, BX = 104;
-            const len = api.draw.forceScale(Math.max.apply(null, rows.map(function (r) { return r.f; })), W - BX - 16, { min: 3, over: 0 });
+            const len = api.draw.forceScale(withSail ? sailDrag : -P.airForce(-v, FRONTS[2], SHAPES[0].cd, 0), W - BX - 16, { min: 3, over: 0 });
             startBoard(api, s, W, H);
             label(api, s, 16, 22, 'The red bars show the drag', { color: '#ff7070', size: 14 });
             rows.forEach(function (r, i) {
@@ -208,11 +212,17 @@
               shape(r.kind, 26, 88, cy, r.kind === 'sail' ? 24 : Math.min(hh, 22));
               api.svg('rect', { x: BX, y: cy - 9, width: len(r.f), height: 18, rx: 3, fill: '#ff5050' }, s);
             });
-            const flat = rows[0].f, round = rows[2].f;
-            if (cmpWith.get() === 'sail') say(api, out, ['⛵ The sail’s drag is ', [cmp(rows[3].f, flat, 'even the flat box’s', { times: len.toScale(rows[3].f) && len.toScale(flat) })],
+            const flat = rows[0].f, round = rows[2].f, normal = -P.airForce(-v, FRONTS[1], SHAPES[0].cd, 0);
+            if (withSail) say(api, out, ['⛵ The sail’s drag is ', [cmp(rows[3].f, flat, 'even the flat box’s', { times: len.toScale(rows[3].f) && len.toScale(flat) })],
               '. On a sail car, the sail makes most of the drag. ', BODY_TXT + ' ' + FREE_TXT]);
-            else say(api, out, ['🚀 The rounded nose’s drag is ', [cmp(round, flat, 'the flat front’s', { times: len.toScale(round) && len.toScale(flat) })],
-              '. But all three are tiny next to the sail. Tap “+ the sail” to compare.']);
+            else {
+              const parts = ['🚀 The rounded nose’s drag is ', [cmp(round, flat, 'the flat front’s', { times: len.toScale(round) && len.toScale(flat) })], '. '];
+              // a slim or bulky front next to the normal one (the bar a normal flat front draws on this same scale)
+              if (size.get() !== 30) parts.push('The ' + (size.get() < 30 ? 'slim' : 'bulky') + ' flat front’s drag is ',
+                [cmp(flat, normal, 'a normal one’s', { times: len.toScale(flat) && len.toScale(normal) })], '. ');
+              parts.push('But all three are tiny next to the sail. Tap “+ the sail” to compare.');
+              say(api, out, parts);
+            }
           }
           draw();
           keepFitted(api, el, draw);

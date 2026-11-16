@@ -216,7 +216,7 @@
               api.svg('line', { x1: gx(m), y1: FL, x2: gx(m), y2: FL + 7, stroke: '#6a5a8a', 'stroke-width': 1.5 }, s);
               if (m % every === 0) label(api, s, gx(m), FL + 34, m + ' ft', { anchor: 'middle', color: '#a090c0', bold: false, size: 13 });
             }
-            api.draw.fan(s, 8, FL, 76);
+            api.draw.fan(s, 12, FL, 76);                                    // at 12 px its "2 FANS" label stays inside the board
             // wind arrows: shorter and fainter where the wind is slower
             const gap = gx(5) - gx(0) >= 30 ? 5 : 10, maxLen = Math.min(40, gx(gap) - gx(0) - 4);
             for (let m = 0; m < GAUGE_FT; m += gap) {
@@ -252,7 +252,7 @@
             if (p < FRICTION) parts.push(' So the wind can’t keep a car rolling here.');
             say(api, out, parts);
             // exactly what the readout shows: 50%
-            if (pct === 50) api.done('At ' + K.dist(x) + ', the wind is half as fast. But right at the fans, the push is ' + K.compare(p0, p) + '! ' +
+            if (pct === 50) api.done('At ' + K.dist(x) + ', the wind is half as fast. But the push right at the fans is ' + K.compare(p0, p, { noun: 'here' }) + '! ' +
               'Slow air hits the sail more gently. And less air hits it each second. So the push drops a lot.');
           }
           draw();
@@ -283,7 +283,7 @@
             const p = push(START, AREA, cd, a);
             const W = boardWidth(el), BXR = W - 84;                          // the "fans see" bracket
             const L = Math.min(80, Math.floor((BXR - 52) / 2 - 24));         // half the sail's width in px
-            const CX = Math.round((52 + BXR) / 2), CY = 40 + L, BY = CY + L + 40, RH = 48, H = BY + 2 * RH + 22;
+            const CX = Math.round((52 + BXR) / 2), CY = 40 + L, BY = CY + L + 56, RH = 48, H = BY + 2 * RH + 22;   // BY: the arrows' first label, clear of "2 fans"
             startBoard(api, s, W, H);
             label(api, s, 12, 22, 'Seen from above', { color: '#9080b0', bold: false, size: 13 });
             // the two box fans side by side, seen from above
@@ -376,7 +376,7 @@
           }
           function info() {
             const c = car(), p = carPush(c);
-            bars.update([{ label: 'your car’s push', value: p, color: '#40e080' }, { label: 'with a 10 × 10 cm sail', value: SMALL_PUSH, color: '#f0c040' }]);
+            bars.update([{ label: 'your car’s push', value: p, color: '#40e080' }, { label: 'push with a 10 × 10 cm sail', value: SMALL_PUSH, color: '#f0c040' }]);
             say(api, out, ['⛵ Sail area: ', [Math.round(c.sailArea * 10000) + ' square cm'], '. The car weighs ', [K.grams(c.mass)],
               '. Start-line push: ', [cmp(p, SMALL_PUSH, 'with a 10 × 10 cm sail', { exact: true, times: bars.len.toScale(p) && bars.len.toScale(SMALL_PUSH) })], '.']);
             if (sim) sim.reset();                               // redraw the car with its new sail, ready for the next run

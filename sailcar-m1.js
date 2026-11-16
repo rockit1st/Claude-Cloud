@@ -249,6 +249,9 @@
             bar: { color: GREEN }, ends: ['no push', 'big push'], valueText: function (v) { return amount(v, 'push'); }, onInput: draw });
           const back = api.ui.slider(row, { label: 'Friction (pushes back)', min: 0, max: STEPS, step: 1, value: BAL_START.friction,
             bar: { color: ORANGE }, ends: ['no friction', 'lots of friction'], valueText: function (v) { return amount(v, 'friction'); }, onInput: draw });
+          // friction pushes BACK: its slider arrow points left, like the friction arrow in the picture (only turned: same length)
+          const backBar = back.input.parentNode.querySelector('.sl-vbar');
+          if (backBar) backBar.style.transform = 'scaleX(-1)';
           el.appendChild(out);
           api.ui.note(el, 'tip', '📜 Isaac Newton figured this out over 300 years ago. We call it <strong>Newton’s First Law</strong>. ' +
             'Things keep doing what they are doing until an unbalanced force acts on them.');
