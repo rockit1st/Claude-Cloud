@@ -80,8 +80,8 @@
 
   // ── the challenge rules: the steps call these before api.done(), and the node check script tests them ──
   // where the starting car is set down (x m from the fans): 'start' it starts by itself; 'keep' it can't start, but the
-  // same car rolling in from the start line goes right past; 'crawl' a still car gets a hair more push than friction,
-  // but the rolling car has already stopped; 'weak' too weak even to keep a car rolling
+  // same car rolling in from the start line goes right past (it is already moving: friction only slows it); 'crawl' a
+  // still car gets a hair more push than friction, but the rolling car has already stopped; 'weak' less than friction
   function spot(x) {
     const p = pushAt(x);
     if (p > ST) return 'start';
@@ -152,6 +152,9 @@
     return set.b === 'straw' ? 'straw' : set.fit === 'snug' ? 'snug' : set.gap === 'spacer' ? 'spacer' : null;
   }
   // the answer after a run. tried = the single fixes tested so far ({ key: distance }); it is filled in here.
+  // A fair test changes ONE thing from the terrible car, so only those runs count. (Adding fixes one after another
+  // would not be fair: the same fix adds more feet to a car that already has less friction.)
+  const BACK_BTN = '↺ Terrible axles again';
   function fixJudge(r, set, tried, v) {
     const n = fixesOf(set), one = singleFix(set), end = r.reason === 'reached the end of the hall';
     if (one) tried[one] = r.distance;
@@ -163,13 +166,18 @@
                : 'With ' + n + ' changes, the car ' + how;
     const left = FIX_ORDER.filter(function (k) { return tried[k] == null; });
     if (left.length) {
+      const todo = ' Still to test on its own: ' + left.map(function (k) { return FIX_NAME[k]; }).join(', ') + '.';
       return { text: text, right: null,
-        why: 'To check your guess, test each fix on its own. Start from the terrible car and change only ONE thing. Still to test: ' +
-             left.map(function (k) { return FIX_NAME[k]; }).join(', ') + '.' };
+        why: n === 0 ? 'To check your guess, change just ONE thing. Then press ▶ Run.' + todo
+           : one ? 'Now press ' + BACK_BTN + '. Then try a different fix.' + todo
+           : n === 1 ? 'A taped skewer is not one of the three fixes.' + todo
+           : 'That run changed ' + n + ' things at once. So it can’t show which ONE fix helps most. ' +
+             'Press ' + BACK_BTN + '. Then change just one thing.' + todo };
     }
     return { text: text, right: v === BEST_FIX,
       why: 'On their own: ' + FIX_ORDER.map(function (k) { return FIX_NAME[k] + ' ' + kid.ft(tried[k]) + ' ft'; }).join(', ') + '. ' +
-           (BEST_FIX === 'spacer' ? 'A wheel rubbing the chassis made the most friction.' : 'That fix took away the most friction.') };
+           (BEST_FIX === 'spacer' ? 'Spacers took away all of the rubbing. A straw bearing still has a little friction, so it took away less.'
+                                  : 'That fix took away the most friction.') };
   }
 
   // ── drawings: drawn at their real on-screen width (260–560 px) and shown 1 : 1, so a 13 px label is 13 px
@@ -243,14 +251,32 @@
     return a < b ? (same ? 'just barely less than' : 'less than') : (same ? 'just barely more than' : 'more than');
   }
 
-  const TESTS_HTML =
-    '<p><strong>Test your friction.</strong></p>' +
-    '<ol><li><strong>Flick test:</strong> hold the car up and flick each wheel. It should spin for <strong>3 seconds or more</strong>. If it stops fast, find what rubs and fix it.</li>' +
-    '<li><strong>Push test (no sail yet):</strong> lean a binder on a book to make a ramp. Let the chassis roll down from the same mark each time. ' +
-    'Measure how far it coasts. Fix one thing, then test again. Farther means less friction.</li>' +
-    '<li><strong>Start test:</strong> put the sail on. Set the car down 5 ft in front of the fans. Move it 5 ft farther away each time. ' +
-    'Find the farthest spot where it still starts by itself. Less friction means it can start farther away. ' +
-    '(In our model, the car with OK wheels ' + startsUpTo(WHEELS.ok) + '. With wheels that spin freely, it ' + startsUpTo(WHEELS.smooth) + '.)</li></ol>';
+  // ── step 6, the real build: two short checklists the student ticks (part 1 build it, part 2 test it), one part on
+  //    screen at a time. The model's numbers and the materials sit in a "More" box that starts closed. ──
+  const BUILD_LIST = [
+    ['Straw bearings', 'Cut two pieces of straw a little wider than your chassis. Hot-glue one across the front and one across the back.'],
+    ['Parallel axles', 'Before the glue cools, measure the gap between the straws at both ends. The same number means they are parallel. ' +
+                       'Crooked axles make the car curve into the wall.'],
+    ['Straight skewers', 'Roll each skewer on the table. If it wobbles, it is bent, so use another one. Snip off the sharp tip.'],
+    ['Spacers', 'Slide a skewer through each straw. Add a short piece of straw (about 5 mm) on each end.'],
+    ['Wheels', 'Glue a wheel onto each end of the skewer. Then the whole axle turns inside the straw. ' +
+               'Leave a gap about as thick as a coin. Check that each wheel is centered and straight.']
+  ];
+  const GLUE_TIP = '⚠️ Use small dabs of hot glue. A drip on a spacer or a wheel will lock it. Keep tape away from anything that turns.';
+  const TEST_LIST = [
+    ['Flick test', 'Hold the car up and flick each wheel. It should spin for <strong>3 seconds or more</strong>. If it stops fast, find what rubs and fix it.'],
+    ['Push test (no sail yet)', 'Lean a binder on a book to make a ramp. Let the chassis roll down from the same mark each time. ' +
+                                'Measure how far it coasts. Fix one thing, then test again. Farther means less friction.'],
+    ['Start test', 'Put the sail on. Set the car down 5 ft in front of the fans. Move it 5 ft farther away each time. ' +
+                   'Find the farthest spot where it still starts by itself. Less friction means it can start farther away.']
+  ];
+  const MORE_HTML =
+    (VEER.reason === 'hit the wall' ? '<p><strong>Crooked axles:</strong> in our model, an axle turned just 1.5 degrees hits the wall after about ' + kid.dist(VEER.distance) + '.</p>' : '') +
+    '<p><strong>Start test:</strong> in our model, the car with OK wheels ' + startsUpTo(WHEELS.ok) + '. With wheels that spin freely, it ' + startsUpTo(WHEELS.smooth) + '.</p>' +
+    '<p style="margin-bottom:0"><strong>Your materials:</strong> popsicle sticks or cardstock for the chassis. Straws for bearings and spacers. ' +
+    'Skewers or thin dowels for axles. Plastic wheels, hot glue and tape.</p>';
+  // the ticks and the part on screen last while the page is open (leaving the step and coming back keeps them)
+  const BUILD_STATE = { part: 'build', ticks: {} };
 
   SailLab.register({
     id: 'friction',
@@ -276,7 +302,7 @@
           const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car with its weight pressing down and friction holding it back, and bars comparing its friction with the starting car' }, el);
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const mass = api.ui.slider(row, { label: 'Car mass', min: 40, max: 200, step: 10, value: 70, format: function (v) { return v + ' g'; }, onInput: draw });
+          const mass = api.ui.slider(row, { label: 'How heavy the car is', min: 40, max: 200, step: 10, value: 70, format: function (v) { return v + ' g'; }, onInput: draw });
           const wh = api.ui.choice(row, { label: 'Wheels', value: 'ok', options: WHEEL_OPTS, onChange: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
@@ -445,11 +471,11 @@
           '<p>Push a heavy box across the floor. Getting it to start takes a big shove. Once it slides, it is easier to keep it going.</p>' +
           '<p>Wheels work the same way. Parts that sit still grip each other a little more. ' +
           'So it takes more push to <strong>start</strong> rolling than to <strong>keep</strong> rolling.</p>' +
-          '<p>The starting car has ' + kid.force(FR) + ' of friction. To keep rolling, the wind must push harder than that. ' +
-          'To start from still, it must push harder than ' + kid.force(ST) + '. Set the car down at different spots and compare.</p>',
+          '<p>The starting car has ' + kid.force(FR) + ' of friction. A car that is already rolling keeps going until friction slows it to a stop. ' +
+          'A still car is different. To <strong>start</strong> it, the wind must push harder than ' + kid.force(ST) + '. Set the car down at different spots and compare.</p>',
         challenge: 'Find a spot where a still car can’t start. But the same car, rolling in from the start line, rolls right past.',
         render: function (el, api) {
-          const s = api.svg('svg', { role: 'img', 'aria-label': 'A hallway with the fans and your car, and a bar comparing the wind’s push with the push needed to keep rolling and to start' }, el);
+          const s = api.svg('svg', { role: 'img', 'aria-label': 'A hallway with the fans and your car, and a bar comparing the wind’s push with friction and with the push needed to start' }, el);
           const d = api.ui.slider(el, { label: 'Where you set the car down (from the fans):', min: 1, max: SPOT_MAX_FT, step: 1, value: 5,
             format: function (v) { return kid.dist(ftToM(v)); }, onInput: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
@@ -469,7 +495,7 @@
             line(api, s, sx, 34, sx, FL, '#f0c040', { 'stroke-width': 2, 'stroke-dasharray': '5,4' });
             label(api, s, sx - 4, 26, 'a rolling car stops here', '#f0c040', { anchor: 'end', size: 13, light: true });
             api.draw.car(s, px(f) - 6, FL, { scale: 1.5, length: 26 });
-            // the push here, against two lines: keep rolling (friction) and start (a bit more)
+            // the push here, against two lines: friction, and the push it takes to start (a bit more)
             const BX = 16, BW = W - 32;
             label(api, s, BX, 150, 'Wind’s push here: ' + kid.forceShort(p), '#40e080');
             bar(api, s, BX, 160, kid.clips(p), MAXP, BW, '#40e080', 22);
@@ -477,10 +503,10 @@
               const lx = BX + kid.clips(b[0]) / MAXP * BW;
               line(api, s, lx, 154, lx, 190, b[1], { 'stroke-width': 3 });
             });
-            label(api, s, BX, 214, (p > FR ? '✔' : '✘') + ' Keep rolling (over ' + kid.forceShort(FR) + ')', '#ffa040', { size: small });
-            label(api, s, BX, 238, (p > ST ? '✔' : '✘') + ' Start (over ' + kid.forceShort(ST) + ')', '#f0c040', { size: small });
-            const verdict = { start: ['It starts by itself here!', ''], keep: ['A still car won’t start here…', '…but a rolling car keeps going!'],
-                              crawl: ['A still car won’t start here.', 'A rolling car stops before here.'], weak: ['Too weak to keep a car rolling.', ''] }[where];
+            label(api, s, BX, 214, (p > FR ? '✔' : '✘') + ' More than friction (' + kid.forceShort(FR) + ')', '#ffa040', { size: small });
+            label(api, s, BX, 238, (p > ST ? '✔' : '✘') + ' Enough to start (over ' + kid.forceShort(ST) + ')', '#f0c040', { size: small });
+            const verdict = { start: ['It starts by itself here!', ''], keep: ['A still car won’t start here…', '…but a rolling car keeps going past.'],
+                              crawl: ['A still car won’t start here.', 'A rolling car stops before here.'], weak: ['Less than friction here.', 'A car here only slows down.'] }[where];
             const vc = { start: '#40e080', keep: '#f0c040', crawl: '#ff8060', weak: '#ff8060' }[where];
             label(api, s, BX, 268, verdict[0], vc, { size: small });
             if (verdict[1]) label(api, s, BX, 288, verdict[1], vc, { size: small });
@@ -490,14 +516,14 @@
             const txt = {
               start: here + 'That is ' + compare(p, ST) + ' the ' + kid.forceShort(ST) + ' it takes to start. The car starts rolling by itself.',
               keep: here + 'That is ' + compare(p, ST) + ' the ' + kid.forceShort(ST) + ' it takes to START. So a still car never moves. ' +
-                    'But a rolling car only needs more than ' + kid.forceShort(FR) + '. The car from the start line rolls right past. It stops at ' + stopTxt + '.',
+                    'But the car from the start line is already rolling. Friction is slowing it down here. But it keeps going until it stops at ' + stopTxt + '.',
               crawl: here + 'That is ' + compare(p, FR) + ' friction, but ' + compare(p, ST) + ' the starting push. ' +
-                     'The car from the start line moves with the wind. So it feels a little less push. It slowed to a creep and stopped at ' + stopTxt + '. ' +
-                     'A creeping car needs the starting push again.',
-              weak: here + 'That is ' + compare(p, FR) + ' friction (' + kid.forceShort(FR) + '). It can’t even keep a car rolling.'
+                     'The car from the start line moves with the wind. So it feels a little less push. It slowed down and stopped at ' + stopTxt + '. ' +
+                     'Once it stops, it needs the starting push again.',
+              weak: here + 'That is ' + compare(p, FR) + ' friction (' + kid.forceShort(FR) + '). A rolling car here only slows down. A still car never starts.'
             }[where];
             say(api, out, [txt]);
-            if (checks.spot(x)) api.done('From ' + ZONE[0] + ' ft to ' + ZONE[ZONE.length - 1] + ' ft from the fans, a still car never starts. But a rolling car keeps going. Starting takes more push than rolling!');
+            if (checks.spot(x)) api.done('From ' + ZONE[0] + ' ft to ' + ZONE[ZONE.length - 1] + ' ft from the fans, a still car never starts. But a car that is already rolling keeps going. Starting is harder than rolling!');
           }
           draw();
           keepFitted(api, el, draw);
@@ -514,6 +540,8 @@
           'Less friction means it coasts farther. A sliding sled would stop in less than 1 ft!</p>',
         challenge: 'Fix the axle. In the push test, the chassis must coast at least ' + kid.dist(ftToM(PUSH_GOAL_FT)) + '.',
         render: function (el, api) {
+          // two words to know, in reading order: "bearing" first, then "chassis" (its first use in the lab)
+          wordFirst(api, el, 'chassis', 'the flat frame of your car. The axles and the sail attach to it.');
           wordFirst(api, el, 'bearing', 'the part that holds a turning axle. A straw that a skewer spins in is a good bearing.');
           const s = api.svg('svg', { role: 'img', 'aria-label': 'Front view of an axle with two wheels, the friction from each part, and how far the chassis coasts in a push test' }, el);
           const row = api.h('div', { class: 'sl-row' });
@@ -615,7 +643,9 @@
         html:
           '<p>Here is the lab car with <strong>terrible axles</strong>. The skewers sit in tight cardstock holes. The wheels wobble and rub the chassis.</p>' +
           '<p>It rolls only about ' + kid.dist(TERRIBLE_D) + '. That is no better than last year’s sleds!</p>' +
-          '<p>You can only change the axles. Fix <strong>one thing at a time</strong>, and run the car after each fix. Then you will know which fix helped the most.</p>',
+          '<p>First, test each fix <strong>on its own</strong>. Change just one thing and press ▶ Run. ' +
+          'Then press <strong>' + BACK_BTN + '</strong> and try another fix. That shows which fix helps most. ' +
+          'Last, put on all three fixes to reach the end!</p>',
         challenge: GOAL_IS_END ? 'Fix the axles. Make the car roll all the way to the end of the ' + HALL_TXT + ' hallway.'
                                : 'Fix the axles. Make the car roll at least ' + kid.dist(HALL_GOAL) + '.',
         render: function (el, api) {
@@ -627,6 +657,10 @@
           const br = api.ui.choice(row, { label: 'Bearing', value: TERRIBLE_SET.b, options: BEARING_OPTS, onChange: changed });
           const fit = api.ui.choice(row, { label: 'Wheel fit', value: TERRIBLE_SET.fit, options: FIT_OPTS, onChange: changed });
           const gap = api.ui.choice(row, { label: 'Wheel gap', value: TERRIBLE_SET.gap, options: GAP_OPTS, onChange: changed });
+          // one tap back to the terrible axles, so each fix can be tested on its own
+          const back = api.h('button', { type: 'button', class: 'sl-btn', text: BACK_BTN });
+          back.addEventListener('click', function () { br.set(TERRIBLE_SET.b); fit.set(TERRIBLE_SET.fit); gap.set(TERRIBLE_SET.gap); changed(); });
+          el.appendChild(api.h('div', { style: 'margin:2px 0 4px' }, [back]));
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
           function set() { return { b: br.get(), fit: fit.get(), gap: gap.get() }; }
@@ -672,20 +706,43 @@
       {
         title: 'Real build: wheels that spin and spin',
         html:
-          '<p><strong>Build your axles like this.</strong></p>' +
-          '<ol><li><strong>Straw bearings:</strong> cut two pieces of straw a little wider than your chassis. Hot-glue them across the chassis, one near the front and one near the back.</li>' +
-          '<li><strong>Parallel axles:</strong> before the glue cools, measure the gap between the straws at both ends. The same number means they are parallel. ' +
-          'Crooked axles make the car curve into the wall. ' +
-          (VEER.reason === 'hit the wall' ? 'Our model shows it. An axle turned just 1.5 degrees hits the wall after about ' + kid.dist(VEER.distance) + '.' : '') + '</li>' +
-          '<li><strong>Straight skewers:</strong> roll each skewer on the table. If it wobbles, it is bent. Use another one. Snip off the sharp tip.</li>' +
-          '<li><strong>Spacers:</strong> slide the skewer through the straw. Add a short piece of straw (about 5 mm) on each end.</li>' +
-          '<li><strong>Wheels:</strong> push a wheel onto each end and glue it to the skewer. Then the whole axle turns inside the straw. ' +
-          'Leave a tiny gap, about as thick as a coin. Check that each wheel is centered and straight.</li>' +
-          '<li><strong>Careful with glue and tape:</strong> use small dabs of hot glue. A drip on a straw end, a spacer or a wheel will lock it. Keep tape away from anything that turns.</li></ol>',
+          '<p>Build real axles that spin and spin! Do part 1, then part 2. Tick each box when it is done.</p>',
         render: function (el, api) {
-          const s = api.svg('svg', { role: 'img', 'aria-label': 'Top view of a chassis with straw bearings, skewer axles, spacers, wheels and small glue dabs, and a ruler check that the axles are parallel' }, el);
+          // part 1 (build it) or part 2 (test it): only one checklist on screen at a time
+          const which = api.ui.choice(el, { label: 'Which part?', value: BUILD_STATE.part, onChange: show,
+            options: [{ value: 'build', label: '🛠️ 1. Build it' }, { value: 'test', label: '🧪 2. Test it' }] });
+          const chooser = el.lastElementChild;
+          const build = api.h('div', { class: 'sl-part-build' }), test = api.h('div', { class: 'sl-part-test' });
+          el.appendChild(build);
+          el.appendChild(test);
+          // a checklist with a box to tick for each item (item text is module-authored static html)
+          function checklist(parent, prefix, items, allDone) {
+            const list = api.h('ul', { class: 'sl-checklist', style: 'list-style:none;margin:8px 0 6px;padding:0' });
+            const count = api.h('div', { 'aria-live': 'polite', style: 'font-size:0.88rem;font-weight:700;color:#80f0b0;margin:0 0 10px' });
+            function tally() {
+              const n = items.filter(function (it, i) { return BUILD_STATE.ticks[prefix + i]; }).length;
+              count.textContent = n === items.length ? allDone : '✔ ' + n + ' of ' + items.length + ' done';
+            }
+            items.forEach(function (it, i) {
+              const box = api.h('input', { type: 'checkbox', style: 'flex:none;width:22px;height:22px;margin:2px 0 0;accent-color:#40e080;cursor:pointer' });
+              box.checked = !!BUILD_STATE.ticks[prefix + i];
+              const row = api.h('label', { style: 'display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:10px;border:1px solid;cursor:pointer;line-height:1.5' },
+                                [box, api.h('span', { html: '<strong>' + it[0] + ':</strong> ' + it[1] })]);
+              function paintRow() {
+                row.style.borderColor = box.checked ? 'rgba(64,224,128,0.65)' : 'rgba(180,79,255,0.3)';
+                row.style.background = box.checked ? 'rgba(64,224,128,0.08)' : 'rgba(255,255,255,0.03)';
+              }
+              box.addEventListener('change', function () { BUILD_STATE.ticks[prefix + i] = box.checked; paintRow(); tally(); });
+              paintRow();
+              list.appendChild(api.h('li', { style: 'margin:0 0 8px' }, [row]));
+            });
+            parent.appendChild(list);
+            parent.appendChild(count);
+            tally();
+          }
+          const s = api.svg('svg', { role: 'img', 'aria-label': 'Top view of a chassis with straw bearings, skewer axles, spacers, wheels and small glue dabs, and a ruler check that the axles are parallel' }, build);
           const key = api.h('div', { class: 'sl-note sl-note-tip', html: '<strong>Seen from above:</strong> ① straw bearing · ② spacer (keeps a tiny gap) · ③ wheel · ④ skewer axle · ⑤ small glue dabs.' });
-          el.appendChild(key);
+          build.appendChild(key);
           function paint() {
             // left–right positions shrink with the screen; up–down positions stay the same
             const W = boardWidth(el), H = 344, k = W / 560;
@@ -713,11 +770,32 @@
               label(api, s, (axles[0] + axles[1]) / 2, r[2], r[1], '#f0c040', { anchor: 'middle', size: 13 });
             });
           }
-          paint();
           keepFitted(api, el, paint);
-          el.appendChild(api.h('div', { html: TESTS_HTML }));
-          api.ui.note(el, 'build', '🛠️ <strong>Your materials:</strong> popsicle sticks or cardstock for the chassis. Straws for bearings and spacers. ' +
-            'Skewers or thin dowels for axles. Plastic wheels, hot glue and tape. Keep the glue and tape away from anything that turns.');
+          checklist(build, 'b', BUILD_LIST, '🎉 All ' + BUILD_LIST.length + ' done! Your axles are built.');
+          api.ui.note(build, 'warn', GLUE_TIP);
+          const toTest = api.h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '🧪 Next: part 2, test it →' });
+          toTest.addEventListener('click', function () {
+            which.set('test');
+            show('test');
+            // scroll back up to the part buttons, below the page's fixed top bar
+            const bar = document.querySelector('.topnav');
+            chooser.style.scrollMarginTop = Math.round((bar ? bar.getBoundingClientRect().height : 0) + 12) + 'px';
+            if (chooser.scrollIntoView) chooser.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          });
+          build.appendChild(api.h('div', { style: 'margin:4px 0 6px' }, [toTest]));
+          checklist(test, 't', TEST_LIST, '🏁 All ' + TEST_LIST.length + ' tests done! Your car is ready for the hallway.');
+          // the model's numbers and the materials: a box that starts closed
+          const more = api.h('details', { class: 'sl-more', style: 'margin:14px 0 4px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(180,79,255,0.25)' });
+          more.appendChild(api.h('summary', { style: 'cursor:pointer;font-weight:700;color:#d8a8ff', text: '📏 More: what our model says, and materials' }));
+          more.appendChild(api.h('div', { style: 'margin-top:8px;font-size:0.92rem', html: MORE_HTML }));
+          el.appendChild(more);
+          function show(part) {
+            BUILD_STATE.part = part;
+            build.hidden = part !== 'build';
+            test.hidden = part !== 'test';
+            if (part === 'build') paint();
+          }
+          show(BUILD_STATE.part);
         }
       }
     ],
@@ -729,7 +807,7 @@
       { q: 'Your car keeps curving into the wall. What should you check first?', options: ['That the sail is big enough', 'That the axles are parallel', 'That the car is heavy enough', 'That the fans are on high'], answer: 1,
         why: 'Crooked axles steer the car to one side. Measure the gap between the axles at both ends.' },
       { q: 'Far down the hall, the wind can’t start a still car. But a car rolling in from the start line keeps going past that spot. Why?', options: ['The wind only pushes moving cars', 'A still car has no friction', 'Starting takes more push than rolling', 'Gravity is stronger on a still car'], answer: 2,
-        why: 'Parts that sit still grip each other a little more. So it takes more push to start rolling than to keep rolling.' },
+        why: 'Parts that sit still grip each other a little, so starting takes extra push. A rolling car is already moving, so it keeps going while friction slows it.' },
       { q: 'Which axle has the LEAST friction?', options: ['A skewer spinning freely in a straw', 'A skewer in a tight cardstock hole', 'Wheels rubbing the side of the chassis', 'Tape wrapped where the wheels turn'], answer: 0,
         why: 'A straw makes a smooth bearing, so the skewer spins easily. Tight holes, rubbing and tape all add friction.' },
       { q: 'You flick a wheel and it stops after half a second. What does that tell you?', options: ['The sail is too small', 'The car is too light', 'Nothing, wheels always stop fast', 'Something is rubbing or too tight'], answer: 3,
@@ -749,6 +827,7 @@
               HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END, ONLY_FULL_FIX: ONLY_FULL_FIX, TERRIBLE: TERRIBLE, TERRIBLE_D: TERRIBLE_D, TERRIBLE_SET: TERRIBLE_SET,
               RUN: RUN, END_X: END_X, LONG_HALL: LONG_HALL, checks: checks, VEER: VEER, FR: FR, ST: ST, SLED_FR: SLED_FR,
               RACE_PREDICT: RACE_PREDICT, raceOutcome: raceOutcome, raceJudge: raceJudge, timesAsFar: timesAsFar,
-              FIX_PREDICT: FIX_PREDICT, FIX_SET: FIX_SET, FIX_D: FIX_D, FIX_ORDER: FIX_ORDER, BEST_FIX: BEST_FIX, fixesOf: fixesOf, singleFix: singleFix, fixJudge: fixJudge }
+              FIX_PREDICT: FIX_PREDICT, FIX_SET: FIX_SET, FIX_D: FIX_D, FIX_ORDER: FIX_ORDER, BEST_FIX: BEST_FIX, fixesOf: fixesOf, singleFix: singleFix, fixJudge: fixJudge,
+              BACK_BTN: BACK_BTN, BUILD_LIST: BUILD_LIST, TEST_LIST: TEST_LIST, GLUE_TIP: GLUE_TIP, MORE_HTML: MORE_HTML }
   });
 })();

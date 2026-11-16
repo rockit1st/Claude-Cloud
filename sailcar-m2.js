@@ -21,6 +21,9 @@
   }
   // push on a sail sitting still x metres from the fans
   function push(x, area, cd, ang) { return P.airForce(P.windAt(x), area, cd, ang || 0); }
+  // Step 4's readout: the wind's push on the WHOLE car at the start line (sail + body), the same number as
+  // simulate(car).startPush, so the standard 20 × 20 cm car reads "about 34 paper clips" here just as in Modules 1, 4 and 5
+  function carPush(c) { return push(START, c.sailArea, c.sailCd, c.sailAngle) + push(START, P.DEFAULT_CAR.bodyArea, P.DEFAULT_CAR.bodyCd, 0); }
   // Step 2's wind meter: whole feet from the fans, 0 to 70 ft (the hall). Where a still 20 × 20 cm sail's push
   // first drops below the typical car's friction, in those same whole feet (56 ft today).
   const GAUGE_FT = Math.round(HALL_M * KID.FT_PER_M);
@@ -93,7 +96,8 @@
           afterFirst(el, api.ui.word(el, 'thrust', 'the push that moves your car forward. For a sail car, thrust is the wind’s push on the sail.'));
           const ref = push(START, 0.01, FLAT), p20 = push(START, 0.04, FLAT);      // the 10 × 10 and 20 × 20 cm sails
           const guess = api.ui.predict(el, {
-            question: 'Make the sail twice as wide AND twice as tall (20 × 20 cm). How much push will it get?',
+            question: 'Start with a 10 × 10 cm sail. Now make it twice as wide AND twice as tall (20 × 20 cm). ' +
+              'How much push will it get, compared with the 10 × 10 cm sail?',
             choices: [{ value: 1, label: 'The same push' }, { value: 2, label: '2 times the push' }, { value: 4, label: '4 times the push' }, { value: 8, label: '8 times the push' }],
             hint: 'Pick one. Any guess is OK! Then test it below.'
           });
@@ -332,15 +336,16 @@
           function info() {
             const c = car();
             say(api, out, ['⛵ Sail area: ', [Math.round(c.sailArea * 10000) + ' square cm'], '. The car weighs ', [K.grams(c.mass)],
-              '. Push at the start line: ', [K.force(push(START, c.sailArea, c.sailCd, c.sailAngle))], '.']);
+              '. Push on the whole car at the start line: ', [K.force(carPush(c))], '.']);
             if (sim) sim.reset();                               // redraw the car with its new sail, ready for the next run
           }
           info();
           const WHY = {
             tip: 'This big sail gets a huge push high above the wheels. That push flipped the car forward.',
             short: 'A small sail catches only a little wind. Down the hall, the weak wind soon loses to friction.',
-            mid: 'This sail catches more wind, so it rolls farther. But the fading wind still loses to friction before ' + GOAL_FT + ' ft.',
-            far: 'A bigger sail catches more wind. So the push beats friction for longer, and the car rolls farther.'
+            mid: 'This sail catches more wind than a small 10 × 10 cm sail. So it rolls farther. ' +
+              'But the fading wind still loses to friction before ' + GOAL_FT + ' ft.',
+            far: 'This big sail catches more wind than a smaller one. So the push beats friction for longer, and the car rolls ' + GOAL_FT + ' ft or more.'
           };
           const guess = api.ui.predict(el, {
             question: 'Pick your sail first. How far do you think your car will roll?',

@@ -88,7 +88,7 @@
   // ── STEP 2: inertia, and more mass = more friction ──
   function massReadout(g) {
     const head = ['⚖️ A ' + g + ' g car weighs ' + kid.force(weightN(g)) + '. Its friction is ', [kid.force(frictionN(g))], '. '];
-    if (tips(g)) return head.concat(['⚠️ But a car this light ', ['tips over'], '! The wind pushes high on the sail. The car is too light to hold its back end down. You will test this in Step 4.']);
+    if (tips(g)) return head.concat(['⚠️ But a car this light ', ['tips over'], '! The wind pushes high on the sail. The car is too light to hold its back end down.']);
     if (g === REF_G) return head.concat(['This is the ' + REF_G + ' g car from the earlier modules. Try a heavier car. Then try a lighter one.']);
     return head.concat(['That is ' + asMuch(g / REF_G) + ' the ' + REF_G + ' g car’s friction. At the start line, it speeds up ', [asFast(speedUp(g) / speedUp(REF_G))], ' the ' + REF_G + ' g car.']);
   }
@@ -148,10 +148,12 @@
   function hallDone(r) {
     const g = Math.round(r.car.mass * 1000);
     const head = atEnd(r) ? 'At ' + g + ' g it reached the end of the ' + HALL_TXT + ' hall!' : 'At ' + g + ' g it rolled ' + kid.dist(r.distance) + '!';
-    return head + ' Lighter cars roll farther. But this car tips over below about ' + Math.round(TIP_G) + ' g. ' +
+    // the step's explanation lives here and in the prediction's answer, so the text above the "Predict first" card can't give it away
+    return head + ' Lighter cars roll farther. They speed up faster and have less friction. ' +
+      'But the wind pushes high on the sail. Below about ' + Math.round(TIP_G) + ' g, this car tips over. ' +
       (g === LIGHTEST
-        ? LIGHTEST + ' g ' + (LIGHTEST - TIP_G < 1 ? 'only just stays' : 'stays') + ' on its wheels. A real car is never exactly like the model. ' +
-          'A gust of wind or extra glue up front could flip it. So build yours a few grams heavier' + (MARGIN_PASS.length ? ', like ' + orList(MARGIN_PASS) + ' g.' : '.')
+        ? LIGHTEST + ' g ' + (LIGHTEST - TIP_G < 1 ? 'only just stays' : 'stays') + ' on its wheels. A gust of wind or extra glue up front could flip it. ' +
+          'So build yours a few grams heavier' + (MARGIN_PASS.length ? ', like ' + orList(MARGIN_PASS) + ' g.' : '.') + ' Those extra grams are a safety margin.'
         : 'Your ' + g + ' g car has ' + (g - LIGHTEST) + ' g to spare. That is a smart safety margin.');
   }
   // PREDICT FIRST #2: what happens as the car gets lighter and lighter? Judged once the runs show it.
@@ -175,12 +177,13 @@
   // runs = every run so far, this one last
   function hallJudge(runs, v) {
     const ev = evidence(runs), text = runText(runs[runs.length - 1]);
-    if (ev.lighterFarther && ev.tipSeen) return { text: text, right: v === 'tip', why: 'Lighter cars rolled farther. But when the car got too light, the wind flipped it over.' };
+    if (ev.lighterFarther && ev.tipSeen) return { text: text, right: v === 'tip',
+      why: 'Lighter cars speed up faster and have less friction, so they rolled farther. But the wind pushes high on the sail. Too light, and that push flips the car forward.' };
     if (ev.lighterFarther) {
       if (v === 'less' || v === 'same') return { text: text, right: false, why: 'The lighter car rolled farther. It speeds up faster and has less friction.' };
       return { text: text, right: null, why: 'So far, lighter cars roll farther. Keep going lighter. What happens?' };
     }
-    if (ev.tipSeen) return { text: text, right: null, why: 'Too light! The wind flipped it over. Now try some heavier cars too.' };
+    if (ev.tipSeen) return { text: text, right: null, why: 'Too light! The wind pushes high on the sail, and it flipped the car forward. Now try some heavier cars too.' };
     return { text: text, right: null, why: 'Now make the car lighter and run it again.' };
   }
 
@@ -326,7 +329,8 @@
       {
         title: 'Inertia, and a hidden catch',
         html:
-          '<p>Inertia makes a heavy car <strong>harder to start</strong>. You saw that in the race.</p>' +
+          '<p>Inertia makes a heavy car <strong>slower to speed up</strong>. You saw that in the race: same push, slower start. ' +
+          'This is not the grip from Module 4. The race had no friction at all.</p>' +
           '<p>Inertia also makes a heavy car <strong>harder to stop</strong>. Think about catching a rolling bowling ball. Now think about a soccer ball!</p>' +
           '<p>Here is the catch. A heavy car presses down harder on its wheels. So its wheels and axles rub more. ' +
           '<strong>More mass means more friction.</strong> Move the slider and watch.</p>',
@@ -451,14 +455,13 @@
         }
       },
       {
-        title: 'Hallway challenge: light, but not too light',
+        title: 'Hallway challenge: how light is best?',
+        // only a neutral setup above the "Predict first" card: why light cars roll farther, and why too light tips,
+        // come AFTER the runs (in the prediction's answer and the done message)
         html:
-          '<p>Light cars usually roll farther. The same push speeds them up faster. ' +
-          'They also have less friction, so the weak wind far down the hall can keep them going.</p>' +
-          '<p>But watch out! The wind pushes <strong>high</strong> on the sail. That push tries to flip the car forward. ' +
-          'The car’s weight holds its back end down. Make the car too light and it <strong>tips over</strong>.</p>' +
-          (GOAL_IS_END ? '' : '<p>The goal is ' + GOAL_TXT + ', a little short of the end of the hall. So a car with a few extra grams can still make it. ' +
-            'Those extra grams are your <strong>safety margin</strong>.</p>'),
+          '<p>Your car has a 20 × 20 cm sail and OK wheels. This time, you change only its <strong>mass</strong>.</p>' +
+          '<p>Start at ' + MASS.start + ' g. Run the car. Then make it lighter and run it again.</p>' +
+          (GOAL_IS_END ? '' : '<p>The goal is ' + GOAL_TXT + '. That is a little short of the end of the hall.</p>'),
         challenge: GOAL_IS_END ? 'Find a mass that rolls all the way to the end of the ' + HALL_TXT + ' hallway without tipping over.'
                                : 'Find a mass that rolls at least ' + GOAL_TXT + ' without tipping over.',
         render: function (el, api) {
@@ -475,6 +478,7 @@
               runs.push(hallEntry(r));
               chart();
               if (checks.hall(r)) api.done(hallDone(r));
+              showNext();
             }
           });
           api.onLeave(sim.stop);
@@ -516,8 +520,11 @@
           }
           keepFitted(api, el, chart);
           chart();
-          api.ui.note(el, 'tip', '💡 Start at ' + MASS.start + ' g and work your way down. Watch the dots. What happens as the car gets lighter? What happens when it gets <em>too</em> light?');
-          api.ui.note(el, 'good', '🔮 <strong>Coming up in Module 6:</strong> tricks that stop a light car from tipping. Then it can be light AND safe.');
+          api.ui.note(el, 'tip', '💡 Each run adds a dot to the chart. Compare the dots as the car gets lighter. What pattern do you see?');
+          // this one talks about tipping, so it waits until the student has seen a car tip (or finished the challenge)
+          const next = api.ui.note(el, 'good', '🔮 <strong>Coming up in Module 6:</strong> tricks that stop a light car from tipping. Then it can be light AND safe.');
+          function showNext() { next.hidden = !(api.isDone() || runs.some(function (e) { return e.tipped; })); }
+          showNext();
         }
       },
       {

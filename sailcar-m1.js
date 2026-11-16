@@ -49,6 +49,12 @@
               { value: 'far', label: 'It will roll ' + GOAL_FT + ' ft or more' }]
   };
   function outcome(r) { return r.reason === 'never moved' ? 'still' : reachesGoal(r.distance) ? 'far' : 'short'; }
+  // Which fan and wheels a run used (the run keeps its car and options). A "far" answer names BOTH causes:
+  // OK wheels go far only on the High fan (53 ft) — on Medium (35 ft) friction wins — so the fan gets the credit too.
+  function fanOf(r) { return Object.keys(FAN_V).find(function (f) { return FAN_V[f] === r.opts.fan.v0; }); }
+  function wheelsOf(r) { return Object.keys(WHEELS).find(function (w) { return WHEELS[w] === r.car.crr; }); }
+  const FAN_PUSH = { high: 'The High fan gave a strong push.', med: 'The Medium fan gave a good push.', low: 'The Low fan gave a gentle push.' };
+  const WHEEL_FRICTION = { free: 'These wheels spin freely, so friction is very small.', ok: 'These wheels have some friction, but not much.' };
   // the answer shown after a run: { text, right, why } — every number comes from this run
   function judge(r, v) {
     const got = outcome(r), end = r.reason === 'reached the end of the hall';
@@ -61,8 +67,9 @@
       : got === 'short'
       ? 'The push beat friction near the fans, so the car sped up. Down the hall the wind faded. ' +
         'Friction won, so the car slowed down and stopped.'
-      : 'The push beat friction near the fans, so the car sped up. These wheels have little friction. ' +
-        'So the fading wind could keep the car rolling a long way.' + (end ? ' It was still rolling at the end!' : '');
+      : (FAN_PUSH[fanOf(r)] || 'The fan gave a strong push.') + ' It beat friction near the fans, so the car sped up. ' +
+        (WHEEL_FRICTION[wheelsOf(r)] ? WHEEL_FRICTION[wheelsOf(r)] + ' ' : '') +
+        'So the car slowed down only a little at a time.' + (end ? ' It was still rolling at the end!' : ' It rolled a long way.');
     return { text: text, right: got === v, why: why };
   }
 
@@ -130,7 +137,11 @@
             api.draw.arrow(s, fanR + 8, midY, sailL - 3, midY, '#40e080', '');
             const tx = (fanR + 8 + sailL) / 2;
             label(api, s, tx, midY - 12, 'THRUST', '#40e080', { size: 16 });
-            if (W >= 440) label(api, s, tx, midY + 24, 'the wind pushes the sail', '#40e080', { size: 13, light: true });
+            // how hard the wind pushes a typical car right at the fans (from simulate(), in clips)
+            if (W >= 440) {
+              label(api, s, tx, midY + 24, 'the wind pushes the sail', '#40e080', { size: 13, light: true });
+              label(api, s, tx, midY + 41, 'with about ' + kid.forceShort(TYPICAL.startPush) + ' at the start', '#40e080', { size: 13, light: true });
+            } else label(api, s, tx, midY + 22, 'about ' + kid.forceShort(TYPICAL.startPush), '#40e080', { size: 13, light: true });
             // DRAG (dashed): the air only pushes BACK if the car moves faster than the wind
             const d1 = W - 12, d2 = mastX + 5, dx = (d1 + d2) / 2;
             const drag = api.draw.arrow(s, d1, midY, d2, midY, '#ff5050', '');
@@ -158,16 +169,13 @@
           }
           paint();
           keepFitted(api, el, paint);
+          // one short line per force (the thrust number is on the picture; Module 3 covers outrunning the wind)
           api.ui.note(el, 'tip',
             '<ul style="margin:0 0 0 18px">' +
-            '<li>🟢 <strong>Thrust:</strong> the wind pushes the sail forward. At the start, it pushes a typical car with ' + kid.force(TYPICAL.startPush) + '.</li>' +
-            '<li>🟠 <strong>Friction:</strong> the wheels and axles rub. Friction works against the motion.</li>' +
-            '<li>🔵 <strong>Gravity</strong> pulls the car down. 🟣 The <strong>floor</strong> pushes up just as hard. These two cancel out.</li>' +
-            '<li>🔴 <strong>Drag</strong> (the dashed arrow): air pushing <em>back</em>. It only happens when the car is faster than the air. ' +
-            'Think of your hand out the window of a moving car.</li></ul>');
-          api.ui.note(el, 'tip',
-            '💨 Near our fans, the wind is faster than the car. So the air pushes the car <em>forward</em>. That is thrust! ' +
-            'Module 3 shows what happens when a car outruns the wind.');
+            '<li>🟢 <strong>Thrust:</strong> the wind pushes the sail forward.</li>' +
+            '<li>🟠 <strong>Friction:</strong> rubbing at the wheels holds the car back.</li>' +
+            '<li>🔵 <strong>Gravity</strong> pulls down. 🟣 The <strong>floor</strong> pushes up just as hard. They cancel out.</li>' +
+            '<li>🔴 <strong>Drag:</strong> air pushing <em>back</em>, only if the car outruns the wind.</li></ul>');
         }
       },
       {
@@ -286,29 +294,31 @@
       }
     ],
     quiz: [
-      { q: 'What is a force?', options: ['A push or a pull', 'How fast something moves', 'How heavy something is', 'The energy in the wind'], answer: 0,
+      // The options in each question are about the same length, so "pick the longest" is no clue: the right
+      // answer is the single longest option in at most 3 of the 10 (the check script counts it).
+      { q: 'What is a force?', options: ['A push or a pull on something', 'How fast something is moving', 'How big something is', 'The energy that moving air has'], answer: 0,
         why: 'A force is any push or pull.' },
-      { q: 'The wind pushes your car forward with 30 paper clips. Friction pushes back with 10. What does the car do?', options: ['It speeds up', 'It slows down', 'It stays still', 'It rolls backward'], answer: 0,
+      { q: 'The wind pushes your car forward with 30 paper clips. Friction pushes back with 10. What does the car do?', options: ['It speeds up more and more', 'It slows down bit by bit', 'It keeps the same speed', 'It stops right away'], answer: 0,
         why: 'The forward push is bigger, so the forces are unbalanced. The car speeds up.' },
-      { q: 'The forces on a rolling car are balanced. What happens?', options: ['It speeds up', 'It slows down', 'It keeps the same speed', 'It stops right away'], answer: 2,
+      { q: 'The forces on a rolling car are balanced. What happens?', options: ['It speeds up more and more', 'It slows down bit by bit', 'It keeps the same speed', 'It stops right away'], answer: 2,
         why: 'Balanced forces cancel out. The car keeps doing what it was doing.' },
-      { q: 'The fans are on, but the car does not move at all. What is the most likely reason?', options: ['Gravity is too strong', 'The wind’s push can’t beat friction', 'The car is too fast', 'The wind pushes too hard'], answer: 1,
+      { q: 'The fans are on, but the car does not move at all. What is the most likely reason?', options: ['Gravity pulls harder than the floor pushes', 'The wind’s push can’t beat friction', 'The wind only pushes rolling cars', 'The forces on it are unbalanced'], answer: 1,
         why: 'A car only starts rolling when the push beats friction. Weak wind or jammed wheels mean no motion.' },
-      { q: 'Which two forces cancel out, so the car does not sink or float?', options: ['Thrust and drag', 'Friction and thrust', 'Gravity and the floor pushing up', 'Drag and friction'], answer: 2,
+      { q: 'Which two forces cancel out, so the car does not sink or float?', options: ['Thrust and the air that pushes back', 'The wind’s push and friction', 'Gravity and the floor pushing up', 'Drag and friction at the wheels'], answer: 2,
         why: 'Gravity pulls the car down. The floor pushes up just as hard.' },
-      { q: 'A car is rolling when the fans turn off. What happens next?', options: ['It stops instantly', 'It slows down bit by bit, then stops', 'It keeps rolling forever', 'It rolls backward'], answer: 1,
+      { q: 'A car is rolling when the fans turn off. What happens next?', options: ['It stops the moment the fans turn off', 'It slows down bit by bit, then stops', 'It keeps rolling forever at the same speed', 'It rolls back toward the fans'], answer: 1,
         why: 'Friction and air drag push back on the moving car. They slow it down bit by bit.' },
-      { q: 'Newton’s First Law says a moving thing keeps the same speed…', options: ['forever, no matter what', 'until an unbalanced force acts on it', 'only if it is heavy', 'only if the wind keeps blowing'], answer: 1,
+      { q: 'Newton’s First Law says a moving thing keeps the same speed…', options: ['forever, no matter what happens to it', 'until an unbalanced force acts on it', 'only if it is very big and heavy', 'only while it is being pushed'], answer: 1,
         why: 'Motion only changes when an unbalanced force acts. For a rolling car, that force is usually friction.' },
-      { q: 'In this lab, what does “a push of 30 paper clips” mean?', options: ['As hard as holding up 30 paper clips', 'A car made of 30 paper clips', 'A push that lasts 30 seconds', 'A car that rolls 30 feet'], answer: 0,
+      { q: 'In this lab, what does “a push of 30 paper clips” mean?', options: ['As hard as holding up 30 paper clips', 'A push that lasts for 30 seconds', 'A push that rolls the car 30 feet', 'A car that is 30 paper clips long'], answer: 0,
         why: 'Scientists measure force in newtons. Paper clips make the numbers easy to picture.' },
-      { q: 'The fans stay on, but far down the hall your car slows down and stops. Why?', options: ['The wind fades, so friction wins', 'Gravity is stronger at the far end', 'The car gets heavier as it rolls', 'Every moving thing must stop'], answer: 0,
+      { q: 'The fans stay on, but far down the hall your car slows down and stops. Why?', options: ['The wind fades, so friction wins', 'Gravity is stronger at the far end', 'The car gets heavier the farther it goes', 'Moving things always stop on their own'], answer: 0,
         why: 'The wind is strongest near the fans and fades down the hall. Once its push is smaller than friction, the car slows down.' },
-      { q: 'Which change would most likely make your car roll farther?', options: ['More push and wheels that spin freely', 'Less push and wheels that rub', 'Wheels that rub, for better grip', 'Nothing, all cars roll the same'], answer: 0,
+      { q: 'Which change would most likely make your car roll farther?', options: ['More push and wheels that spin freely', 'A weaker fan and wheels that rub badly', 'Wheels that rub, so they grip the floor', 'Nothing, because all cars roll the same'], answer: 0,
         why: 'More push makes the car speed up more. Less friction lets the wind keep it rolling longer.' }
     ],
     // the hallway step's settings, for the node check script (not used by the page)
     _model: { GOAL_FT: GOAL_FT, GOAL_M: GOAL_M, FAN_V: FAN_V, WHEELS: WHEELS, START: START, CATCHES_UP: CATCHES_UP,
-              PREDICT: PREDICT, judge: judge, outcome: outcome, reachesGoal: reachesGoal }
+              PREDICT: PREDICT, judge: judge, outcome: outcome, reachesGoal: reachesGoal, fanOf: fanOf, wheelsOf: wheelsOf }
   });
 })();

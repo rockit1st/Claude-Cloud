@@ -453,7 +453,7 @@
               out.textContent = r.reason === 'tipped over' ? '🤸 The car tipped over at the start, so it never got going.'
                 : '🔵 The yellow line stayed under the blue line. The wind was faster the whole way, so it pushed the car the whole time.' +
                   (r.reason === END ? endTxt
-                    : ' The car stopped when the push got weaker than friction. To outrun the wind, a car must keep its speed as the wind fades. ' +
+                    : ' Soon the push got weaker than friction. Then the car slowed down bit by bit and finally stopped. To outrun the wind, a car must keep its speed as the wind fades. ' +
                       (r.car.crr <= CRR.free ? 'Try a lighter car.' : 'Try wheels that spin freely.'));
             }
           }

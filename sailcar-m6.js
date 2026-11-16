@@ -81,7 +81,9 @@
   const FINGER_START = { n: 0, f: 5 };
   const CG0 = fingerTest(0, 0).cg;                      // 8 cm: the everyday car with no nickels
 
-  // ── Step 2: why cars flip (predict first) ───────────────────────────────
+  // ── Step 2: will it flip? (predict first) ───────────────────────────────
+  // Nothing above the prediction says what happens: the "door hinge" idea and "the wind tips the car forward" come
+  // only after the first test (in flipJudge's answer and the "How tipping works" note that appears then).
   function flipCar(side, gap, cg) { return makeCar(side, gap, 16, 0, cg); }
   const FLIP_START = { side: 30, gap: 10, cg: 8 };       // a big sail on a tall mast: it flips
   const FLIP_PREDICT = {
@@ -96,7 +98,7 @@
     const text = flips ? 'The car flipped forward onto its nose.' : 'The car stayed on its wheels.';
     const why = v === 'back'
       ? 'The wind blows away from the fans. So it pushes the car forward, never back toward the fans.'
-      : flips ? 'The wind pushes high on the sail. Tipping beat holding down, so the back wheels lifted.'
+      : flips ? 'The wind pushes high on the sail and tips the car forward. Its weight could not hold the back down.'
               : 'Holding down beat tipping. So the back wheels stayed on the floor.';
     return { text: text, right: (flips ? 'nose' : 'stay') === v, why: why };
   }
@@ -152,6 +154,9 @@
   // ── Step 4: square axles (predict first) ────────────────────────────────
   // The goal: at least 40 ft without hitting a wall, checked on the distance as the student sees it (kid.ft rounds).
   // ¼° off — the least crooked axle on the slider — hits the wall at about 35 ft; square axles roll about 53 ft.
+  // A prediction is about ONE axle angle: moving the slider asks for a new one (as in Module 1), so the run that passes
+  // the challenge is judged against what the student predicted for the square axle. "Wheels roll the way they point"
+  // and "a giant circle" come only after a roll (in axleJudge's answer), never above the prediction.
   const GOAL_FT = 40, START_DEG = 1;
   function straightOK(r) { return r.reason !== 'hit the wall' && kid.ft(r.distance) >= GOAL_FT; }
   const DEFAULT_RUN = P.simulate({});
@@ -271,13 +276,9 @@
         }
       },
       {
-        title: 'Why cars flip forward',
+        title: 'Will it flip?',
         html:
-          '<p>The fans push hardest at the start line. That is where cars flip.</p>' +
-          '<p>Push a door near its hinges. It barely moves. Push it far from the hinges, and it swings open. ' +
-          'A push far from a hinge has more turning power.</p>' +
-          '<p>Your car’s front wheels act like a hinge. The wind pushes high on the sail and tips the car forward. ' +
-          'The car’s weight holds the back down. It is a tug-of-war!</p>',
+          '<p>Let’s test a car at the start line. It sits close to the two fans, where the wind is strongest.</p>',
         render: function (el, api) {
           wordFirst(api, el, 'stable', 'hard to tip over. A stable car stays on all four wheels.');
           const pr = api.ui.predict(el, { question: FLIP_PREDICT.question, choices: FLIP_PREDICT.choices });
@@ -287,6 +288,13 @@
           const s = newBoard(api, el, 'A sail car seen from the side, and a tug-of-war between tipping and holding down');
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
+          // how tipping works: shown only after the first test, so it can't give the prediction away
+          const how = api.ui.note(el, 'tip',
+            '<p style="margin:0 0 8px">🚪 <strong>How tipping works:</strong> Push a door near its hinges. It barely moves. ' +
+            'Push it far from the hinges, and it swings open. A push far from a hinge has more turning power.</p>' +
+            '<p style="margin:0">Your car’s front wheels act like a hinge. The wind pushes high on the sail and tries to tip the car forward. ' +
+            'The car’s weight holds the back down. It is a tug-of-war!</p>');
+          how.hidden = true;
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
           const size = api.ui.slider(row, { label: 'Sail size (square)', min: 10, max: 35, step: 5, value: FLIP_START.side, format: function (v) { return v + ' × ' + v + ' cm'; }, onInput: slid });
@@ -297,6 +305,11 @@
           el.appendChild(lock);
           sliders.forEach(function (c) { c.input.disabled = true; });
           let fansOn = false, grow = 0, tilt = 0, raf = null;
+          // A prediction is judged once, by the first test after it is picked. Then it is spent: when the sliders change
+          // the car, its answer goes, and later tests show only the plain result (the picture and the readout under it).
+          // So a student is never told "You predicted … Surprise!" about a car they changed after predicting.
+          let pending = false;
+          pr.onChange(function (v) { pending = v != null; });
           function car() { return flipCar(size.get(), gap.get(), cgS.get()); }
           function paint() {
             const W = boardWidth(el), wide = W >= 520, K = wide ? 4.2 : 3.6;                 // wide: bars beside the car · narrow: below it
@@ -313,8 +326,10 @@
             const carO = { scale: K, length: 19, wheelR: 1.5, sailW: side, sailH: side, mastH: gap.get() + side - 1, mastAt: 0.5 };
             if (tilt > 0) api.draw.car(s, FA - 17.5 * K, FL, Object.assign({ tilt: 24 * tilt }, carO)).setAttribute('opacity', 0.35);
             api.draw.car(s, FA - 17.5 * K, FL, carO);
-            api.svg('polygon', { points: [FA, FL + 1, FA - 7, FL + 13, FA + 7, FL + 13].join(','), fill: '#ffa040' }, s);
-            label(api, s, FA + 11, FL + 14, 'hinge', { color: '#ffa040', size: 13 });
+            if (fansOn) {                                                          // the hinge would hint "forward", so not before the test
+              api.svg('polygon', { points: [FA, FL + 1, FA - 7, FL + 13, FA + 7, FL + 13].join(','), fill: '#ffa040' }, s);
+              label(api, s, FA + 11, FL + 14, 'hinge', { color: '#ffa040', size: 13 });
+            }
             // the wind's push on the middle of the sail (only with the fans on): a longer arrow is a bigger push
             if (fansOn && grow > 0) {
               const ax2 = sailL - 6, room = ax2 - (fanR + 8), len = Math.max(14, room * Math.min(1, t.push / MAXPUSH)) * grow;
@@ -339,7 +354,7 @@
             const vy = y0 + (wide ? 206 : 156);
             if (!fansOn) {
               label(api, s, BX, vy, 'FANS OFF', { color: MUTED, size: 20 });
-              label(api, s, BX, vy + 24, 'nothing tips the car yet', { bold: false, size: 13 });
+              label(api, s, BX, vy + 24, 'no wind yet', { bold: false, size: 13 });
             } else if (grow >= 1) {
               label(api, s, BX, vy, flips ? 'IT FLIPS!' : 'IT STAYS DOWN', { color: flips ? RED : GREEN, size: 20 });
               label(api, s, BX, vy + 24, flips ? 'tipping wins' : 'holding down wins', { bold: false, size: 13 });
@@ -347,7 +362,7 @@
           }
           function explain() {
             const t = turns(car()), flips = t.tip > t.hold;
-            if (!fansOn) { say(api, out, ['The fans are off, so nothing tips the car yet. Make your prediction. Then press ', ['▶ Turn on the fans'], '.']); return; }
+            if (!fansOn) { say(api, out, ['The fans are off. Make your prediction. Then press ', ['▶ Turn on the fans'], '.']); return; }
             say(api, out, ['🔴 ', ['Tipping:'], ' the wind pushes with ' + kid.force(t.push) + ', high on the sail. ',
               '🔵 ', ['Holding down:'], ' the car weighs ' + kid.force(t.weight) + '. ', [compare(t)], ' ' + verdict(t) +
               (flips && kid.clips(t.push) < kid.clips(t.weight) ? ' The push is smaller than the weight, but it still wins. A push up high has lots of turning power.' : '')]);
@@ -362,14 +377,18 @@
             go.textContent = '▶ Test again';
             sliders.forEach(function (c) { c.input.disabled = false; });
             lock.hidden = true;
-            const j = flipJudge(t, pr.get());
-            pr.reveal(j.text, j.right, j.why);
+            how.hidden = false; tryIt.hidden = false;
+            if (pending) {
+              pending = false;
+              const j = flipJudge(t, pr.get());
+              pr.reveal(j.text, j.right, j.why);
+            }
           }
           // the fans spin up: the tipping bar grows (0.9 s), then a car that flips tips over (0.5 s)
           go.addEventListener('click', function () {
             if (pr.get() == null) return;
             if (raf) cancelAnimationFrame(raf);
-            pr.clear();
+            if (pending) pr.clear();                          // a new answer is coming; otherwise the last one (same car) stays
             fansOn = true; grow = 0; tilt = 0;
             go.disabled = true;
             say(api, out, ['🌬️ The fans are on…']);
@@ -385,7 +404,8 @@
             }
             raf = requestAnimationFrame(frame);
           });
-          // after the test the sliders change the car live (the old answer goes: it was about a different car)
+          // after the test the sliders change the car live (the old answer goes: it was about a different car;
+          // the prediction was already judged, so "Test again" shows only the plain result)
           function slid() {
             if (raf) { cancelAnimationFrame(raf); raf = null; }
             const t = turns(car());
@@ -397,8 +417,10 @@
           api.onLeave(function () { if (raf) cancelAnimationFrame(raf); raf = null; });
           keepFitted(api, el, paint);
           paint(); explain();
-          api.ui.note(el, 'tip', '💡 <strong>Try this:</strong> Set the gap under the sail to 0 cm. Slide the balance point back. Make the sail smaller. ' +
+          // the sliders' "try this" appears with the sliders (after the first test), like "How tipping works"
+          const tryIt = api.ui.note(el, 'tip', '💡 <strong>Try this:</strong> Set the gap under the sail to 0 cm. Slide the balance point back. Make the sail smaller. ' +
             'Which changes shrink the red bar? Which one grows the blue bar? On a real car, weight at the back moves the balance point back. So does a longer chassis.');
+          tryIt.hidden = true;
         }
       },
       {
@@ -477,18 +499,23 @@
       {
         title: 'Drive straight: square axles',
         html:
-          '<p>Wheels roll the way they point. Turn the front axle even a little, and the car drives in a giant circle. ' +
-          'The front axle below is turned just ' + deg(START_DEG) + '. Can you even see it?</p>' +
-          '<p>Our hall is ' + kid.dist(HALL_W) + ' wide. Your car starts in the middle. So it has only about ' + kid.dist(ROOM) + ' of room on each side.</p>' +
-          '<p>The map shows the whole ' + kid.dist(HALL.length) + ' hall from above. It is squeezed to fit, so curves look steeper than they really are.</p>',
-        challenge: 'Fix the front axle. The car must roll at least ' + kid.dist(GOAL_FT / kid.FT_PER_M) + ' without hitting a wall. Press ▶ Roll to test.',
+          '<p>Here is your car from above. Its front axle is turned just ' + deg(START_DEG) + ' off square. Can you even see it?</p>' +
+          '<p>Our hall is ' + kid.dist(HALL_W) + ' wide. Your car starts in the middle. So it has about ' + kid.dist(ROOM) + ' of room on each side.</p>' +
+          '<p>The map below shows the whole ' + kid.dist(HALL.length) + ' hall from above. It is squeezed to fit. So the hall looks shorter and wider than it really is.</p>',
+        challenge: 'Make the car roll at least ' + kid.dist(GOAL_FT / kid.FT_PER_M) + ' without hitting a wall. Change the front axle, then press ▶ Roll to test.',
         render: function (el, api) {
           wordFirst(api, el, 'square axle', 'an axle that sits straight across the car. It makes a perfect corner (90°), like the corner of a sheet of paper.');
           const top = newBoard(api, el, 'Your car seen from above, with its two axles');
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
+          // a prediction is about ONE axle angle: a new angle needs a new prediction
+          let picked = START_DEG;
           const ang = api.ui.slider(row, { label: 'Front axle turned off square', min: 0, max: 5, step: 0.25, value: START_DEG, format: deg,
-            onInput: function () { stop(); pr.clear(); carTop(); hall([], null); explain(null); } });
+            onInput: function () {
+              stop();
+              if (ang.get() !== picked) { picked = ang.get(); pr.reset(); }
+              carTop(); hall([], null); explain(null);
+            } });
           const pr = api.ui.predict(el, { question: AXLE_PREDICT.question, choices: AXLE_PREDICT.choices });
           const go = api.h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '▶ Roll' });
           el.appendChild(api.h('div', { class: 'sl-ctrl' }, [go]));
@@ -574,7 +601,8 @@
           function explain(r) {
             const a = r ? r.car.veerDeg : ang.get();
             if (!r) {
-              say(api, out, a ? ['Front axle: ', [deg(a)], ' off square. Press ▶ Roll to test it.'] : ['Both axles are ', ['square'], '. Press ▶ Roll to test it.']);
+              const next = pr.get() == null ? ' Make a prediction first ↑ Then press ▶ Roll.' : ' Press ▶ Roll to test it.';
+              say(api, out, a ? ['Front axle: ', [deg(a)], ' off square.' + next] : ['Both axles are ', ['square'], '.' + next]);
               return;
             }
             say(api, out, r.reason === 'hit the wall'
@@ -609,6 +637,8 @@
             }
             raf = requestAnimationFrame(frame);
           });
+          // a pick (or a new angle wiping it) updates the "what to do next" line, unless a roll's result is showing
+          pr.onChange(function () { if (!raf && !lastRes) explain(null); });
           api.onLeave(stop);
           keepFitted(api, el, function () { carTop(); hall(lastPts, lastRes); });
           carTop(); hall([], null); explain(null);
