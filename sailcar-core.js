@@ -4,6 +4,9 @@
 // • SailLab.physics           — ONE physics model of two box fans blowing a sail car down
 //                               the hallway, used by every simulator and the Design Studio
 // • SailLab.ui / SailLab.draw — small helpers so every module looks and behaves the same
+//                               (ui.predict = the "Predict first" card; ui.word = a "Word to know" box)
+// • SailLab.kid               — numbers for 6th graders: forces in paper clips, distances in feet (then
+//                               metres), speeds in words. Students never see newtons, kg or m/s.
 // • Progress (which modules a student has passed) is saved in Firestore
 //   (sailcar_progress/{uid}); if the database refuses, it falls back to this browser.
 (function () {
@@ -130,6 +133,54 @@
                     HALL: HALL, MODEL_VERSION: MODEL_VERSION,
                     windAt: windAt, airForce: airForce, rollingFriction: rollingFriction, simulate: simulate };
 
+  // ── NUMBERS FOR 6TH GRADERS ───────────────────────────────────────────────
+  // Students never see newtons, kilograms or m/s. Every number a student reads goes through these:
+  //   kid.force(0.31)  → 'about 32 paper clips'   (a push as hard as holding up that many standard paper clips;
+  //                       1 paper clip ≈ 1 g, so 1 clip = 0.001 kg × G ≈ 0.0098 N — a 70 g car weighs 70 clips)
+  //   kid.dist(15.85)  → '52 ft (16 m)'           (feet first: US tape measures; whole feet, one decimal under 10 ft)
+  //   kid.speed(1.4)   → 'walking speed'          (words, not m/s)
+  const CLIP_N = 0.001 * G, FT_PER_M = 3.28084;
+  function r1(v) { return Math.round(v * 10) / 10; }
+  function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
+  function clipsRaw(N) { return Math.abs(num(N)) / CLIP_N; }
+  const kid = {
+    CLIP_N: CLIP_N, FT_PER_M: FT_PER_M,
+    // a force in paper clips, rounded the way it is shown: one decimal under 3, whole numbers above
+    clips: function (N) { const c = clipsRaw(N); return c < 3 ? r1(c) : Math.round(c); },
+    // 'about 32 paper clips' · 'about 1.8 paper clips' · 'about 1 paper clip' · 'less than 1 paper clip' · '0 paper clips'
+    force: function (N) {
+      const c = clipsRaw(N);
+      if (c < 0.05) return '0 paper clips';
+      if (c < 1) return 'less than 1 paper clip';
+      const n = kid.clips(N);
+      return 'about ' + n + ' paper clip' + (n === 1 ? '' : 's');
+    },
+    // the same, short enough for a label on a drawing: '32 clips' · '1.8 clips' · '<1 clip' · '0 clips'
+    forceShort: function (N) {
+      const c = clipsRaw(N);
+      if (c < 0.05) return '0 clips';
+      if (c < 1) return '<1 clip';
+      const n = kid.clips(N);
+      return n + (n === 1 ? ' clip' : ' clips');
+    },
+    // metres → feet, rounded the way it is shown: whole feet, one decimal under 10 ft
+    ft: function (m) { const f = num(m) * FT_PER_M; return Math.abs(f) < 9.95 ? r1(f) : Math.round(f); },
+    // metres, rounded the way it is shown: whole metres, one decimal under 10 m
+    m: function (m) { m = num(m); return Math.abs(m) < 9.95 ? r1(m) : Math.round(m); },
+    // '52 ft (16 m)' · '25 ft (7.6 m)' · '6.6 ft (2 m)'
+    dist: function (m) { return kid.ft(m) + ' ft (' + kid.m(m) + ' m)'; },
+    // kilograms → '70 g'
+    grams: function (kg) { return Math.round(num(kg) * 1000) + ' g'; },
+    // a speed (m/s) in words. The cars in our hallway top out around walking speed; the wind at the fans is a run.
+    speed: function (mps) {
+      const v = Math.abs(num(mps));
+      return v < 0.05 ? 'stopped' : v < 0.3 ? 'creeping' : v < 0.9 ? 'a slow walk' : v < 1.6 ? 'walking speed'
+           : v < 2.2 ? 'a fast walk' : v < 3.2 ? 'jogging speed' : 'running speed';
+    },
+    // a speed (m/s) in feet per second, rounded the way it is shown: '4.6 ft per second' (one decimal under 10)
+    ftPerSec: function (mps) { return kid.ft(mps) + ' ft per second'; }
+  };
+
   // ── DRAWING ───────────────────────────────────────────────────────────────
   const draw = {
     // arrow from (x1,y1) to (x2,y2) with an optional label
@@ -150,7 +201,7 @@
       const g = svg('g', { class: 'sl-fan' }, parent);
       svg('rect', { x: x, y: floorY - size, width: size * 0.32, height: size, rx: 4, fill: '#3a2a5a', stroke: '#9080b0', 'stroke-width': 2 }, g);
       for (let i = 1; i < 5; i++) svg('line', { x1: x + 3, y1: floorY - size + i * size / 5, x2: x + size * 0.32 - 3, y2: floorY - size + i * size / 5, stroke: '#6a5a8a', 'stroke-width': 1.5 }, g);
-      svg('text', { x: x + size * 0.16, y: floorY + 14, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 10 }, g, label || '2 FANS');
+      svg('text', { x: x + size * 0.16, y: floorY + 14, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 12 }, g, label || '2 FANS');
       return g;
     },
     // a sail car seen from the side; (x, floorY) = back wheel contact point. 1 unit ≈ 1 px per cm × scale
@@ -209,14 +260,119 @@
     },
     // callout box: kind = 'tip' | 'warn' | 'good' | 'build'
     note: function (parent, kind, html) { const n = h('div', { class: 'sl-note sl-note-' + (kind || 'tip'), html: html }); parent.appendChild(n); return n; },
+    // "Word to know" box: introduce a key term ONCE (force, friction, drag, thrust, mass, inertia, balance point…),
+    // then use that word the same way everywhere. meaningHtml is module-authored static text.
+    word: function (parent, term, meaningHtml) {
+      const n = h('div', { class: 'sl-note sl-note-word' }, [h('span', { class: 'sl-word-tag', text: '📘 Word to know' }), h('strong', { class: 'sl-word', text: term }), ' ']);
+      n.appendChild(h('span', { html: meaningHtml }));
+      parent.appendChild(n);
+      return n;
+    },
+
+    // PREDICT FIRST: before an experiment, the student picks what they think will happen. A prediction is
+    // never graded and never blocks Next — it only has to be picked before the experiment can run.
+    //   o = { question, choices: [{ value, label }], onPick(value)  (optional),
+    //         judge(result, value) → { text, right, why }  (optional: a trackSim gated by this card calls it
+    //                                                       after each run and shows the answer by itself),
+    //         hint  (optional: the line under the choices before a pick) }
+    // Returns { el, get(), label(), reveal(text, wasRight, why), clear(), reset(), gate(button), onChange(fn), judge }
+    //   reveal → "You predicted: <label>." + text + "✅ Good thinking! why" (wasRight true)
+    //                                              / "🤔 Surprise! Here’s why: why" (wasRight false)
+    //                                              / just why (wasRight null: nothing to judge)
+    //   clear  → hides the reveal, keeps the choice (a trackSim's Reset and each new run do this)
+    //   reset  → forgets the choice too (e.g. the student changed the experiment the question was about)
+    //   gate(button) → keeps any other button disabled until a choice is picked (a trackSim does this itself)
+    predict: function (parent, o) {
+      o = o || {};
+      const id = 'sl-p' + (++uid), choices = o.choices || [], subs = [];
+      const HINT = o.hint || 'Pick one. Any guess is OK! Then test it to find out.';
+      let val = null;
+      const card = h('div', { class: 'sl-note sl-predict', role: 'group', 'aria-labelledby': id + '-q' });
+      card.appendChild(h('div', { class: 'sl-predict-q', id: id + '-q' }, [h('span', { class: 'sl-predict-tag', text: '🤔 Predict first' }), o.question || 'What do you think will happen?']));
+      const row = h('div', { class: 'sl-predict-opts', role: 'radiogroup', 'aria-labelledby': id + '-q' });
+      const btns = choices.map(function (c, i) {
+        const b = h('button', { type: 'button', class: 'sl-predict-opt', role: 'radio', 'aria-checked': 'false', tabindex: i === 0 ? '0' : '-1' },
+                    [h('span', { class: 'sl-predict-dot', 'aria-hidden': 'true' }), h('span', { text: c.label })]);
+        b.addEventListener('click', function () { pick(i); });
+        // arrow keys move through the choices, like a normal set of radio buttons
+        b.addEventListener('keydown', function (e) {
+          const n = btns.length, k = e.key;
+          let j = null;
+          if (k === 'ArrowRight' || k === 'ArrowDown') j = (i + 1) % n;
+          else if (k === 'ArrowLeft' || k === 'ArrowUp') j = (i - 1 + n) % n;
+          else if (k === 'Home') j = 0;
+          else if (k === 'End') j = n - 1;
+          if (j == null) return;
+          e.preventDefault();
+          btns[j].focus();
+          pick(j);
+        });
+        row.appendChild(b);
+        return b;
+      });
+      card.appendChild(row);
+      const hint = h('div', { class: 'sl-predict-hint', text: HINT });
+      const out = h('div', { class: 'sl-predict-out', 'aria-live': 'polite', hidden: true });
+      card.appendChild(hint);
+      card.appendChild(out);
+      parent.appendChild(card);
+      const gated = [];
+      function labelOf(v) { const c = choices.filter(function (x) { return x.value === v; })[0]; return c ? c.label : ''; }
+      function paint() {
+        const at = choices.findIndex(function (c) { return c.value === val; });
+        btns.forEach(function (b, i) {
+          b.setAttribute('aria-checked', String(i === at));
+          b.setAttribute('tabindex', i === (at < 0 ? 0 : at) ? '0' : '-1');
+        });
+        hint.textContent = val == null ? HINT : '👍 Got it. Now test it to find out!';
+        gated.forEach(function (b) { b.disabled = val == null; b.title = val == null ? 'Make a prediction first ↑' : ''; });
+      }
+      function clear() { out.hidden = true; out.textContent = ''; card.classList.remove('sl-predict-yes', 'sl-predict-no'); }
+      function pick(i) {
+        const v = choices[i].value;
+        if (v !== val) clear();                       // an answer to a different guess would be confusing
+        val = v;
+        paint();
+        if (o.onPick) o.onPick(v);
+        subs.forEach(function (fn) { fn(v); });
+      }
+      const api = {
+        el: card, judge: o.judge || null,
+        get: function () { return val; },
+        label: function () { return labelOf(val); },
+        reveal: function (text, wasRight, why) {
+          out.textContent = '';
+          if (val != null) out.appendChild(h('div', null, ['You predicted: ', h('strong', { text: labelOf(val) }), '.']));
+          if (text) out.appendChild(h('div', { text: text }));
+          if (wasRight === true) out.appendChild(h('div', null, [h('strong', { class: 'sl-predict-yes-txt', text: '✅ Good thinking!' }), why ? ' ' + why : '']));
+          else if (wasRight === false) out.appendChild(h('div', null, why ? [h('strong', { class: 'sl-predict-no-txt', text: '🤔 Surprise! Here’s why:' }), ' ' + why]
+                                                                           : [h('strong', { class: 'sl-predict-no-txt', text: '🤔 Surprise!' }), ' Scientists learn a lot from surprises.']));
+          else if (why) out.appendChild(h('div', { text: why }));
+          card.classList.toggle('sl-predict-yes', wasRight === true);
+          card.classList.toggle('sl-predict-no', wasRight === false);
+          out.hidden = false;
+        },
+        clear: clear,
+        reset: function () { val = null; clear(); paint(); subs.forEach(function (fn) { fn(null); }); },
+        gate: function (btn) { gated.push(btn); paint(); return btn; },
+        onChange: function (fn) { subs.push(fn); }
+      };
+      paint();
+      return api;
+    },
 
     // The hallway simulator: fan on the left, the car rolls right, forces drawn on the car.
     //   getCar()  → car parameters (merged over DEFAULT_CAR)
     //   opts      → simulate() options (fan, startX, hallLength…), plus
     //               { getOpts() → options read fresh on every run (e.g. a fan-speed control),
     //                 showForces (default true), scaleM (metres shown; default fits the run),
-    //                 playSpeed (default: 2×, faster for long runs so it lasts ≤ ~9 s), onResult(result) }
-    // Returns { run(), reset(), last() }
+    //                 playSpeed (default: 2×, faster for long runs so it lasts ≤ ~9 s), onResult(result),
+    //                 needPrediction: a ui.predict() card — ▶ Run stays disabled until a choice is picked,
+    //                                 each run and Reset hide its old answer (the choice stays), and if the card
+    //                                 has judge(result, value) its answer is shown after each run,
+    //                 showSpeeds: true → the readout during a run gives car and wind speed in ft per second
+    //                                 (default: the car's speed in words and whether it is slower or faster than the wind) }
+    // Returns { run(), reset(), last(), stop() }
     trackSim: function (parent, getCar, opts) {
       opts = opts || {};
       const box = h('div', { class: 'sl-track' });
@@ -227,7 +383,7 @@
       function cur() { return Object.assign({}, opts, opts.getOpts ? opts.getOpts() : {}); }
       const sv = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'sl-track-svg', role: 'img', 'aria-label': 'Hallway simulator' }, box);
       function fit() {
-        W = Math.max(360, Math.min(820, Math.round(box.clientWidth || 820)));
+        W = Math.max(280, Math.min(820, Math.round(box.clientWidth || 820)));
         XEND = W - 20;
         sv.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
       }
@@ -237,20 +393,38 @@
       // shown while a run plays sped up, so nobody expects a real car to be this quick
       const speedTag = h('span', { class: 'sl-speed', hidden: true });
       box.appendChild(h('div', { class: 'sl-track-bar' }, [runBtn, resetBtn, speedTag, readout]));
-      let raf = null, last = null, scaleM = 8;
+      let raf = null, last = null, scaleM = 8, idle = true;
+      const P = opts.needPrediction || null;
+      const READY = 'Press ▶ Run to send your car down the hallway.', NEED = 'Make a prediction first ↑';
+      function needPick() { return !!(P && P.get() == null); }
+      function updateRun() {
+        runBtn.disabled = !!raf || needPick();
+        runBtn.title = needPick() ? NEED : '';
+      }
+      // a pick enables ▶ Run; predict.reset() (the question changed) disables it again and says why
+      if (P) P.onChange(function (v) {
+        updateRun();
+        if (raf) return;
+        if (v == null) idle = true;
+        if (idle) show(needPick() ? NEED : READY);
+      });
       function pxOf(m) { return X0 + 18 + m / scaleM * (XEND - X0 - 40); }
       function scene(distM, carState) {
         fit();
         sv.textContent = '';
         svg('rect', { x: 0, y: 0, width: W, height: H, fill: '#120826' }, sv);
         svg('line', { x1: 10, y1: FLOOR, x2: W - 10, y2: FLOOR, stroke: '#4a3a6a', 'stroke-width': 3 }, sv);
-        // metre marks
-        const pxPerM = (XEND - X0 - 40) / scaleM;
-        const step = pxPerM >= 40 ? 1 : pxPerM >= 20 ? 2 : pxPerM >= 10 ? 4 : 5;
-        for (let m = 0; m <= scaleM + 0.001; m += step) {
-          const px = pxOf(m);
+        // foot marks (US tape measures): a label every 1, 2, 5, 10, 20 or 50 ft, whatever fits, small ticks between
+        const pxPerFt = (XEND - X0 - 40) / (scaleM * FT_PER_M), ftMax = scaleM * FT_PER_M + 0.001;
+        const lab = [1, 2, 5, 10, 20, 50].filter(function (s) { return s * pxPerFt >= 42; })[0] || 100;
+        const minor = { 1: 0, 2: 1, 5: 1, 10: 5, 20: 10, 50: 10, 100: 50 }[lab];
+        if (minor && minor * pxPerFt >= 8) for (let f = minor; f <= ftMax; f += minor) {
+          if (f % lab) svg('line', { x1: pxOf(f / FT_PER_M), y1: FLOOR, x2: pxOf(f / FT_PER_M), y2: FLOOR + 5, stroke: '#4a3a6a', 'stroke-width': 1.5 }, sv);
+        }
+        for (let f = 0; f <= ftMax; f += lab) {
+          const px = pxOf(f / FT_PER_M);
           svg('line', { x1: px, y1: FLOOR, x2: px, y2: FLOOR + 8, stroke: '#6a5a8a', 'stroke-width': 1.5 }, sv);
-          svg('text', { x: px, y: FLOOR + 22, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 11 }, sv, m + ' m');
+          svg('text', { x: px, y: FLOOR + 23, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 12 }, sv, f + ' ft');
         }
         draw.fan(sv, X0 - 40, FLOOR, 70);
         // wind streaks: fewer and shorter where the wind is weaker
@@ -278,26 +452,41 @@
         }
       }
       function show(text) { readout.textContent = text; }
+      function seconds(t) { const s = Math.max(1, Math.round(t)); return s + (s === 1 ? ' second' : ' seconds'); }
+      // during a run: where the car is, how fast it goes, and how that compares with the wind
+      function liveText(p) {
+        if (opts.showSpeeds) return kid.dist(p.x) + ' · car ' + kid.ftPerSec(p.v) + ' · wind ' + kid.ftPerSec(p.wind);
+        const vs = p.v < 0.05 ? '' : p.v > p.wind + 0.03 ? ' · faster than the wind!' : p.v < p.wind - 0.03 ? ' · slower than the wind' : ' · as fast as the wind';
+        return kid.dist(p.x) + ' · ' + kid.speed(p.v) + vs;
+      }
       function stop() {
         if (raf) cancelAnimationFrame(raf);
-        raf = null; runBtn.disabled = false; speedTag.hidden = true;
+        raf = null; speedTag.hidden = true;
+        readout.removeAttribute('aria-busy');
+        updateRun();
       }
       function reset() {
         stop();
         scaleM = opts.scaleM || 8;
         scene(null, null);
-        show('Press ▶ Run to send your car down the hallway.');
+        idle = true;
+        if (P) P.clear();                               // the old answer goes; the student's choice stays
+        show(needPick() ? NEED : READY);
       }
       function run() {
+        if (needPick()) { show(NEED); updateRun(); return; }   // commit to a guess first
         if (raf) cancelAnimationFrame(raf);
+        if (P) P.clear();
         const res = simulate(getCar(), cur());
         last = res;
+        idle = false;
         scaleM = opts.scaleM || Math.max(6, Math.ceil(res.distance * 1.15));
         runBtn.disabled = true;
+        readout.setAttribute('aria-busy', 'true');      // screen readers hear the end, not every frame
         const speedUp = opts.playSpeed || Math.max(2, res.time / 9), t0 = performance.now(), tr = res.trace;
         const times = Math.round(speedUp);
-        speedTag.textContent = '▶▶ ×' + times + ' speed';
-        speedTag.title = 'Playing ' + times + ' times faster than real life. The real run takes about ' + fmt(res.time, 0) + ' s.';
+        speedTag.textContent = '▶▶ ' + times + '× speed';
+        speedTag.title = 'This plays ' + times + ' times faster than real life. The real run takes about ' + seconds(res.time) + '.';
         speedTag.hidden = times <= 1;
         let i = 0;
         function frame(now) {
@@ -307,12 +496,15 @@
           const p = tr[i], done = i >= tr.length - 1;
           const tipped = res.reason === 'tipped over' && done;
           scene(done ? res.distance : null, { x: p.x, tilt: tipped ? 35 : 0, forces: done ? null : { thrust: p.thrust, body: p.body, friction: p.friction } });
-          show((done ? '🏁 ' : '') + fmt(p.x, 2) + ' m · speed ' + fmt(p.v, 2) + ' m/s · wind ' + fmt(p.wind, 2) + ' m/s');
-          if (!done) { raf = requestAnimationFrame(frame); return; }
+          if (!done) { show(liveText(p)); raf = requestAnimationFrame(frame); return; }
+          const why = { 'never moved': '😴 It never moved. The wind’s push was smaller than friction.',
+                        'tipped over': '🤸 It tipped over! The wind pushed high on the sail and flipped the car forward.',
+                        'hit the wall': '🧱 It curved off course and hit the wall.',
+                        'reached the end of the hall': '🏆 It made it to the end of the ' + kid.dist(res.opts.hallLength) + ' hall!',
+                        'coasted to a stop': '🛑 It slowed down and stopped.' }[res.reason] || '';
+          show('📏 ' + kid.dist(res.distance) + (res.distance >= 0.01 ? ' in ' + seconds(res.time) + ' · top speed: ' + kid.speed(res.topSpeed) : '') + '. ' + why);
           stop();
-          const why = { 'never moved': '😴 It never moved — the wind’s push was smaller than friction.', 'tipped over': '🤸 It tipped over! The push high on the sail flipped it forward.',
-                        'hit the wall': '🧱 It veered into the wall.', 'reached the end of the hall': '🏆 It made it to the end of the ' + Number(res.opts.hallLength.toFixed(1)) + ' m (' + Math.round(res.opts.hallLength * 3.28084) + ' ft) hall!', 'coasted to a stop': '🛑 It coasted to a stop.' }[res.reason] || '';
-          show('📏 ' + fmt(res.distance, 2) + ' m in ' + fmt(res.time, 1) + ' s · top speed ' + fmt(res.topSpeed, 2) + ' m/s — ' + why);
+          if (P && P.judge) { const j = P.judge(res, P.get()); if (j) P.reveal(j.text, j.right, j.why); }
           if (opts.onResult) opts.onResult(res);
         }
         raf = requestAnimationFrame(frame);
@@ -587,7 +779,7 @@
       h('div', { class: 'sl-progress-txt', text: state.isTeacher ? 'Teacher view: every module is open so you can preview it.' : doneN + ' of ' + graded.length + ' modules passed' + (doneN === graded.length ? ' — the Design Studio is open! 🏁' : '') }),
       h('div', { class: 'sl-progress-bar' }, [h('div', { class: 'sl-progress-fill', style: 'width:' + (graded.length ? doneN / graded.length * 100 : 0) + '%' })])
     ]));
-    if (progress.mode === 'local' && !state.isTeacher) ui.note(hub, 'warn', '⚠️ Couldn’t reach the class database, so your progress is kept on <strong>this device only</strong> for now. It will upload to your class account by itself as soon as the database can be reached — until then, keep using this device.');
+    if (progress.mode === 'local' && !state.isTeacher) ui.note(hub, 'warn', '⚠️ We can’t reach the class database right now. Your progress is saved on <strong>this device only</strong> for now. It will upload to your class account by itself later. Until then, keep using this device.');
     const grid = h('div', { class: 'sl-grid' });
     modules.forEach(function (m, i) {
       const open = unlocked(i), rec = progress.get(m.id), passed = progress.passed(m.id);
@@ -596,7 +788,7 @@
       card.appendChild(h('div', { class: 'sl-card-icon', text: open ? m.icon : '🔒' }));
       card.appendChild(h('div', { class: 'sl-card-title', text: m.title }));
       card.appendChild(h('div', { class: 'sl-card-blurb', text: m.blurb || '' }));
-      card.appendChild(h('div', { class: 'sl-card-status', text: passed ? '✓ Passed (' + rec.best + '/' + (rec.total || QUIZ_SIZE) + ')' : open ? (rec && rec.attempts ? 'Check: best ' + rec.best + '/' + (rec.total || QUIZ_SIZE) + ' — try again' : (m.minutes ? '~' + m.minutes + ' min' : 'Start')) : 'Pass module ' + (m.num - 1) + ' to unlock' }));
+      card.appendChild(h('div', { class: 'sl-card-status', text: passed ? '✓ Passed (' + rec.best + '/' + (rec.total || QUIZ_SIZE) + ')' : open ? (rec && rec.attempts ? 'Best score ' + rec.best + '/' + (rec.total || QUIZ_SIZE) + '. Try again!' : (m.minutes ? 'About ' + m.minutes + ' min' : 'Start')) : 'Pass module ' + (m.num - 1) + ' to open this' }));
       if (open) card.addEventListener('click', function () { openModule(i); });
       grid.appendChild(card);
     });
@@ -652,7 +844,7 @@
     function refreshNext() {
       const ok = !st.challenge || state.doneSteps[key] || state.isTeacher;
       nextBtn.disabled = !ok;
-      nextBtn.title = ok ? '' : 'Finish the challenge first';
+      nextBtn.title = ok ? '' : 'Finish the challenge first.';
     }
     const api = {
       done: function (msg) {
@@ -660,7 +852,7 @@
       },
       isDone: function () { return !!state.doneSteps[key]; },
       onLeave: function (fn) { state.cleanups.push(fn); },
-      physics: physics, ui: ui, draw: draw, h: h, svg: svg, fmt: fmt, isTeacher: state.isTeacher
+      physics: physics, kid: kid, ui: ui, draw: draw, h: h, svg: svg, fmt: fmt, isTeacher: state.isTeacher
     };
     if (st.html) content.innerHTML = st.html;
     if (st.render) st.render(content, api);
@@ -686,8 +878,8 @@
       return { q: q, order: order, picked: null };
     });
     const need = Math.ceil(qs.length * PASS_COUNT / QUIZ_SIZE);
-    body.appendChild(h('h2', { class: 'sl-step-title', text: '✅ Check your understanding' }));
-    body.appendChild(h('p', { class: 'sl-quiz-help', text: 'Answer all ' + qs.length + ' questions. Get ' + need + ' right to unlock the next module. You can try again as many times as you need — the questions change.' }));
+    body.appendChild(h('h2', { class: 'sl-step-title', text: '✅ Check what you learned' }));
+    body.appendChild(h('p', { class: 'sl-quiz-help', text: 'Answer all ' + qs.length + ' questions. Get ' + need + ' right to open the next module. You can try as many times as you want. You get new questions each time.' }));
     const list = h('ol', { class: 'sl-quiz' });
     qs.forEach(function (item, qi) {
       const li = h('li', { class: 'sl-q' });
@@ -730,15 +922,15 @@
           confetti();
         } else {
           result.className = 'sl-quiz-result fail';
-          result.appendChild(h('div', { class: 'sl-quiz-score', text: score + ' / ' + qs.length + ' — you need ' + need + '. Read the explanations, then try a new set.' }));
+          result.appendChild(h('div', { class: 'sl-quiz-score', text: score + ' / ' + qs.length + ' — you need ' + need + ' to pass. Read why each answer is right, then try new questions.' }));
           result.appendChild(h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '↻ Try again', onclick: function () { renderStep(); } }));
-          result.appendChild(h('button', { type: 'button', class: 'sl-btn', text: 'Review the lesson', onclick: function () { state.step = 0; renderStep(); } }));
+          result.appendChild(h('button', { type: 'button', class: 'sl-btn', text: 'Read the lesson again', onclick: function () { state.step = 0; renderStep(); } }));
         }
         const saved = h('div', { class: 'sl-save-note', text: '☁️ Saving to your class account…' });
         result.appendChild(saved);
         progress.lastSync.then(function (ok) {
           saved.textContent = ok ? '☁️ Saved to your class account.'
-                                 : '💾 Saved on this device. It will upload to your class account by itself when the class database can be reached.';
+                                 : '💾 Saved on this device. It will upload to your class account by itself later.';
         });
         result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
@@ -870,7 +1062,7 @@
     });
   }
 
-  window.SailLab = { register: register, physics: physics, draw: draw, ui: ui, h: h, svg: svg, fmt: fmt, progress: progress,
+  window.SailLab = { register: register, physics: physics, kid: kid, draw: draw, ui: ui, h: h, svg: svg, fmt: fmt, progress: progress,
                      start: start, modules: modules, isTeacher: function () { return state.isTeacher; },
                      _test: { unlocked: unlocked, openModule: openModule, state: state } };
 })();
