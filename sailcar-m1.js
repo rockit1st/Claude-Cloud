@@ -240,12 +240,13 @@
           'Your first test is set up: the <strong>Low</strong> fan and <strong>Jammed</strong> wheels.</p>',
         challenge: 'Change the fan and the wheels. Make the car roll at least ' + kid.dist(GOAL_FT / kid.FT_PER_M) + '.',
         render: function (el, api) {
+          // the lab's first "Predict first" card: the word is taught at the top of the step, before the step text
+          // uses it ("Make a prediction"), like steps 1 and 2 (the Studio only reminds)
+          wordFirst(api, el, 'prediction', 'your best guess about what will happen. You make it <em>before</em> you test.');
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
           const fan = api.ui.choice(row, { label: 'Fan speed', value: START.fan, options: FAN_OPTS, onChange: changed });
           const fric = api.ui.choice(row, { label: 'Wheels', value: START.wheels, options: WHEEL_OPTS, onChange: changed });
-          // the lab's first "Predict first" card: the word is taught right above it (the Studio only reminds)
-          api.ui.word(el, 'prediction', 'your best guess about what will happen. You make it <em>before</em> you test.');
           const guess = api.ui.predict(el, { question: PREDICT.question, choices: PREDICT.choices, judge: judge });
           // a guess is about ONE fan + wheels: new settings need a new guess
           let picked = START.fan + '+' + START.wheels;
@@ -300,9 +301,9 @@
       // answer is the single longest option in at most 3 of the 10 (the check script counts it).
       { q: 'What is a force?', options: ['A push or a pull on something', 'How fast something is moving', 'How big something is', 'The energy that moving air has'], answer: 0,
         why: 'A force is any push or pull.' },
-      { q: 'The wind pushes your car forward with 30 paper clips. Friction pushes back with 10. What does the car do?', options: ['It speeds up more and more', 'It slows down bit by bit', 'It keeps the same speed', 'It stops right away'], answer: 0,
+      { q: 'The wind pushes your car forward with 30 paper clips. Friction pushes back with 10. What does the car do?', options: ['It keeps speeding up', 'It slows down bit by bit', 'It keeps the same speed', 'It stops right away'], answer: 0,
         why: 'The forward push is bigger, so the forces are unbalanced. The car speeds up.' },
-      { q: 'The forces on a rolling car are balanced. What happens?', options: ['It speeds up more and more', 'It slows down bit by bit', 'It keeps the same speed', 'It stops right away'], answer: 2,
+      { q: 'The forces on a rolling car are balanced. What happens?', options: ['It keeps speeding up', 'It slows down bit by bit', 'It keeps the same speed', 'It stops right away'], answer: 2,
         why: 'Balanced forces cancel out. The car keeps doing what it was doing.' },
       { q: 'The fans are on, but the car does not move at all. What is the most likely reason?', options: ['Gravity pulls harder than the floor pushes', 'The wind’s push can’t beat friction', 'The wind only pushes rolling cars', 'The forces on it are unbalanced'], answer: 1,
         why: 'A car only starts rolling when the push beats friction. Weak wind or jammed wheels mean no motion.' },

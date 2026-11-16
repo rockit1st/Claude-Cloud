@@ -344,7 +344,8 @@
           function nudge() {
             if (!again) return;
             const on = !pending && judgedKey != null && judgedKey !== key();
-            again.textContent = on ? '🔁 New sail? Pick again to test a new guess.' : '';
+            const txt = on ? '🔁 New sail? Pick again to test a new guess.' : '';
+            if (again.textContent !== txt) again.textContent = txt;   // only on a change, so the slider doesn't repeat it aloud
             again.hidden = !on;
           }
           function info() {

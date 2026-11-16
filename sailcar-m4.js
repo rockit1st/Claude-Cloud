@@ -811,7 +811,7 @@
         why: 'Crooked axles steer the car to one side. Measure the gap between the axles at both ends.' },
       { q: 'Far down the hall, the wind can’t start a still car. But a car rolling in from the start line keeps going past that spot. Why?', options: ['The wind pushes harder on cars that move', 'A still car has no friction at all', 'Starting takes more push than rolling', 'Gravity pulls harder on a still car'], answer: 2,
         why: 'Parts that sit still grip each other a little, so starting takes extra push. A rolling car is already moving, so it keeps going while friction slows it.' },
-      { q: 'Which axle has the LEAST friction?', options: ['A skewer spinning freely in a straw', 'A skewer in a tight cardstock hole', 'Wheels rubbing the side of the chassis', 'Tape wrapped tight where the wheels turn'], answer: 0,
+      { q: 'Which axle has the LEAST friction?', options: ['A skewer turning in a straw bearing', 'A skewer in a tight cardstock hole', 'Wheels rubbing the side of the chassis', 'Tape wrapped around where the wheels turn'], answer: 0,
         why: 'A straw makes a smooth bearing, so the skewer spins easily. Tight holes, rubbing and tape all add friction.' },
       { q: 'You flick a wheel and it stops after half a second. What does that tell you?', options: ['The car needs to be heavier', 'The wheel grips well, which is good', 'Nothing, wheels always stop fast', 'Something is rubbing or too tight'], answer: 3,
         why: 'A good wheel spins for 3 seconds or more. If it stops fast, find what rubs and fix it.' },

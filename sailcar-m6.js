@@ -670,7 +670,7 @@
     quiz: [
       // The options in each question are about the same length, so "pick the longest" is no clue: the right
       // answer is the single longest option in at most 3 of the 10 (and the single shortest in at most 3).
-      { q: 'What is a car’s balance point?', options: ['The spot where it balances on a finger', 'The spot right over the front wheels', 'The spot where the wind pushes the sail', 'The heaviest part of the whole car'], answer: 0,
+      { q: 'What is a car’s balance point?', options: ['The spot where it balances on a finger', 'The spot where the wind and weight balance', 'The spot where the wind pushes the sail', 'The heaviest part of the whole car'], answer: 0,
         why: 'At the balance point, the car balances on one finger. The car acts as if all its weight were right there.' },
       { q: 'You tape 3 nickels over the back axle. Where does the balance point go?', options: ['Up high, toward the top of the mast', 'Toward the front, to balance the nickels', 'Toward the back, closer to the nickels', 'It stays put, because coins are so small'], answer: 2,
         why: 'The balance point moves toward the heavy part. Weight at the back moves it back.' },
@@ -679,12 +679,12 @@
       { q: 'Why does a sail high on a tall mast make a car flip more easily?', options: ['A high sail makes the fans blow harder', 'A push up high has more turning power', 'A tall mast makes the car lighter', 'A high sail adds friction to the wheels'], answer: 1,
         why: 'The front wheels act like a hinge. A push far from a hinge turns things more easily, like pushing a door far from its hinges.' },
       { q: 'Car A’s balance point is 4 cm behind its front wheels. Car B’s is 10 cm behind. Same sail, same weight. Which is harder to flip?',
-        options: ['Car A, because its weight is up front', 'Car B, because its weight sits farther back', 'They tie, because both cars weigh the same', 'They tie, because the sails are the same'], answer: 1,
+        options: ['Car A, because its weight is up front', 'Car B, because its weight sits farther back', 'They tie, because both cars weigh the same', 'It depends on how hard the fans blow'], answer: 1,
         why: 'The farther back the balance point is, the better the weight holds the back down. So Car B is harder to flip.' },
       { q: 'Your car flips every time the fans turn on. Which change helps?', options: ['Tape a few coins on the very front', 'Move the sail higher up on the mast', 'Mount the sail lower, near the chassis', 'Use a shorter chassis, so it is lighter'], answer: 2,
         why: 'A lower sail has less turning power, so it tips the car less. The other changes make flipping worse.' },
       { q: 'Car A stopped flipping with 4 nickels on the back. Car B has the same sail. It stopped flipping with a lower sail instead. Which will probably roll farther?',
-        options: ['Car A, because heavier cars roll farther', 'Car B, because less weight means less friction', 'They tie, because both stay on their wheels', 'They tie, because weight does not matter'], answer: 1,
+        options: ['Car A, because heavier cars keep rolling farther', 'Car B, because less weight means less friction', 'They tie, because both stay on their wheels', 'They tie, because weight does not matter'], answer: 1,
         why: 'Both cars stay on their wheels, but Car A is heavier. More weight means more friction, so Car B rolls farther.' },
       { q: 'In the simulator, a car’s front axle is turned 3° off square. What happens?', options: ['Nothing changes, since the turn is tiny', 'It turns once, then rolls straight', 'It curves away and hits a side wall', 'It zig-zags, so it rolls even farther'], answer: 2,
         why: 'It hits the wall after only about ' + kid.dist(WALL_AT(3)) + '. With square axles, the same car rolls about ' + kid.dist(STRAIGHT_RUN) + '.' },

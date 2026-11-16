@@ -176,11 +176,13 @@
   // a real, hand-measured run that made it to the far end of the hallway
   function realAtEnd(m) { return m >= hall().length - END_SLACK_M; }
   function trimNum(v) { return String(Math.round(v * 100) / 100); }
+  function r1(v) { return Math.round(v * 10) / 10; }
   // A real, hand-measured distance, feet first like kid.dist. The number the student typed is their measurement,
-  // so it is shown just as typed; the other unit is rounded the kid.dist way (kid.ft / kid.m), never "13.72 m":
-  // 45 ft typed → "45 ft (14 m)" · 13.5 ft → "13.5 ft (4.1 m)" · 4.2 m typed → "14 ft (4.2 m)"
+  // so it is shown just as typed; the other unit gets one decimal (not kid.ft / kid.m's whole numbers), so a
+  // board with runs typed in both units still reads in rank order: no "45 ft (13.8 m)" above "45 ft (14 m)":
+  // 45 ft typed → "45 ft (13.7 m)" · 13.5 ft → "13.5 ft (4.1 m)" · 4.2 m typed → "13.8 ft (4.2 m)"
   // (Only the text changes: distance, unit and distanceM are stored exactly as before.)
-  function realDist(v, unit) { return unit === 'ft' ? trimNum(v) + ' ft (' + kid.m(v / FT_PER_M) + ' m)' : kid.ft(v) + ' ft (' + trimNum(v) + ' m)'; }
+  function realDist(v, unit) { return unit === 'ft' ? trimNum(v) + ' ft (' + r1(v / FT_PER_M) + ' m)' : r1(v * FT_PER_M) + ' ft (' + trimNum(v) + ' m)'; }
   // a logged run's real distance with the number the student typed. distanceM is what the board ranks by (and
   // the database caps at 100 m); the typed number is only shown when it agrees with it, so a hand-made run
   // can't show a different distance from the one it is ranked by. Otherwise distanceM is shown, as kid.dist.
@@ -691,8 +693,8 @@
                 : pred > 0 && m > 2.5 * pred ? 'That’s more than 2½ times the simulator’s prediction (' + aboutText(pred) + ')!' : '';
       if (why && confirmKey !== key) {
         confirmKey = key;
-        // what they typed, in the unit they typed it in (the other unit rounded the kid.dist way)
-        say('You typed ' + (u === 'ft' ? trimNum(v) + ' ft (' + kid.m(m) + ' m)' : trimNum(v) + ' m (' + kid.ft(m) + ' ft)') + '. ' + why + ' Tap Log again if that’s right.', true);
+        // what they typed, in the unit they typed it in (the other unit with one decimal, as realDist logs it)
+        say('You typed ' + (u === 'ft' ? trimNum(v) + ' ft (' + r1(m) + ' m)' : trimNum(v) + ' m (' + r1(v * FT_PER_M) + ' ft)') + '. ' + why + ' Tap Log again if that’s right.', true);
         return;
       }
       confirmKey = null;
@@ -758,7 +760,7 @@
         // the teacher (only) sees whose account posted each row: hover the name, and in the delete question
         const cells = [h('td', { text: r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : String(r.rank) }),
           h('td', { text: name, title: isTeacher && email ? 'Posted by ' + email : null }),
-          h('td', { text: (r.atEnd ? '🏁 ' : '') + realRunText(r) }),          // the unit it was measured in first, like "My runs"
+          h('td', { text: (r.atEnd ? '🏁 ' : '') + realRunText(r) }),          // feet first, the typed number as typed, like "My runs"
           h('td', { text: predictedCell(r) }),
           h('td', { text: String((r.design && r.design.summary) || ''), style: 'text-align:left;white-space:normal;font-size:0.85rem;min-width:170px' })];
         if (isTeacher) {
