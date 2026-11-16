@@ -113,10 +113,8 @@
       {
         title: 'Forces are pushes and pulls',
         html:
-          '<p>Scientists measure force in <strong>newtons</strong>. In this lab we use <strong>paper clips</strong> instead. ' +
-          'The numbers are easier.</p>' +
-          '<p>Hold 30 paper clips in your hand. The push you need to hold them up is a force of 30 paper clips. ' +
-          'A typical sail car weighs ' + kid.force(WEIGHT_N) + '.</p>' +
+          '<p>Scientists measure force in units called <strong>newtons</strong>. ' +
+          'In this lab we compare forces with arrows: <strong>a longer arrow means a bigger force</strong>.</p>' +
           '<p>In front of the fans, <strong>four forces</strong> act on your car at once. ' +
           'A fifth one joins in only if the car goes faster than the wind.</p>',
         render: function (el, api) {
