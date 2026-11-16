@@ -330,20 +330,29 @@
           const shape = api.ui.choice(row, { label: 'Sail shape', value: FLAT, options: [{ value: FLAT, label: 'Flat' }, { value: CUPPED, label: 'Cupped' }], onChange: info });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          let sim = null;
           // A prediction is judged once, by the first run after it is picked (as in Module 6, step 2). Then it is spent:
           // once the sail changes, later runs show only the plain result in the hallway readout, so a student is never
-          // told "You predicted … Surprise!" about a car they changed after predicting. Running the SAME car again shows
-          // the same answer again. A new pick (even the same choice again) is judged by the next run.
-          let pending = false, judged = false;
+          // told "You predicted … Surprise!" about a car they changed after predicting. Running the SAME car again
+          // (judgedKey: the sail size and shape that were judged) shows the same answer again. A new pick (even the same
+          // choice again) is judged by the next run that STARTS after it (pickedAfter: a run already playing when the
+          // student picks does not judge that pick).
+          let pending = false, judgedKey = null, pickedAfter = null, sim = null, again = null;
           // no angle control here: a real sail is built facing the fans (Step 3 is where the angle lesson lives)
           function car() { return sailCar(size.get(), size.get(), shape.get(), 0); }
+          function key() { return size.get() + '|' + shape.get(); }
+          // after a judged guess, a new sail gets a nudge in the card: pick again to have the new sail judged
+          function nudge() {
+            if (!again) return;
+            const on = !pending && judgedKey != null && judgedKey !== key();
+            again.textContent = on ? '🔁 New sail? Pick again to test a new guess.' : '';
+            again.hidden = !on;
+          }
           function info() {
             const c = car();
             say(api, out, ['⛵ Sail area: ', [Math.round(c.sailArea * 10000) + ' square cm'], '. The car weighs ', [K.grams(c.mass)],
               '. Push on the whole car at the start line: ', [K.force(carPush(c))], '.']);
-            judged = false;                                     // the judged answer was about the old sail
             if (sim) sim.reset();                               // redraw the car with its new sail, ready for the next run
+            nudge();
           }
           info();
           const WHY = {
@@ -358,13 +367,21 @@
             choices: [{ value: 'short', label: 'Less than 30 ft' }, { value: 'mid', label: '30 to ' + (GOAL_FT - 1) + ' ft' },
                       { value: 'far', label: GOAL_FT + ' ft or more' }, { value: 'tip', label: 'It will tip over' }],
             judge: function (r, v) {
-              if (!pending && !judged) return null;             // the sail changed since this pick was judged: just the plain result
-              pending = false; judged = true;
+              if (pending && r === pickedAfter) return null;   // picked while this run was playing: the next run judges it
+              if (!pending && judgedKey !== key()) return null; // the sail changed since this pick was judged: just the plain result
+              pending = false; judgedKey = key();
+              nudge();
               const got = band(r);
               return { text: got === 'tip' ? 'The car tipped over at the start!' : 'The car rolled ' + K.dist(r.distance) + '.', right: got === v, why: WHY[got] };
             }
           });
-          guess.onChange(function (v) { pending = v != null; judged = false; });
+          again = api.h('div', { class: 'sl-predict-hint', style: 'color:#ffd080', 'aria-live': 'polite', hidden: true });
+          if (guess.el) guess.el.appendChild(again);
+          guess.onChange(function (v) {
+            pending = v != null;
+            pickedAfter = sim ? sim.last() : null;            // the run playing now (or the last one): it started before this pick
+            nudge();
+          });
           sim = api.ui.trackSim(el, car, {
             scaleM: HALL_M,                                     // the whole hallway, the same view every run, so runs are easy to compare
             needPrediction: guess,
@@ -413,17 +430,17 @@
         why: 'Thrust is the push that moves the car forward. For a sail car, it is the wind pushing on the sail.' },
       { q: 'You make your sail twice as wide AND twice as tall. How much push does it get now?', options: ['The same push as before', '2 times as much push', '4 times as much push', '8 times as much push'], answer: 2,
         why: 'The new sail holds 4 of the old sails (2 × 2). So it has 4 times the area and gets 4 times the push.' },
-      { q: 'Sail A is 20 cm × 20 cm. Sail B is 10 cm × 40 cm. Both face the fans. Which gets more push?', options: ['Sail A, because it is a square', 'Sail B, because it is taller', 'Sail A, because it is wider', 'They get the same push'], answer: 3,
+      { q: 'Sail A is 20 cm × 20 cm. Sail B is 10 cm × 40 cm. Both face the fans. Which gets more push?', options: ['Sail A, because it is a square', 'Sail B, because it is taller', 'The same, because the areas match', 'It depends on how strong the wind is'], answer: 2,
         why: 'Both sails have an area of 400 square cm. Same area, same push.' },
-      { q: 'Where in the hall does your sail get the biggest push?', options: ['Close to the fans, at the start line', 'Far down the hall, near the end', 'In the middle, once it gets going', 'The same everywhere in the hall'], answer: 0,
+      { q: 'Where in the hall does your sail get the biggest push?', options: ['Near the fans, at the start line', 'Far down the hall, near the end', 'In the middle, once it gets going', 'The same everywhere in the hall'], answer: 0,
         why: 'The wind spreads out and fades down the hall. So the push is biggest close to the fans.' },
       { q: 'Wind A blows twice as fast as Wind B. How hard does Wind A push on the same sail?', options: ['About the same as Wind B', 'About 2 times as hard', 'About 4 times as hard', 'About 8 times as hard'], answer: 2,
         why: 'Faster air hits harder, and more of it hits each second. So wind twice as fast pushes about 4 times as hard.' },
-      { q: 'Your car slows down and stops about ' + KID.ft(TYPICAL_RUN.distance) + ' ft down the hall. The fans are still on. Why?', options: ['Gravity pulls harder at the far end', 'The wind is weak there, so friction wins', 'The car gets heavier the farther it rolls', 'The car used up its push from the start'], answer: 1,
+      { q: 'Your car slows down and stops about ' + KID.ft(TYPICAL_RUN.distance) + ' ft down the hall. The fans are still on. Why?', options: ['Gravity pulls harder at the far end', 'The wind is weak there, so friction wins', 'The car gets heavier the farther it rolls', 'The wind turns around and blows back'], answer: 1,
         why: 'The wind fades down the hall. Far away, its push is smaller than friction, so the car slows down and stops.' },
       { q: 'Two sails are the same size. Which one gets a little MORE push?', options: ['A flat sail, held stiff and straight', 'A cupped sail, hollow side to the fans', 'A cupped sail, bulging side to the fans', 'A sail with holes to let the air through'], answer: 1,
         why: 'The hollow side holds the air like a cupped hand. So it gets a little more push than a flat sail.' },
-      { q: 'Which way should your sail face?', options: ['Facing straight at the fans', 'Turned halfway to the side', 'With its thin edge toward the fans', 'It doesn’t matter which way'], answer: 0,
+      { q: 'Which way should your sail face?', options: ['Straight toward the two fans', 'Turned halfway to the side', 'With its thin edge toward the fans', 'It doesn’t matter which way'], answer: 0,
         why: 'When it faces straight at the fans, the whole sail catches the wind. A turned sail catches less.' },
       { q: 'Your paper sail bends back and flaps in the wind. What is the best fix?', options: ['Use thin, light paper instead', 'Tape straws along the sail’s edges', 'Turn its edge toward the fans', 'Tape it to the mast only at the top'], answer: 1,
         why: 'The straws make a frame that keeps the sail stiff. Then it keeps catching the wind instead of spilling it.' },
