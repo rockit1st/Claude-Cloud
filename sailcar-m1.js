@@ -4,8 +4,10 @@
 //          A step with `challenge` keeps the Next button locked until the step calls api.done().
 //   quiz:  a pool of questions; the lab draws 5 of them each try (4 right = 80% to pass).
 //          `answer` is the index of the right option in `options`; `why` explains it.
-// Written for 6th graders: short sentences, forces in paper clips (SailLab.kid.force), distances in
-// feet first (SailLab.kid.dist), no formulas. Every number a student reads is worked out from simulate().
+// Written for 6th graders: short sentences, distances in feet first (SailLab.kid.dist), no formulas.
+// Forces are NEVER numbers here: each force is an arrow whose LENGTH shows its size (one honest scale per
+// picture, SailLab.draw.forceScale), with a word label, and the words COMPARE forces (SailLab.kid.compare).
+// Every distance and every comparison a student reads is worked out from simulate().
 (function () {
   'use strict';
   const P = SailLab.physics, kid = SailLab.kid;
@@ -21,8 +23,8 @@
   const FAN_OPTS = [{ value: 'low', label: 'Low' }, { value: 'med', label: 'Medium' }, { value: 'high', label: 'High' }];
   // Wheel stickiness (crr). Rubbing / OK / Spin freely mean the SAME numbers in Modules 1, 3 and 4
   // (OK = the lab's standard car, DEFAULT_CAR.crr), so a "Rubbing" car rolls the same distance everywhere.
-  // Jammed is an extra, worse choice only here: on the Low fan its push (about 9 clips) is smaller than
-  // the most its stuck wheels can hold back (about 12 clips), so the car never starts — friction matches
+  // Jammed is an extra, worse choice only here: on the Low fan its push is a little smaller than the most
+  // its stuck wheels can hold back (STICKY × rolling friction), so the car never starts — friction matches
   // the push exactly: the "balanced, nothing moves" demo.
   const WHEELS = { jam: 0.13, rub: 0.07, ok: P.DEFAULT_CAR.crr, free: 0.012 };
   const WHEEL_OPTS = [{ value: 'jam', label: 'Jammed (rubbing hard)' }, { value: 'rub', label: 'Rubbing' }, { value: 'ok', label: 'OK' }, { value: 'free', label: 'Spin freely' }];
@@ -31,15 +33,29 @@
   function hallOpts(fan) { return { fan: { v0: FAN_V[fan], L: P.FAN.L } }; }
   // Can any car on the hallway step catch up with the fading wind? (High fan + Spin freely does, for a few feet.)
   // The step's text says so only when simulate() agrees. The trace's last point is the "stopped" marker, so it is skipped.
-  const CATCHES_UP = Object.keys(FAN_V).some(function (f) {
-    return Object.keys(WHEELS).some(function (w) {
+  // DRAG_MAX = the biggest push back (drag) any of those runs ever feels: step 1 draws drag's dashed arrow that big.
+  let CATCHES_UP = false, DRAG_MAX = 0;
+  Object.keys(FAN_V).forEach(function (f) {
+    Object.keys(WHEELS).forEach(function (w) {
       const tr = P.simulate({ crr: WHEELS[w] }, hallOpts(f)).trace;
-      return tr.some(function (p, i) { return i < tr.length - 1 && p.v > p.wind; });
+      tr.forEach(function (p, i) {
+        if (i >= tr.length - 1) return;
+        if (p.v > p.wind) CATCHES_UP = true;
+        DRAG_MAX = Math.max(DRAG_MAX, -(p.thrust + p.body));
+      });
     });
   });
-  // A typical car (DEFAULT_CAR), for step 1: its weight and the wind's push right at the fans.
+  // A typical car (DEFAULT_CAR), for step 1's picture: its weight (gravity), and the wind's push and friction at the fans.
   const TYPICAL = P.simulate({}, {});
   const WEIGHT_N = P.DEFAULT_CAR.mass * P.G;
+  // the colours every force has in this module (the hallway simulator uses the same green and orange)
+  const GREEN = '#40e080', ORANGE = '#ffa040', RED = '#ff5050', BLUE = '#7ad7ff', PURPLE = '#c0a0ff';
+
+  // Step 2 (balanced or unbalanced?): two force sliders in STEPS equal steps, from none to the biggest.
+  // The challenge: the two arrows the same length, with the push slider at least halfway (so 0 = 0 never counts).
+  const STEPS = 10, HALF = STEPS / 2;
+  const BAL_START = { push: 8, friction: 2 };          // the teacher's picture: a long push arrow, a short friction arrow
+  function balanceDone(p, b) { return p === b && p >= HALF; }
 
   // PREDICT FIRST (hallway step): what will the car do with the fan and wheels picked?
   const PREDICT = {
@@ -55,14 +71,16 @@
   function wheelsOf(r) { return Object.keys(WHEELS).find(function (w) { return WHEELS[w] === r.car.crr; }); }
   const FAN_PUSH = { high: 'The High fan gave a strong push.', med: 'The Medium fan gave a good push.', low: 'The Low fan gave a gentle push.' };
   const WHEEL_FRICTION = { free: 'These wheels spin freely, so friction is very small.', ok: 'These wheels have some friction, but not much.' };
-  // the answer shown after a run: { text, right, why } — every number comes from this run
+  // the answer shown after a run: { text, right, why } — every distance and comparison comes from this run.
+  // A still car: the wind's push vs the most its wheels can hold back (STICKY × rolling friction), in kid.compare
+  // words (Low + Jammed: "a little smaller"). No ratio: the run draws no arrows to check it against.
   function judge(r, v) {
     const got = outcome(r), end = r.reason === 'reached the end of the hall';
     const text = got === 'still' ? 'The car did not move.'
                : end ? 'The car rolled all ' + kid.dist(r.distance) + ' to the end of the hall!'
                : 'The car rolled ' + kid.dist(r.distance) + '.';
     const why = got === 'still'
-      ? 'The wind pushed with ' + kid.force(r.startPush) + '. These wheels can hold back up to ' + kid.force(r.friction * P.STICKY) + '. ' +
+      ? 'The push was ' + kid.compare(r.startPush, r.friction * P.STICKY, { noun: 'what these wheels can hold back', times: false }) + '. ' +
         'So friction pushed back just as hard as the wind. The forces were balanced, so the car stayed still.'
       : got === 'short'
       ? 'The push beat friction near the fans, so the car sped up. Down the hall the wind faded. ' +
@@ -94,13 +112,23 @@
     return api.svg('text', { x: x, y: y, 'text-anchor': o.anchor || 'middle', fill: color, 'font-size': o.size || 15,
                              'font-weight': o.light ? 400 : 700, class: 'sl-lbl' }, s, str);
   }
+  // a label's width on screen (measured; a rough guess if the browser can't measure it yet)
+  function textW(t) {
+    try { const w = t.getComputedTextLength(); if (w > 0) return w; } catch (e) { /* not measurable */ }
+    return t.textContent.length * (parseFloat(t.getAttribute('font-size')) || 15) * 0.62;
+  }
+  function place(t, x, y) { t.setAttribute('x', Math.round(x)); t.setAttribute('y', Math.round(y)); return t; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  // repaint once the page's font has loaded (labels are measured, and the font changes their width)
+  function afterFonts(el, paint) {
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (el.isConnected) paint(); });
+  }
   // a "Word to know" box at the very top of the step (above the step's html)
   function wordFirst(api, el, term, meaningHtml) {
     const box = api.ui.word(el, term, meaningHtml);
     el.insertBefore(box, el.firstChild);
     return box;
   }
-  function clipsText(n) { return n + (n === 1 ? ' paper clip' : ' paper clips'); }
 
   SailLab.register({
     id: 'forces',
@@ -119,60 +147,85 @@
           'A fifth one joins in only if the car goes faster than the wind.</p>',
         render: function (el, api) {
           wordFirst(api, el, 'force', 'a push or a pull.');
-          const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car in front of two box fans. Thrust from the wind pushes it forward. Friction pushes back at the wheels. Gravity pulls down and the floor pushes up. A dashed drag arrow shows the push back that only happens if the car is faster than the wind.' }, el);
+          // ONE honest scale for every arrow here (draw.forceScale): gravity, the biggest force, is the longest arrow,
+          // and the floor's push is exactly as long. The wind's push (about half of gravity) is to scale. Friction and
+          // the tiny drag are drawn a little too LONG so they can be seen (never too short), so no ratio with them is
+          // claimed anywhere on this step ("much bigger than friction").
+          const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car in front of two box fans, with an arrow for each force. A longer arrow is a bigger force. ' +
+            'Gravity pulls down and the floor pushes up. Their arrows are the same length. ' +
+            'The wind’s push on the sail is ' + kid.compare(TYPICAL.startPush, WEIGHT_N, { noun: 'gravity' }) + '. ' +
+            'It is ' + kid.compare(TYPICAL.startPush, TYPICAL.friction, { noun: 'friction', times: false }) + ' at the wheels. ' +
+            'A short dashed arrow shows drag. It pushes back only if the car is faster than the wind.' }, el);
           function paint() {
-            const W = boardWidth(el), FL = 165, H = FL + 66;
+            const W = boardWidth(el), tiny = W < 290, narrow = W < 440;
+            const sc = tiny ? 2.3 : narrow ? 2.6 : 3.6, len = 30 * sc, r = 3 * sc, SAIL = 20, MAST = 30;
+            const fanSize = tiny ? 80 : 96, fanR = 10 + fanSize * 0.32;
+            const flen = api.draw.forceScale(WEIGHT_N, 100, { min: 18 });
+            const gL = flen(WEIGHT_N), tL = flen(TYPICAL.startPush), frL = flen(TYPICAL.friction), dL = flen(Math.max(DRAG_MAX, 1e-6));
+            // gravity's arrow (or the mast) is the tallest thing; the floor's arrow hangs below the floor
+            const deckY = Math.round(12 + Math.max(gL, MAST * sc)), FL = deckY + 2 * r + sc, H = Math.round(FL + 5 + gL + 12);
             startBoard(api, s, W, H);
             api.svg('line', { x1: 12, y1: FL, x2: W - 12, y2: FL, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
-            const fan = api.draw.fan(s, 10, FL, 96), fanR = 10 + 96 * 0.32;
+            const fan = api.draw.fan(s, 10, FL, fanSize);
             const fanTxt = fan.querySelector('text');
             if (fanTxt) { fanTxt.setAttribute('font-size', 13); fanTxt.setAttribute('y', FL + 18); }
-            // the car, and where its parts are (the same sums api.draw.car uses)
-            const sc = W < 440 ? 2.6 : 3.6, len = 30 * sc, carX = Math.round(W * 0.42), front = carX + len, r = 3 * sc;
-            api.draw.car(s, carX, FL, { scale: sc, length: 30, sailW: 20, sailH: 20, mastH: 30 });
-            const deckY = FL - r * 2 - sc, mastX = carX + len * 0.45, sailL = mastX - 20 * sc * 0.45, midY = Math.round(deckY - 18 * sc);
+            // the words first: they are measured, so the car goes where every word fits (one word per arrow, no numbers)
+            const tT = label(api, s, 0, 0, 'THRUST', GREEN, { size: tiny ? 14 : 16 });
+            const dT = label(api, s, 0, 0, 'DRAG', RED, { size: 16, anchor: 'start' });
+            const dLines = (narrow ? ['only if the car', 'outruns the wind'] : ['only if the car outruns the wind'])
+              .map(function (str) { return label(api, s, 0, 0, str, '#ff8080', { size: 13, light: true, anchor: 'start' }); });
+            const gT = label(api, s, 0, 0, 'GRAVITY', BLUE, { size: tiny ? 13 : 15, anchor: 'start' });
+            const fT = label(api, s, 0, 0, 'FRICTION', ORANGE, { size: tiny ? 13 : 15 });
+            const flT = label(api, s, 0, 0, 'FLOOR', PURPLE, { anchor: 'start' });
+            const fl2T = label(api, s, 0, 0, 'pushes up', PURPLE, { size: 13, light: true, anchor: 'start' });
+            const wT = textW(tT), wD = Math.max.apply(null, [dT].concat(dLines).map(textW));
+            // the car: THRUST's arrow and word fit between the fans and the sail; the drag words fit right of the car
+            const sailOff = len * 0.45 - SAIL * sc * 0.45;          // the car's back end → the sail's back edge
+            const carMin = fanR + Math.max(wT + 8, tL + 9) - sailOff, carMax = W - 8 - wD - len;
+            const carX = Math.round(Math.max(carMin, Math.min(W * 0.36, carMax)));
+            const front = carX + len, mastX = carX + len * 0.45, sailL = mastX - SAIL * sc * 0.45, midY = Math.round(deckY - 18 * sc);
+            // the fans' wind on its way to the sail: faint dashed streaks (not forces: no arrowheads)
+            const tail = sailL - 3 - tL;
+            [[midY, fanR + 8, tail - 8], [midY + 16, fanR + 8, sailL - 6], [midY + 32, fanR + 8, sailL - 6]].forEach(function (w) {
+              if (w[2] - w[1] >= 14) api.svg('line', { x1: w[1], y1: w[0], x2: w[2], y2: w[0], stroke: '#9fb4d8', 'stroke-width': 1.5, opacity: 0.45, 'stroke-dasharray': '10 6', 'stroke-linecap': 'round' }, s);
+            });
+            api.draw.car(s, carX, FL, { scale: sc, length: 30, sailW: SAIL, sailH: 20, mastH: MAST });
             // THRUST: the fans' wind pushes the sail forward
-            api.draw.arrow(s, fanR + 8, midY, sailL - 3, midY, '#40e080', '');
-            const tx = (fanR + 8 + sailL) / 2;
-            label(api, s, tx, midY - 12, 'THRUST', '#40e080', { size: 16 });
-            // how hard the wind pushes a typical car right at the fans (from simulate(), in clips)
-            if (W >= 440) {
-              label(api, s, tx, midY + 24, 'the wind pushes the sail', '#40e080', { size: 13, light: true });
-              label(api, s, tx, midY + 41, 'with about ' + kid.forceShort(TYPICAL.startPush) + ' at the start', '#40e080', { size: 13, light: true });
-            } else label(api, s, tx, midY + 22, 'about ' + kid.forceShort(TYPICAL.startPush), '#40e080', { size: 13, light: true });
-            // DRAG (dashed): the air only pushes BACK if the car moves faster than the wind
-            const d1 = W - 12, d2 = mastX + 5, dx = (d1 + d2) / 2;
-            const drag = api.draw.arrow(s, d1, midY, d2, midY, '#ff5050', '');
+            api.draw.arrow(s, tail, midY, sailL - 3, midY, GREEN, '');
+            place(tT, clamp(sailL - 3 - tL / 2, fanR + 4 + wT / 2, sailL - 4 - wT / 2), midY - 12);
+            // GRAVITY pulls down on the car; the FLOOR pushes up just as hard: the same length, the other way
+            const gx = Math.round(carX + len * 0.8);
+            api.draw.arrow(s, gx, deckY - gL, gx, deckY, BLUE, '');
+            place(gT, gx + 9, deckY - gL + 14);
+            api.draw.arrow(s, gx, FL + 5 + gL, gx, FL + 5, PURPLE, '');
+            place(flT, gx + 10, FL + 5 + gL / 2);
+            place(fl2T, gx + 10, FL + 5 + gL / 2 + 17);
+            // FRICTION at the wheels pushes back (its word sits under the floor, clear of the fans' word)
+            api.draw.arrow(s, carX - 3, FL - 6, carX - 3 - frL, FL - 6, ORANGE, '');
+            const fanWordEnd = fanTxt ? 10 + fanSize * 0.16 + textW(fanTxt) / 2 : fanR;
+            place(fT, Math.max(carX - 3 - frL / 2, fanWordEnd + 8 + textW(fT) / 2), FL + 21);
+            // DRAG (dashed and short): the air pushes back only if the car outruns the wind, and then only a tiny bit
+            const dTip = front + r * 0.4 + 2, dY = Math.round(deckY + sc);
+            const drag = api.draw.arrow(s, dTip + dL, dY, dTip, dY, RED, '', { head: 6, width: 3 });
             const dl = drag.querySelector('line');
-            if (dl) dl.setAttribute('stroke-dasharray', '8 7');
-            if (d1 - d2 >= 240) {
-              label(api, s, dx, midY - 30, 'DRAG', '#ff5050', { size: 16 });
-              label(api, s, dx, midY - 12, 'only if the car outruns the wind', '#ff8080', { size: 13, light: true });
-            } else {
-              label(api, s, dx, midY - 44, 'DRAG', '#ff5050', { size: 16 });
-              label(api, s, dx, midY - 28, 'only if the car', '#ff8080', { size: 13, light: true });
-              label(api, s, dx, midY - 12, 'outruns the wind', '#ff8080', { size: 13, light: true });
-            }
-            // GRAVITY pulls down on the car
-            const gx = carX + len * 0.8;
-            api.draw.arrow(s, gx, midY + 12, gx, deckY - 1, '#7ad7ff', '');
-            label(api, s, gx + 9, Math.round((midY + deckY) / 2) + 11, 'GRAVITY', '#7ad7ff', { anchor: 'start', size: W < 300 ? 13 : 15 });
-            // FRICTION at the wheels pushes back
-            api.draw.arrow(s, carX - 3, FL - 6, carX - 48, FL - 6, '#ffa040', '');
-            label(api, s, carX - 6, FL - 16, 'FRICTION', '#ffa040', { anchor: 'end' });
-            // the FLOOR pushes up on both wheels
-            [carX + r, front - r].forEach(function (wx) { api.draw.arrow(s, wx, FL + 56, wx, FL + 5, '#c0a0ff', ''); });
-            label(api, s, front - r + 10, FL + 30, 'FLOOR', '#c0a0ff', { anchor: 'start' });
-            label(api, s, front - r + 10, FL + 47, 'pushes up', '#c0a0ff', { anchor: 'start', size: 13, light: true });
+            if (dl) dl.setAttribute('stroke-dasharray', '4 3');
+            let y = deckY - 12;
+            for (let i = dLines.length - 1; i >= 0; i--) { place(dLines[i], front + 2, y); y -= 16; }
+            place(dT, front + 2, y);
+            // the words on top of every line and arrow
+            [tT, dT, gT, fT, flT, fl2T].concat(dLines).forEach(function (t) { s.appendChild(t); });
           }
           paint();
           keepFitted(api, el, paint);
-          // one short line per force (the thrust number is on the picture; Module 3 covers outrunning the wind)
+          afterFonts(el, paint);
+          // one short line per force (Module 3 covers outrunning the wind)
           api.ui.note(el, 'tip',
             '<ul style="margin:0 0 0 18px">' +
-            '<li>🟢 <strong>Thrust:</strong> the wind pushes the sail forward.</li>' +
+            '<li>🟢 <strong>Thrust:</strong> the wind pushes the sail forward. Near the fans, the push is ' +
+              kid.compare(TYPICAL.startPush, TYPICAL.friction, { noun: 'friction', times: false }) + '.</li>' +
             '<li>🟠 <strong>Friction:</strong> rubbing at the wheels holds the car back.</li>' +
-            '<li>🔵 <strong>Gravity</strong> pulls down. 🟣 The <strong>floor</strong> pushes up just as hard. They cancel out.</li>' +
+            '<li>🔵 <strong>Gravity</strong> pulls down. 🟣 The <strong>floor</strong> pushes up just as hard. ' +
+              'Their arrows are the same length, so they cancel out.</li>' +
             '<li>🔴 <strong>Drag:</strong> air pushing <em>back</em>, only if the car outruns the wind.</li></ul>');
         }
       },
@@ -182,7 +235,7 @@
           '<p>Forces that point opposite ways work against each other. It is like a tug of war!</p>' +
           '<p><strong>Balanced:</strong> the motion stays the same. A still car stays still. A rolling car keeps the same speed.</p>' +
           '<p><strong>Unbalanced:</strong> one force is bigger, so it wins. The car speeds up or slows down.</p>',
-        challenge: 'Move the sliders so the forces are balanced. Keep the wind’s push at 10 paper clips or more.',
+        challenge: 'Make the push arrow and the friction arrow the same length. Keep the push slider at least halfway across.',
         render: function (el, api) {
           wordFirst(api, el, 'balanced forces', 'forces that are the same size but push opposite ways. They cancel out. ' +
             'If one force is bigger, the forces are <strong>unbalanced</strong>.');
@@ -190,12 +243,18 @@
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const MAX = 40;
-          const push = api.ui.slider(row, { label: 'Wind’s push (thrust)', min: 0, max: MAX, step: 1, value: 20, format: clipsText, onInput: draw });
-          const back = api.ui.slider(row, { label: 'Friction (pushes back)', min: 0, max: MAX, step: 1, value: 8, format: clipsText, onInput: draw });
+          // FORCE sliders: no numbers. Each shows a little arrow (ui.slider's bar) and words at its two ends.
+          // STEPS equal steps, so the two arrows can be made exactly the same length.
+          const push = api.ui.slider(row, { label: 'Wind’s push (thrust)', min: 0, max: STEPS, step: 1, value: BAL_START.push,
+            bar: { color: GREEN }, ends: ['no push', 'big push'], valueText: function (v) { return amount(v, 'push'); }, onInput: draw });
+          const back = api.ui.slider(row, { label: 'Friction (pushes back)', min: 0, max: STEPS, step: 1, value: BAL_START.friction,
+            bar: { color: ORANGE }, ends: ['no friction', 'lots of friction'], valueText: function (v) { return amount(v, 'friction'); }, onInput: draw });
           el.appendChild(out);
           api.ui.note(el, 'tip', '📜 Isaac Newton figured this out over 300 years ago. We call it <strong>Newton’s First Law</strong>. ' +
             'Things keep doing what they are doing until an unbalanced force acts on them.');
+          // the sliders' little arrows use this rule (the same one ui.slider uses), so a ratio is said only when
+          // the picture AND both slider arrows show it to scale (a 1-step arrow is drawn a bit too long)
+          const barLen = api.draw.forceScale(STEPS, 110, { min: 10, over: 0 });
           function draw() {
             const p = push.get(), b = back.get(), net = p - b;
             const W = boardWidth(el), H = 190, FL = 160, mid = W / 2;
@@ -203,29 +262,46 @@
             api.svg('line', { x1: 12, y1: FL, x2: W - 12, y2: FL, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
             const sc = W < 440 ? 2.2 : 3, len = 26 * sc, carX = Math.round(mid - len / 2), front = carX + len;
             api.draw.car(s, carX, FL, { scale: sc, length: 26, sailW: 18, sailH: 18, mastH: 26 });
-            const k = (carX - 18) / MAX;                  // px per paper clip: the biggest push just fits
+            // ONE honest scale for the push, friction and "wins" arrows: the biggest setting just fits beside the car
+            const flen = api.draw.forceScale(STEPS, carX - 18, { min: 6, over: 0 });
             const sailL = carX + len * 0.45 - 18 * sc * 0.45, sailY = Math.round(FL - 22 * sc);
             if (p > 0) {
-              api.draw.arrow(s, sailL - 2 - p * k, sailY, sailL - 2, sailY, '#40e080', '');
-              label(api, s, Math.min(sailL - 2 - p * k / 2, sailL - 36), sailY - 11, p + ' clips', '#40e080');   // a short arrow's label stays clear of the sail
+              api.draw.arrow(s, sailL - 2 - flen(p), sailY, sailL - 2, sailY, GREEN, '');
+              const t = label(api, s, 0, 0, 'push', GREEN);
+              place(t, Math.min(sailL - 2 - flen(p) / 2, sailL - 6 - textW(t) / 2), sailY - 11);   // a short arrow's word stays clear of the sail
             }
-            if (b > 0) api.draw.arrow(s, front + 2 + b * k, FL - 10, front + 2, FL - 10, '#ffa040', b + ' clips', { size: 15, dy: 24 });
+            if (b > 0) api.draw.arrow(s, front + 2 + flen(b), FL - 10, front + 2, FL - 10, ORANGE, 'friction', { size: 15, dy: 24 });
             if (net !== 0) {
-              const end = mid + Math.max(-(mid - 20), Math.min(mid - 20, net * k)), color = net > 0 ? '#40e080' : '#ff5050';
-              const str = (net > 0 ? 'push wins by ' : 'friction wins by ') + Math.abs(net) + (Math.abs(net) === 1 ? ' clip' : ' clips');
-              const half = str.length * 15 * 0.3 + 6;     // about half the label's width: it stays inside the picture
+              const color = net > 0 ? GREEN : ORANGE, end = mid + (net > 0 ? 1 : -1) * flen(Math.abs(net));
+              const t = label(api, s, 0, 0, net > 0 ? 'push wins' : 'friction wins', color), half = textW(t) / 2 + 4;
               api.draw.arrow(s, mid, 42, end, 42, color, '');
-              label(api, s, Math.max(half, Math.min(W - half, (mid + end) / 2)), 30, str, color);
+              place(t, clamp((mid + end) / 2, half, W - half), 30);   // the word stays inside the picture
             } else label(api, s, mid, 46, 'balanced ⚖️', '#f0c040', { size: 16 });
+            // the words: which force wins, and how the two compare (kid.compare: exact, so "the same" only when equal)
+            const times = flen.toScale(p) && flen.toScale(b) && barLen.toScale(p) && barLen.toScale(b);
+            const hint = p < HALF ? ' <em>For the challenge, keep the push slider at least halfway across.</em>' : '';
             out.innerHTML = net === 0
-              ? '⚖️ <strong>Balanced!</strong> The car keeps doing what it was doing. If it was still, it stays still.'
-              : net > 0 ? '➡️ <strong>Unbalanced!</strong> The push wins by ' + clipsText(net) + '. The car <strong>speeds up</strong>.'
-                        : '⬅️ <strong>Unbalanced!</strong> Friction wins by ' + clipsText(-net) + '. A rolling car <strong>slows down</strong>. ' +
-                          'A still car just stays still. (Friction can’t push a car backward.)';
-            if (net === 0 && p >= 10) api.done('Balanced forces! The motion does not change. That is Newton’s First Law.');
+              ? '⚖️ <strong>Balanced!</strong> ' + (p === 0 ? 'There are no forces at all, so nothing changes.'
+                  : 'The two arrows are the same length. The car keeps doing what it was doing. If it was still, it stays still.') + hint
+              : net > 0
+              ? '➡️ <strong>Unbalanced!</strong> ' + (b === 0 ? 'There is no friction at all.'
+                  : 'The push is ' + kid.compare(p, b, { exact: true, noun: 'friction', times: times }) + '.') +
+                ' The push wins, so the car <strong>speeds up</strong>.'
+              : '⬅️ <strong>Unbalanced!</strong> ' + (p === 0 ? 'There is no push at all.'
+                  : 'Friction is ' + kid.compare(b, p, { exact: true, noun: 'the push', times: times }) + '.') +
+                ' Friction wins. A rolling car <strong>slows down</strong>. A still car just stays still. (Friction can’t push a car backward.)';
+            s.setAttribute('aria-label', 'Tug of war between the wind’s push and friction. ' +
+              (net === 0 ? (p === 0 ? 'There are no arrows.' : 'The two arrows are the same length.')
+                         : net > 0 ? 'The push arrow is longer.' : 'The friction arrow is longer.'));
+            if (balanceDone(p, b)) api.done('Balanced forces! The arrows are the same length, so the motion does not change. That is Newton’s First Law.');
+          }
+          // what a screen reader says for a slider (no numbers): none, a little, some, a lot, the most
+          function amount(v, noun) {
+            return v <= 0 ? 'no ' + noun : v >= STEPS ? 'the most ' + noun : v < 4 ? 'a little ' + noun : v < 7 ? 'some ' + noun : 'a lot of ' + noun;
           }
           draw();
           keepFitted(api, el, draw);
+          afterFonts(el, draw);
         }
       },
       {
@@ -269,9 +345,11 @@
             }
           });
           api.onLeave(sim.stop);
+          // (the hallway's arrows share one honest scale: a longer arrow is always the bigger force. Far from the fans
+          // both are short, and friction wins by only a little: the check script measures both on every run.)
           api.ui.note(el, 'tip', '👀 Watch the arrows on the car. <span style="color:#40e080">Green</span> is the wind’s push. ' +
             '<span style="color:#ffa040">Orange</span> is friction. When green is longer, the car speeds up. When orange is longer, it slows down. ' +
-            'Down the hall, the two arrows are almost the same size. So the car slows down only a little at a time.' +
+            'Far from the fans, both arrows are short. So the car slows down only a little at a time.' +
             (CATCHES_UP ? ' If the car ever goes faster than the wind, the green arrow turns <span style="color:#ff5050">red</span>. ' +
                           'That is drag: the air pushes back.' : ''));
         }
@@ -287,10 +365,12 @@
           '<li><strong>Hold test (balance):</strong> hold the car lightly in front of the fans. Feel which way it wants to go. ' +
           'Does the front dip? Does it pull to one side?</li></ol>',
         render: function (el, api) {
+          // wheels that spin freely vs a sled sliding on the tile, for the same car (crr vs SLED_FRICTION): "much smaller"
           api.ui.note(el, 'good', '🏁 Last year’s sail sleds slid about ' + kid.dist(25 / kid.FT_PER_M) + '. The best one went ' + kid.dist(30 / kid.FT_PER_M) + '. ' +
-            'Wheels that spin freely have much less friction than sliding, so your car can beat that!');
-          api.ui.note(el, 'build', '🛠️ <strong>Your materials:</strong> popsicle sticks, straws, paper, pipe cleaners, cardstock, plastic wheels, ' +
-            'skewers or thin dowels, tape and hot glue. Every module ends with tips for using them well.');
+            'With wheels that spin freely, friction is ' + kid.compare(WHEELS.free, P.SLED_FRICTION, { noun: 'when a sled slides', times: false }) + '. ' +
+            'So your car can beat that!');
+          api.ui.note(el, 'build', '🛠️ <strong>Your materials:</strong> popsicle sticks, straws, paper, pipe cleaners and cardstock. ' +
+            'Also plastic wheels, skewers or thin dowels, tape and hot glue. Every module ends with tips for using them well.');
         }
       }
     ],
@@ -299,8 +379,8 @@
       // answer is the single longest option in at most 3 of the 10 (the check script counts it).
       { q: 'What is a force?', options: ['A push or a pull on something', 'How fast something is moving', 'How big something is', 'The energy that moving air has'], answer: 0,
         why: 'A force is any push or pull.' },
-      { q: 'The wind pushes your car forward with 30 paper clips. Friction pushes back with 10. What does the car do?', options: ['It keeps speeding up', 'It slows down bit by bit', 'It keeps the same speed', 'It stops right away'], answer: 0,
-        why: 'The forward push is bigger, so the forces are unbalanced. The car speeds up.' },
+      { q: 'Your car’s push arrow is much longer than its friction arrow. What does the car do?', options: ['It keeps speeding up', 'It slows down bit by bit', 'It keeps the same speed', 'It stops right away'], answer: 0,
+        why: 'The push is bigger than friction, so the forces are unbalanced. The car speeds up.' },
       { q: 'The forces on a rolling car are balanced. What happens?', options: ['It keeps speeding up', 'It slows down bit by bit', 'It keeps the same speed', 'It stops right away'], answer: 2,
         why: 'Balanced forces cancel out. The car keeps doing what it was doing.' },
       { q: 'The fans are on, but the car does not move at all. What is the most likely reason?', options: ['Gravity pulls harder than the floor pushes', 'The wind’s push can’t beat friction', 'The wind only pushes rolling cars', 'The forces on it are unbalanced'], answer: 1,
@@ -311,15 +391,17 @@
         why: 'Friction and air drag push back on the moving car. They slow it down bit by bit.' },
       { q: 'Newton’s First Law says a moving thing keeps the same speed…', options: ['forever, no matter what happens to it', 'until an unbalanced force acts on it', 'only if it is very big and heavy', 'only while it is being pushed'], answer: 1,
         why: 'Motion only changes when an unbalanced force acts. For a rolling car, that force is usually friction.' },
-      { q: 'In this lab, what does “a push of 30 paper clips” mean?', options: ['As hard as holding up 30 paper clips', 'A push that lasts for 30 seconds', 'A push that rolls the car 30 feet', 'A car that is 30 paper clips long'], answer: 0,
-        why: 'Scientists measure force in newtons. Paper clips make the numbers easy to picture.' },
+      { q: 'In this lab’s force pictures, what does a longer arrow mean?', options: ['It shows a faster car', 'It shows a bigger force', 'The push lasts longer', 'It shows a heavier car'], answer: 1,
+        why: 'An arrow’s length shows how big the force is. A longer arrow means a bigger force.' },
       { q: 'The fans stay on, but far down the hall your car slows down and stops. Why?', options: ['The wind fades, so friction wins', 'Gravity is stronger at the far end', 'The car gets heavier the farther it goes', 'Moving things always stop on their own'], answer: 0,
         why: 'The wind is strongest near the fans and fades down the hall. Once its push is smaller than friction, the car slows down.' },
       { q: 'Which change would most likely make your car roll farther?', options: ['More push and wheels that spin freely', 'A weaker fan and wheels that rub badly', 'Wheels that rub, so they grip the floor', 'Nothing, because all cars roll the same'], answer: 0,
         why: 'More push makes the car speed up more. Less friction lets the wind keep it rolling longer.' }
     ],
-    // the hallway step's settings, for the node check script (not used by the page)
+    // the steps' settings, for the node check script (not used by the page)
     _model: { GOAL_FT: GOAL_FT, GOAL_M: GOAL_M, FAN_V: FAN_V, WHEELS: WHEELS, START: START, CATCHES_UP: CATCHES_UP,
-              PREDICT: PREDICT, judge: judge, outcome: outcome, reachesGoal: reachesGoal, fanOf: fanOf, wheelsOf: wheelsOf }
+              PREDICT: PREDICT, judge: judge, outcome: outcome, reachesGoal: reachesGoal, fanOf: fanOf, wheelsOf: wheelsOf,
+              TYPICAL: TYPICAL, WEIGHT_N: WEIGHT_N, DRAG_MAX: DRAG_MAX,
+              BALANCE: { STEPS: STEPS, HALF: HALF, START: BAL_START, done: balanceDone } }
   });
 })();
