@@ -550,25 +550,29 @@
       }
     ],
     quiz: [
-      { q: 'What is mass?', options: ['How much stuff is in an object', 'How fast an object moves', 'How hard the wind pushes', 'How big the sail is'], answer: 0,
+      // The options in each question are about the same length, and the wrong ones are ideas a 6th grader might really
+      // hold, so "pick the longest" is no clue: the right answer is the single longest option in at most 3 of the 10
+      // and the single shortest in at most 3, and on a 390 px phone the right answer is never the only option that
+      // wraps to 2 lines (the check scripts count both). The lab shuffles the options.
+      { q: 'What is mass?', options: ['How much stuff is in an object', 'How fast an object can move', 'How hard the wind pushes it', 'How much space it takes up'], answer: 0,
         why: 'Mass is how much stuff is in an object. We measure it in grams.' },
-      { q: 'Two cars get the same push. Car A is 50 g. Car B is 100 g. What happens?', options: ['Car B speeds up faster', 'They speed up the same', 'Car A speeds up faster', 'Neither car moves'], answer: 2,
+      { q: 'Two cars get the same push. Car A is 50 g. Car B is 100 g. What happens?', options: ['Car B speeds up faster', 'They both speed up the same', 'Car A speeds up faster', 'Car B, since it has more inertia'], answer: 2,
         why: 'Car A has less mass. The same push speeds up a lighter car faster.' },
-      { q: 'A heavy car races a light car. How can the heavy car speed up just as fast?', options: ['Give it the same push', 'Give it a bigger push', 'Give it a smaller push', 'Give it no push'], answer: 1,
+      { q: 'A heavy car races a light car. How can the heavy car speed up just as fast?', options: ['Give it the same push', 'Give it a bigger push', 'Give it a smaller push', 'Make it even heavier'], answer: 1,
         why: 'More mass needs more push. A car with 3 times the mass needs 3 times the push.' },
-      { q: 'What is inertia?', options: ['The wind’s push on the sail', 'Objects keep doing what they are doing', 'How fast a car goes', 'The rubbing of the axles'], answer: 1,
+      { q: 'What is inertia?', options: ['The push that makes things speed up', 'Objects keep doing what they are doing', 'How fast something is moving', 'The rubbing that slows things down'], answer: 1,
         why: 'A still object stays still, and a moving object keeps moving. More mass means more inertia.' },
-      { q: 'A bowling ball and a soccer ball roll toward you at the same speed. Which is harder to stop?', options: ['The soccer ball', 'They are the same', 'Neither one, balls stop by themselves', 'The bowling ball'], answer: 3,
+      { q: 'A bowling ball and a soccer ball roll toward you at the same speed. Which is harder to stop?', options: ['The soccer ball', 'They are just as hard to stop', 'Neither, balls stop on their own', 'The bowling ball'], answer: 3,
         why: 'The bowling ball has more mass, so it has more inertia. More inertia makes it harder to stop.' },
-      { q: 'Why does a heavier car have more friction?', options: ['It presses its wheels down harder', 'The fans blow less on heavy cars', 'Heavy cars have bigger sails', 'It doesn’t. All cars have the same friction'], answer: 0,
+      { q: 'Why does a heavier car have more friction?', options: ['It presses harder on its wheels', 'It has to push more air aside', 'Heavy parts are always rougher', 'It moves faster, so it rubs more'], answer: 0,
         why: 'A heavier car presses harder on its wheels and axles, so they rub more. Twice the mass means twice the friction.' },
-      { q: 'You make your car lighter, from 150 g to 45 g. The sail and wheels stay the same. What happens in the hallway?', options: ['It rolls about the same', 'It rolls much farther', 'It rolls less far', 'It can’t start'], answer: 1,
+      { q: 'You make your car lighter, from 150 g to 45 g. The sail and wheels stay the same. What happens in the hallway?', options: ['It rolls about as far', 'It rolls much farther', 'It rolls less far', 'It stops sooner, with less inertia'], answer: 1,
         why: 'In the simulator, it goes from ' + rolls(Q_MASS.heavy) + ' to ' + rolls(Q_MASS.light) + '. A light car speeds up faster and has less friction.' },
-      { q: 'A super-light 25 g car flips onto its nose in front of the fans. Why?', options: ['Its wheels rub too much', 'It has too much inertia', 'It is too light for its sail', 'The fans are too weak'], answer: 2,
+      { q: 'A super-light 25 g car flips onto its nose in front of the fans. Why?', options: ['Light cars have too much friction', 'It has too much inertia to roll', 'It is too light for its sail', 'It is going too fast to stay up'], answer: 2,
         why: 'The wind pushes high on the sail and tries to flip the car forward. With a 20 × 20 cm sail, a car lighter than about ' + Math.round(TIP_G) + ' g flips.' },
-      { q: 'Which change takes the MOST mass off a sail car?', options: ['Using a little less tape', 'Leaving out one straw', 'Cutting 1 cm off a skewer', 'A paper sail instead of cardstock'], answer: 3,
+      { q: 'Which change takes the MOST mass off a sail car?', options: ['Using two fewer strips of tape', 'Leaving out one of the straws', 'Cutting 1 cm off each skewer', 'A paper sail, not cardstock'], answer: 3,
         why: 'Paper is about 4.5 g and cardstock is about 10 g. That swap saves about 5.5 g, more than all the others put together.' },
-      { q: 'Your car rolls ' + kid.dist(Q_NICKEL.before.distance) + '. You tape on two nickels (10 g). Now it rolls ' + kid.dist(Q_NICKEL.after.distance) + '. What does this show?', options: ['Extra mass made it roll less far', 'Heavier cars always tip over', 'The nickels helped the sail', 'Mass makes no difference'], answer: 0,
+      { q: 'Your car rolls ' + kid.dist(Q_NICKEL.before.distance) + '. You tape on two nickels (10 g). Now it rolls ' + kid.dist(Q_NICKEL.after.distance) + '. What does this show?', options: ['More mass made it roll less far', 'Heavier cars always roll farther', 'The nickels gave the car more push', 'Heavy cars have less friction'], answer: 0,
         why: 'Only the mass changed, so the extra 10 g made the runs shorter. Taking grams off should help, as long as the car doesn’t tip.' }
     ],
     // the numbers and rules behind the text, for checking (not used by the page)

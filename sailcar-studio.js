@@ -176,16 +176,18 @@
   // a real, hand-measured run that made it to the far end of the hallway
   function realAtEnd(m) { return m >= hall().length - END_SLACK_M; }
   function trimNum(v) { return String(Math.round(v * 100) / 100); }
-  function fmt(v, d) { return SailLab.fmt(v, d); }
-  // a real distance in the unit it was measured in, then the other unit: "52 ft (15.85 m)" / "4.20 m (13.8 ft)"
-  function bothUnits(v, unit) { return unit === 'ft' ? trimNum(v) + ' ft (' + fmt(v / FT_PER_M, 2) + ' m)' : fmt(v, 2) + ' m (' + fmt(v * FT_PER_M, 1) + ' ft)'; }
-  // a logged run's real distance as the student typed it (the unit they measured in first). distanceM is what the
-  // board ranks by (and the database caps at 100 m); the typed number is only shown when it agrees with it, so a
-  // hand-made run can't show a different distance from the one it is ranked by. Otherwise distanceM is shown.
+  // A real, hand-measured distance, feet first like kid.dist. The number the student typed is their measurement,
+  // so it is shown just as typed; the other unit is rounded the kid.dist way (kid.ft / kid.m), never "13.72 m":
+  // 45 ft typed → "45 ft (14 m)" · 13.5 ft → "13.5 ft (4.1 m)" · 4.2 m typed → "14 ft (4.2 m)"
+  // (Only the text changes: distance, unit and distanceM are stored exactly as before.)
+  function realDist(v, unit) { return unit === 'ft' ? trimNum(v) + ' ft (' + kid.m(v / FT_PER_M) + ' m)' : kid.ft(v) + ' ft (' + trimNum(v) + ' m)'; }
+  // a logged run's real distance with the number the student typed. distanceM is what the board ranks by (and
+  // the database caps at 100 m); the typed number is only shown when it agrees with it, so a hand-made run
+  // can't show a different distance from the one it is ranked by. Otherwise distanceM is shown, as kid.dist.
   function realRunText(r) {
     const typed = typeof r.distance === 'number' && isFinite(r.distance) && (r.unit === 'ft' || r.unit === 'm') &&
       Math.abs((r.unit === 'ft' ? r.distance / FT_PER_M : r.distance) - r.distanceM) < 0.01;
-    return typed ? bothUnits(r.distance, r.unit) : bothUnits(r.distanceM, 'm');
+    return typed ? realDist(r.distance, r.unit) : kid.dist(r.distanceM);
   }
 
   // ── predict first (step 2): how far will this design go? ──
@@ -254,7 +256,7 @@
   // after a run is saved. why = 'tipped' / 'never moved' when the design had no predicted distance (see noDistanceWhy)
   function loggedText(rec, why) {
     const pct = rec.predictedM > 0 ? Math.round(rec.distanceM / rec.predictedM * 100) : 0;
-    return '✓ Logged ' + bothUnits(rec.distance, rec.unit) + '.' +
+    return '✓ Logged ' + realDist(rec.distance, rec.unit) + '.' +
       (!(rec.predictedM > 0) ? (WHY_SAID[why] ? ' The simulator said this design ' + WHY_SAID[why] + '. So there is no predicted distance to compare.' : '')
         : atEnd(rec.predictedM) ? ' The simulator predicted it would reach the end of the hall' + (realAtEnd(rec.distanceM) ? ', and it did!' : '. This run went ' + pct + '% of the way there.')
         : ' The simulator predicted ' + aboutText(rec.predictedM) + '. This run went ' + pct + '% of that.') +
@@ -476,7 +478,6 @@
   function renderPredict(el, api) {
     useDesignFor(currentUser());
     const h = api.h;
-    api.ui.word(el, 'prediction', 'a careful guess about what will happen, made <em>before</em> you test it.');
     const about = h('p');
     function showDesign() { about.textContent = 'Your design: ' + summary(design) + ' · ' + Math.round(analyse(design).grams) + ' g.'; }
     showDesign();
@@ -484,6 +485,8 @@
     el.appendChild(h('p', { text: 'In the simulator, your car starts ' + kid.dist(START_X) + ' in front of the two fans. The hallway is ' +
       hallLenText() + ' long and ' + hallWideText() + ' wide, just like ours.' }));
     // PREDICT FIRST: the student commits to a guess; ▶ Run stays off until they pick one
+    // ("prediction" is taught in a Word-to-know box above Module 1's first predict card: here it is only a reminder)
+    el.appendChild(h('p', { text: '🔮 Remember: make your prediction first. Then test it.' }));
     const q = guessQuestion();
     const guess = api.ui.predict(el, { question: q.question, choices: q.choices, hint: q.hint, judge: guessJudge });
     const best = h('div', { class: 'sl-note sl-note-good', 'aria-live': 'polite' });
@@ -631,7 +634,7 @@
       const tb = h('tbody');
       runs.forEach(function (r, i) {
         const pct = r.predictedM > 0 ? Math.round(r.distanceM / r.predictedM * 100) + '%' : '—';
-        const real = realRunText(r);          // in the unit it was measured in first: "13.5 ft (4.11 m)"
+        const real = realRunText(r);          // feet first, the typed number as typed: "13.5 ft (4.1 m)"
         tb.appendChild(h('tr', null, [h('td', { text: String(i + 1) }), h('td', { text: real }),
           h('td', { text: predictedCell(r) }), h('td', { text: pct }), h('td', { text: String(r.note || ''), style: 'text-align:left;white-space:normal;min-width:' + (r.note ? 140 : 0) + 'px' })]));
       });
@@ -654,7 +657,7 @@
         queued = true;
         btn.disabled = !classesOk; btn.textContent = LOG_TEXT;
         distIn.value = ''; noteIn.value = '';
-        say('📶 ' + bothUnits(rec.distance, rec.unit) + ' is saved on this device. It will upload when the Wi-Fi is back. Keep this page open until you see ✓.', true);
+        say('📶 ' + realDist(rec.distance, rec.unit) + ' is saved on this device. It will upload when the Wi-Fi is back. Keep this page open until you see ✓.', true);
       }, SAVE_WAIT_MS);
       db().collection('sailcar_runs').add(rec).then(function () {
         settled = true;
@@ -666,7 +669,7 @@
         if (life.left) return;
         btn.disabled = !classesOk; btn.textContent = LOG_TEXT;
         const why = err && err.code === 'permission-denied' ? 'Logging runs isn’t turned on in the class database yet. Ask your teacher.' : 'Check the Wi-Fi and try again.';
-        say(queued ? 'Your ' + bothUnits(rec.distance, rec.unit) + ' run was NOT saved. ' + why : 'Not saved. ' + why, true);
+        say(queued ? 'Your ' + realDist(rec.distance, rec.unit) + ' run was NOT saved. ' + why : 'Not saved. ' + why, true);
       });
     }
     btn.addEventListener('click', function () {
@@ -688,7 +691,8 @@
                 : pred > 0 && m > 2.5 * pred ? 'That’s more than 2½ times the simulator’s prediction (' + aboutText(pred) + ')!' : '';
       if (why && confirmKey !== key) {
         confirmKey = key;
-        say('You typed ' + (u === 'ft' ? trimNum(v) + ' ft (' + Math.round(m) + ' m)' : trimNum(v) + ' m (' + Math.round(v * FT_PER_M) + ' ft)') + '. ' + why + ' Tap Log again if that’s right.', true);
+        // what they typed, in the unit they typed it in (the other unit rounded the kid.dist way)
+        say('You typed ' + (u === 'ft' ? trimNum(v) + ' ft (' + kid.m(m) + ' m)' : trimNum(v) + ' m (' + kid.ft(m) + ' ft)') + '. ' + why + ' Tap Log again if that’s right.', true);
         return;
       }
       confirmKey = null;

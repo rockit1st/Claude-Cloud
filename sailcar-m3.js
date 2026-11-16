@@ -511,25 +511,27 @@
       }
     ],
     quiz: [
-      { q: 'What is drag?', options: ['The air pushing back on something that moves through it', 'The wind from the fans pushing the car forward', 'The rubbing between the wheels and the axles', 'The pull of gravity on the car'], answer: 0,
+      // The options in each question are about the same length, so "pick the longest" is no clue: the right
+      // answer is the single longest option in at most 3 of the 10 (the check script counts it).
+      { q: 'What is drag?', options: ['The air pushing back on things moving through it', 'The wind from the fans pushing the car forward', 'The wheels rubbing on their axles as they turn', 'Gravity pulling the car down to the floor'], answer: 0,
         why: 'Anything moving through air has to push the air aside. The air pushes back, and that push is drag.' },
-      { q: 'Your car rolls through still air. Then it goes twice as fast. What happens to the drag?', options: ['It stays the same', 'It gets about 2 times as big', 'It gets about 4 times as big', 'It gets half as big'], answer: 2,
+      { q: 'Your car rolls through still air. Then it goes twice as fast. What happens to the drag?', options: ['It stays the same in still air', 'It gets about 2 times as big', 'It gets about 4 times as big', 'It gets about half as big'], answer: 2,
         why: 'Faster air hits harder, and more of it hits each second. So twice as fast means about 4 times the drag.' },
-      { q: 'Three car bodies are the same size and go the same speed. Which one has the MOST drag?', options: ['The one with a rounded nose', 'The one with a flat box front', 'The one with a pointed wedge front', 'They all have the same drag'], answer: 1,
+      { q: 'Three car bodies are the same size and go the same speed. Which one has the MOST drag?', options: ['The one with a rounded nose', 'The one with a flat box front', 'The one with a pointed wedge front', 'They all make about the same drag'], answer: 1,
         why: 'A flat front slams into the air. Pointed and rounded fronts let the air slide around them.' },
-      { q: 'Your car rolls exactly as fast as the wind around it. How hard does the wind push the sail?', options: ['Harder than ever', 'Not at all, because the sail feels no wind', 'It pushes the car backward hard', 'Twice as hard as usual'], answer: 1,
+      { q: 'Your car rolls exactly as fast as the wind around it. How hard does the wind push the sail?', options: ['Just as hard as it did at the start line', 'Not at all, since no air rushes past the sail', 'Harder, because the car is going so fast', 'It pushes the car backward like a brake'], answer: 1,
         why: 'The car moves along with the air. So no air rushes past the sail, and there is no push.' },
-      { q: 'Your car is going faster than the wind around it. What does the air do to the sail?', options: ['It pushes the car forward', 'Nothing at all', 'It hits the sail from the front and slows the car', 'It lifts the car off the floor'], answer: 2,
+      { q: 'Your car is going faster than the wind around it. What does the air do to the sail?', options: ['It pushes the car forward even harder', 'Nothing, since the car is ahead of the wind', 'It hits from the front and slows the car', 'It pulls the car along from behind'], answer: 2,
         why: 'The sail runs into the air, like your hand out a car window. The sail acts like a parachute.' },
-      { q: 'Where in the hall can a car get going faster than the wind?', options: ['Right at the start line', 'Farther down the hall, where the wind is weaker', 'Nowhere, because a car is never faster than the wind', 'Only if the car is very heavy'], answer: 1,
+      { q: 'Where in the hall can a car get going faster than the wind?', options: ['Right by the fans, where the wind is strongest', 'Farther down the hall, where the wind fades', 'Nowhere, since a car can never beat the wind', 'Anywhere, as long as the car is heavy'], answer: 1,
         why: 'Down the hall, the wind fades. A car that kept its speed can catch up and pass it.' },
-      { q: 'Which car is most likely to outrun the wind?', options: ['A heavy car with rubbing wheels', 'A light car with rubbing wheels', 'A light car with wheels that spin freely', 'A car with no sail'], answer: 2,
+      { q: 'Which car is most likely to outrun the wind?', options: ['A heavy car with wheels that spin freely', 'A light car with wheels that rub the axles', 'A light car with wheels that spin freely', 'A car with a tiny sail to cut its drag'], answer: 2,
         why: 'A light car with wheels that spin freely keeps its speed best. So it can roll faster than the fading wind.' },
-      { q: 'Which part of a sail car makes the most drag?', options: ['The sail', 'The front of the body', 'The wheels', 'The mast'], answer: 0,
+      { q: 'Which part of a sail car makes the most drag?', options: ['The sail', 'The body', 'The wheels', 'The mast'], answer: 0,
         why: 'The big sail catches the most air. The body’s drag is tiny, less than 1 paper clip.' },
-      { q: 'Which change cuts extra drag on the car’s body?', options: ['Glue a wide, flat bumper on the front', 'Add pipe-cleaner antennas for style', 'Tape down loose flaps and cut long axle ends short', 'Leave long skewer ends sticking out'], answer: 2,
+      { q: 'Which change cuts extra drag on the car’s body?', options: ['Glue on a big flat shield to block the air', 'Make the body heavier so the air can’t push it', 'Tape down loose flaps and trim long ends', 'Leave flaps loose so the air slips past them'], answer: 2,
         why: 'Loose flaps and long ends catch the air. Trimming them cuts drag and saves weight too.' },
-      { q: 'A classmate wants a much smaller sail to cut drag. Is that a good idea?', options: ['Yes, because the smallest sail always wins', 'No, because the sail is the car’s engine', 'Yes, so take the sail off completely', 'It makes no difference'], answer: 1,
+      { q: 'A classmate wants a much smaller sail to cut drag. Is that a good idea?', options: ['Yes, because the smallest sail always wins', 'No, because the sail is the car’s engine', 'Yes, since less drag always means faster', 'It won’t matter, since all sails push the same'], answer: 1,
         why: 'In the simulator, a 20 × 20 cm sail rolls about ' + KID.ft(STD.distance) + ' ft. A 10 × 10 cm sail rolls only about ' + KID.ft(SMALL_SAIL.distance) + ' ft.' }
     ],
     // the wheel table and computed sentences, for the node check script (not used by the page)

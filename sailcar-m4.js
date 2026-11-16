@@ -800,25 +800,28 @@
       }
     ],
     quiz: [
-      { q: 'What does friction do to a rolling car?', options: ['It speeds the car up', 'It slows the car down', 'It makes the car lighter', 'It pushes the car forward'], answer: 1,
+      // The options in each question are about the same length, so "pick the longest" is no clue: the right
+      // answer is the single longest option in at most 3 of the 10, and the single shortest in at most 3
+      // (the check script counts both).
+      { q: 'What does friction do to a rolling car?', options: ['It speeds the car up', 'It slows the car down', 'It only matters when the car starts', 'It holds the car down on the floor'], answer: 1,
         why: 'Friction rubs against motion. It works against the car and slows it down.' },
       { q: 'You tape some pennies onto your car to make it heavier. What happens to its friction?', options: ['It gets smaller', 'It stays the same', 'It gets bigger', 'It goes away'], answer: 2,
         why: 'A heavier car presses down harder on its wheels and axles. So it has more friction.' },
-      { q: 'Your car keeps curving into the wall. What should you check first?', options: ['That the sail is big enough', 'That the axles are parallel', 'That the car is heavy enough', 'That the fans are on high'], answer: 1,
+      { q: 'Your car keeps curving into the wall. What should you check first?', options: ['That the sail is big enough', 'That the two axles are parallel', 'That the car is heavy enough', 'That the fans are on high'], answer: 1,
         why: 'Crooked axles steer the car to one side. Measure the gap between the axles at both ends.' },
-      { q: 'Far down the hall, the wind can’t start a still car. But a car rolling in from the start line keeps going past that spot. Why?', options: ['The wind only pushes moving cars', 'A still car has no friction', 'Starting takes more push than rolling', 'Gravity is stronger on a still car'], answer: 2,
+      { q: 'Far down the hall, the wind can’t start a still car. But a car rolling in from the start line keeps going past that spot. Why?', options: ['The wind pushes harder on cars that move', 'A still car has no friction at all', 'Starting takes more push than rolling', 'Gravity pulls harder on a still car'], answer: 2,
         why: 'Parts that sit still grip each other a little, so starting takes extra push. A rolling car is already moving, so it keeps going while friction slows it.' },
-      { q: 'Which axle has the LEAST friction?', options: ['A skewer spinning freely in a straw', 'A skewer in a tight cardstock hole', 'Wheels rubbing the side of the chassis', 'Tape wrapped where the wheels turn'], answer: 0,
+      { q: 'Which axle has the LEAST friction?', options: ['A skewer spinning freely in a straw', 'A skewer in a tight cardstock hole', 'Wheels rubbing the side of the chassis', 'Tape wrapped tight where the wheels turn'], answer: 0,
         why: 'A straw makes a smooth bearing, so the skewer spins easily. Tight holes, rubbing and tape all add friction.' },
-      { q: 'You flick a wheel and it stops after half a second. What does that tell you?', options: ['The sail is too small', 'The car is too light', 'Nothing, wheels always stop fast', 'Something is rubbing or too tight'], answer: 3,
+      { q: 'You flick a wheel and it stops after half a second. What does that tell you?', options: ['The car needs to be heavier', 'The wheel grips well, which is good', 'Nothing, wheels always stop fast', 'Something is rubbing or too tight'], answer: 3,
         why: 'A good wheel spins for 3 seconds or more. If it stops fast, find what rubs and fix it.' },
-      { q: 'What is a spacer for?', options: ['It makes the wheel spin faster', 'It keeps the wheel from rubbing the chassis', 'It adds weight to hold the car down', 'It locks the wheel so it can’t turn'], answer: 1,
+      { q: 'What is a spacer for?', options: ['It holds the wheel tight against the chassis', 'It keeps the wheel from rubbing the chassis', 'It adds weight to hold the car down', 'It helps the wheels grip the floor'], answer: 1,
         why: 'A spacer keeps a small gap between the wheel and the chassis. Rubbing makes lots of friction.' },
-      { q: 'Same car, same fans. You swap rubbing wheels for wheels that spin freely. What happens?', options: ['It rolls about the same', 'It rolls a little less far', 'It won’t move at all', 'It rolls much farther'], answer: 3,
+      { q: 'Same car, same fans. You swap rubbing wheels for wheels that spin freely. What happens?', options: ['It rolls about the same', 'It rolls a little less far', 'The wheels just spin in place', 'It rolls much farther'], answer: 3,
         why: 'In our model, the car with rubbing wheels ' + rollText(RUN.rub) + '. With wheels that spin freely, it ' + rollText(RUN.smooth) + '.' },
-      { q: 'Last year’s sleds slid about 25 ft. Why can a car with wheels go much farther?', options: ['Rolling has much less friction than sliding', 'Cars with wheels are always lighter', 'The fans blow harder on cars', 'Heavier things always go farther'], answer: 0,
+      { q: 'Last year’s sleds slid about 25 ft. Why can a car with wheels go much farther?', options: ['Rolling has much less friction than sliding', 'Cars with wheels are always lighter', 'The fans blow harder on cars than sleds', 'Heavier things always go farther'], answer: 0,
         why: 'In our model, the 20 g sled has ' + kid.force(SLED_FR) + ' of friction. The 70 g car with OK wheels has only ' + kid.force(FR) + '.' },
-      { q: 'You glue the wheels tight onto a skewer. How should the skewer be held on the chassis?', options: ['Glued down so it can’t move', 'Taped down tight', 'Loose inside a straw, so it can turn', 'Pushed through a tight hole'], answer: 2,
+      { q: 'You glue the wheels tight onto a skewer. How should the skewer be held on the chassis?', options: ['Glued down flat so it stays straight', 'Taped down tight so it won’t wobble', 'Loose in a straw so it can turn', 'Pushed through a tight cardstock hole'], answer: 2,
         why: 'If the wheels are glued on, the whole skewer must turn. A straw lets it spin freely.' }
     ],
     // the model's numbers and the challenge rules, for the node check script (not used by the page)

@@ -244,6 +244,8 @@
           el.appendChild(row);
           const fan = api.ui.choice(row, { label: 'Fan speed', value: START.fan, options: FAN_OPTS, onChange: changed });
           const fric = api.ui.choice(row, { label: 'Wheels', value: START.wheels, options: WHEEL_OPTS, onChange: changed });
+          // the lab's first "Predict first" card: the word is taught right above it (the Studio only reminds)
+          api.ui.word(el, 'prediction', 'your best guess about what will happen. You make it <em>before</em> you test.');
           const guess = api.ui.predict(el, { question: PREDICT.question, choices: PREDICT.choices, judge: judge });
           // a guess is about ONE fan + wheels: new settings need a new guess
           let picked = START.fan + '+' + START.wheels;
