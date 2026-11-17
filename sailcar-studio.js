@@ -6,8 +6,10 @@
 // Each student's design + prediction is kept with their account (sailcar_progress/{uid}.design,
 // written only here and never touching 'modules') and on this device ('sailcar-design-v2-<uid>');
 // whichever copy was saved last (savedMs) wins.
-// Written for 6th graders: short sentences, forces in paper clips (SailLab.kid.force), distances in feet
-// first (SailLab.kid.dist), no formulas. Every number a student reads is worked out from simulate().
+// Written for 6th graders: short sentences, distances in feet first (SailLab.kid.dist), no formulas, and NO force
+// numbers or force units: a force is an arrow whose LENGTH shows its size (draw.forceScale: one honest scale per
+// picture or row), with a word label, and the words COMPARE two forces (kid.compare, the whole lab's vocabulary).
+// Every number a student reads (grams, cm, feet) is worked out from simulate().
 (function () {
   const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
   const kid = SailLab.kid;
@@ -112,29 +114,62 @@
   }
 
   // ── numbers for people ──
-  // "about 30 times" / "twice" / "1.7 times": one decimal under 3, whole numbers above (like kid.clips)
-  function times(r) { const n = r < 3 ? Math.round(r * 10) / 10 : Math.round(r); return n === 2 ? 'twice' : n + ' times'; }
-  // What the design card says, as plain rows (label, text, colour). Every number comes from analyse(),
-  // the same sums simulate() uses: the card shows "TIPS OVER" exactly when simulate() says 'tipped over'
-  // and "too much" friction exactly when it says 'never moved'.
+  // a DISTANCE ratio in words (last year's sleds): 2 → "twice", 3 → "3 times". Forces are never compared with this:
+  // they use kid.compare, the whole lab's vocabulary.
+  function times(n) { return n === 2 ? 'twice' : n + ' times'; }
+  // ── forces on the design card: arrows and words, never a number ──
+  const GREEN = '#40e080', ORANGE = '#ffa040', RED = '#ff6060', BLUE = '#7ad7ff';
+  // The biggest push any design can get at the start line (the biggest cupped sail on big wheels). The side picture's
+  // push arrow uses it as a FIXED scale, so a bigger sail always draws a longer push arrow, from one design to the next.
+  const MAX_PUSH = analyse(Object.assign({}, DEFAULT, { sailW: RANGES.sailW[1], sailH: RANGES.sailH[1], cupped: true, bigWheels: true })).startPush;
+  // a card row's arrows, in % of the row: ONE scale per row (draw.forceScale), and the row's words are built from that
+  // same scale, so they state a ratio only when both arrows are drawn to scale
+  function barScale(max) { return SailLab.draw.forceScale(max, 92, { min: 6, over: 0 }); }
+  // the picture's push arrow: MAX_PUSH is ARROW_PX long (a small push is drawn a bit too long, so it stays visible)
+  const ARROW_PX = 60;
+  function arrowScale() { return SailLab.draw.forceScale(MAX_PUSH, ARROW_PX, { min: 12, over: 0 }); }
+  // What the design card says, as plain rows (label, text, colour, and for a force row its arrows: bars = { len, rows }).
+  // Every fact comes from analyse(), the same sums simulate() uses: the card shows "TIPS OVER" exactly when simulate()
+  // says 'tipped over' and "Too much friction" exactly when it says 'never moved'.
   function designFacts(d) {
-    const P = SailLab.physics, a = analyse(d), rows = [];
-    // grams are shown whole (as on race day and in the run log); 1 paper clip ≈ 1 g, so the weight in clips is the same number
-    const g = Math.round(a.grams);
-    rows.push({ label: 'Mass', text: g + ' g (it weighs about as much as ' + kid.force(g * kid.CLIP_N).replace(/^about /, '') + ')' });
+    const a = analyse(d), rows = [];
+    // grams are shown whole (as on race day and in the run log)
+    rows.push({ label: 'Mass', text: Math.round(a.grams) + ' g' });
     rows.push({ label: 'Sail', text: d.sailW + ' cm × ' + d.sailH + ' cm = ' + (d.sailW * d.sailH) + ' square cm' });
-    rows.push({ label: 'Wind’s push (thrust) at the start', text: kid.force(a.startPush) });
-    const r = a.startPush / a.friction;
-    rows.push({ label: 'Friction', text: kid.force(a.friction) + '. ' + (!a.canStart ? 'Too much! It holds the car still, so the wind can’t start it.'
-                                                                     : r < 2 ? 'The push is only a little bigger. The car barely gets going.'
-                                                                     : 'The push is about ' + times(r) + ' as big, so friction can’t hold the car still.'),
-                color: a.canStart ? '' : '#ff8080' });
-    const tm = a.tipMargin;
-    rows.push({ label: 'Tipping', text: tm >= 1.5 ? '✅ Safe. Holding down is about ' + times(tm) + ' as strong as tipping.'
-                                  : tm >= 1 ? '⚠️ Close to tipping! Lower the sail, or tape a penny low at the back.'
-                                  : '🤸 TIPS OVER! Tipping is stronger than holding down. Lower the sail, add weight at the back, or use a smaller sail.',
-                color: tm >= 1.5 ? '#40e080' : tm >= 1 ? '#f0c040' : '#ff8080' });
+    // the wind's push against friction at the start line: the bigger one fills the row, so the two lengths show how they
+    // compare (the side picture's push arrow is the one on a fixed scale, for comparing one design with the next)
+    const push = a.startPush, fr = a.friction, fl = barScale(Math.max(push, fr));
+    const pf = 'The push is ' + kid.compare(push, fr, { noun: 'friction', times: fl.toScale(push) && fl.toScale(fr) });
+    rows.push({ label: 'Wind’s push and friction',
+                // a still car needs a slightly bigger push to START than to keep rolling (P.STICKY, Module 4)
+                text: !a.canStart ? '❌ Too much friction! ' + pf + '.' + (push > fr ? ' But a still car needs a slightly bigger push to start.' : '') + ' So the wind can’t start the car.'
+                    : push < fr * kid.COMPARE.RATIO ? pf + '. That is not much extra push, so the car barely gets going.'
+                    : pf + '. Friction can’t hold the car still.',
+                color: a.canStart ? '' : '#ff8080',
+                bars: { len: fl, rows: [{ label: 'wind push', value: push, color: GREEN }, { label: 'friction', value: fr, color: ORANGE, dir: 'left' }] } });
+    // the tug-of-war (as in Module 6): tipping against holding down, the bigger one fills the row. tipMargin is
+    // holding down ÷ tipping, so 1 and tipMargin are the two sides' sizes.
+    const tm = a.tipMargin, tl = barScale(Math.max(1, tm)), o = { times: tl.toScale(1) && tl.toScale(tm) };
+    const holdWords = 'Holding down is ' + kid.compare(tm, 1, Object.assign({ noun: 'tipping' }, o)) + '.';
+    const tipWords = 'Tipping is ' + kid.compare(1, tm, Object.assign({ noun: 'holding down' }, o)) + (kid.bigger(1, tm) === 'about the same' ? ', but it wins by a hair.' : '.');
+    rows.push({ label: 'Tipping', text: tm >= 1.5 ? '✅ Safe. ' + holdWords
+                                  : tm >= 1 ? '⚠️ Close to tipping! ' + holdWords + ' Lower the sail, or tape a penny low at the back.'
+                                  : '🤸 TIPS OVER! ' + tipWords + ' Lower the sail, add weight at the back, or use a smaller sail.',
+                color: tm >= 1.5 ? '#40e080' : tm >= 1 ? '#f0c040' : '#ff8080',
+                bars: { len: tl, tug: true, rows: [{ label: 'tipping', value: 1, color: RED }, { label: 'holding down', value: tm, color: BLUE }] } });
     return rows;
+  }
+  // a card row's arrows (tug-of-war bars for tipping), drawn with the row's own scale so the picture and the words beside
+  // it always agree. The look is ui.forceBars' (the same CSS): word labels, never numbers. Screen readers skip them:
+  // the row's words just above say the same thing.
+  function barsEl(h, row) {
+    const b = row.bars;
+    return h('div', { class: 'sl-fbars', 'aria-hidden': 'true' }, b.rows.map(function (r) {
+      const w = b.len(r.value);
+      return h('div', { class: 'sl-fbar-row' }, [h('span', { class: 'sl-fbar-lbl', style: 'color:' + r.color, text: r.label }),
+        h('span', { class: 'sl-fbar-track' }, [h('span', { class: 'sl-fbar' + (r.dir === 'left' ? ' sl-fbar-left' : ''), hidden: !(w > 0),
+          style: 'width:' + Math.round(w * 100) / 100 + '%;background:' + r.color + (b.tug ? ';clip-path:none;border-radius:4px' : '') })])]);
+    }));
   }
 
   // The model is calibrated only from past years' sled runs, so predictions are shown as a rounded
@@ -230,7 +265,7 @@
       why = 'The wind pushed high on the sail and flipped the car forward. A lower sail or pennies at the back can help.';
     } else if (r.reason === 'never moved') {
       text = 'Your car did not move at all.';
-      why = 'Friction held it still. It was bigger than the wind’s push. Make the wheels spin freely, or use a bigger sail.';
+      why = 'Friction held it still. The wind’s push was too small to beat it. Make the wheels spin freely, or use a bigger sail.';
     } else if (r.reason === 'hit the wall') {
       text = 'Your car rolled ' + kid.dist(d) + ', then hit the wall.';
       why = 'Its axles were not lined up, so it curved off course. Line them up with a ruler.';
@@ -437,6 +472,7 @@
         card.textContent = '';
         designFacts(design).forEach(function (row) {
           card.appendChild(h('div', null, [h('strong', { text: row.label + ': ' }), h('span', { text: row.text, style: row.color ? 'color:' + row.color : '' })]));
+          if (row.bars) card.appendChild(barsEl(h, row));
         });
         // drawn at the real on-screen width (like the hallway simulator), so the labels stay readable on a phone
         const W = Math.max(260, Math.min(560, Math.round(root.clientWidth || 560))), FLOOR = 175;
@@ -447,16 +483,23 @@
         api.svg('line', { x1: 16, y1: FLOOR, x2: W - 16, y2: FLOOR, stroke: '#4a3a6a', 'stroke-width': 3 }, pic);
         // the whole car (wheels + deck + mast) must fit in the picture
         const wr = design.bigWheels ? 2.5 : 1.5, len = a.car.wheelbase * 100 + 2 * wr, tallCm = 2 * wr + 1.5 + design.sailGap + design.sailH;
-        const scale = Math.min(4.5, 150 / tallCm, (W - 120) / len), x0 = W / 2 - len * scale / 2;
-        const frontAxle = x0 + len * scale - wr * scale;
+        const scale = Math.min(4.5, 150 / tallCm, (W - 120) / len), carW = len * scale;
+        // the sail's front edge, measured from the car's back end; the car moves right (never off the picture) when
+        // the wind push arrow needs more room in front of a big sail
+        const sailRel = carW - wr * scale - MAST_POS[design.mastPos] * a.car.wheelbase * 100 * scale - design.sailW * scale * 0.45;
+        let x0 = W / 2 - carW / 2;
+        x0 += Math.max(0, Math.min(ARROW_PX + 18 - (x0 + sailRel), W - 16 - (x0 + carW)));
+        const frontAxle = x0 + carW - wr * scale;
         const mastX = frontAxle - MAST_POS[design.mastPos] * a.car.wheelbase * 100 * scale;
         api.draw.car(pic, x0, FLOOR, { scale: scale, length: len, sailW: design.sailW, sailH: design.sailH, mastH: design.sailGap + design.sailH, mastAt: (mastX - x0) / (len * scale),
                                        cupped: design.cupped, wheelR: wr, sailColor: design.sailMat === 'cardstock' ? '#f0d8a0' : '#f0e6ff' });
-        // the wind pushes on the middle of the sail (high up: that is what tips a car forward)
+        // the wind pushes on the middle of the sail (high up: that is what tips a car forward). The arrow's length shows
+        // the push on one fixed scale for every design (arrowScale), so a bigger push never draws a shorter arrow.
         const sailFront = mastX - design.sailW * scale * 0.45, sailMidY = FLOOR - (2 * wr + 1 + design.sailGap + design.sailH / 2) * scale + design.sailW * scale * 0.06;
-        if (sailFront - 6 - 16 >= 44) {
-          api.draw.arrow(pic, 16, sailMidY, sailFront - 6, sailMidY, '#40e080', '');
-          api.svg('text', { x: 18, y: sailMidY - 10, 'text-anchor': 'start', fill: '#40e080', 'font-size': 13, 'font-weight': 700, class: 'sl-lbl' }, pic, 'wind');
+        const tipX = sailFront - 6, pushPx = arrowScale()(a.startPush);
+        if (tipX - pushPx >= 4) {
+          api.draw.arrow(pic, tipX - pushPx, sailMidY, tipX, sailMidY, GREEN, '');
+          api.svg('text', { x: tipX, y: sailMidY - 10, 'text-anchor': 'end', fill: GREEN, 'font-size': 13, 'font-weight': 700, class: 'sl-lbl' }, pic, 'wind push');
         }
         const cgX = frontAxle - a.car.cgToFront * 100 * scale, cgY = FLOOR - a.car.cgHeight * 100 * scale;
         api.svg('circle', { cx: cgX, cy: cgY, r: 6, fill: '#00a8ff', stroke: '#fff', 'stroke-width': 1.5 }, pic);
@@ -498,7 +541,7 @@
       if (strongText) best.appendChild(h('div', { style: 'margin-top:6px;font-size:0.85rem;color:#c8b8ea', text: TUNED_NOTE }));
     }
     const TIP_TEXT = '🤸 In the simulator, this design tips over at the start line. Go back and lower the sail. Or tape a penny low at the back.';
-    const STUCK_TEXT = '😴 In the simulator, this design never starts rolling. Friction is bigger than the wind’s push. Go back and fix the axles, or use a bigger sail.';
+    const STUCK_TEXT = '😴 In the simulator, this design never starts rolling. The wind’s push is too small to beat friction. Go back and fix the axles, or use a bigger sail.';
     function showLast() {
       // the longer-hall distance isn't stored: the same design in the same model always rolls the same, so work it out again
       if (design.predictedM > 0) say('🔮 The simulator’s last prediction for this design: ', predictionText(design.predictedM, atEnd(design.predictedM) ? forecast(design).longer : 0), '.');
@@ -846,6 +889,7 @@
     _studio: { clean: clean, predictionText: predictionText, forecast: forecast, rankRows: rankRows, LONG_HALL_M: LONG_HALL_M,
                designFacts: designFacts, guessQuestion: guessQuestion, guessOutcome: guessOutcome, guessJudge: guessJudge,
                bestLine: bestLine, designLineText: designLineText, loggedText: loggedText, summary: summary,
+               barScale: barScale, arrowScale: arrowScale, MAX_PUSH: MAX_PUSH, ARROW_PX: ARROW_PX,
                SLED_FT: SLED_FT, MID_FT: MID_FT, START_X: START_X,
                state: function () { return { design: design, uid: designUid, status: cloudStatus }; } }
   });
