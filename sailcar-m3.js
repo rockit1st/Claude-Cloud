@@ -129,12 +129,15 @@
           function draw() {
             const f = sp.get(), d = drag(f);
             const W = boardWidth(el), H = 210, FL = 184, narrow = W < 430, sc = narrow ? 2.4 : 3;
-            const x = narrow ? W * 0.5 - 18 : W * 0.46 - 45, g = carGeo(x, FL, sc);
+            // The car sits toward the RIGHT of the board, so the drag arrow (drawn backward from the sail) has room to grow
+            // to scale. On a phone it sits right at the edge; on a wider board it leaves 70 px in front for the air streaks.
+            const x = W - 30 * sc - 16 - (narrow ? 0 : 70), g = carGeo(x, FL, sc);
             startBoard(api, s, W, H);
             api.svg('line', { x1: 12, y1: FL, x2: W - 12, y2: FL, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
-            // the still air rushing at the front of the car, the way the car "sees" it
-            if (f > 0) [g.mastTop + 14, g.mastTop + 38, g.mastTop + 62, FL - 20].forEach(function (y, i) {
-              const x1 = W - 14 - (i % 2) * 14, len = Math.min(x1 - g.front - 8, 10 + f * 4);
+            // the still air rushing past the car, the way the car "sees" it: in front of the car on a wide board, and just
+            // above the sail on a phone (where the car is at the edge and there is no room in front of it)
+            if (f > 0) (narrow ? [g.mastTop - 12, g.mastTop - 28, g.mastTop - 44] : [g.mastTop + 14, g.mastTop + 38, g.mastTop + 62, FL - 20]).forEach(function (y, i) {
+              const x1 = W - 14 - (i % 2) * 14, len = narrow ? 10 + f * 4 : Math.min(x1 - g.front - 8, 10 + f * 4);
               if (len > 6) api.draw.arrow(s, x1, y, x1 - len, y, '#7ad7ff', '', { width: 2, head: 4 });
             });
             api.draw.car(s, x, FL, { scale: sc, length: 30, sailW: 20, sailH: 20, mastH: 30 });
@@ -142,8 +145,8 @@
             label(api, s, W - 16, 30, f > 0 ? K.speed(fps(f)) + ' →' : 'standing still', { anchor: 'end', color: '#d8a8ff' });
             // The drag now (red) and the drag at 3 ft per second (yellow) on ONE honest scale, both backward from the
             // back of the sail. Speeds up to `top` are drawn to scale (the fastest that fits on this screen with the
-            // 3 ft per second arrow still to scale: 7 to 10 ft per second); faster ones still grow, a little.
-            const x0 = g.sailBack - 2, room = x0 - 14;
+            // 3 ft per second arrow still to scale: 9 to 12 ft per second); faster ones still grow, a little.
+            const x0 = g.sailBack - 2, room = x0 - 10;
             function scaleFor(t) { return api.draw.forceScale(drag(t), room * 0.85, { min: 8, over: room * 0.15 }); }
             let top = 12;
             while (top > 6 && !scaleFor(top).toScale(ref)) top--;

@@ -638,7 +638,7 @@
           // The push and friction, side by side on ONE line from ONE point above the car's mast (where the wind pushes):
           // the push goes right, friction goes left. Same height, same start, ONE honest scale (TRACK_LEN): the longer
           // arrow is always the bigger force, and equal arrows are balanced. Word labels only, never numbers.
-          const f = st.forces, push = f.thrust + f.body, ox = pxOf(st.x) - 12 + 24 * carScale * 0.45, y0 = FLOOR - 134;   // (draw.car: 24 long, mast 45% along)
+          const f = st.forces, push = f.thrust + f.body, ox = pxOf(st.x) - 12 + 24 * carScale * 0.45, y0 = FLOOR - 142;   // (draw.car: 24 long, mast 45% along)
           // a still car (never moved): friction holds it back exactly as hard as the wind pushes: two equal arrows
           const pl = f.still ? Math.max(TRACK_LEN(push), 10) : TRACK_LEN(Math.abs(push)), fl = f.still ? pl : TRACK_LEN(f.friction);
           const carTop = FLOOR - carScale * (7 + mastH);                   // the mast's top (draw.car: wheels 3, deck 1)
@@ -647,8 +647,7 @@
           if (pl > 0 && push >= 0) tag(draw.arrow(sv, ox, y0, ox + pl, y0, '#40e080', '', { width: 4 }), 'wind push', '#40e080', ox + 4, y0 - 11, 'start');
           if (fl > 0) tag(draw.arrow(sv, ox, y0, ox - fl, y0, '#ffa040', '', { width: 4 }), 'friction', '#ffa040', ox - 4, y0 - 11, 'end');
           // the air pushing BACK on a car that outruns the wind (drag) is a second backward arrow: its own line under friction's
-          if (pl > 0 && push < 0) tag(draw.arrow(sv, ox, y0 + 26, ox - pl, y0 + 26, '#ff5050', '', { width: 4 }), 'drag', '#ff5050', ox - 4, y0 + 52, 'end');
-          svg('circle', { cx: ox, cy: y0, r: 3.5, fill: '#f0e6ff', stroke: '#120826', 'stroke-width': 1.5 }, sv);
+          if (pl > 0 && push < 0) tag(draw.arrow(sv, ox, y0 + 32, ox - pl, y0 + 32, '#ff5050', '', { width: 4 }), 'drag', '#ff5050', ox - 4, y0 + 21, 'end');
         }
       }
       function show(text) { readout.textContent = text; }

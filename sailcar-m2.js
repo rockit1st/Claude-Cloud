@@ -248,11 +248,11 @@
             const parts = f === 0
               ? ['📍 Right at the fans, the wind moves at ' + K.speed(v) + '. This is the fastest wind in the hall. So the push is biggest here. It is ', [vsFriction], '.']
               : ['📍 ' + K.dist(x) + ' from the fans, the wind moves at ' + K.speed(v) + '. That’s ', [pct + '% as fast'], ' as at the fans. At the fans, the push is ',
-                 [cmp(p0, p, 'here', { times: len.toScale(p0) && len.toScale(p) })], '. Here, it is ', [vsFriction], '.'];
+                 [cmp(p0, p, 'it is here', { times: len.toScale(p0) && len.toScale(p) })], '. Here, the push is ' + (p > FRICTION ? 'still ' : ''), [vsFriction], '.'];
             if (p < FRICTION) parts.push(' So the wind can’t keep a car rolling here.');
             say(api, out, parts);
             // exactly what the readout shows: 50%
-            if (pct === 50) api.done('At ' + K.dist(x) + ', the wind is half as fast. But the push right at the fans is ' + K.compare(p0, p, { noun: 'here' }) + '! ' +
+            if (pct === 50) api.done('At ' + K.dist(x) + ', the wind is half as fast. But the push at the fans is ' + K.compare(p0, p, { noun: 'it is here' }) + '! ' +
               'Slow air hits the sail more gently. And less air hits it each second. So the push drops a lot.');
           }
           draw();
@@ -378,7 +378,7 @@
             const c = car(), p = carPush(c);
             bars.update([{ label: 'your car’s push', value: p, color: '#40e080' }, { label: 'push with a 10 × 10 cm sail', value: SMALL_PUSH, color: '#f0c040' }]);
             say(api, out, ['⛵ Sail area: ', [Math.round(c.sailArea * 10000) + ' square cm'], '. The car weighs ', [K.grams(c.mass)],
-              '. Start-line push: ', [cmp(p, SMALL_PUSH, 'with a 10 × 10 cm sail', { exact: true, times: bars.len.toScale(p) && bars.len.toScale(SMALL_PUSH) })], '.']);
+              '. Your start-line push is ', [cmp(p, SMALL_PUSH, 'with a 10 × 10 cm sail', { exact: true, times: bars.len.toScale(p) && bars.len.toScale(SMALL_PUSH) })], '.']);
             if (sim) sim.reset();                               // redraw the car with its new sail, ready for the next run
             nudge();
           }
