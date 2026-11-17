@@ -1,9 +1,13 @@
 // Sail Car Lab — Module 5: Mass & Inertia
-// Written for 6th graders: short sentences, forces in paper clips (SailLab.kid.force), distances in feet first
-// (SailLab.kid.dist), no formulas. Behind the scenes it is the same model as the hallway: the race in step 1 is a
-// steady push with no friction (speed-up = push ÷ mass), rolling friction = crr × weight
-// (SailLab.physics.rollingFriction), the start-line tipping rule from simulate(), and simulate() for every hallway
-// number. Every number a student reads is worked out from the model when the page loads.
+// Written for 6th graders: short sentences, mass in grams, distances in feet first (SailLab.kid.dist), no formulas,
+// and NO force numbers or force units: every force is an arrow or bar whose LENGTH shows its size
+// (draw.forceScale / ui.forceBars: ONE honest scale per picture, so a bigger force is never drawn shorter), with a
+// word label, and the words COMPARE (kid.compare, the lab's shared vocabulary). A sentence beside a picture states a
+// ratio ("about 2 times as strong") only when both arrows are drawn to scale (len.toScale).
+// Behind the scenes it is the same model as the hallway: the race in step 1 is a steady push with no friction
+// (speed-up = push ÷ mass; YOUR car's push is a whole number of times the light car's, so a tie is exact),
+// rolling friction = crr × weight (SailLab.physics.rollingFriction), the start-line tipping rule from simulate(), and
+// simulate() for every hallway number. Every comparison a student reads is worked out from the model when the page loads.
 (function () {
   'use strict';
   const P = SailLab.physics, kid = SailLab.kid, D = P.DEFAULT_CAR, G = P.G, FT = kid.FT_PER_M;
@@ -11,7 +15,7 @@
   // the wind's push on the standard car (20 × 20 cm sail + chassis) sitting still x metres from the fans
   function pushAt(x) { const w = P.windAt(x); return P.airForce(w, D.sailArea, D.sailCd, D.sailAngle) + P.airForce(w, D.bodyArea, D.bodyCd, 0); }
   const SAIL0 = P.airForce(P.windAt(START), D.sailArea, D.sailCd, D.sailAngle);   // on the sail alone, at the start line
-  const PUSH0 = pushAt(START);                                                    // about 34 paper clips
+  const PUSH0 = pushAt(START);                                                    // the wind's push at the start line (≈ 0.33 N, never shown)
   // the same tipping rule simulate() uses at the start line: the push high on the sail beats the weight holding the back down
   function tips(g) { return SAIL0 * (D.sailHeight - D.cgHeight) > (g / 1000) * G * D.cgToFront; }
   const TIP_G = SAIL0 * (D.sailHeight - D.cgHeight) / (G * D.cgToFront) * 1000;   // ≈ 40 g: lighter than this, the standard car flips
@@ -19,10 +23,21 @@
   const REF_G = Math.round(D.mass * 1000);                                        // 70: the standard car from Modules 1–4
   function weightN(g) { return g / 1000 * G; }
   function frictionN(g) { return P.rollingFriction(g / 1000, D.crr); }
-  // how quickly the car gains speed at the start line (only ever shown as "about half as fast as the 70 g car")
+  // how quickly the car gains speed at the start line (only ever shown in words: "about half as fast as the 70 g car")
   function speedUp(g) { return (PUSH0 - frictionN(g)) / (g / 1000); }
-  function clipsTxt(N) { const n = kid.clips(N); return n + (n === 1 ? ' paper clip' : ' paper clips'); }
-  function times(r) { return (Math.round(r * 10) / 10) + ' times'; }                // 3 → "3 times", 3.5 → "3.5 times"
+  // whole numbers only ("3 times"): the race's masses are whole multiples of the light car's 50 g
+  function times(r) { return Math.round(r) + ' times'; }
+  // the lab's shared comparison words (kid.compare: the same thresholds and the same "about 2 times" / "about half"),
+  // said about something that is not a force: how fast a car speeds up ('faster', 'more slowly') or its mass ('heavier', 'heavy')
+  //   kid.compare → 'about the same' · 'a little bigger' · 'bigger' · 'about 2 times as strong' · 'more than 2 times as strong'
+  //                 'a little smaller' · 'smaller' · 'about half as strong' · 'less than half as strong' · 'much smaller'
+  function compareAs(a, b, more, less, adj) {
+    const p = kid.compare(a, b);
+    if (p === 'about the same') return 'about as ' + adj + ' as';
+    return p.replace(/ as strong$/, ' as ' + adj + ' as').replace(/bigger$/, more + ' than').replace(/smaller$/, less + ' than');
+  }
+  function asFast(a, b) { return compareAs(a, b, 'faster', 'more slowly', 'fast'); } // 'about half as fast as', 'a little more slowly than'
+  function asHeavy(a, b) { return compareAs(a, b, 'heavier', 'lighter', 'heavy'); }  // 'about 2 times as heavy as'
 
   // ── the hallway: its size lives ONLY in SailLab.physics.HALL (sailcar-core.js); nothing below hard-codes it ──
   const HALL = P.HALL, HALL_TXT = kid.dist(HALL.length), LONG_HALL = 1000;   // LONG_HALL: room for any car to coast to a stop
@@ -30,42 +45,35 @@
   // how far a run would have gone with no end wall (a run that stopped inside the hallway: just its distance)
   function longer(r) { return atEnd(r) ? P.simulate(r.car, Object.assign({}, r.opts, { hallLength: LONG_HALL })).distance : r.distance; }
 
-  // ── words for "how many times as much" (this car ÷ the 70 g car) ──
-  function asMuch(r) {
-    if (Math.abs(r - 1) < 0.07) return 'about the same as';
-    if (r > 1) return r < 1.3 ? 'a little more than' : r < 1.75 ? 'about one and a half times' : 'about ' + Math.round(r) + ' times';
-    const q = 1 / r;
-    return q < 1.3 ? 'a little less than' : q < 1.75 ? 'about two-thirds of' : q < 2.5 ? 'about half of' : q < 3.5 ? 'about a third of' : 'about a quarter of';
-  }
-  function asFast(r) {
-    if (Math.abs(r - 1) < 0.07) return 'about as fast as';
-    if (r > 1) return r < 1.3 ? 'a little faster than' : r < 1.75 ? 'about one and a half times as fast as' : 'about ' + Math.round(r) + ' times as fast as';
-    const q = 1 / r;
-    return q < 1.3 ? 'a little slower than' : q < 1.75 ? 'about two-thirds as fast as' : q < 2.5 ? 'about half as fast as' : q < 3.5 ? 'about a third as fast as' : 'about a quarter as fast as';
-  }
-
   // ── STEP 1: the race. A steady push, no friction: the speed-up is push ÷ mass, so the time to the line is √(2 × d ÷ speed-up) ──
-  const RACE = { lightG: 50, lightClips: 10, ft: 3 };        // the light car, and the finish line 3 ft away
+  // The light car's push is the unit: YOUR car's push is 1, 2, 3 or 4 times it (whole steps), and your car's mass is
+  // 50, 100, 150 or 200 g (whole multiples of the light car's 50 g). So every mass on the slider has exactly ONE push
+  // that ties (k × 50 = g, integers, no rounding): "a car 3 times as heavy needs 3 times the push".
+  const RACE = { lightG: 50, lightPush: 1, ft: 3 };          // the light car (its push = 1 step), and the finish line 3 ft away
   const RACE_M = RACE.ft / FT, RACE_TXT = kid.dist(RACE_M);  // "3 ft (0.9 m)"
-  const PUSH_S = { min: 5, max: 40, step: 5, start: 10 };    // YOUR car's push, in whole paper clips
-  const MASS_S = { min: 25, max: 200, step: 25, start: 150 };
+  const PUSH_S = { min: 1, max: 4, step: 1, start: 1 };      // YOUR car's push, in whole multiples of the light car's push
+  const MASS_S = { min: 50, max: 200, step: 50, start: 150 };
   const TIE_MIN_G = 150;
-  function clipsN(c) { return c * kid.CLIP_N; }
-  function raceTime(clips, g) { return Math.sqrt(2 * RACE_M / (clipsN(clips) / (g / 1000))); }
-  // a tie = the same speed-up: the same push for each gram (whole clips and grams, so no rounding)
-  function tie(clips, g) { return clips * RACE.lightG === RACE.lightClips * g; }
-  function raceWinner(clips, g) { return tie(clips, g) ? 'tie' : clips * RACE.lightG > RACE.lightClips * g ? 'yours' : 'light'; }
+  const STEP_N = 0.01 * G;                                   // one push step, in newtons (≈ 0.1 N; only the race's timing uses it)
+  function pushN(k) { return k * STEP_N; }
+  function raceTime(k, g) { return Math.sqrt(2 * RACE_M / (pushN(k) / (g / 1000))); }
+  // a tie = the same speed-up: the same push for each gram (whole steps and grams, so no rounding)
+  function tie(k, g) { return k * RACE.lightG === RACE.lightPush * g; }
+  function raceWinner(k, g) { return tie(k, g) ? 'tie' : k * RACE.lightG > RACE.lightPush * g ? 'yours' : 'light'; }
+  // YOUR car's push, in words: "the same push" · "2 times the push" (always compared with the light car's push)
+  function pushWords(k) { return k === RACE.lightPush ? 'the same push' : (k / RACE.lightPush) + ' times the push'; }
+  function pushSlider(k) { return k === RACE.lightPush ? 'the same as the light car' : (k / RACE.lightPush) + ' times the light car’s push'; }
   function secs(t) { const s = Math.round(t * 10) / 10; return s + (s === 1 ? ' second' : ' seconds'); }
   const RACE_PREDICT = {
-    question: 'Both cars get the same push: ' + clipsTxt(clipsN(RACE.lightClips)) + '. Which car will win the race?',
+    question: 'Both cars get the same push. Which car will win the race?',
     choices: [{ value: 'light', label: 'The light car (' + RACE.lightG + ' g)' },
               { value: 'yours', label: 'Your car (' + MASS_S.start + ' g)' },
               { value: 'tie', label: 'It will be a tie' }]
   };
-  function raceTimes(clips, g) { return 'Light car: ' + secs(raceTime(RACE.lightClips, RACE.lightG)) + '. Your car: ' + secs(raceTime(clips, g)) + '.'; }
+  function raceTimes(k, g) { return 'Light car: ' + secs(raceTime(RACE.lightPush, RACE.lightG)) + '. Your car: ' + secs(raceTime(k, g)) + '.'; }
   // the answer to the prediction, after the first race (always the same push on both cars)
-  function raceJudge(clips, g, v) {
-    const win = raceWinner(clips, g), tl = secs(raceTime(RACE.lightClips, RACE.lightG)), ty = secs(raceTime(clips, g));
+  function raceJudge(k, g, v) {
+    const win = raceWinner(k, g), tl = secs(raceTime(RACE.lightPush, RACE.lightG)), ty = secs(raceTime(k, g));
     const text = win === 'tie' ? 'It was a tie! Both cars took ' + tl + '.'
       : (win === 'light' ? 'The light car won. It took ' + tl + '. Your car took ' + ty + '.' : 'Your car won. It took ' + ty + '. The light car took ' + tl + '.');
     const why = win === 'light' ? 'Your car has ' + times(g / RACE.lightG) + ' the mass. With the same push, more mass speeds up more slowly.'
@@ -74,8 +82,8 @@
     return { text: text, right: win === v, why: why };
   }
   // the readout after a race (the first race's answer is in the prediction card)
-  function raceResult(clips, g, first) {
-    const win = raceWinner(clips, g), pre = '🏁 ' + raceTimes(clips, g) + ' ';
+  function raceResult(k, g, first) {
+    const win = raceWinner(k, g), pre = '🏁 ' + raceTimes(k, g) + ' ';
     if (first) return [pre, ['The light car wins.'], ' Now change YOUR car. Can you make it tie?'];
     if (win !== 'tie') return [pre, [win === 'yours' ? 'Your car wins!' : 'The light car wins.'], ' For a tie, both cars must speed up the same.'];
     return g < TIE_MIN_G ? [pre, ['A tie!'], ' Now try it with a car of ' + TIE_MIN_G + ' g or more.'] : [pre, ['A tie!']];
@@ -86,12 +94,25 @@
   }
 
   // ── STEP 2: inertia, and more mass = more friction ──
-  function massReadout(g) {
-    const head = ['⚖️ A ' + g + ' g car weighs ' + kid.force(weightN(g)) + '. Its friction is ', [kid.force(frictionN(g))], '. '];
+  const MASS2 = { min: 25, max: 200, step: 5 };             // step 2's mass slider
+  const FR_BAR_MAX = frictionN(MASS2.max);                   // the friction bars' fixed scale: the heaviest car fills the row
+  // the readout. len = the friction bars' scale (ui.forceBars → .len): "about 2 times" / "about half" only when both
+  // bars are drawn to scale; otherwise the same words without a ratio ("much smaller")
+  function massReadout(g, len) {
+    const scaled = !len || (len.toScale(frictionN(g)) && len.toScale(frictionN(REF_G)));
+    const fr = kid.compare(frictionN(g), frictionN(REF_G), { noun: 'the ' + REF_G + ' g car’s', times: scaled });
+    if (g === REF_G) return ['⚖️ This is the ' + REF_G + ' g car from the earlier modules. Try a heavier car. Then try a lighter one.'];
+    const head = ['⚖️ This car is ' + asHeavy(g, REF_G) + ' the ' + REF_G + ' g car. Its friction is ', [fr], '. '];
     if (tips(g)) return head.concat(['⚠️ But a car this light ', ['tips over'], '! The wind pushes high on the sail. The car is too light to hold its back end down.']);
-    if (g === REF_G) return head.concat(['This is the ' + REF_G + ' g car from the earlier modules. Try a heavier car. Then try a lighter one.']);
-    return head.concat(['That is ' + asMuch(g / REF_G) + ' the ' + REF_G + ' g car’s friction. At the start line, it speeds up ', [asFast(speedUp(g) / speedUp(REF_G))], ' the ' + REF_G + ' g car.']);
+    return head.concat(['It speeds up ', [asFast(speedUp(g), speedUp(REF_G))], ' the ' + REF_G + ' g car.']);
   }
+  // the tip under the picture: the wind's push near the fans and 50 ft away, against friction (no ratio: the picture's
+  // friction arrow is squeezed in at the short end, not drawn to scale)
+  const NOTE2 = '💡 Near the fans, the wind’s push is ' + kid.compare(PUSH0, frictionN(REF_G), { noun: 'friction', times: false }) + '. ' +
+    'But the wind fades down the hall. Picture a spot ' + kid.dist(FAR_FT / FT).replace(' ft', '&nbsp;ft') + ' from the fans. ' +
+    'There, the push is only ' + kid.compare(FAR_PUSH, frictionN(REF_G), { noun: 'the ' + REF_G + ' g car’s friction', times: false }) + '. ' +
+    'A 100 g car’s friction is ' + kid.compare(frictionN(100), FAR_PUSH, { noun: 'that push', times: false }) + '! ' +
+    'So out there, a heavy car’s extra friction stops it sooner.';
 
   // ── STEP 3: the mass budget (approximate masses of the students' real materials) ──
   const PARTS = [
@@ -141,7 +162,7 @@
   for (let g = LIGHTEST + MASS.step; g <= MASS.max; g += MASS.step) if (reachedGoal(P.simulate({ mass: g / 1000 }))) MARGIN_PASS.push(g);
   function orList(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' or ' + a[a.length - 1]; }
   const checks = {
-    race: function (clips, g) { return g >= TIE_MIN_G && tie(clips, g); },
+    race: function (k, g) { return g >= TIE_MIN_G && tie(k, g); },
     budget: function (t, counts) { return complete(counts) && t <= BUDGET_GOAL && P.simulate({ mass: t / 10000 }).reason !== 'tipped over'; },
     hall: reachedGoal
   };
@@ -251,7 +272,7 @@
           '<p>The light car is ' + RACE.lightG + ' g. Your car is ' + MASS_S.start + ' g. Each red block on a car is 25 g.</p>',
         challenge: 'Make YOUR car ' + TIE_MIN_G + ' g or heavier. Then find the push that makes it TIE the light car.',
         render: function (el, api) {
-          wordFirst(api, el, 'mass', 'how much stuff is in an object. We measure mass in grams (g). 1 gram weighs about as much as 1 paper clip.');
+          wordFirst(api, el, 'mass', 'how much stuff is in an object. We measure mass in grams (g). A nickel is about 5 g.');
           const s = api.svg('svg', { role: 'img', 'aria-label': 'A race to a line ' + RACE.ft + ' feet away between a light car and your car' }, el);
           const pred = api.ui.predict(el, { question: RACE_PREDICT.question, choices: RACE_PREDICT.choices });
           const go = api.h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '▶ Race' });
@@ -263,29 +284,35 @@
           el.appendChild(lock);
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
+          // YOUR car's push: whole steps of the light car's push, shown as words and a little arrow (never a force number)
           const pushS = api.ui.slider(row, { label: 'Push on YOUR car:', min: PUSH_S.min, max: PUSH_S.max, step: PUSH_S.step, value: PUSH_S.start,
-            format: function (v) { return clipsTxt(clipsN(v)); }, onInput: reset });
+            format: pushSlider, valueText: pushSlider, bar: { color: '#40e080' }, onInput: reset });
           const massS = api.ui.slider(row, { label: 'Mass of YOUR car:', min: MASS_S.min, max: MASS_S.max, step: MASS_S.step, value: MASS_S.start,
             format: function (v) { return v + ' g'; }, onInput: reset });
           pushS.input.disabled = true; massS.input.disabled = true;     // the first race tests the prediction: same push on both cars
           let raf = null, raced = false;
           function cars() {
-            return [{ name: 'Light car', clips: RACE.lightClips, g: RACE.lightG, color: '#7ad7ff' },
-                    { name: 'Your car', clips: pushS.get(), g: massS.get(), color: '#f0c040' }];
+            return [{ name: 'Light car', k: RACE.lightPush, g: RACE.lightG, color: '#7ad7ff' },
+                    { name: 'Your car', k: pushS.get(), g: massS.get(), color: '#f0c040' }];
           }
           function scene(t) {                                // t = seconds since the start (null: at the start line)
-            const W = boardWidth(el), H = 238, sc = W < 440 ? 1.9 : 2.2, LEN = 26 * sc, X0 = Math.round(LEN + 64), X1 = W - 16, FL = [106, 208];
+            // the push arrows behind the cars: ONE scale for both lanes, 1 push step = UNIT px, every step drawn to scale
+            // (forceScale's knee = UNIT), so "3 times the push" is an arrow exactly 3 times as long
+            const W = boardWidth(el), H = 238, sc = W < 440 ? 1.9 : 2.2, LEN = 26 * sc, UNIT = W < 440 ? 15 : 20;
+            const X0 = Math.round(LEN + PUSH_S.max * UNIT + 14), X1 = W - 16, FL = [106, 208];
+            const plen = api.draw.forceScale(PUSH_S.max, PUSH_S.max * UNIT, { min: UNIT / 2, over: 0 });
             startBoard(api, s, W, H);
             cars().forEach(function (c, i) {
-              const fl = FL[i], a = clipsN(c.clips) / (c.g / 1000), d = t == null ? 0 : Math.min(RACE_M, 0.5 * a * t * t);
+              const fl = FL[i], a = pushN(c.k) / (c.g / 1000), d = t == null ? 0 : Math.min(RACE_M, 0.5 * a * t * t);
               const back = X0 - LEN + d / RACE_M * (X1 - X0), deckY = fl - 7 * sc;
               line(api, s, 10, fl, W - 10, fl, '#4a3a6a', { 'stroke-width': 3 });
               [X0, X1].forEach(function (x) { line(api, s, x, fl - 32 * sc, x, fl, '#f0c040', { 'stroke-dasharray': '5,5', opacity: 0.7 }); });
-              label(api, s, 12, fl - 31 * sc - 10, c.name + ': ' + c.g + ' g · push ' + kid.forceShort(clipsN(c.clips)), { color: c.color });
+              label(api, s, 12, fl - 31 * sc - 10, c.name + ': ' + c.g + ' g' + (i ? ' · ' + pushWords(c.k) : ''), { color: c.color });
               api.draw.car(s, back, fl, { scale: sc, length: 26, sailW: 18, sailH: 18, mastH: 24 });
               blocks(api, s, back + 13.6 * sc, deckY, c.g, 5 * sc, 3.2 * sc, 2);
-              const len = c.clips * (X0 - LEN - 14) / PUSH_S.max;    // the push arrow: longer = more paper clips
-              api.draw.arrow(s, back - 2 - len, fl - 22 * sc, back - 2, fl - 22 * sc, '#40e080', '', { width: 4 });
+              const len = plen(c.k), ay = fl - 22 * sc;           // the push arrow: longer = a bigger push
+              api.draw.arrow(s, back - 2 - len, ay, back - 2, ay, '#40e080', '', { width: 4, head: 5 });
+              label(api, s, back - 4, ay - 9, 'push', { anchor: 'end', color: '#40e080' });
             });
             label(api, s, X0, H - 8, 'start', { anchor: 'middle', color: '#9080b0', bold: false });
             label(api, s, X1, H - 8, RACE_TXT, { anchor: 'end', color: '#9080b0', bold: false });
@@ -295,21 +322,21 @@
           function stop() { if (raf) cancelAnimationFrame(raf); raf = null; go.disabled = pred.get() == null; }
           function reset() { stop(); scene(null); ready(); }
           function finish() {
-            const clips = pushS.get(), g = massS.get(), first = !raced;
+            const k = pushS.get(), g = massS.get(), first = !raced;
             if (first) {
-              const j = raceJudge(clips, g, pred.get());
+              const j = raceJudge(k, g, pred.get());
               pred.reveal(j.text, j.right, j.why);
               raced = true;
               pushS.input.disabled = false; massS.input.disabled = false;
               lock.hidden = true;
             }
-            say(api, out, raceResult(clips, g, first));
-            if (checks.race(clips, g)) api.done(raceDone(g));
+            say(api, out, raceResult(k, g, first));
+            if (checks.race(k, g)) api.done(raceDone(g));
           }
           go.addEventListener('click', function () {
             if (pred.get() == null) return;
             stop();
-            const tEnd = Math.max(raceTime(RACE.lightClips, RACE.lightG), raceTime(pushS.get(), massS.get())), t0 = performance.now();
+            const tEnd = Math.max(raceTime(RACE.lightPush, RACE.lightG), raceTime(pushS.get(), massS.get())), t0 = performance.now();
             go.disabled = true;
             say(api, out, ['🏁 Racing…']);
             function frame(now) {
@@ -337,45 +364,55 @@
         render: function (el, api) {
           wordFirst(api, el, 'inertia', 'objects keep doing what they are doing. A still car stays still. A rolling car keeps rolling. More mass means more inertia.');
           const s = api.svg('svg', { role: 'img', 'aria-label': 'Forces on the car at the start line, and how quickly it speeds up' }, el);
-          const mS = api.ui.slider(el, { label: 'Car mass:', min: 25, max: 200, step: 5, value: REF_G, format: function (v) { return v + ' g'; }, onInput: draw });
+          const mS = api.ui.slider(el, { label: 'Car mass:', min: MASS2.min, max: MASS2.max, step: MASS2.step, value: REF_G, format: function (v) { return v + ' g'; }, onInput: draw });
+          // your car's friction against the 70 g car's: two bars on ONE fixed scale (the heaviest car fills the row), so
+          // the 70 g car's bar never moves and yours grows as you add mass
+          const bars = api.ui.forceBars(el, [], { max: FR_BAR_MAX });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          api.ui.note(el, 'tip', '💡 Near the fans, the wind pushes with ' + kid.force(PUSH0) + '. That is much more than friction. ' +
-            'But the wind fades down the hall. ' + kid.dist(FAR_FT / FT).replace(' ft', '&nbsp;ft') + ' from the fans, it can push with only ' + kid.force(FAR_PUSH) + '. ' +
-            'Out there, a heavy car’s extra friction stops it sooner.');
+          api.ui.note(el, 'tip', NOTE2);
           const A_MAX = speedUp(25);                         // the bar's full length: a 25 g car (it would tip, but that's the top of the slider)
           function draw() {
-            const g = mS.get(), W = boardWidth(el), FL = 150, H = FL + 100, flip = tips(g);
+            const g = mS.get(), W = boardWidth(el), flip = tips(g);
+            const sc = W < 440 ? 2.2 : 3, len = 30 * sc, r = 3 * sc, blkW = 4 * sc, blkH = 2.6 * sc;
+            // ONE honest scale for the three arrows (draw.forceScale). The wind's push is drawn to scale, PX long. The
+            // weight is bigger than the push for every car that stays on its wheels: it grows on into the extra px
+            // (always longer than the push, but squeezed). Friction is much smaller: it is squeezed in at the short end
+            // (always shorter than the push, a bit too long to be to scale). So the words beside it never state a ratio.
+            const PX = W < 440 ? 72 : 96, L = api.draw.forceScale(PUSH0, PX, { min: 10, over: W < 440 ? 48 : 64 });
+            const ROWS = Math.ceil(Math.ceil(MASS2.max / 25) / 3);   // the most rows of blocks (the heaviest car)
+            const FL = Math.round(L.max + ROWS * (blkH + 1) + 2 * r + sc + 3 + 34), H = FL + 92;
             startBoard(api, s, W, H);
             line(api, s, 10, FL, W - 10, FL, '#4a3a6a', { 'stroke-width': 3 });
-            // the car sits far enough from the fans for the "wind push" label to fit before the sail
-            const sc = W < 440 ? 2.2 : 3, len = 30 * sc, carX = Math.round(Math.min(W - len - 24, Math.max(W * 0.45, 200))), r = 3 * sc, deckY = FL - 2 * r - sc;
+            const carX = Math.round(Math.min(W - len - 24, Math.max(W * 0.45, 200))), deckY = FL - 2 * r - sc;
             const mastX = carX + len * 0.45, sailL = mastX - 20 * sc * 0.45, sailMid = deckY - 30 * sc + 10 * sc;
-            api.draw.fan(s, 10, FL, 84, ' ');                // our own, bigger "2 FANS" label above the fans (readable on a phone),
-            label(api, s, 10, Math.min(FL - 92, sailMid - 32), '2 FANS', { color: '#9080b0' });   // and above the "wind push" label
+            api.draw.fan(s, 10, FL, 84, ' ');                // our own, bigger "2 FANS" label above the fans (readable on a phone)
+            label(api, s, 10, FL - 92, '2 FANS', { color: '#9080b0' });
             api.draw.car(s, carX, FL, { scale: sc, length: 30, sailW: 20, sailH: 20, mastH: 30 });
-            const blkW = 4 * sc, blkH = 2.6 * sc, bx0 = mastX + 4 * sc, rows = Math.ceil(Math.ceil(g / 25) / 3);
+            const bx0 = mastX + 4 * sc, rows = Math.ceil(Math.ceil(g / 25) / 3);
             blocks(api, s, bx0, deckY, g, blkW, blkH, 3);
-            // the wind's push on the sail (the same at every mass)
-            const fanR = 10 + 84 * 0.32;
-            api.draw.arrow(s, fanR + 6, sailMid, sailL - 3, sailMid, '#40e080', '', { width: 4 });
-            label(api, s, fanR + 6, sailMid - 12, 'wind push: ' + kid.forceShort(PUSH0), { color: '#40e080' });
+            // the wind's push on the sail (the same at every mass), ending at the sail
+            const pl = L(PUSH0), px1 = sailL - 3;
+            api.draw.arrow(s, px1 - pl, sailMid, px1, sailMid, '#40e080', '', { width: 4 });
+            label(api, s, px1 - pl, sailMid - 12, 'wind push', { color: '#40e080' });
             // weight presses the car down on its wheels (an arrow down onto the blocks); friction holds it back at the wheels
-            const wx = bx0 + 1.5 * (blkW + 1), wTop = deckY - rows * (blkH + 1) - 3, wl = 10 + kid.clips(weightN(g)) * 0.2;
+            const wx = bx0 + 1.5 * (blkW + 1), wTop = deckY - rows * (blkH + 1) - 3, wl = L(weightN(g));
             api.draw.arrow(s, wx, wTop - wl, wx, wTop, '#7ad7ff', '', { width: 4 });
-            const fl = Math.max(6, kid.clips(frictionN(g)) * 12);
-            api.draw.arrow(s, carX + r, FL + 8, carX + r - fl, FL + 8, '#ffa040', '', { width: 4, head: 5 });
-            label(api, s, 12, FL + 30, 'friction: ' + kid.forceShort(frictionN(g)), { color: '#ffa040' });
-            label(api, s, W - 12, FL + 30, 'weight: ' + kid.forceShort(weightN(g)), { color: '#7ad7ff', anchor: 'end' });
+            label(api, s, Math.min(wx, W - 30), wTop - wl - 7, 'weight', { anchor: 'middle', color: '#7ad7ff' });
+            const fl = L(frictionN(g)), fx = carX + r;
+            api.draw.arrow(s, fx, FL + 10, fx - fl, FL + 10, '#ffa040', '', { width: 4, head: 5 });
+            label(api, s, fx - fl - 6, FL + 15, 'friction', { anchor: 'end', color: '#ffa040' });
             // how quickly it gains speed at the start line, with the 70 g car marked
-            const bx = 12, bw = W - 24, by = FL + 62, k = bw / A_MAX;
+            const bx = 12, bw = W - 24, by = FL + 52, k = bw / A_MAX;
             label(api, s, bx, by - 8, flip ? '⚠ Too light: it tips over!' : 'How fast it speeds up', { color: flip ? '#ff6060' : '#40e080' });
             api.svg('rect', { x: bx, y: by, width: bw, height: 12, rx: 6, fill: '#2a1a4a' }, s);
             api.svg('rect', { x: bx, y: by, width: Math.max(4, speedUp(g) * k), height: 12, rx: 6, fill: flip ? '#ff5050' : '#40e080' }, s);
             const rx = bx + speedUp(REF_G) * k;
             line(api, s, rx, by - 3, rx, by + 15, '#f0e6ff', { 'stroke-width': 2 });
             label(api, s, rx, by + 30, '▲ the ' + REF_G + ' g car', { anchor: 'middle', color: '#f0e6ff', bold: false });
-            say(api, out, massReadout(g));
+            bars.update([{ label: 'your car’s friction', value: frictionN(g), color: '#ffa040', dir: 'left' },
+                         { label: 'the ' + REF_G + ' g car’s friction', value: frictionN(REF_G), color: '#9080b0', dir: 'left' }]);
+            say(api, out, massReadout(g, bars.len));
           }
           keepFitted(api, el, draw);
           draw();
@@ -565,7 +602,7 @@
       { q: 'A bowling ball and a soccer ball roll toward you at the same speed. Which is harder to stop?', options: ['The soccer ball', 'They are just as hard to stop', 'Neither, balls stop on their own', 'The bowling ball'], answer: 3,
         why: 'The bowling ball has more mass, so it has more inertia. More inertia makes it harder to stop.' },
       { q: 'Why does a heavier car have more friction?', options: ['It presses harder on its wheels', 'It has to push more air aside', 'Heavy parts are rougher', 'It moves faster, so it rubs more'], answer: 0,
-        why: 'A heavier car presses harder on its wheels and axles, so they rub more. Twice the mass means twice the friction.' },
+        why: 'A heavier car presses harder on its wheels and axles, so they rub more. Twice the mass means about 2 times the friction.' },
       { q: 'You make your car lighter, from 150 g to 45 g. The sail and wheels stay the same. What happens in the hallway?', options: ['It rolls about as far', 'It rolls much farther', 'It rolls less far', 'It is too light to get going'], answer: 1,
         why: 'In the simulator, it goes from ' + rolls(Q_MASS.heavy) + ' to ' + rolls(Q_MASS.light) + '. A light car speeds up faster and has less friction.' },
       { q: 'A super-light 25 g car flips onto its nose in front of the fans. Why?', options: ['Light cars have too much friction', 'It has too much inertia to roll', 'It is too light for its sail', 'It is going too fast to stay up'], answer: 2,
@@ -577,10 +614,11 @@
     ],
     // the numbers and rules behind the text, for checking (not used by the page)
     _model: { START: START, PUSH0: PUSH0, SAIL0: SAIL0, TIP_G: TIP_G, tips: tips, FAR_FT: FAR_FT, FAR_PUSH: FAR_PUSH, REF_G: REF_G, speedUp: speedUp,
-              weightN: weightN, frictionN: frictionN, asMuch: asMuch, asFast: asFast, times: times, secs: secs,
-              RACE: RACE, RACE_M: RACE_M, RACE_TXT: RACE_TXT, PUSH_S: PUSH_S, MASS_S: MASS_S, TIE_MIN_G: TIE_MIN_G, raceTime: raceTime, tie: tie,
-              raceWinner: raceWinner, RACE_PREDICT: RACE_PREDICT, raceJudge: raceJudge, raceResult: raceResult, raceDone: raceDone,
-              massReadout: massReadout, PARTS: PARTS, START_TENTHS: START_TENTHS, BUDGET_GOAL: BUDGET_GOAL, totalTenths: totalTenths, rules: rules,
+              weightN: weightN, frictionN: frictionN, asHeavy: asHeavy, asFast: asFast, times: times, secs: secs,
+              RACE: RACE, RACE_M: RACE_M, RACE_TXT: RACE_TXT, PUSH_S: PUSH_S, MASS_S: MASS_S, TIE_MIN_G: TIE_MIN_G, STEP_N: STEP_N, pushN: pushN,
+              raceTime: raceTime, tie: tie, raceWinner: raceWinner, pushWords: pushWords, pushSlider: pushSlider,
+              RACE_PREDICT: RACE_PREDICT, raceJudge: raceJudge, raceResult: raceResult, raceDone: raceDone,
+              MASS2: MASS2, FR_BAR_MAX: FR_BAR_MAX, massReadout: massReadout, NOTE2: NOTE2, PARTS: PARTS, START_TENTHS: START_TENTHS, BUDGET_GOAL: BUDGET_GOAL, totalTenths: totalTenths, rules: rules,
               complete: complete, budgetSim: budgetSim, MASS: MASS, MARGIN_G: MARGIN_G, LIGHTEST: LIGHTEST, MARGIN_RUN: MARGIN_RUN,
               GOAL_IS_END: GOAL_IS_END, GOAL_FT: GOAL_FT, GOAL_TXT: GOAL_TXT, MARGIN_PASS: MARGIN_PASS, checks: checks, hallDone: hallDone,
               HALL_PREDICT: HALL_PREDICT, hallEntry: hallEntry, evidence: evidence, hallJudge: hallJudge, Q_MASS: Q_MASS, Q_NICKEL: Q_NICKEL }

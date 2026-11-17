@@ -1,9 +1,12 @@
 // Sail Car Lab — Module 4: Friction (wheels and axles)
-// Written for 6th graders: short sentences, forces in paper clips (SailLab.kid.force), distances in feet
-// first (SailLab.kid.dist), no formulas. Behind the scenes it is the same two-box-fan model as the hallway:
-// rolling friction = crr × weight (SailLab.physics.rollingFriction), last year's sliding sleds
-// (SLED_FRICTION), the extra push it takes to START rolling (STICKY), and simulate(). Every number a
-// student reads is worked out from the model when the page loads.
+// Written for 6th graders: short sentences, distances in feet first (SailLab.kid.dist), no formulas, and NO force
+// numbers or force units: every force is an arrow or bar whose LENGTH shows its size (draw.forceScale / ui.forceBars:
+// ONE honest scale per picture, so a bigger force is never drawn shorter), with a word label, and the words COMPARE
+// two forces with the lab's shared vocabulary (kid.compare / kid.times). A sentence beside a picture states a ratio
+// ("about 3 times as strong") only when both arrows are drawn to scale (len.toScale).
+// Behind the scenes it is the same two-box-fan model as the hallway: rolling friction = crr × weight
+// (SailLab.physics.rollingFriction), last year's sliding sleds (SLED_FRICTION), the extra push it takes to START
+// rolling (STICKY), and simulate(). Every comparison a student reads is worked out from the model when the page loads.
 (function () {
   'use strict';
   const P = SailLab.physics, kid = SailLab.kid, C = P.DEFAULT_CAR, FT = kid.FT_PER_M;
@@ -35,7 +38,10 @@
     return lo;
   }
   function ftToM(f) { return f / FT; }
-  function clips(n) { return n + (n === 1 ? ' paper clip' : ' paper clips'); }
+  // how force a compares with force b, in the lab's shared words, finished with "than …" / "as …" and the noun
+  function cmp(a, b, noun, o) { return kid.compare(a, b, Object.assign({ noun: noun }, o)); }
+  // the arrow colors: the wind's push, friction, the starting car's friction, the starting push, weight
+  const GREEN = '#40e080', ORANGE = '#ffa040', GREY = '#9080b0', YELLOW = '#f0c040', BLUE = '#7ad7ff';
 
   // ── the hallway: its size lives ONLY in SailLab.physics.HALL (sailcar-core.js); nothing below hard-codes it ──
   const HALL = P.HALL;
@@ -51,10 +57,26 @@
   function rollText(r) { return r.end ? 'reached the end of the ' + HALL_TXT + ' hall' : 'rolled ' + kid.dist(r.distance); }
 
   // ── numbers worked out from the model (so every sentence below stays true) ──
-  const WEIGHT = C.mass * P.G;                                          // the starting car weighs 70 paper clips
+  const WEIGHT = C.mass * P.G;                                          // the starting car's weight (a force)
   const FR = P.rollingFriction(C.mass, C.crr);                          // the starting car: 70 g, OK wheels
   const ST = FR * P.STICKY;                                             // …and the push it needs to START rolling
   const FAR_FT = 50, FAR_PUSH = pushAt(ftToM(FAR_FT));                  // step 1: the wind's push 50 ft from the fans
+  // step 1's comparisons, in the shared words: "about 2 times" (twice as heavy), "about half as strong" (spin freely
+  // vs OK), "about 3 times as strong" (rubbing vs OK), "much smaller" (friction vs weight), "a little bigger" (the push
+  // 50 ft from the fans vs friction). The check script tests each one against the model.
+  const TWICE_HEAVY = kid.times(P.rollingFriction(2 * C.mass, C.crr), FR);
+  const SMOOTH_VS_OK = cmp(WHEELS.smooth, WHEELS.ok, 'with OK wheels');
+  const RUB_VS_OK = kid.compare(WHEELS.rub, WHEELS.ok);
+  const FR_VS_WEIGHT = cmp(FR, WEIGHT, 'the car’s weight');
+  const FAR_VS_FR = cmp(FAR_PUSH, FR, 'friction');
+  // step 2: a sled's friction against OK wheels, the same weight ("more than 10 times as strong")
+  const SLED_VS_OK = cmp(P.SLED_FRICTION, WHEELS.ok, 'with OK wheels');
+  // step 3: the push it takes to start, against friction ("a little bigger")
+  const ST_VS_FR = cmp(ST, FR, 'friction');
+  // step 1's friction arrows fit up to 3.2 × the starting car's friction: the starting car, wheels that spin freely
+  // (about half) and rubbing wheels (about 3 times) are all drawn to scale. A bigger friction (a heavy car with
+  // rubbing wheels) still gets a longer arrow, squeezed in at the end of the row (and then no ratio is stated).
+  const FR_BAR_MAX = 3.2 * FR;
   const START_RUN = P.simulate({});
   const STOP_X = START_RUN.opts.startX + START_RUN.distance;            // where it stops, rolling in from the start line (m from the fans)
   const END_X = START_RUN.opts.startX + HALL.length;                    // the end of the hallway, in metres from the fans
@@ -62,6 +84,10 @@
   const SLED_FR = P.rollingFriction(SLED.mass, SLED.crr);
   const RUN = { smooth: roll({ crr: WHEELS.smooth }), ok: roll({ crr: WHEELS.ok }), rub: roll({ crr: WHEELS.rub }) };
   const TERRIBLE = axleCrr('hole', 'wobbly', 'rub'), TERRIBLE_D = P.simulate({ crr: TERRIBLE }).distance;
+  const TERRIBLE_FR = P.rollingFriction(C.mass, TERRIBLE);
+  // step 5's words: friction with some axles against the terrible axles' (exact: the chips can match exactly; a ratio
+  // only when both arrows are drawn to scale by len, the step's forceBars scale)
+  function fixVsTerrible(fr, len) { return cmp(fr, TERRIBLE_FR, 'with the terrible axles', { exact: true, times: !len || (len.toScale(fr) && len.toScale(TERRIBLE_FR)) }); }
   // Step 5's goal: all the way to the END of the hallway — only axles with all three fixes get there. (If the hall is
   // ever made longer than even that car can roll, the goal becomes the whole metres that car can still reach.)
   const BEST_AXLE = roll({ crr: axleCrr('straw', 'snug', 'spacer') });
@@ -88,6 +114,9 @@
     if (x < STOP_X) return 'keep';
     return p > FR ? 'crawl' : 'weak';
   }
+  // step 3's arrow scale for a row BW px wide: twice the starting push fills 78% of it (so friction, the starting push
+  // and the push far down the hall are all drawn to scale); a bigger push near the fans grows into the last 20%
+  function startLen(BW) { return SailLab.draw.forceScale(2 * ST, BW * 0.78, { min: 14, over: BW * 0.2 }); }
   const checks = {
     lighter: function (grams, crr) { return grams >= 100 && P.rollingFriction(grams / 1000, crr) < FR; },
     race: function (sledDist, carDist) { return carDist >= 2 * sledDist; },
@@ -126,7 +155,7 @@
     const why = got === 'far'
       ? 'Rolling has much less friction than sliding. So the fading wind kept the car going much longer.' + (end ? ' It was still rolling at the end!' : '')
       : got === 'bit'
-      ? 'With ' + WHEEL_NAME[kind] + ', the car’s friction is ' + kid.force(rc.friction) + '. That is almost as much as the sled’s ' + kid.force(rs.friction) + '. So the car only won by a little.'
+      ? 'With ' + WHEEL_NAME[kind] + ', the car’s friction is ' + cmp(rc.friction, rs.friction, 'the sled’s', { times: false }) + '. So the car only won by a little.'
       : 'This car had more friction than the sled, so the sled went farther.';
     return { text: text, right: got === v, why: why };
   }
@@ -203,11 +232,12 @@
   }
   function rect(api, s, x, y, w, hh, fill, extra) { return api.svg('rect', Object.assign({ x: x, y: y, width: w, height: hh, fill: fill }, extra || {}), s); }
   function line(api, s, x1, y1, x2, y2, color, extra) { return api.svg('line', Object.assign({ x1: x1, y1: y1, x2: x2, y2: y2, stroke: color, 'stroke-width': 1.5 }, extra || {}), s); }
-  // a bar that stops at the edge of its chart, with a note inside when the real value is bigger
-  function bar(api, s, x, y, val, max, px, fill, hh) {
-    hh = hh || 20;
-    rect(api, s, x, y, Math.max(2, Math.min(val, max) / max * px), hh, fill, { rx: 3 });
-    if (val > max) label(api, s, x + px - 6, y + hh - 5, 'off the chart →', '#120826', { anchor: 'end', size: 13, plain: true });
+  // a force arrow that starts at x (its left end) and is exactly len px long; 'left' turns only the head (friction
+  // pushes back), so arrows drawn this way line up on the left and their lengths compare at a glance
+  function forceArrow(api, s, x, y, len, color, dir) {
+    if (!(len > 0)) return;
+    if (dir === 'left') api.draw.arrow(s, x + len, y, x, y, color, '', { width: 6, head: 6 });
+    else api.draw.arrow(s, x, y, x + len, y, color, '', { width: 6, head: 6 });
   }
   // the box fans, with a 13 px label (or none)
   function fans(api, s, x, floorY, size, withLabel) {
@@ -244,11 +274,6 @@
     const box = api.ui.word(el, term, meaningHtml);
     el.insertBefore(box, el.firstChild);
     return box;
-  }
-  // "less than" / "more than", with "just barely" when the two rounded numbers would look the same
-  function compare(a, b) {
-    const same = kid.clips(a) === kid.clips(b);
-    return a < b ? (same ? 'just barely less than' : 'less than') : (same ? 'just barely more than' : 'more than');
   }
 
   // ── step 6, the real build: two short checklists the student ticks (part 1 build it, part 2 test it), one part on
@@ -292,55 +317,52 @@
           '<p>Flick a wheel on a toy car. It spins, slows down and stops. Friction slows it. ' +
           'On a sail car, most friction comes from the <strong>axles</strong>. Those are the sticks the wheels turn on.</p>' +
           '<p>Two things change how much friction a car has:</p>' +
-          '<ul><li><strong>Weight.</strong> A heavier car presses down harder. Twice as heavy means about twice the friction.</li>' +
-          '<li><strong>The wheels.</strong> Wheels that spin freely have about half the friction of OK wheels. Rubbing wheels have about 3 times as much.</li></ul>' +
-          '<p>The starting car weighs ' + kid.force(WEIGHT) + '. Its friction is only ' + kid.force(FR) + '. That is tiny! ' +
-          'But far down the hall, the wind is weak too. ' + kid.dist(ftToM(FAR_FT)) + ' from the fans, it pushes with only ' + kid.force(FAR_PUSH) + '.</p>',
+          '<ul><li><strong>Weight.</strong> A heavier car presses down harder. Twice as heavy means about ' + TWICE_HEAVY + ' times the friction.</li>' +
+          '<li><strong>The wheels.</strong> With wheels that spin freely, friction is ' + SMOOTH_VS_OK + '. With rubbing wheels, it is ' + RUB_VS_OK + '.</li></ul>' +
+          '<p>The starting car’s friction is tiny. It is ' + FR_VS_WEIGHT + '! ' +
+          'But far down the hall, the wind is weak too. ' + kid.dist(ftToM(FAR_FT)) + ' from the fans, its push is only ' + FAR_VS_FR + '.</p>',
         challenge: 'Build a car that weighs at least 100 g. It must have less friction than the starting car (70 g, OK wheels).',
         render: function (el, api) {
           wordFirst(api, el, 'friction', 'a force that rubs against motion and slows things down.');
-          const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car with its weight pressing down and friction holding it back, and bars comparing its friction with the starting car' }, el);
+          const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car with an arrow showing its weight pressing down. A heavier car gets a longer arrow.' }, el);
+          // The picture shows ONLY the weight arrow (exactly to scale, so it grows with the slider). Friction is about 40 times
+          // smaller than weight, so on the same scale it would be a dot: an arrow squeezed to stay visible would barely change
+          // across the slider, and it would look much too big next to the weight. So friction is shown only by the two bars
+          // right under the picture: your car's friction against the starting car's, on ONE fixed scale (a shorter arrow is
+          // less friction). The scale stays put as you change the car (the starting car's arrow never moves).
+          el.appendChild(api.h('p', { class: 'sl-muted', style: 'margin:8px 0 0;color:#c8b8ea', text: 'Watch the friction arrows below. A longer arrow means more friction.' }));
+          const bars = api.ui.forceBars(el, [], { max: FR_BAR_MAX });
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
           const mass = api.ui.slider(row, { label: 'How heavy the car is', min: 40, max: 200, step: 10, value: 70, format: function (v) { return v + ' g'; }, onInput: draw });
           const wh = api.ui.choice(row, { label: 'Wheels', value: 'ok', options: WHEEL_OPTS, onChange: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          const MAXC = 8;                            // the bars show 0 to 8 paper clips
           function draw() {
             const g = mass.get(), m = g / 1000, kind = wh.get(), crr = WHEELS[kind], wt = m * P.G, fr = P.rollingFriction(m, crr);
-            const W = boardWidth(el), FL = 150, H = 292;
+            const W = boardWidth(el), FL = 150, H = 176;
             startBoard(api, s, W, H);
-            // the car: weight presses down, friction holds it back at the wheels
+            // the car: its weight presses down. The arrow is exactly to scale (the heaviest car's weight just fits above the
+            // deck; min 9 puts even the 40 g car past the squeezed zone), so every slider step draws a longer arrow.
             const sc = W < 440 ? 2.6 : 3.2, len = 34 * sc, carX = Math.round(W * 0.36), deckY = FL - 7 * sc;
+            const flen = api.draw.forceScale(0.2 * P.G, deckY - 30, { min: 9, over: 0 });
             line(api, s, 12, FL, W - 12, FL, '#4a3a6a', { 'stroke-width': 3 });
             api.draw.car(s, carX, FL, { scale: sc, length: 34 });
-            const ax = carX + len * 0.8, wl = 20 + kid.clips(wt) * 0.45;
-            api.draw.arrow(s, ax, deckY - wl, ax, deckY - 2, '#7ad7ff', '', { width: 5 });
-            label(api, s, ax + 10, deckY - wl / 2 - 4, 'weight', '#7ad7ff');
-            label(api, s, ax + 10, deckY - wl / 2 + 14, kid.forceShort(wt), '#7ad7ff');
-            const fl = Math.min(carX - 16, kid.clips(fr) * 12);
-            if (fl >= 3) api.draw.arrow(s, carX + 6, FL + 12, carX + 6 - fl, FL + 12, '#ffa040', '', { width: 4, head: 5 });
-            label(api, s, carX + 14, FL + 18, 'friction', '#ffa040');
-            label(api, s, W - 14, FL + 18, 'rolling →', '#9080b0', { anchor: 'end', size: 13, light: true });
-            // bars: your car's friction against the starting car's
-            const BX = 16, BW = W - 32, frX = BX + FR / (MAXC * kid.CLIP_N) * BW;
-            label(api, s, BX, FL + 52, 'Your car’s friction: ' + kid.forceShort(fr), '#ffa040');
-            bar(api, s, BX, FL + 60, kid.clips(fr), MAXC, BW, '#ffa040');
-            label(api, s, BX, FL + 106, 'Starting car’s friction: ' + kid.forceShort(FR), '#c8b8ea');
-            bar(api, s, BX, FL + 114, kid.clips(FR), MAXC, BW, '#9080b0');
-            line(api, s, frX, FL + 56, frX, FL + 84, '#f0e6ff', { 'stroke-dasharray': '4,3' });   // the starting car's friction, marked on your bar
-            // the readout, in words
-            const ratio = fr / FR, same = kid.clips(fr) === kid.clips(FR);
-            const cmp = Math.abs(fr - FR) < 1e-12 ? 'That is the same as the starting car.'
-                      : same ? 'That is ' + compare(fr, FR) + ' the starting car.'
-                      : fr < FR ? 'That is less than the starting car (' + kid.force(FR) + ').'
-                      : ratio < 1.75 ? 'That is more than the starting car (' + kid.force(FR) + ').'
-                      : 'That is about ' + Math.round(ratio) + ' times the starting car’s friction.';
-            const parts = ['⚖️ Your car weighs ', [kid.force(wt)], ' (' + g + ' g). With ' + WHEEL_NAME[kind] + ', its friction is ', [kid.force(fr)], '. ' + cmp];
+            const ax = carX + len * 0.8, wl = flen(wt);
+            api.draw.arrow(s, ax, deckY - 2 - wl, ax, deckY - 2, BLUE, '', { width: 5 });
+            label(api, s, ax + 10, deckY - 2 - wl / 2 + 5, 'weight', BLUE);
+            label(api, s, W - 14, FL + 18, 'rolling →', GREY, { anchor: 'end', size: 13, light: true });
+            // the two friction arrows, right under the picture: your car's against the starting car's
+            bars.update([{ label: 'your car’s friction', value: fr, color: ORANGE, dir: 'left' },
+                         { label: 'the starting car’s friction', value: FR, color: GREY, dir: 'left' }]);
+            // the readout, in words (exact: the settings come in steps, so "the same" only when they are equal)
+            const times = bars.len.toScale(fr) && bars.len.toScale(FR);
+            const same = g === Math.round(C.mass * 1000) && kind === 'ok';
+            const parts = ['⚖️ Your car weighs ', [g + ' g'], '. With ' + WHEEL_NAME[kind] + ', its friction is ',
+                           [cmp(fr, FR, 'the starting car’s', { exact: true, times: times })], '.' + (same ? ' This is the starting car!' : '')];
             if (g >= 100 && fr >= FR) parts.push(' A heavier car has more friction. Can you make up for it with the wheels?');
             say(api, out, parts);
-            if (checks.lighter(g, crr)) api.done('Your heavier car has less friction! Wheels that spin freely have about half the friction of OK wheels. Weight matters, but the wheels are the part you can fix.');
+            if (checks.lighter(g, crr)) api.done('Your heavier car has less friction! With wheels that spin freely, friction is ' + SMOOTH_VS_OK + '. Weight matters, but the wheels are the part you can fix.');
           }
           draw();
           keepFitted(api, el, draw);
@@ -352,7 +374,7 @@
           '<p>Last year’s classes built paper-sail <strong>sleds</strong> with no wheels. In front of the same two box fans, most slid about <strong>' + kid.dist(ftToM(25)) + '</strong>. ' +
           'The best went about <strong>' + kid.dist(ftToM(30)) + '</strong>.</p>' +
           '<p>A sled <strong>slides</strong>. Its whole bottom scrapes along the floor. Wheels <strong>roll</strong> instead. ' +
-          'With the same weight, a sled has over 10 times the friction of OK wheels.</p>' +
+          'Give a sled and a car the same weight. The sled’s friction is ' + SLED_VS_OK + '.</p>' +
           '<p>Race our model sled against the 70 g lab car. The sled weighs only 20 g. Its low, tent-shaped sail keeps it from tipping over.</p>',
         challenge: 'Pick wheels so the car rolls at least twice as far as the sled.',
         render: function (el, api) {
@@ -378,6 +400,10 @@
           guess.onChange(function () { updateGo(); if (idle) intro(); });
           function stop() { if (raf) cancelAnimationFrame(raf); raf = null; updateGo(); }
           api.onLeave(stop);
+          // the friction arrows beside the lane titles: ONE scale for both lanes (the sled's friction is the longest),
+          // starting at F_X, and kept clear of the distance shown at the right end of the same line
+          const F_X = 86;
+          function frictionLen(W) { return api.draw.forceScale(SLED_FR, Math.max(40, Math.min(120, W - F_X - 14 - 118)), { min: 12, over: 0 }); }
           function sled(x, fy) {
             rect(api, s, x, fy - 5, 42, 5, '#e8dcc0', { stroke: '#a07830', 'stroke-width': 0.8 });                // cardstock base
             api.svg('polygon', { points: [x + 3, fy - 5, x + 21, fy - 36, x + 39, fy - 5].join(','), fill: '#f0e6ff', stroke: '#9080b0', 'stroke-width': 1, opacity: 0.92 }, s);   // tent sail
@@ -401,10 +427,12 @@
             });
             footMarks(api, s, function (m) { return hx(m); }, HALL.length * FT - 1, LC, XE);
             label(api, s, XE + 3, LC + 22, kid.ft(HALL.length) + ' ft', '#9080b0', { anchor: 'end', size: 13, light: true });
-            // the lane titles, with each one's friction, and how far it has gone
+            // the lane titles, each with its friction as an arrow (ONE scale for both lanes: frictionLen), and how far it has gone
+            const fLen = frictionLen(W);
             [['Last year’s SLED (20 g)', SLED_FR, shown.ds, shown.sDone, 22], ['This year’s CAR (70 g)', P.rollingFriction(C.mass, WHEELS[wh.get()]), shown.dc, shown.cDone, 154]].forEach(function (r) {
               label(api, s, 14, r[4], r[0], '#f0e6ff');
-              label(api, s, 14, r[4] + 20, 'friction: ' + kid.forceShort(r[1]), '#ffa040', { size: 14, light: true });
+              label(api, s, 14, r[4] + 20, 'friction', ORANGE, { size: 14 });
+              forceArrow(api, s, F_X, r[4] + 15, fLen(r[1]), ORANGE, 'left');
               if (r[2] != null) label(api, s, W - 14, r[4] + 20, r[3] ? kid.dist(r[2]) : kid.ft(r[2]) + ' ft', r[3] ? '#f0c040' : '#c8b8ea', { anchor: 'end' });
             });
             [[shown.ds, shown.sDone, LS], [shown.dc, shown.cDone, LC]].forEach(function (r) {
@@ -414,9 +442,9 @@
             api.draw.car(s, hx(shown.dc || 0) - 44, LC, { scale: 1.7, length: 26 });
           }
           function intro() {
-            const kind = wh.get();
-            say(api, out, ['🛷 The sled’s friction: ', [kid.force(SLED_FR)], '. 🚗 The car’s friction with ' + WHEEL_NAME[kind] + ': ', [kid.force(P.rollingFriction(C.mass, WHEELS[kind]))],
-              '. The sled is much lighter, but sliding makes lots of friction! ' + (guess.get() == null ? 'Make a prediction first ↑' : 'Press ▶ Race!')]);
+            const kind = wh.get(), carFr = P.rollingFriction(C.mass, WHEELS[kind]), fLen = frictionLen(boardWidth(el));
+            say(api, out, ['🛷 The sled’s friction is ', [cmp(SLED_FR, carFr, 'the car’s', { times: fLen.toScale(SLED_FR) && fLen.toScale(carFr) })],
+              ' with ' + WHEEL_NAME[kind] + '. The sled is much lighter, but sliding makes lots of friction! ' + (guess.get() == null ? 'Make a prediction first ↑' : 'Press ▶ Race!')]);
           }
           function reset() {
             stop();
@@ -470,20 +498,20 @@
         html:
           '<p>Push a heavy box across the floor. Getting it to start takes a big shove. Once it slides, it is easier to keep it going.</p>' +
           '<p>Wheels work the same way. Parts that sit still grip each other a little more. ' +
-          'So it takes more push to <strong>start</strong> rolling than to <strong>keep</strong> rolling.</p>' +
-          '<p>The starting car has ' + kid.force(FR) + ' of friction. A car that is already rolling keeps going until friction slows it to a stop. ' +
-          'A still car is different. To <strong>start</strong> it, the wind must push harder than ' + kid.force(ST) + '. Set the car down at different spots and compare.</p>',
+          'So a still car needs ' + kid.compare(ST, FR) + ' push to <strong>start</strong> than to <strong>keep</strong> rolling.</p>' +
+          '<p>A car that is already rolling keeps going until friction slows it to a stop. ' +
+          'A still car is different. It needs the <strong>starting push</strong>, which is ' + ST_VS_FR + '. ' +
+          'Set the car down at different spots and compare the arrows.</p>',
         challenge: 'Find a spot where a still car can’t start. But the same car, rolling in from the start line, rolls right past.',
         render: function (el, api) {
-          const s = api.svg('svg', { role: 'img', 'aria-label': 'A hallway with the fans and your car, and a bar comparing the wind’s push with friction and with the push needed to start' }, el);
+          const s = api.svg('svg', { role: 'img', 'aria-label': 'A hallway with the fans and your car, and arrows comparing the wind’s push with friction and with the starting push' }, el);
           const d = api.ui.slider(el, { label: 'Where you set the car down (from the fans):', min: 1, max: SPOT_MAX_FT, step: 1, value: 5,
             format: function (v) { return kid.dist(ftToM(v)); }, onInput: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          const MAXP = 4;                                                  // the push bar: 0 to 4 paper clips
           function draw() {
             const f = d.get(), x = ftToM(f), p = pushAt(x), where = spot(x);
-            const W = boardWidth(el), H = 300, FL = 112, X0 = 60, small = W < 360 ? 13 : 14;
+            const W = boardWidth(el), H = 362, FL = 112, X0 = 60, small = W < 360 ? 13 : 14;
             function px(ft) { return X0 + ft / SPOT_MAX_FT * (W - 20 - X0); }
             startBoard(api, s, W, H);
             // the hallway: fans, foot marks, fading wind, where the rolling car stops, the car
@@ -495,32 +523,35 @@
             line(api, s, sx, 34, sx, FL, '#f0c040', { 'stroke-width': 2, 'stroke-dasharray': '5,4' });
             label(api, s, sx - 4, 26, 'a rolling car stops here', '#f0c040', { anchor: 'end', size: 13, light: true });
             api.draw.car(s, px(f) - 6, FL, { scale: 1.5, length: 26 });
-            // the push here, against two lines: friction, and the push it takes to start (a bit more)
-            const BX = 16, BW = W - 32;
-            label(api, s, BX, 150, 'Wind’s push here: ' + kid.forceShort(p), '#40e080');
-            bar(api, s, BX, 160, kid.clips(p), MAXP, BW, '#40e080', 22);
-            [[FR, '#ffa040'], [ST, '#f0c040']].forEach(function (b) {
-              const lx = BX + kid.clips(b[0]) / MAXP * BW;
-              line(api, s, lx, 154, lx, 190, b[1], { 'stroke-width': 3 });
+            // three arrows on ONE honest scale, all starting at the left edge: the wind's push here, friction (it points
+            // back), and the starting push (a little more than friction). The scale fits twice the starting push; a push
+            // bigger than that (near the fans) still gets a longer arrow, squeezed in at the right.
+            const BX = 16, BW = W - 32, len = startLen(BW), pl = len(p);
+            [['wind’s push here', p, GREEN, 'right', 156], ['friction', FR, ORANGE, 'left', 196], ['starting push', ST, YELLOW, 'right', 236]].forEach(function (r) {
+              label(api, s, BX, r[4], r[0], r[2], { size: small });
+              forceArrow(api, s, BX, r[4] + 13, len(r[1]), r[2], r[3]);
             });
-            label(api, s, BX, 214, (p > FR ? '✔' : '✘') + ' More than friction (' + kid.forceShort(FR) + ')', '#ffa040', { size: small });
-            label(api, s, BX, 238, (p > ST ? '✔' : '✘') + ' Enough to start (over ' + kid.forceShort(ST) + ')', '#f0c040', { size: small });
+            line(api, s, BX + pl, 166, BX + pl, 256, GREEN, { 'stroke-dasharray': '3,4', opacity: 0.8 });   // where the push reaches
+            label(api, s, BX, 284, (p > FR ? '✔' : '✘') + ' Push is bigger than friction', ORANGE, { size: small });
+            label(api, s, BX, 306, (p > ST ? '✔' : '✘') + ' Push is big enough to start', YELLOW, { size: small });
             const verdict = { start: ['It starts by itself here!', ''], keep: ['A still car won’t start here…', '…but a rolling car keeps going past.'],
-                              crawl: ['A still car won’t start here.', 'A rolling car stops before here.'], weak: ['Less than friction here.', 'A car here only slows down.'] }[where];
-            const vc = { start: '#40e080', keep: '#f0c040', crawl: '#ff8060', weak: '#ff8060' }[where];
-            label(api, s, BX, 268, verdict[0], vc, { size: small });
-            if (verdict[1]) label(api, s, BX, 288, verdict[1], vc, { size: small });
-            // the readout: the push in paper clips, compared in words
-            const here = '📍 ' + kid.dist(x) + ' from the fans, the wind pushes with ' + kid.force(p) + '. ';
+                              crawl: ['A still car won’t start here.', 'A rolling car stops before here.'], weak: ['The push can’t beat friction here.', 'A car here only slows down.'] }[where];
+            const vc = { start: GREEN, keep: YELLOW, crawl: '#ff8060', weak: '#ff8060' }[where];
+            label(api, s, BX, 334, verdict[0], vc, { size: small });
+            if (verdict[1]) label(api, s, BX, 354, verdict[1], vc, { size: small });
+            // the readout: the push compared with friction or the starting push, in the shared words (exact: "the same"
+            // never stands for two forces that are not; a ratio only when both arrows are drawn to scale)
+            function vs(b, noun) { return cmp(p, b, noun, { exact: true, times: len.toScale(p) && len.toScale(b) }); }
+            const here = '📍 Here, the wind’s push is ';
             const stopTxt = kid.dist(STOP_X);
             const txt = {
-              start: here + 'That is ' + compare(p, ST) + ' the ' + kid.forceShort(ST) + ' it takes to start. The car starts rolling by itself.',
-              keep: here + 'That is ' + compare(p, ST) + ' the ' + kid.forceShort(ST) + ' it takes to START. So a still car never moves. ' +
+              start: here + vs(ST, 'the starting push') + '. So the car starts rolling by itself.',
+              keep: here + vs(ST, 'the starting push') + '. So a still car never moves. ' +
                     'But the car from the start line is already rolling. Friction is slowing it down here. But it keeps going until it stops at ' + stopTxt + '.',
-              crawl: here + 'That is ' + compare(p, FR) + ' friction, but ' + compare(p, ST) + ' the starting push. ' +
+              crawl: here + vs(FR, 'friction') + '. But it is ' + vs(ST, 'the starting push') + '. ' +
                      'The car from the start line moves with the wind. So it feels a little less push. It slowed down and stopped at ' + stopTxt + '. ' +
                      'Once it stops, it needs the starting push again.',
-              weak: here + 'That is ' + compare(p, FR) + ' friction (' + kid.forceShort(FR) + '). A rolling car here only slows down. A still car never starts.'
+              weak: here + vs(FR, 'friction') + '. A rolling car here only slows down. A still car never starts.'
             }[where];
             say(api, out, [txt]);
             if (checks.spot(x)) api.done('From ' + ZONE[0] + ' ft to ' + ZONE[ZONE.length - 1] + ' ft from the fans, a still car never starts. But a car that is already rolling keeps going. Starting is harder than rolling!');
@@ -661,12 +692,18 @@
           const back = api.h('button', { type: 'button', class: 'sl-btn', text: BACK_BTN });
           back.addEventListener('click', function () { br.set(TERRIBLE_SET.b); fit.set(TERRIBLE_SET.fit); gap.set(TERRIBLE_SET.gap); changed(); });
           el.appendChild(api.h('div', { style: 'margin:2px 0 4px' }, [back]));
+          // friction with the axles on screen against the terrible axles': two arrows on ONE fixed scale (the terrible
+          // axles' friction fills the row), so each fix visibly shortens the top arrow
+          const bars = api.ui.forceBars(el, [], { max: TERRIBLE_FR });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
           function set() { return { b: br.get(), fit: fit.get(), gap: gap.get() }; }
           function crr() { return axleCrr(br.get(), fit.get(), gap.get()); }
           function info() {
-            say(api, out, ['🛞 Friction: ', [kid.force(P.rollingFriction(C.mass, crr()))], ' · the wind’s push at the start line: ', [kid.force(pushAt(START_RUN.opts.startX))]]);
+            const fr = P.rollingFriction(C.mass, crr());
+            bars.update([{ label: 'friction with these axles', value: fr, color: ORANGE, dir: 'left' },
+                         { label: 'friction with the terrible axles', value: TERRIBLE_FR, color: GREY, dir: 'left' }]);
+            say(api, out, ['🛞 Friction with these axles is ', [fixVsTerrible(fr, bars.len)], '.']);
           }
           info();
           const tried = {};
@@ -820,7 +857,7 @@
       { q: 'Same car, same fans. You swap rubbing wheels for wheels that spin freely. What happens?', options: ['It rolls about the same', 'It rolls a little less far', 'The wheels just spin in place', 'It rolls much farther'], answer: 3,
         why: 'In our model, the car with rubbing wheels ' + rollText(RUN.rub) + '. With wheels that spin freely, it ' + rollText(RUN.smooth) + '.' },
       { q: 'Last year’s sleds slid about 25 ft. Why can a car with wheels go much farther?', options: ['Rolling has much less friction than sliding', 'Cars with wheels are always lighter', 'The fans blow harder on cars than sleds', 'Heavier things always go farther'], answer: 0,
-        why: 'In our model, the 20 g sled has ' + kid.force(SLED_FR) + ' of friction. The 70 g car with OK wheels has only ' + kid.force(FR) + '.' },
+        why: 'In our model, the sled weighs 20 g and the car with OK wheels weighs 70 g. Still, the sled’s friction is ' + cmp(SLED_FR, FR, 'the car’s') + '.' },
       { q: 'You glue the wheels tight onto a skewer. How should the skewer be held on the chassis?', options: ['Glued down flat so it stays straight', 'Taped down tight so it won’t wobble', 'Loose in a straw so it can turn', 'Pushed through a tight cardstock hole'], answer: 2,
         why: 'If the wheels are glued on, the whole skewer must turn. A straw lets it spin freely.' }
     ],
@@ -828,7 +865,9 @@
     _model: { WHEELS: WHEELS, SLED: SLED, BEARING: BEARING, WOBBLY: WOBBLY, RUBBING: RUBBING, axleCrr: axleCrr, coast: coast, PUSH_V: PUSH_V, PUSH_GOAL_FT: PUSH_GOAL_FT,
               pushAt: pushAt, farStart: farStart, startsUpTo: startsUpTo, spot: spot, STOP_X: STOP_X, ZONE: ZONE, SPOT_MAX_FT: SPOT_MAX_FT, FAR_FT: FAR_FT,
               HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END, ONLY_FULL_FIX: ONLY_FULL_FIX, TERRIBLE: TERRIBLE, TERRIBLE_D: TERRIBLE_D, TERRIBLE_SET: TERRIBLE_SET,
-              RUN: RUN, END_X: END_X, LONG_HALL: LONG_HALL, checks: checks, VEER: VEER, FR: FR, ST: ST, SLED_FR: SLED_FR,
+              RUN: RUN, END_X: END_X, LONG_HALL: LONG_HALL, checks: checks, VEER: VEER, FR: FR, ST: ST, SLED_FR: SLED_FR, WEIGHT: WEIGHT, FAR_PUSH: FAR_PUSH,
+              TWICE_HEAVY: TWICE_HEAVY, SMOOTH_VS_OK: SMOOTH_VS_OK, RUB_VS_OK: RUB_VS_OK, FR_VS_WEIGHT: FR_VS_WEIGHT, FAR_VS_FR: FAR_VS_FR, SLED_VS_OK: SLED_VS_OK,
+              ST_VS_FR: ST_VS_FR, FR_BAR_MAX: FR_BAR_MAX, startLen: startLen, TERRIBLE_FR: TERRIBLE_FR, fixVsTerrible: fixVsTerrible,
               RACE_PREDICT: RACE_PREDICT, raceOutcome: raceOutcome, raceJudge: raceJudge, timesAsFar: timesAsFar,
               FIX_PREDICT: FIX_PREDICT, FIX_SET: FIX_SET, FIX_D: FIX_D, FIX_ORDER: FIX_ORDER, BEST_FIX: BEST_FIX, fixesOf: fixesOf, singleFix: singleFix, fixJudge: fixJudge,
               BACK_BTN: BACK_BTN, BUILD_LIST: BUILD_LIST, TEST_LIST: TEST_LIST, GLUE_TIP: GLUE_TIP, MORE_HTML: MORE_HTML }

@@ -1,12 +1,15 @@
 // Sail Car Lab — Module 6: Balance & Stability
 // The balance point (center of gravity), why the wind from the two box fans flips a car forward over its
 // front wheels, and why crooked axles curve a car into the wall.
-// Written for 6th graders: short sentences, no formulas, forces in paper clips (SailLab.kid.force),
-// distances in feet first (SailLab.kid.dist). Tipping is shown as a tug-of-war of two bars, "tipping"
-// against "holding down". Behind the bars is simulate()'s own rule (students never see it):
+// Written for 6th graders: short sentences, no formulas, distances in feet first (SailLab.kid.dist), and NO force
+// numbers or force units: a force is an arrow whose LENGTH shows its size (draw.forceScale: ONE honest scale per
+// picture, so a bigger force is never drawn shorter), with a word label, and the words COMPARE two forces with the
+// lab's shared vocabulary (kid.compare). Tipping is shown as a tug-of-war of two bars, "tipping" against "holding
+// down", also on one honest scale per step. A sentence states a ratio ("about 3 times as strong") only when both
+// bars or arrows it compares are drawn to scale. Behind the bars is simulate()'s own rule (students never see it):
 //   the car flips if  sail push × (sail height − balance-point height)  >  weight × (balance point to front axle)
 // and a front axle turned off square makes simulate() steer the car round a circle (radius = wheelbase ÷ tan(angle)).
-// Every number a student reads is worked out from SailLab.physics and simulate() when the page loads.
+// Every number a student reads (grams, cm, feet) is worked out from SailLab.physics and simulate() when the page loads.
 (function () {
   'use strict';
   const P = SailLab.physics, D = P.DEFAULT_CAR, G = P.G, kid = SailLab.kid;
@@ -43,15 +46,19 @@
     for (let n = 0; n <= 4; n++) { const t = turns(makeCar(side, gap, wb, n)); if (t.tip <= t.hold) return n; }
     return null;
   }
-  // The two sides of the tug-of-war in words: "about 3 times as strong", never a number with a unit.
-  function times(x) { const n = Math.round(x); return n === 2 ? 'twice' : n + ' times'; }
-  function isTie(t) { const r = t.tip / t.hold; return r >= 0.9 && r <= 1.1; }
-  function compare(t) {
+  // The tug-of-war bars: ONE honest scale per step (draw.forceScale). max = the biggest bar the step can make, which
+  // fills the row. A bar shorter than 2 × TUG_MIN of the row is drawn a bit too long (so it stays visible): it is then
+  // not to scale. min is a share of the row, so which bars are to scale is the same on a phone and on a laptop.
+  const TUG_MIN = 0.02;
+  function tugScale(max, w) { return SailLab.draw.forceScale(max, w, { min: w * TUG_MIN, over: 0 }); }
+  // The two sides of the tug-of-war in words (kid.compare: the whole lab's vocabulary), never a number with a unit.
+  // The bigger side goes first. A ratio ("about 3 times as strong") only when both bars are drawn to scale.
+  function isTie(t) { return kid.bigger(t.tip, t.hold) === 'about the same'; }
+  function compare(t, max) {
     if (!(t.tip > 0)) return 'Nothing is tipping the car.';
-    const r = t.tip / t.hold;
-    if (isTie(t)) return 'Tipping and holding down are almost a tie.';
-    if (r > 1) return r < 1.5 ? 'Tipping is a little stronger than holding down.' : 'Tipping is about ' + times(r) + ' as strong as holding down.';
-    return 1 / r < 1.5 ? 'Holding down is a little stronger than tipping.' : 'Holding down is about ' + times(1 / r) + ' as strong as tipping.';
+    const len = tugScale(max, 100), o = { times: len.toScale(t.tip) && len.toScale(t.hold) };
+    return t.tip >= t.hold ? 'Tipping is ' + kid.compare(t.tip, t.hold, Object.assign({ noun: 'holding down' }, o)) + '.'
+                           : 'Holding down is ' + kid.compare(t.hold, t.tip, Object.assign({ noun: 'tipping' }, o)) + '.';
   }
   function verdict(t) {
     const flips = t.tip > t.hold;
@@ -102,13 +109,24 @@
               : 'Holding down beat tipping. So the back wheels stayed on the floor.';
     return { text: text, right: (flips ? 'nose' : 'stay') === v, why: why };
   }
-  // the biggest push and the biggest bar the step-2 sliders can make, so the arrow and the bars always fit
+  // the biggest push and the biggest bar the step-2 sliders can make, so the arrows and the bars always fit
   const MAXPUSH = P.airForce(P.windAt(START), 0.35 * 0.35, D.sailCd, 0);
   const MAX2 = (function () {
     let m = 0;
     for (let s = 10; s <= 35; s += 5) for (let g = 0; g <= 15; g += 5) [2, 14].forEach(function (cg) { const t = turns(flipCar(s, g, cg)); m = Math.max(m, t.tip, t.hold); });
     return m;
   })();
+  // Step 2's picture draws the wind's push and the car's weight as two arrows on ONE scale: F2MAX (the biggest push
+  // or weight the sliders can make) is px long. A force under 30% of F2MAX is drawn a bit too long (min = 15% of px),
+  // so which arrows are to scale does not depend on the screen width.
+  const MAXW2 = flipCar(35, 0, 8).mass * G;                 // the heaviest step-2 car: the biggest sail
+  const F2MAX = Math.max(MAXPUSH, MAXW2);
+  function pushScale(px) { return SailLab.draw.forceScale(F2MAX, px, { min: px * 0.15, over: 0 }); }
+  // "The push is about the same as the weight." (a ratio only when both arrows are drawn to scale)
+  function pushVsWeight(t) {
+    const len = pushScale(100);
+    return 'The push is ' + kid.compare(t.push, t.weight, { noun: 'the weight', times: len.toScale(t.push) && len.toScale(t.weight) }) + '.';
+  }
 
   // ── Step 3: tame the big sail ───────────────────────────────────────────
   // The 30 × 30 cm sail's farthest non-flipping run with the step's controls (gap 0/5/10 cm, chassis 12/16/22 cm,
@@ -210,10 +228,12 @@
     return box;
   }
   // The tug-of-war: two bars, tipping (red) against holding down (blue), at (x, y), w wide. max = the biggest value either
-  // bar reaches on this step, so a bar's length can be compared across settings. grow (0–1) grows the tipping bar.
+  // bar reaches on this step, so a bar's length can be compared across settings (tugScale: one honest scale, word labels,
+  // never a number). grow (0–1) grows the tipping bar.
   function tugBars(api, s, x, y, w, t, max, grow, gap) {
+    const len = tugScale(max, w);
     [['Tipping (wind)', t.tip * (grow == null ? 1 : grow), RED], ['Holding down (weight)', t.hold, BLUE]].forEach(function (b, i) {
-      const yy = y + i * (gap || 52), bw = b[1] > 0 ? Math.max(3, Math.min(w, b[1] / max * w)) : 0;
+      const yy = y + i * (gap || 52), bw = len(b[1]);
       label(api, s, x, yy, b[0], { color: b[2] });
       api.svg('rect', { x: x, y: yy + 7, width: w, height: 22, rx: 5, fill: '#ffffff', opacity: 0.06 }, s);
       if (bw) api.svg('rect', { x: x, y: yy + 7, width: bw, height: 22, rx: 5, fill: b[2], opacity: 0.88 }, s);
@@ -314,8 +334,12 @@
           function paint() {
             const W = boardWidth(el), wide = W >= 520, K = wide ? 4.2 : 3.6;                 // wide: bars beside the car · narrow: below it
             const side = size.get(), c = car(), t = turns(c), flips = t.tip > t.hold;
-            const FL = Math.round(53 * K + 20), sceneH = FL + 58, H = wide ? sceneH : sceneH + 188;   // floor: room for the tallest sail (3 + 15 + 35 cm)
+            const FL = Math.round(53 * K + 20);                                              // floor: room for the tallest sail (3 + 15 + 35 cm)
             const FA = wide ? 230 : W - 108, fanS = wide ? 70 : 60, fanR = 10 + fanS * 0.32;  // the front wheels (the hinge) · the fans
+            // ONE scale for the push and weight arrows (pushScale): the push on the biggest sail (35 cm) just fits between the
+            // fans and the sail. The "how far back" bracket sits below the longest weight arrow, so it never moves.
+            const PX = Math.max(40, Math.min(90, Math.floor(FA - 8 * K - 35 * 0.45 * K - 6 - (fanR + 8)))), flen = pushScale(PX);
+            const BY = FL + Math.ceil(flen(MAXW2)) + 10, sceneH = BY + 22, H = wide ? sceneH : sceneH + 188;
             const mastX = FA - 8 * K, sailY = FL - c.sailHeight * 100 * K, sailL = mastX - side * 0.45 * K;
             const cgX = FA - t.holdArm * K, cgY = FL - c.cgHeight * 100 * K, LX = FA + 24;
             startBoard(api, s, W, H);
@@ -332,20 +356,22 @@
             }
             // the wind's push on the middle of the sail (only with the fans on): a longer arrow is a bigger push
             if (fansOn && grow > 0) {
-              const ax2 = sailL - 6, room = ax2 - (fanR + 8), len = Math.max(14, room * Math.min(1, t.push / MAXPUSH)) * grow;
+              const ax2 = sailL - 6, len = flen(t.push) * grow;
               api.draw.arrow(s, ax2 - len, sailY, ax2, sailY, GREEN, '');
-              if (grow >= 1) label(api, s, ax2, sailY - 12, 'push: ' + kid.forceShort(t.push), { anchor: 'end', color: GREEN, size: 13 });
+              if (grow >= 1) label(api, s, ax2, sailY - 12, 'push', { anchor: 'end', color: GREEN, size: 13 });
             }
             // how high the push is above the balance point (red), and how far back the balance point is (blue)
             api.svg('circle', { cx: mastX, cy: sailY, r: 4, fill: RED }, s);
             [[mastX, sailY], [cgX, cgY]].forEach(function (p) { api.svg('line', { x1: p[0], y1: p[1], x2: LX + 6, y2: p[1], stroke: RED, 'stroke-width': 1.5, 'stroke-dasharray': '2,4', opacity: 0.8 }, s); });
             api.svg('line', { x1: LX, y1: cgY, x2: LX, y2: sailY, stroke: RED, 'stroke-width': 3 }, s);
             label(api, s, LX + 7, (cgY + sailY) / 2 + 5, 'how high', { color: RED, size: 13 });
-            api.draw.arrow(s, cgX, cgY, cgX, FL + 22, BLUE, '', { width: 3 });
-            label(api, s, cgX - 8, FL + 24, 'weight: ' + kid.forceShort(t.weight), { anchor: 'end', color: BLUE, size: 13 });
-            api.svg('line', { x1: cgX, y1: FL + 38, x2: FA, y2: FL + 38, stroke: BLUE, 'stroke-width': 3 }, s);
-            [cgX, FA].forEach(function (x) { api.svg('line', { x1: x, y1: FL + 31, x2: x, y2: FL + 45, stroke: BLUE, 'stroke-width': 2 }, s); });
-            label(api, s, FA + 11, FL + 44, 'how far back', { color: BLUE, size: 13 });
+            // the weight pulls down at the balance point: on the push arrow's scale, so the two lengths can be compared
+            const wl = flen(t.weight);
+            api.draw.arrow(s, cgX, cgY, cgX, cgY + wl, BLUE, '', { width: 3 });
+            label(api, s, cgX - 8, Math.max(FL + 18, cgY + wl / 2 + 5), 'weight', { anchor: 'end', color: BLUE, size: 13 });
+            api.svg('line', { x1: cgX, y1: BY, x2: FA, y2: BY, stroke: BLUE, 'stroke-width': 3 }, s);
+            [cgX, FA].forEach(function (x) { api.svg('line', { x1: x, y1: BY - 7, x2: x, y2: BY + 7, stroke: BLUE, 'stroke-width': 2 }, s); });
+            label(api, s, FA + 11, BY + 6, 'how far back', { color: BLUE, size: 13 });
             api.svg('circle', { cx: cgX, cy: cgY, r: 6, fill: '#00a8ff', stroke: '#fff', 'stroke-width': 1.5 }, s);
             // the tug-of-war
             const BX = wide ? 344 : 14, BW = wide ? W - 358 : W - 28, y0 = wide ? 0 : sceneH;
@@ -363,9 +389,12 @@
           function explain() {
             const t = turns(car()), flips = t.tip > t.hold;
             if (!fansOn) { say(api, out, ['The fans are off. Make your prediction. Then press ', ['▶ Turn on the fans'], '.']); return; }
-            say(api, out, ['🔴 ', ['Tipping:'], ' the wind pushes with ' + kid.force(t.push) + ', high on the sail. ',
-              '🔵 ', ['Holding down:'], ' the car weighs ' + kid.force(t.weight) + '. ', [compare(t)], ' ' + verdict(t) +
-              (flips && kid.clips(t.push) < kid.clips(t.weight) ? ' The push is smaller than the weight, but it still wins. A push up high has lots of turning power.' : '')]);
+            // a push that is NOT bigger than the weight can still flip the car: that is the surprise worth saying out loud
+            const tug = compare(t, MAX2), surprise = flips && kid.bigger(t.push, t.weight) !== 'bigger';
+            say(api, out, ['🔴 ', ['Tipping:'], ' the wind pushes high on the sail. ',
+              '🔵 ', ['Holding down:'], ' the car’s weight pulls down at the balance point. ', pushVsWeight(t) + ' ',
+              [surprise && !isTie(t) ? 'But ' + tug.charAt(0).toLowerCase() + tug.slice(1) : tug],
+              (surprise ? ' A push up high has lots of turning power.' : '') + ' ' + verdict(t)]);
           }
           function finish() {
             if (raf) cancelAnimationFrame(raf);
@@ -448,15 +477,16 @@
           const fb = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite', text: HINT });
           function car() { return makeCar(side.get(), gap.get(), wb.get(), coins.get()); }
           function bars() {
-            const W = boardWidth(el);
+            const W = boardWidth(el), t = turns(car());
             startBoard(api, bs, W, 112);
-            tugBars(api, bs, 14, 24, W - 28, turns(car()), MAX3, 1, 50);
+            tugBars(api, bs, 14, 24, W - 28, t, MAX3, 1, 50);
+            bs.setAttribute('aria-label', 'The tug-of-war for this car at the start line. ' + compare(t, MAX3));
           }
           // any change to the car clears the old run, so a run of a different car can't pass the challenge
           function info() {
             const c = car(), t = turns(c);
             bars();
-            say(api, out, ['⚖️ This car weighs ', [kid.grams(c.mass)], '. ' + compare(t) + ' ', t.tip > t.hold ? ['It will flip! 🤸'] : ['It stays down ✓'],
+            say(api, out, ['⚖️ This car weighs ', [kid.grams(c.mass)], '. ' + compare(t, MAX3) + ' ', t.tip > t.hold ? ['It will flip! 🤸'] : ['It stays down ✓'],
               isTie(t) ? ' But only just!' : '']);
             fb.textContent = HINT;
             if (sim) sim.reset();
@@ -677,7 +707,7 @@
       { q: 'When the fans flip a sail car, which way does it go?', options: ['Backward, toward the fans', 'Forward, onto its nose', 'Up off the floor, like a kite', 'Left or right, onto one side'], answer: 1,
         why: 'The wind pushes high on the sail, away from the fans. So the car tips forward over its front wheels.' },
       { q: 'Why does a sail high on a tall mast make a car flip more easily?', options: ['A high sail makes the fans blow harder', 'A push up high has more turning power', 'A tall mast makes the car lighter', 'A high sail adds friction to the wheels'], answer: 1,
-        why: 'The front wheels act like a hinge. A push far from a hinge turns things more easily, like pushing a door far from its hinges.' },
+        why: 'The front wheels act like a hinge. Like a door, a push far from the hinge has more turning power.' },
       { q: 'Car A’s balance point is 4 cm behind its front wheels. Car B’s is 10 cm behind. Same sail, same weight. Which is harder to flip?',
         options: ['Car A, because its weight is up front', 'Car B, because its weight sits farther back', 'They tie, because both cars weigh the same', 'It depends on how hard the fans blow'], answer: 1,
         why: 'The farther back the balance point is, the better the weight holds the back down. So Car B is harder to flip.' },
@@ -695,6 +725,7 @@
     ],
     // for the check script only: the module's own car builder, tug-of-war and challenge rules
     _calc: { makeCar: makeCar, turns: turns, fewestNickels: fewestNickels, compare: compare, verdict: verdict, isTie: isTie,
+             TUG_MIN: TUG_MIN, tugScale: tugScale, pushScale: pushScale, pushVsWeight: pushVsWeight, F2MAX: F2MAX, MAXW2: MAXW2,
              fingerTest: fingerTest, FINGER_START: FINGER_START, CG0: CG0, BAL_TOL: BAL_TOL,
              flipCar: flipCar, FLIP_START: FLIP_START, FLIP_PREDICT: FLIP_PREDICT, flipJudge: flipJudge, MAX2: MAX2, MAXPUSH: MAXPUSH,
              tamed: tamed, longer: longer, BIG_START: BIG_START, HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END, GOAL3_TXT: GOAL3_TXT,

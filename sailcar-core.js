@@ -5,8 +5,10 @@
 //                               the hallway, used by every simulator and the Design Studio
 // • SailLab.ui / SailLab.draw — small helpers so every module looks and behaves the same
 //                               (ui.predict = the "Predict first" card; ui.word = a "Word to know" box)
-// • SailLab.kid               — numbers for 6th graders: forces in paper clips, distances in feet (then
-//                               metres), speeds in words. Students never see newtons, kg or m/s.
+// • SailLab.kid               — words and numbers for 6th graders: distances in feet (then metres), mass in
+//                               grams, speeds in words, and forces NEVER as numbers: a force is an arrow
+//                               (longer = bigger) and kid.compare() says how two forces compare in words.
+//                               Students never see newtons, kg or m/s.
 // • Progress (which modules a student has passed) is saved in Firestore
 //   (sailcar_progress/{uid}); if the database refuses, it falls back to this browser.
 (function () {
@@ -133,21 +135,121 @@
                     HALL: HALL, MODEL_VERSION: MODEL_VERSION,
                     windAt: windAt, airForce: airForce, rollingFriction: rollingFriction, simulate: simulate };
 
-  // ── NUMBERS FOR 6TH GRADERS ───────────────────────────────────────────────
-  // Students never see newtons, kilograms or m/s. Every number a student reads goes through these:
-  //   kid.force(0.31)  → 'about 32 paper clips'   (a push as hard as holding up that many standard paper clips;
-  //                       1 paper clip ≈ 1 g, so 1 clip = 0.001 kg × G ≈ 0.0098 N — a 70 g car weighs 70 clips)
+  // ── WORDS AND NUMBERS FOR 6TH GRADERS ─────────────────────────────────────
+  // Students never see newtons, kilograms or m/s, and never see a force as a number at all.
+  //   FORCES: an arrow or bar whose LENGTH shows the size (draw.forceScale / ui.forceBars), with a word label,
+  //           and words that COMPARE two forces:
+  //             kid.compare(push, friction, { noun: 'friction' }) → 'about 20 times as strong as friction'
+  //             kid.bigger(push, friction)                        → 'bigger'
   //   kid.dist(15.85)  → '52 ft (16 m)'           (feet first: US tape measures; whole feet, one decimal under 10 ft)
+  //   kid.grams(0.07)  → '70 g'                   (mass stays in grams: students weigh their real cars)
   //   kid.speed(1.4)   → 'walking speed'          (words, not m/s)
   const CLIP_N = 0.001 * G, FT_PER_M = 3.28084;
   function r1(v) { return Math.round(v * 10) / 10; }
   function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
   function clipsRaw(N) { return Math.abs(num(N)) / CLIP_N; }
+
+  // COMPARING TWO FORCES IN WORDS — the ONE vocabulary every module uses, so the whole lab sounds the same.
+  // r = the bigger size ÷ the smaller size (signs are ignored: a force's direction is the arrow's job).
+  //   r < 1.1                 'about the same'                    (less than 10% apart)
+  //   1.1 ≤ r < 1.4           'a little bigger'  / 'a little smaller'
+  //   1.4 ≤ r < 1.8           'bigger'           / 'smaller'
+  //   r ≥ 1.8, a is bigger:   'about N times as strong'  when r is within 10% of N = 2, 3, 4, 5, 10 or 20
+  //                                                       (2: 1.8–2.2 · 3: 2.7–3.3 · 4: 3.6–4.4 · 5: 4.5–5.5 · 10: 9–11 · 20: 18–22)
+  //                           'more than N times as strong'  in the gaps (N = the biggest of those below r: TRUE, never a decimal)
+  //   r ≥ 1.8, a is smaller:  'about half as strong'  (1.8–2.2) · 'less than half as strong' (2.2–4) · 'much smaller' (4 and up)
+  //                           (never 'a third as strong' or 'N times smaller': to state a big ratio, put the bigger force first)
+  //   one of them is 0:       'much bigger' / 'much smaller' (both 0: 'about the same')
+  // Options:
+  //   noun: 'friction'   → finishes the phrase: 'a little bigger than friction', 'about the same as friction',
+  //                        'about 4 times as strong as friction', 'about half as strong as friction'
+  //   times: false       → never a ratio: r ≥ 1.8 is 'much bigger' / 'much smaller'. Use it when the ratio is not
+  //                        robust, or when the picture beside the words is not drawn to scale (see draw.forceScale:
+  //                        { times: len.toScale(a) && len.toScale(b) }).
+  //   exact: true        → for forces set on slider steps a student can count (squares of sail, steps of a slider,
+  //                        "3 times as fast"), where the model's ratio is exact:
+  //                          'the same' only when they are equal, and 1 < r < 1.1 is 'just a little bigger' / 'just a
+  //                          little smaller' (so "balanced" is never claimed for forces that are not);
+  //                          a whole-number ratio N = 2 … 20 is said exactly: 'N times as strong' (no "about": 8 squares
+  //                          of sail push 8 times as hard, 3 times as fast is 9 times the drag), and r = 2 is 'half as strong';
+  //                          otherwise 'about N times' / 'about half' only within 5% of N (strictly), and in the gaps
+  //                          'more than N times as strong' with N = r rounded down (4.5 → 'more than 4 times'),
+  //                          1.8 ≤ r ≤ 1.9 is 'bigger' / 'smaller', 'less than half' and 'much smaller' as above.
+  // Boundaries are inclusive on the bigger side (exactly 1.1 is 'a little bigger', exactly 1.8 is 'about 2 times').
+  const CMP = { SAME: 1.1, LITTLE: 1.4, RATIO: 1.8, NEAR: 0.1, NICE: [2, 3, 4, 5, 10, 20], HALF_MAX: 2.2, MUCH_SMALLER: 4,
+                EXACT_NEAR: 0.05, EXACT_MAX: 20 };
+  const EPS = 1e-9, WHOLE = 1e-6;   // WHOLE: how close (relative) a ratio must be to N to be "exactly N" (rounding only)
+  function sizes(a, b) { return [Math.abs(num(a)), Math.abs(num(b))]; }
+  // the "nice" whole number r is about (within 10%, or strictly within 5% for exact settings), or null
+  function niceTimes(r, exact) {
+    for (let i = 0; i < CMP.NICE.length; i++) {
+      const off = Math.abs(r / CMP.NICE[i] - 1);
+      if (exact ? off < CMP.EXACT_NEAR : off <= CMP.NEAR + EPS) return CMP.NICE[i];
+    }
+    return null;
+  }
+  // exact settings: r ≥ 1.8 (the bigger ÷ the smaller), up = a is the bigger one
+  function exactTimes(r, up) {
+    const n = Math.round(r), whole = n >= 2 && n <= CMP.EXACT_MAX && Math.abs(r / n - 1) < WHOLE;
+    if (up) {
+      if (whole) return n + ' times as strong';
+      const near = niceTimes(r, true);
+      if (near) return 'about ' + near + ' times as strong';
+      if (r < 2) return 'bigger';                       // 1.8 … 1.9: too far from 2 to say "about 2 times"
+      return 'more than ' + Math.min(Math.floor(r * (1 + EPS)), CMP.EXACT_MAX) + ' times as strong';
+    }
+    if (whole && n === 2) return 'half as strong';
+    if (Math.abs(r / 2 - 1) < CMP.EXACT_NEAR) return 'about half as strong';
+    if (r < 2) return 'smaller';
+    return r * (1 + EPS) < CMP.MUCH_SMALLER ? 'less than half as strong' : 'much smaller';
+  }
+  function comparePhrase(a, b, o) {
+    const s = sizes(a, b), big = Math.max(s[0], s[1]), small = Math.min(s[0], s[1]);
+    if (big === 0) return o.exact ? 'the same' : 'about the same';
+    const up = s[0] >= s[1], r = small === 0 ? Infinity : big / small, rr = r * (1 + EPS);
+    if (o.exact && r <= 1 + EPS) return 'the same';
+    if (rr < CMP.SAME) return o.exact ? (up ? 'just a little bigger' : 'just a little smaller') : 'about the same';
+    if (rr < CMP.LITTLE) return up ? 'a little bigger' : 'a little smaller';
+    if (rr < CMP.RATIO) return up ? 'bigger' : 'smaller';
+    if (o.times === false || r === Infinity) return up ? 'much bigger' : 'much smaller';
+    if (o.exact) return exactTimes(r, up);
+    if (up) {
+      const n = niceTimes(r);
+      if (n) return 'about ' + n + ' times as strong';
+      return 'more than ' + CMP.NICE.filter(function (k) { return k < r; }).pop() + ' times as strong';
+    }
+    if (r <= CMP.HALF_MAX * (1 + EPS)) return 'about half as strong';
+    return rr < CMP.MUCH_SMALLER ? 'less than half as strong' : 'much smaller';
+  }
+
   const kid = {
-    CLIP_N: CLIP_N, FT_PER_M: FT_PER_M,
+    CLIP_N: CLIP_N, FT_PER_M: FT_PER_M, COMPARE: CMP,
+    // kid.compare(a, b, { noun, times, exact }) → how force a compares with force b, in the shared words above
+    compare: function (a, b, o) {
+      o = o || {};
+      const p = comparePhrase(a, b, o);
+      if (!o.noun) return p;
+      return p + (/as strong$|the same$/.test(p) ? ' as ' : ' than ') + o.noun;
+    },
+    // kid.bigger(a, b) → 'bigger' | 'smaller' | 'about the same'   (less than 10% apart is 'about the same')
+    bigger: function (a, b) {
+      const s = sizes(a, b), big = Math.max(s[0], s[1]), small = Math.min(s[0], s[1]);
+      if (big === 0 || (small > 0 && big / small * (1 + EPS) < CMP.SAME)) return 'about the same';
+      return s[0] > s[1] ? 'bigger' : 'smaller';
+    },
+    // kid.times(a, b) → 2, 3, 4, 5, 10 or 20 when a is about that many times b (within 10%), else null.
+    // For your own wording, e.g. 'about ' + n + ' times the push'. Only for a ≥ b; never a decimal.
+    times: function (a, b) {
+      const s = sizes(a, b);
+      if (!(s[1] > 0) || s[0] / s[1] * (1 + EPS) < CMP.RATIO) return null;
+      return niceTimes(s[0] / s[1]);
+    },
+
+    // ── NOT FOR STUDENT TEXT ── forces as paper clips (1 clip ≈ 1 g of weight ≈ 0.0098 N). Kept only for
+    // teacher-only views and tests. Students see arrows and kid.compare() words, never these.
     // a force in paper clips, rounded the way it is shown: one decimal under 3, whole numbers above
     clips: function (N) { const c = clipsRaw(N); return c < 3 ? r1(c) : Math.round(c); },
-    // 'about 32 paper clips' · 'about 1.8 paper clips' · 'about 1 paper clip' · 'less than 1 paper clip' · '0 paper clips'
+    // (not for student text) 'about 32 paper clips' · 'about 1.8 paper clips' · 'about 1 paper clip' · 'less than 1 paper clip' · '0 paper clips'
     force: function (N) {
       const c = clipsRaw(N);
       if (c < 0.05) return '0 paper clips';
@@ -155,7 +257,7 @@
       const n = kid.clips(N);
       return 'about ' + n + ' paper clip' + (n === 1 ? '' : 's');
     },
-    // the same, short enough for a label on a drawing: '32 clips' · '1.8 clips' · '<1 clip' · '0 clips'
+    // (not for student text) the same, short: '32 clips' · '1.8 clips' · '<1 clip' · '0 clips'
     forceShort: function (N) {
       const c = clipsRaw(N);
       if (c < 0.05) return '0 clips';
@@ -182,14 +284,46 @@
   };
 
   // ── DRAWING ───────────────────────────────────────────────────────────────
+  // HONEST ARROWS: draw.forceScale(maxValue, maxPx, { min, over, zero }) → len(force) in px, ONE shared length rule
+  // for every force drawn together (call it once per picture and use it for every arrow or bar in it).
+  //   • a bigger force is never drawn shorter, and equal forces get exactly equal lengths;
+  //   • TO SCALE (length ∝ force) from the knee (2 × min) up to maxPx, so a ratio you can see there is true;
+  //   • a tiny force that would be shorter than the knee is drawn between min (default 14 px) and the knee, so it stays
+  //     visible: it is then drawn a bit too LONG, never too short (the order stays right, the ratio looks smaller);
+  //   • a force bigger than maxValue grows only a little more, up to maxPx + over (default 20% of maxPx), never past it;
+  //   • |force| ≤ zero (default 0) → 0 px: draw no arrow.
+  //   len.toScale(f) → true when f is drawn exactly to scale. A sentence next to the picture may state a ratio
+  //   ('about 4 times as strong') only when both forces are: kid.compare(a, b, { times: len.toScale(a) && len.toScale(b) }).
+  function forceScale(maxValue, maxPx, o) {
+    o = o || {};
+    const mx = Math.abs(num(maxValue)) || 1, px = Math.max(1, num(maxPx));
+    const min = Math.min(o.min == null ? 14 : num(o.min), px / 2), knee = 2 * min;
+    const over = o.over == null ? px * 0.2 : Math.max(0, num(o.over)), zero = Math.abs(num(o.zero));
+    function lin(v) { return Math.abs(num(v)) / mx * px; }
+    function len(v) {
+      if (Math.abs(num(v)) <= zero) return 0;
+      const l = lin(v);
+      if (l <= 0) return 0;
+      if (l < knee) return min + l * (knee - min) / knee;   // (min … knee): a tiny force stays visible
+      if (l <= px) return l;                                // to scale
+      return px + over * (1 - px / l);                      // (maxPx … maxPx + over): still growing, never off the picture
+    }
+    len.toScale = function (v) { const l = lin(v); return Math.abs(num(v)) > zero && l >= knee - 1e-9 && l <= px + 1e-9; };
+    len.max = px + over;
+    return len;
+  }
+
   const draw = {
+    forceScale: forceScale,
     // arrow from (x1,y1) to (x2,y2) with an optional label
     arrow: function (parent, x1, y1, x2, y2, color, label, opts) {
       opts = opts || {};
       const g = svg('g', { class: 'sl-arrow' }, parent);
       const len = Math.hypot(x2 - x1, y2 - y1);
       if (len < 2) return g;
-      const ux = (x2 - x1) / len, uy = (y2 - y1) / len, hw = opts.head || 7;
+      // (a short arrow gets a smaller head: the head is never longer than 80% of the arrow, so a 5 px arrow is still a little arrow;
+      //  an arrow of 14 px or more is drawn exactly as before)
+      const ux = (x2 - x1) / len, uy = (y2 - y1) / len, hw = Math.min(opts.head || 7, len * 0.5);
       svg('line', { x1: x1, y1: y1, x2: x2 - ux * hw, y2: y2 - uy * hw, stroke: color, 'stroke-width': opts.width || 4, 'stroke-linecap': 'round' }, g);
       svg('polygon', { points: [x2, y2, x2 - ux * hw * 1.6 - uy * hw, y2 - uy * hw * 1.6 + ux * hw, x2 - ux * hw * 1.6 + uy * hw, y2 - uy * hw * 1.6 - ux * hw].join(','), fill: color }, g);
       if (label) svg('text', { x: (x1 + x2) / 2 + (opts.dx || 0), y: (y1 + y2) / 2 + (opts.dy == null ? -9 : opts.dy), 'text-anchor': 'middle', fill: color, 'font-size': opts.size || 12, 'font-weight': 700, class: 'sl-lbl' }, g, label);
@@ -230,18 +364,74 @@
 
   // ── UI HELPERS ────────────────────────────────────────────────────────────
   let uid = 0;
+  // The hallway simulator's force arrows, scaled for FRICTION (the force the push has to beat down the hall), not for
+  // the big push at the start line: 1000 px per newton, to scale from 6 px (0.006 N) to 80 px (0.08 N). So every wheel
+  // friction on a typical car is to scale (Spin freely 8 px, OK 17 px, Rubbing 48 px; Jammed 82 px is just squeezed),
+  // and so is the faded push down the hall it is compared with. A bigger force (the start push) is squeezed into
+  // 80–94 px: still the longest arrow, and never off the left edge at the start line. A push or drag under 0.001 N
+  // (an eighth of the smallest friction) is not drawn; one just above it is a little 3 px arrow.
+  const TRACK_LEN = forceScale(0.08, 80, { min: 3, over: 14, zero: 0.001 });
   const ui = {
     // labelled slider: returns { get(), set(v), input }
+    //   o = { label, min, max, step, value, onInput(v), format(v) → the text after the label (default: v + unit),
+    //         bar: { color, max (default o.max), px (default 110) } → a FORCE slider: a little arrow whose length shows
+    //              the setting (draw.forceScale, so equal settings = equal arrows) and NO number (unless format is given),
+    //         ends: ['small push', 'big push'] → words under the two ends of the slider,
+    //         valueText(v) → what a screen reader says for the setting (e.g. kid.compare words) }
     slider: function (parent, o) {
       const id = 'sl-s' + (++uid);
       const out = h('span', { class: 'sl-val' });
       const input = h('input', { type: 'range', id: id, min: o.min, max: o.max, step: o.step || 1, value: o.value });
-      const fmtV = o.format || function (v) { return v + (o.unit ? ' ' + o.unit : ''); };
-      function show() { out.textContent = fmtV(Number(input.value)); }
+      const fmtV = o.format || (o.bar ? null : function (v) { return v + (o.unit ? ' ' + o.unit : ''); });
+      const bar = o.bar ? h('span', { class: 'sl-vbar', 'aria-hidden': 'true', style: 'background:' + (o.bar.color || '#40e080') }) : null;
+      const barLen = o.bar ? forceScale(o.bar.max == null ? o.max : o.bar.max, o.bar.px || 110, { min: 10, over: 0 }) : null;
+      function show() {
+        const v = Number(input.value);
+        out.textContent = fmtV ? fmtV(v) : '';
+        if (bar) { const w = barLen(v); bar.style.width = w + 'px'; bar.hidden = !(w > 0); out.appendChild(bar); }
+        if (o.valueText) input.setAttribute('aria-valuetext', o.valueText(v));
+      }
       input.addEventListener('input', function () { show(); if (o.onInput) o.onInput(Number(input.value)); });
-      parent.appendChild(h('div', { class: 'sl-ctrl' }, [h('label', { for: id, class: 'sl-ctrl-lbl' }, [o.label + ' ', out]), input]));
+      const kids = [h('label', { for: id, class: 'sl-ctrl-lbl' }, [o.label + ' ', out]), input];
+      if (o.ends) kids.push(h('div', { class: 'sl-ends' }, [h('span', { text: o.ends[0] }), h('span', { text: o.ends[1] })]));
+      parent.appendChild(h('div', { class: 'sl-ctrl' + (o.bar ? ' sl-ctrl-force' : '') }, kids));
       show();
       return { input: input, get: function () { return Number(input.value); }, set: function (v) { input.value = v; show(); } };
+    },
+    // FORCE BARS: forces as arrows on ONE honest scale (draw.forceScale), each with a WORD label and never a number.
+    //   rows = [{ label: 'wind push', value: push, color: '#40e080' },
+    //           { label: 'friction', value: friction, color: '#ffa040', dir: 'left' }]
+    //   o = { max: the force that fills a row (default: the biggest in rows; give a fixed one so a student can compare
+    //              one setting with the next), label: the aria-label (default: the arrows compared in kid.compare words) }
+    // Every bar starts at the left edge, so the lengths line up; dir 'left' only turns the arrowhead (friction pushes back).
+    // Returns { el, update(rows, max?), len } — len = the scale in use: len.toScale(v) for kid.compare's times option.
+    forceBars: function (parent, rows, o) {
+      o = Object.assign({}, o);
+      const el = h('div', { class: 'sl-fbars', role: 'img' });
+      parent.appendChild(el);
+      const api = { el: el, len: null, update: update };
+      function size(r) { return Math.abs(num(r.value)); }
+      function update(newRows, max) {
+        if (newRows) rows = newRows;
+        if (max != null) o.max = max;
+        const top = o.max != null ? Math.abs(num(o.max)) : rows.reduce(function (m, r) { return Math.max(m, size(r)); }, 0);
+        const len = api.len = forceScale(top || 1, 88, { min: 6, over: 12 });    // lengths in % of the row
+        el.textContent = '';
+        rows.forEach(function (r) {
+          const w = len(r.value), color = r.color || '#40e080';
+          const bar = h('span', { class: 'sl-fbar' + (r.dir === 'left' ? ' sl-fbar-left' : ''), style: 'width:' + w.toFixed(2) + '%;background:' + color });
+          if (!(w > 0)) bar.hidden = true;
+          el.appendChild(h('div', { class: 'sl-fbar-row' }, [h('span', { class: 'sl-fbar-lbl', style: 'color:' + color, text: r.label }),
+                                                            h('span', { class: 'sl-fbar-track' }, [bar])]));
+        });
+        // for screen readers: the longest arrow, then each other one compared with it (words only, no ratios)
+        const big = rows.slice().sort(function (a, b) { return size(b) - size(a); })[0];
+        el.setAttribute('aria-label', o.label || (big ? 'Force arrows. ' + rows.map(function (r) {
+          return r === big ? r.label + ': the longest arrow.' : r.label + ': ' + kid.compare(r.value, big.value, { noun: big.label, times: false }) + '.';
+        }).join(' ') : 'Force arrows.'));
+      }
+      update();
+      return api;
     },
     // chip buttons, one choice: returns { get(), set(v) }
     choice: function (parent, o) {
@@ -431,7 +621,7 @@
         const o = cur();
         for (let m = 0.2; m < scaleM; m += scaleM / 22) {
           const w = windAt(m + (o.startX || 0.3), o.fan), len = Math.min(26, w * 8), op = Math.min(0.55, w / FAN.v0 * 0.6);
-          [70, 100, 130].forEach(function (y, i) {
+          [40, 65, 90].forEach(function (y, i) {
             const px = pxOf(m) + (i % 2) * 8;
             svg('line', { x1: px, y1: FLOOR - y, x2: px + len, y2: FLOOR - y, stroke: '#7ad7ff', 'stroke-width': 1.5, opacity: op.toFixed(2), 'stroke-linecap': 'round' }, sv);
           });
@@ -441,14 +631,23 @@
           svg('line', { x1: fx, y1: FLOOR - 150, x2: fx, y2: FLOOR, stroke: '#f0c040', 'stroke-dasharray': '4,4', 'stroke-width': 1.5 }, sv);
         }
         const c = Object.assign({}, DEFAULT_CAR, getCar());
-        const sailSide = Math.sqrt(c.sailArea) * 100, carScale = W < 600 ? 1.8 : 2.4;
+        const sailSide = Math.sqrt(c.sailArea) * 100, carScale = W < 600 ? 1.8 : 2.4, mastH = Math.max(sailSide, c.sailHeight * 100 + sailSide / 2);
         const st = carState || { x: 0, tilt: 0 };
-        draw.car(sv, pxOf(st.x) - 12, FLOOR, { scale: carScale, sailW: sailSide, sailH: Math.max(6, sailSide * Math.max(0.2, Math.cos(c.sailAngle * Math.PI / 180))), mastH: Math.max(sailSide, c.sailHeight * 100 + sailSide / 2), cupped: c.sailCd > 1.3, tilt: st.tilt || 0 });
+        draw.car(sv, pxOf(st.x) - 12, FLOOR, { scale: carScale, sailW: sailSide, sailH: Math.max(6, sailSide * Math.max(0.2, Math.cos(c.sailAngle * Math.PI / 180))), mastH: mastH, cupped: c.sailCd > 1.3, tilt: st.tilt || 0 });
         if (st.forces && opts.showForces !== false) {
-          const cx = pxOf(st.x) + 10, k = 260;         // px per newton
-          const push = st.forces.thrust + st.forces.body;
-          if (Math.abs(push) > 0.002) draw.arrow(sv, cx, FLOOR - 120, cx + Math.max(-90, Math.min(90, push * k)), FLOOR - 120, push >= 0 ? '#40e080' : '#ff5050', push >= 0 ? 'wind push' : 'air drag', { width: 4 });
-          if (st.forces.friction > 0.001) draw.arrow(sv, cx, FLOOR - 4, cx - Math.min(90, st.forces.friction * k), FLOOR - 4, '#ffa040', 'friction', { width: 3, dy: 16 });
+          // The push and friction, side by side on ONE line from ONE point above the car's mast (where the wind pushes):
+          // the push goes right, friction goes left. Same height, same start, ONE honest scale (TRACK_LEN): the longer
+          // arrow is always the bigger force, and equal arrows are balanced. Word labels only, never numbers.
+          const f = st.forces, push = f.thrust + f.body, ox = pxOf(st.x) - 12 + 24 * carScale * 0.45, y0 = FLOOR - 142;   // (draw.car: 24 long, mast 45% along)
+          // a still car (never moved): friction holds it back exactly as hard as the wind pushes: two equal arrows
+          const pl = f.still ? Math.max(TRACK_LEN(push), 10) : TRACK_LEN(Math.abs(push)), fl = f.still ? pl : TRACK_LEN(f.friction);
+          const carTop = FLOOR - carScale * (7 + mastH);                   // the mast's top (draw.car: wheels 3, deck 1)
+          if (carTop - 4 > y0 + 10) svg('line', { x1: ox, y1: y0 + 8, x2: ox, y2: carTop - 4, stroke: '#9080b0', 'stroke-width': 1.5, 'stroke-dasharray': '3,3', opacity: 0.8 }, sv);
+          function tag(g, text, color, x, y, anchor) { svg('text', { x: x, y: y, 'text-anchor': anchor, fill: color, 'font-size': 13, 'font-weight': 700, class: 'sl-lbl' }, g, text); }
+          if (pl > 0 && push >= 0) tag(draw.arrow(sv, ox, y0, ox + pl, y0, '#40e080', '', { width: 4 }), 'wind push', '#40e080', ox + 4, y0 - 11, 'start');
+          if (fl > 0) tag(draw.arrow(sv, ox, y0, ox - fl, y0, '#ffa040', '', { width: 4 }), 'friction', '#ffa040', ox - 4, y0 - 11, 'end');
+          // the air pushing BACK on a car that outruns the wind (drag) is a second backward arrow: its own line under friction's
+          if (pl > 0 && push < 0) tag(draw.arrow(sv, ox, y0 + 32, ox - pl, y0 + 32, '#ff5050', '', { width: 4 }), 'drag', '#ff5050', ox - 4, y0 + 21, 'end');
         }
       }
       function show(text) { readout.textContent = text; }
@@ -494,10 +693,15 @@
           const tt = (now - t0) / 1000 * speedUp;
           while (i < tr.length - 1 && tr[i + 1].t <= tt) i++;
           const p = tr[i], done = i >= tr.length - 1;
-          const tipped = res.reason === 'tipped over' && done;
-          scene(done ? res.distance : null, { x: p.x, tilt: tipped ? 35 : 0, forces: done ? null : { thrust: p.thrust, body: p.body, friction: p.friction } });
+          const tipped = res.reason === 'tipped over' && done, still = res.reason === 'never moved';
+          // a car that never moved keeps two EQUAL arrows on screen (friction holds it back exactly as hard as the wind pushes);
+          // every other run ends with the car stopped, so no arrows
+          scene(done && !still ? res.distance : null, { x: p.x, tilt: tipped ? 35 : 0,
+            forces: still ? { thrust: res.startPush, body: 0, friction: res.startPush, still: true } : done ? null : { thrust: p.thrust, body: p.body, friction: p.friction } });
           if (!done) { show(liveText(p)); raf = requestAnimationFrame(frame); return; }
-          const why = { 'never moved': '😴 It never moved. The wind’s push was smaller than friction.',
+          // (never moved: the push was at most the most friction can hold back at the start — not always less than rolling friction.
+          //  Friction matches the push exactly, so the two arrows above are the same length: "balanced")
+          const why = { 'never moved': '😴 It never moved. Friction held back just as hard as the wind pushed. The forces were balanced.',
                         'tipped over': '🤸 It tipped over! The wind pushed high on the sail and flipped the car forward.',
                         'hit the wall': '🧱 It curved off course and hit the wall.',
                         'reached the end of the hall': '🏆 It made it to the end of the ' + kid.dist(res.opts.hallLength) + ' hall!',

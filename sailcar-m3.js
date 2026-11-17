@@ -2,8 +2,11 @@
 // Air pushes back on anything that moves through it. The big idea: the sail only feels how much faster the
 // wind is than the car. If the car is FASTER than the wind, the air hits the sail from the front and the sail
 // becomes a parachute. Every force here comes from SailLab.physics.airForce and every run from simulate(),
-// the same model the hallway and Design Studio use. Every number a student reads goes through SailLab.kid
-// (paper clips for forces, feet then metres for distances, ft per second or words for speeds).
+// the same model the hallway and Design Studio use. Students never see a force as a number: a force is an arrow
+// or bar whose LENGTH shows its size (draw.forceScale: ONE honest scale per picture, so a bigger force is never
+// drawn shorter), and the words COMPARE two forces with the lab's shared vocabulary (kid.compare). A sentence
+// states a ratio only when both forces are drawn to scale beside it. Distances are feet then metres (kid.dist);
+// speeds are ft per second or words (kid.ftPerSec / kid.speed).
 (function () {
   'use strict';
   const P = SailLab.physics, KID = SailLab.kid, HALL = P.HALL, C = P.DEFAULT_CAR;
@@ -56,10 +59,10 @@
     });
     return { outran: from != null, from: from, to: to, chute: -chute };
   }
-  function clipsTxt(N) { return KID.clips(N) < 1 && N > 0 ? 'less than 1 paper clip' : KID.force(N); }   // a real push is never "0"
-  function times(x) {                                           // 4 → '4 times', 2.78 → 'about 2.8 times'
-    return Math.abs(x - Math.round(x)) < 1e-9 ? Math.round(x) + ' times' : 'about ' + Math.round(x * 10) / 10 + ' times';
-  }
+  // how force a compares with force b, in the lab's shared words, with "as" or "than" and the noun
+  function cmp(a, b, noun, o) { return KID.compare(a, b, Object.assign({ noun: noun }, o)); }
+  // step 5: the body's drag and the sail's drag at the fastest car's top speed (the same ratio at any speed)
+  const BODY_TOP = -P.airForce(-FASTEST, C.bodyArea, C.bodyCd, 0), SAIL_TOP = -P.airForce(-FASTEST, C.sailArea, C.sailCd, 0);
   // write a readout from plain strings and ['bold'] pieces — never innerHTML
   function say(api, box, parts) {
     box.textContent = '';
@@ -109,53 +112,56 @@
         title: 'Drag: the air pushes back',
         html:
           '<p>Think of your hand out the window of a moving car. The faster the car goes, the harder the air pushes your hand back.</p>' +
-          '<p>Here the fans are <strong>off</strong>. Your car rolls through still air. Change its speed. Watch the red drag arrow.</p>',
+          '<p>Here the fans are <strong>off</strong>. Your car rolls through still air. Change its speed. Watch the red drag arrow. ' +
+          'The yellow arrow shows the drag at 3 ft per second, so you can compare.</p>',
         challenge: 'Find the speed that gives 4 times the drag of 3 ft per second.',
         render: function (el, api) {
           const K = api.kid, REF = 3;
           afterFirst(el, api.ui.word(el, 'drag', 'the air pushing back on something that moves through it. Drag is also called air resistance.'));
           // still air: the wind is 0, so the air comes at the car from the front and pushes it back
           function drag(f) { const v = fps(f); return -P.airForce(-v, C.sailArea, C.sailCd, 0) - P.airForce(-v, C.bodyArea, C.bodyCd, 0); }
-          const ref = drag(REF), maxDrag = drag(12);
-          const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car rolling through still air, with a red arrow for the drag on it' }, el);
+          const ref = drag(REF);
+          const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car rolling through still air, with a red arrow for the drag on it and a yellow arrow for the drag at 3 feet per second' }, el);
           const sp = api.ui.slider(el, { label: 'Car speed', min: 0, max: 12, step: 1, value: REF, format: function (f) { return K.ftPerSec(fps(f)); }, onInput: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
           api.ui.note(el, 'tip', '💡 Almost all of the drag is on the sail. A big, flat sail is great for catching wind. But it also catches air when the car moves.');
           function draw() {
-            const f = sp.get(), d = drag(f), ratio = d / ref;
+            const f = sp.get(), d = drag(f);
             const W = boardWidth(el), H = 210, FL = 184, narrow = W < 430, sc = narrow ? 2.4 : 3;
-            const x = narrow ? W * 0.5 - 18 : W * 0.46 - 45, g = carGeo(x, FL, sc);
+            // The car sits toward the RIGHT of the board, so the drag arrow (drawn backward from the sail) has room to grow
+            // to scale. On a phone it sits right at the edge; on a wider board it leaves 70 px in front for the air streaks.
+            const x = W - 30 * sc - 16 - (narrow ? 0 : 70), g = carGeo(x, FL, sc);
             startBoard(api, s, W, H);
             api.svg('line', { x1: 12, y1: FL, x2: W - 12, y2: FL, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
-            // the still air rushing at the front of the car, the way the car "sees" it
-            if (f > 0) [g.mastTop + 14, g.mastTop + 38, g.mastTop + 62, FL - 20].forEach(function (y, i) {
-              const x1 = W - 14 - (i % 2) * 14, len = Math.min(x1 - g.front - 8, 10 + f * 4);
+            // the still air rushing past the car, the way the car "sees" it: in front of the car on a wide board, and just
+            // above the sail on a phone (where the car is at the edge and there is no room in front of it)
+            if (f > 0) (narrow ? [g.mastTop - 12, g.mastTop - 28, g.mastTop - 44] : [g.mastTop + 14, g.mastTop + 38, g.mastTop + 62, FL - 20]).forEach(function (y, i) {
+              const x1 = W - 14 - (i % 2) * 14, len = narrow ? 10 + f * 4 : Math.min(x1 - g.front - 8, 10 + f * 4);
               if (len > 6) api.draw.arrow(s, x1, y, x1 - len, y, '#7ad7ff', '', { width: 2, head: 4 });
             });
             api.draw.car(s, x, FL, { scale: sc, length: 30, sailW: 20, sailH: 20, mastH: 30 });
             // which way the car moves, and how fast in words
             label(api, s, W - 16, 30, f > 0 ? K.speed(fps(f)) + ' →' : 'standing still', { anchor: 'end', color: '#d8a8ff' });
-            // the drag arrow, backward from the back of the sail (always long enough to see when there is drag)
-            const room = g.sailBack - 2 - 14, len = d > 0 ? Math.max(8, d / maxDrag * room) : 0;
-            if (len) {
-              api.draw.arrow(s, g.sailBack - 2, g.sailMid, g.sailBack - 2 - len, g.sailMid, '#ff5050', '', { width: 4, head: Math.max(4, Math.min(7, len / 3)) });
-              label(api, s, g.sailBack - 4, g.sailMid - 14, 'DRAG ' + K.forceShort(d), { anchor: 'end', color: '#ff7070', size: 15 });
+            // The drag now (red) and the drag at 3 ft per second (yellow) on ONE honest scale, both backward from the
+            // back of the sail. Speeds up to `top` are drawn to scale (the fastest that fits on this screen with the
+            // 3 ft per second arrow still to scale: 9 to 12 ft per second); faster ones still grow, a little.
+            const x0 = g.sailBack - 2, room = x0 - 10;
+            function scaleFor(t) { return api.draw.forceScale(drag(t), room * 0.85, { min: 8, over: room * 0.15 }); }
+            let top = 12;
+            while (top > 6 && !scaleFor(top).toScale(ref)) top--;
+            const len = scaleFor(top), fair = len.toScale(d) && len.toScale(ref);
+            if (d > 0) {
+              api.draw.arrow(s, x0, g.sailMid, x0 - len(d), g.sailMid, '#ff5050', '', { width: 4, head: Math.max(4, Math.min(7, len(d) / 3)) });
+              label(api, s, x0 - 2, g.sailMid - 14, 'drag', { anchor: 'end', color: '#ff7070', size: 15 });
             }
-            // the big comparison with 3 ft per second
-            const big = f === 0 ? 'no drag' : ratio < 1 ? 'less' : '× ' + (Math.abs(ratio - Math.round(ratio)) < 1e-9 ? Math.round(ratio) : Math.round(ratio * 10) / 10);
-            label(api, s, 16, 44, big, { color: '#f0c040', size: f === 0 || ratio < 1 ? 24 : 32 });
-            label(api, s, 16, 66, f === 0 ? 'still air, no motion' : (ratio < 1 ? 'than ' : '') + 'the drag at ' + REF + ' ft per second', { color: '#f0c040', size: 14, bold: false });
+            api.draw.arrow(s, x0, g.sailMid + 20, x0 - len(ref), g.sailMid + 20, '#f0c040', '', { width: 3, head: 5 });
+            label(api, s, x0 - 2, g.sailMid + 40, 'at ' + REF + ' ft per second', { anchor: 'end', color: '#f0c040', size: 14 });
             if (f === 0) say(api, out, ['🛑 The car is standing still in still air. No air rushes past, so there is ', ['no drag'], ' at all.']);
-            else {
-              const parts = ['🌬️ At ' + K.ftPerSec(fps(f)) + ' (' + K.speed(fps(f)) + '), the drag is ', [K.force(d)], '. '];
-              if (f === REF) parts.push('This is our starting speed.');
-              else if (ratio < 1) parts.push('That’s less than at ' + REF + ' ft per second.');
-              else parts.push('That’s ', [times(ratio)], ' the drag at ' + REF + ' ft per second.');
-              say(api, out, parts);
-            }
-            if (Math.abs(ratio - 4) < 1e-9) api.done('Yes! At ' + K.ftPerSec(fps(f)) + ', the drag is 4 times as big, not 2 times. ' +
-              'Twice as fast means about 4 times the drag. Faster air hits harder, and more of it hits each second.');
+            else if (f === REF) say(api, out, ['🌬️ ' + K.ftPerSec(fps(f)) + ' is ' + K.speed(fps(f)) + '. The red drag arrow matches the yellow one. This is our starting speed.']);
+            else say(api, out, ['🌬️ ' + K.ftPerSec(fps(f)) + ' is ' + K.speed(fps(f)) + '. The drag is ', [cmp(d, ref, 'at ' + REF + ' ft per second', { exact: true, times: fair })], '.']);
+            if (Math.abs(d / ref - 4) < 1e-9) api.done('Yes! At ' + K.ftPerSec(fps(f)) + ', the drag is about 4 times as strong. ' +
+              'Twice as fast means about 4 times the drag, not 2 times. Faster air hits harder, and more of it hits each second.');
           }
           draw();
           keepFitted(api, el, draw);
@@ -165,7 +171,7 @@
         title: 'Front size and shape',
         html:
           '<p>The front of your car matters too. A flat front slams into the air. A pointed or rounded front lets the air slide around it.</p>' +
-          '<p>A bigger front hits more air. Twice the front size means twice the drag.</p>' +
+          '<p>A bigger front hits more air. Twice the front size means about 2 times the drag.</p>' +
           '<p>Here every car body moves at ' + KID.ftPerSec(fps(BODY_F)) + '. That’s about as fast as the fastest cars go in our hall.</p>',
         render: function (el, api) {
           const K = api.kid, v = fps(BODY_F), HALF = { 15: 11, 30: 16, 60: 22 };
@@ -173,7 +179,7 @@
           el.appendChild(row);
           const size = api.ui.choice(row, { label: 'Front size', value: 30, onChange: draw,
             options: [{ value: 15, label: 'Slim (15 square cm)' }, { value: 30, label: 'Normal (30 square cm)' }, { value: 60, label: 'Bulky (60 square cm)' }] });
-          const cmp = api.ui.choice(row, { label: 'Compare with', value: 'body', onChange: draw,
+          const cmpWith = api.ui.choice(row, { label: 'Compare with', value: 'body', onChange: draw,
             options: [{ value: 'body', label: 'Car bodies only' }, { value: 'sail', label: '+ the sail' }] });
           const s = api.svg('svg', { role: 'img', 'aria-label': 'Bars comparing the drag on three car fronts, and on the sail, at the same speed' }, el);
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
@@ -194,22 +200,32 @@
           function draw() {
             const area = size.get() / 10000, hh = HALF[size.get()], W = boardWidth(el);
             const rows = SHAPES.map(function (sh) { return { label: sh.name, kind: sh.kind, f: -P.airForce(-v, area, sh.cd, 0) }; });
-            if (cmp.get() === 'sail') rows.push({ label: 'Sail (20 × 20 cm)', kind: 'sail', f: -P.airForce(-v, C.sailArea, C.sailCd, 0) });
-            const RH = 78, H = rows.length * RH + 10, BX = 104, k = (W - BX - 76) / Math.max.apply(null, rows.map(function (r) { return r.f; }));
+            const withSail = cmpWith.get() === 'sail', sailDrag = -P.airForce(-v, C.sailArea, C.sailCd, 0);
+            if (withSail) rows.push({ label: 'Sail (20 × 20 cm)', kind: 'sail', f: sailDrag });
+            // the drag bars share ONE honest scale, fixed for each view, so a bigger front draws a longer bar from one
+            // choice to the next: bodies only → the bulky flat front fills the row; + the sail → the sail fills it
+            // (then a tiny body drag is drawn a bit long)
+            const RH = 78, TOP = 30, H = TOP + rows.length * RH + 10, BX = 104;
+            const len = api.draw.forceScale(withSail ? sailDrag : -P.airForce(-v, FRONTS[2], SHAPES[0].cd, 0), W - BX - 16, { min: 3, over: 0 });
             startBoard(api, s, W, H);
+            label(api, s, 16, 22, 'The red bars show the drag', { color: '#ff7070', size: 14 });
             rows.forEach(function (r, i) {
-              const y0 = i * RH + 4, cy = y0 + 52;
+              const y0 = TOP + i * RH, cy = y0 + 52;
               label(api, s, 16, y0 + 22, r.label, { color: '#e0d0ff', size: 15 });
               shape(r.kind, 26, 88, cy, r.kind === 'sail' ? 24 : Math.min(hh, 22));
-              const w = Math.max(3, r.f * k);
-              api.svg('rect', { x: BX, y: cy - 9, width: w, height: 18, rx: 3, fill: '#ff5050' }, s);
-              label(api, s, BX + w + 8, cy + 6, K.forceShort(r.f), { color: '#ffb0b0', size: 15 });
+              api.svg('rect', { x: BX, y: cy - 9, width: len(r.f), height: 18, rx: 3, fill: '#ff5050' }, s);
             });
-            const flat = rows[0].f;
-            if (cmp.get() === 'sail') say(api, out, ['⛵ The sail has about ', [Math.round(rows[3].f / flat) + ' times'], ' the drag of even the flat box. On a sail car, the sail makes most of the drag. ',
-              BODY_TXT + ' ' + FREE_TXT]);
-            else say(api, out, ['🚀 The rounded nose has ', ['half'], ' the drag of the flat front. But look how small they all are! Even the flat box feels ' + (K.clips(flat) < 1 ? '' : 'only '),
-              [K.force(flat)], '. Tap “+ the sail” to compare.']);
+            const flat = rows[0].f, round = rows[2].f, normal = -P.airForce(-v, FRONTS[1], SHAPES[0].cd, 0);
+            if (withSail) say(api, out, ['⛵ The sail’s drag is ', [cmp(rows[3].f, flat, 'even the flat box’s', { times: len.toScale(rows[3].f) && len.toScale(flat) })],
+              '. On a sail car, the sail makes most of the drag. ', BODY_TXT + ' ' + FREE_TXT]);
+            else {
+              const parts = ['🚀 The rounded nose’s drag is ', [cmp(round, flat, 'the flat front’s', { times: len.toScale(round) && len.toScale(flat) })], '. '];
+              // a slim or bulky front next to the normal one (the bar a normal flat front draws on this same scale)
+              if (size.get() !== 30) parts.push('The ' + (size.get() < 30 ? 'slim' : 'bulky') + ' flat front’s drag is ',
+                [cmp(flat, normal, 'a normal one’s', { times: len.toScale(flat) && len.toScale(normal) })], '. ');
+              parts.push('But all three are tiny next to the sail. Tap “+ the sail” to compare.');
+              say(api, out, parts);
+            }
           }
           draw();
           keepFitted(api, el, draw);
@@ -281,22 +297,23 @@
             const feel = r > 0 ? 'Sail feels wind from behind' : r < 0 ? 'Sail feels wind from the front' : 'Sail feels NO wind';
             label(api, front, W / 2, narrow ? 76 : 60, feel, { anchor: 'middle', color: r > 0 ? '#40e080' : r < 0 ? '#ff5050' : '#f0c040', size: narrow ? 15 : 18 });
             api.draw.car(front, carX, FLOOR, { scale: sc, length: 30, sailW: 20, sailH: 20, mastH: 30 });
-            // the force on the sail. Not to scale when tiny (every non-zero force gets at least a short arrow,
-            // so the colour always matches the words): the label gives the size in paper clips.
-            const maxF = P.airForce(fps(12), C.sailArea, C.sailCd, 0), ly = g.mastTop - 10;
+            // the force on the sail: a push (forward) or a drag (backward) on ONE honest scale, so the same size of
+            // force always draws the same length either way. The biggest (12 ft per second apart) fills the room on the
+            // shorter side; a tiny force is drawn a bit long, so the colour always matches the words. Word labels only.
+            const maxF = P.airForce(fps(12), C.sailArea, C.sailCd, 0);
+            const len = api.draw.forceScale(maxF, Math.min(W - 16 - (g.mastX + 6), g.sailBack - 4 - 14), { min: 14, over: 0 });
             if (f > 0) {
-              const room = W - 16 - (g.mastX + 6), len = Math.min(room, 14 + f / maxF * (room - 14));
-              api.draw.arrow(front, g.mastX + 6, g.sailMid, g.mastX + 6 + len, g.sailMid, '#40e080');
-              label(api, front, W - 14, ly, 'PUSH ' + K.forceShort(f), { anchor: 'end', color: '#40e080', size: 15 });
+              api.draw.arrow(front, g.mastX + 6, g.sailMid, g.mastX + 6 + len(f), g.sailMid, '#40e080');
+              // the word sits right above its arrow (as in step 1), not in a corner of the picture
+              label(api, front, g.mastX + 8, g.sailMid - 14, 'wind push', { color: '#40e080', size: 15 });
             }
             if (f < 0) {
-              const room = g.sailBack - 4 - 14, len = Math.min(room, 14 + -f / maxF * (room - 14));
-              api.draw.arrow(front, g.sailBack - 4, g.sailMid, g.sailBack - 4 - len, g.sailMid, '#ff5050');
-              label(api, front, 14, ly, 'DRAG ' + K.forceShort(f), { color: '#ff7070', size: 15 });
+              api.draw.arrow(front, g.sailBack - 4, g.sailMid, g.sailBack - 4 - len(f), g.sailMid, '#ff5050');
+              label(api, front, g.sailBack - 6, g.sailMid - 14, 'drag', { anchor: 'end', color: '#ff7070', size: 15 });
             }
-            if (r > 0) say(api, out, ['🟢 The wind is ' + speedTxt(r) + ' faster than the car. So the air hits the sail from behind. It ', ['pushes'], ' the car forward with ' + K.force(f) + '.']);
+            if (r > 0) say(api, out, ['🟢 The wind is ' + speedTxt(r) + ' faster than the car. So the air hits the sail from behind. It ', ['pushes'], ' the car forward.']);
             else if (r < 0) say(api, out, ['🔴 The car is ' + speedTxt(-r) + ' faster than the wind. It runs into the air, so the air hits the sail from the front. It ', ['drags'],
-              ' the car back with ' + K.force(f) + '. The sail is a parachute! 🪂']);
+              ' the car back. The sail is a parachute! 🪂']);
             else if (w === 0) say(api, out, ['🟡 The fans are off and the car is still. Nothing pushes at all. Turn the fans on!']);
             else say(api, out, ['🟡 The car moves exactly as fast as the air. The sail feels ', ['no wind'], ', so there is no push at all.']);
             if (w >= 1 && r === 0) seenZero = true;
@@ -446,14 +463,14 @@
             if (outran) {
               out.className = 'sl-note sl-note-good';
               say(api, out, ['🪂 See the red zone? There the air hit the sail from the front and pushed it back. That push was tiny: ',
-                [clipsTxt(z.chute)], '. But it helped friction slow the car down.' + endTxt]);
+                [cmp(z.chute, r.friction, 'friction', { times: false })], '. But it helped friction slow the car down.' + endTxt]);
               ask.style.display = 'block';
             } else {
               out.className = 'sl-note sl-note-tip';
               out.textContent = r.reason === 'tipped over' ? '🤸 The car tipped over at the start, so it never got going.'
                 : '🔵 The yellow line stayed under the blue line. The wind was faster the whole way, so it pushed the car the whole time.' +
                   (r.reason === END ? endTxt
-                    : ' Soon the push got weaker than friction. Then the car slowed down bit by bit and finally stopped. To outrun the wind, a car must keep its speed as the wind fades. ' +
+                    : ' Soon the push got smaller than friction. Then the car slowed down bit by bit and finally stopped. To outrun the wind, a car must keep its speed as the wind fades. ' +
                       (r.car.crr <= CRR.free ? 'Try a lighter car.' : 'Try wheels that spin freely.'));
             }
           }
@@ -490,7 +507,7 @@
         html:
           '<p>Here’s the truth about drag on <strong>your</strong> car.</p>' +
           '<ul><li>Near the fans, the wind is faster than your car. So the air pushes it forward. Drag only slows your car where the car is faster than the wind.</li>' +
-          '<li>The <strong>body’s</strong> drag is tiny: ' + clipsTxt(-P.airForce(-FASTEST, C.bodyArea, C.bodyCd, 0)) + ', even for the fastest cars. ' + BODY_TXT + '</li>' +
+          '<li>The <strong>body’s</strong> drag is tiny. At the same speed, the sail’s drag is ' + KID.compare(SAIL_TOP, BODY_TOP) + '. ' + BODY_TXT + '</li>' +
           '<li>The <strong>sail</strong> makes the most drag. But it’s also your engine! <strong>Don’t shrink it.</strong> ' +
           'In the simulator, a 20 × 20 cm sail rolls ' + KID.dist(STD.distance) + '. A 10 × 10 cm sail rolls only ' + KID.dist(SMALL_SAIL.distance) + '.</li></ul>' +
           '<p><strong>Tidy up</strong> (small wins that also save weight):</p>' +
@@ -515,7 +532,7 @@
       // answer is the single longest option in at most 3 of the 10 (the check script counts it).
       { q: 'What is drag?', options: ['The air pushing back on things moving through it', 'The wind from the fans pushing the car forward', 'The wheels rubbing on their axles as they turn', 'Gravity pulling the car down to the floor'], answer: 0,
         why: 'Anything moving through air has to push the air aside. The air pushes back, and that push is drag.' },
-      { q: 'Your car rolls through still air. Then it goes twice as fast. What happens to the drag?', options: ['It stays the same in still air', 'It gets about 2 times as big', 'It gets about 4 times as big', 'It gets about half as big'], answer: 2,
+      { q: 'Your car rolls through still air. Then it goes twice as fast. What happens to the drag?', options: ['It stays the same in still air', 'It gets about 2 times as strong', 'It gets about 4 times as strong', 'It gets about half as strong'], answer: 2,
         why: 'Faster air hits harder, and more of it hits each second. So twice as fast means about 4 times the drag.' },
       { q: 'Three car bodies are the same size and go the same speed. Which one has the MOST drag?', options: ['The one with a rounded nose', 'The one with a flat box front', 'The one with a pointed wedge front', 'They all have the same drag'], answer: 1,
         why: 'A flat front slams into the air. Pointed and rounded fronts let the air slide around them.' },
@@ -528,7 +545,7 @@
       { q: 'Which car is most likely to outrun the wind?', options: ['A heavy car with wheels that spin freely', 'A light car with wheels that rub the axles', 'A light car with wheels that spin freely', 'A car with a tiny sail to cut its drag'], answer: 2,
         why: 'A light car with wheels that spin freely keeps its speed best. So it can roll faster than the fading wind.' },
       { q: 'Which part of a sail car makes the most drag?', options: ['The sail', 'The body', 'The wheels', 'The mast'], answer: 0,
-        why: 'The big sail catches the most air. The body’s drag is tiny, less than 1 paper clip.' },
+        why: 'The big sail catches the most air. The body’s drag is tiny next to the sail’s.' },
       { q: 'Which change cuts extra drag on the car’s body?', options: ['Glue on a big flat shield to block the air', 'Make the body heavier so the air can’t push it', 'Tape down loose flaps and trim axle ends', 'Leave flaps loose so the air slips past them'], answer: 2,
         why: 'Loose flaps and long axle ends catch the air. Trimming them cuts drag and saves weight too.' },
       { q: 'A classmate wants a much smaller sail to cut drag. Is that a good idea?', options: ['Yes, because the smallest sail always wins', 'No, because the sail is the car’s engine', 'Yes, because the car will roll much farther', 'It won’t matter, since all sails push the same'], answer: 1,
