@@ -372,7 +372,7 @@
           '<p>Last year’s classes built paper-sail <strong>sleds</strong> with no wheels. In front of the same two box fans, most slid about <strong>' + kid.dist(ftToM(25)) + '</strong>. ' +
           'The best went about <strong>' + kid.dist(ftToM(30)) + '</strong>.</p>' +
           '<p>A sled <strong>slides</strong>. Its whole bottom scrapes along the floor. Wheels <strong>roll</strong> instead. ' +
-          'With the same weight, a sled’s friction is ' + SLED_VS_OK + '.</p>' +
+          'Give a sled and a car the same weight. The sled’s friction is ' + SLED_VS_OK + '.</p>' +
           '<p>Race our model sled against the 70 g lab car. The sled weighs only 20 g. Its low, tent-shaped sail keeps it from tipping over.</p>',
         challenge: 'Pick wheels so the car rolls at least twice as far as the sled.',
         render: function (el, api) {
@@ -546,7 +546,7 @@
               start: here + vs(ST, 'the starting push') + '. So the car starts rolling by itself.',
               keep: here + vs(ST, 'the starting push') + '. So a still car never moves. ' +
                     'But the car from the start line is already rolling. Friction is slowing it down here. But it keeps going until it stops at ' + stopTxt + '.',
-              crawl: here + vs(FR, 'friction') + ', but ' + vs(ST, 'the starting push') + '. ' +
+              crawl: here + vs(FR, 'friction') + '. But it is ' + vs(ST, 'the starting push') + '. ' +
                      'The car from the start line moves with the wind. So it feels a little less push. It slowed down and stopped at ' + stopTxt + '. ' +
                      'Once it stops, it needs the starting push again.',
               weak: here + vs(FR, 'friction') + '. A rolling car here only slows down. A still car never starts.'

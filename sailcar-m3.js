@@ -297,15 +297,16 @@
             // the force on the sail: a push (forward) or a drag (backward) on ONE honest scale, so the same size of
             // force always draws the same length either way. The biggest (12 ft per second apart) fills the room on the
             // shorter side; a tiny force is drawn a bit long, so the colour always matches the words. Word labels only.
-            const maxF = P.airForce(fps(12), C.sailArea, C.sailCd, 0), ly = g.mastTop - 10;
+            const maxF = P.airForce(fps(12), C.sailArea, C.sailCd, 0);
             const len = api.draw.forceScale(maxF, Math.min(W - 16 - (g.mastX + 6), g.sailBack - 4 - 14), { min: 14, over: 0 });
             if (f > 0) {
               api.draw.arrow(front, g.mastX + 6, g.sailMid, g.mastX + 6 + len(f), g.sailMid, '#40e080');
-              label(api, front, W - 14, ly, 'wind push', { anchor: 'end', color: '#40e080', size: 15 });
+              // the word sits right above its arrow (as in step 1), not in a corner of the picture
+              label(api, front, g.mastX + 8, g.sailMid - 14, 'wind push', { color: '#40e080', size: 15 });
             }
             if (f < 0) {
               api.draw.arrow(front, g.sailBack - 4, g.sailMid, g.sailBack - 4 - len(f), g.sailMid, '#ff5050');
-              label(api, front, 14, ly, 'drag', { color: '#ff7070', size: 15 });
+              label(api, front, g.sailBack - 6, g.sailMid - 14, 'drag', { anchor: 'end', color: '#ff7070', size: 15 });
             }
             if (r > 0) say(api, out, ['🟢 The wind is ' + speedTxt(r) + ' faster than the car. So the air hits the sail from behind. It ', ['pushes'], ' the car forward.']);
             else if (r < 0) say(api, out, ['🔴 The car is ' + speedTxt(-r) + ' faster than the wind. It runs into the air, so the air hits the sail from the front. It ', ['drags'],
@@ -466,7 +467,7 @@
               out.textContent = r.reason === 'tipped over' ? '🤸 The car tipped over at the start, so it never got going.'
                 : '🔵 The yellow line stayed under the blue line. The wind was faster the whole way, so it pushed the car the whole time.' +
                   (r.reason === END ? endTxt
-                    : ' Soon the push got weaker than friction. Then the car slowed down bit by bit and finally stopped. To outrun the wind, a car must keep its speed as the wind fades. ' +
+                    : ' Soon the push got smaller than friction. Then the car slowed down bit by bit and finally stopped. To outrun the wind, a car must keep its speed as the wind fades. ' +
                       (r.car.crr <= CRR.free ? 'Try a lighter car.' : 'Try wheels that spin freely.'));
             }
           }
