@@ -168,7 +168,7 @@
         title: 'Front size and shape',
         html:
           '<p>The front of your car matters too. A flat front slams into the air. A pointed or rounded front lets the air slide around it.</p>' +
-          '<p>A bigger front hits more air. Twice the front size means twice the drag.</p>' +
+          '<p>A bigger front hits more air. Twice the front size means about 2 times the drag.</p>' +
           '<p>Here every car body moves at ' + KID.ftPerSec(fps(BODY_F)) + '. That’s about as fast as the fastest cars go in our hall.</p>',
         render: function (el, api) {
           const K = api.kid, v = fps(BODY_F), HALF = { 15: 11, 30: 16, 60: 22 };
@@ -528,7 +528,7 @@
       // answer is the single longest option in at most 3 of the 10 (the check script counts it).
       { q: 'What is drag?', options: ['The air pushing back on things moving through it', 'The wind from the fans pushing the car forward', 'The wheels rubbing on their axles as they turn', 'Gravity pulling the car down to the floor'], answer: 0,
         why: 'Anything moving through air has to push the air aside. The air pushes back, and that push is drag.' },
-      { q: 'Your car rolls through still air. Then it goes twice as fast. What happens to the drag?', options: ['It stays the same in still air', 'It gets about 2 times as big', 'It gets about 4 times as big', 'It gets about half as big'], answer: 2,
+      { q: 'Your car rolls through still air. Then it goes twice as fast. What happens to the drag?', options: ['It stays the same in still air', 'It gets about 2 times as strong', 'It gets about 4 times as strong', 'It gets about half as strong'], answer: 2,
         why: 'Faster air hits harder, and more of it hits each second. So twice as fast means about 4 times the drag.' },
       { q: 'Three car bodies are the same size and go the same speed. Which one has the MOST drag?', options: ['The one with a rounded nose', 'The one with a flat box front', 'The one with a pointed wedge front', 'They all have the same drag'], answer: 1,
         why: 'A flat front slams into the air. Pointed and rounded fronts let the air slide around them.' },

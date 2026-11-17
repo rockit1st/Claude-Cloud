@@ -202,7 +202,7 @@
             'A rolling car feels even less push, because it moves along with the air. ' +
             'So a typical car slows down and stops at about ' + K.dist(TYPICAL_RUN.distance) + '.');
           api.ui.note(el, 'tip', '💡 <strong>The start line matters.</strong> Close to the fans, the wind is fast. Fast wind pushes much harder. ' +
-            'Wind twice as fast pushes about 4 times as hard!');
+            'Wind twice as fast gives about 4 times the push!');
           function draw() {
             const f = d.get(), x = ftToM(f), v = P.windAt(x), p = push(x, AREA, FLAT);
             const pct = Math.round(v / V0 * 100);
@@ -462,8 +462,8 @@
         why: 'Both sails have an area of 400 square cm. Same area, same push.' },
       { q: 'Where in the hall does your sail get the biggest push?', options: ['Near the fans, at the start line', 'Far down the hall, near the end', 'In the middle, once it gets going', 'The same everywhere in the hall'], answer: 0,
         why: 'The wind spreads out and fades down the hall. So the push is biggest close to the fans.' },
-      { q: 'Wind A blows twice as fast as Wind B. How hard does Wind A push on the same sail?', options: ['About the same as Wind B', 'About 2 times as hard', 'About 4 times as hard', 'About 8 times as hard'], answer: 2,
-        why: 'Faster air hits harder, and more of it hits each second. So wind twice as fast pushes about 4 times as hard.' },
+      { q: 'Wind A blows twice as fast as Wind B. How does Wind A’s push on the same sail compare?', options: ['About the same as Wind B', 'About 2 times as strong', 'About 4 times as strong', 'About 8 times as strong'], answer: 2,
+        why: 'Faster air hits harder, and more of it hits each second. So wind twice as fast gives about 4 times the push.' },
       { q: 'Your car slows down and stops about ' + KID.ft(TYPICAL_RUN.distance) + ' ft down the hall. The fans are still on. Why?', options: ['Gravity pulls harder at the far end', 'The wind is weak there, so friction wins', 'The car gets heavier the farther it rolls', 'The wind turns around and blows back'], answer: 1,
         why: 'The wind fades down the hall. Far away, its push is smaller than friction, so the car slows down and stops.' },
       { q: 'Two sails are the same size. Which one gets a little MORE push?', options: ['A flat sail, held stiff and straight', 'A cupped sail, hollow side to the fans', 'A cupped sail, bulging side to the fans', 'A sail with holes to let the air through'], answer: 1,

@@ -224,7 +224,8 @@
             '<li>🟢 <strong>Thrust:</strong> the wind pushes the sail forward. Near the fans, the push is ' +
               kid.compare(TYPICAL.startPush, TYPICAL.friction, { noun: 'friction', times: false }) + '.</li>' +
             '<li>🟠 <strong>Friction:</strong> rubbing at the wheels holds the car back.</li>' +
-            '<li>🔵 <strong>Gravity</strong> pulls down. 🟣 The <strong>floor</strong> pushes up just as hard. ' +
+            '<li>🔵 <strong>Gravity</strong> pulls down. That pull is the car’s <strong>weight</strong>. ' +
+              '🟣 The <strong>floor</strong> pushes up just as hard. ' +
               'Their arrows are the same length, so they cancel out.</li>' +
             '<li>🔴 <strong>Drag:</strong> air pushing <em>back</em>, only if the car outruns the wind.</li></ul>');
         }

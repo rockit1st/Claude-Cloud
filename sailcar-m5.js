@@ -602,7 +602,7 @@
       { q: 'A bowling ball and a soccer ball roll toward you at the same speed. Which is harder to stop?', options: ['The soccer ball', 'They are just as hard to stop', 'Neither, balls stop on their own', 'The bowling ball'], answer: 3,
         why: 'The bowling ball has more mass, so it has more inertia. More inertia makes it harder to stop.' },
       { q: 'Why does a heavier car have more friction?', options: ['It presses harder on its wheels', 'It has to push more air aside', 'Heavy parts are rougher', 'It moves faster, so it rubs more'], answer: 0,
-        why: 'A heavier car presses harder on its wheels and axles, so they rub more. Twice the mass means twice the friction.' },
+        why: 'A heavier car presses harder on its wheels and axles, so they rub more. Twice the mass means about 2 times the friction.' },
       { q: 'You make your car lighter, from 150 g to 45 g. The sail and wheels stay the same. What happens in the hallway?', options: ['It rolls about as far', 'It rolls much farther', 'It rolls less far', 'It is too light to get going'], answer: 1,
         why: 'In the simulator, it goes from ' + rolls(Q_MASS.heavy) + ' to ' + rolls(Q_MASS.light) + '. A light car speeds up faster and has less friction.' },
       { q: 'A super-light 25 g car flips onto its nose in front of the fans. Why?', options: ['Light cars have too much friction', 'It has too much inertia to roll', 'It is too light for its sail', 'It is going too fast to stay up'], answer: 2,

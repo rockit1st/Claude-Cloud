@@ -142,7 +142,7 @@
     const pf = 'The push is ' + kid.compare(push, fr, { noun: 'friction', times: fl.toScale(push) && fl.toScale(fr) });
     rows.push({ label: 'Wind’s push and friction',
                 // a still car needs a slightly bigger push to START than to keep rolling (P.STICKY, Module 4)
-                text: !a.canStart ? '❌ Too much friction! ' + pf + '.' + (push > fr ? ' But a still car needs a slightly bigger push to start.' : '') + ' So the wind can’t start the car.'
+                text: !a.canStart ? '❌ Too much friction! ' + pf + '.' + (push > fr ? ' But a still car needs a little bigger push to start.' : '') + ' So the wind can’t start the car.'
                     : push < fr * kid.COMPARE.RATIO ? pf + '. That is not much extra push, so the car barely gets going.'
                     : pf + '. Friction can’t hold the car still.',
                 color: a.canStart ? '' : '#ff8080',
