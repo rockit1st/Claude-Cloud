@@ -166,17 +166,42 @@
   //   times: false       → never a ratio: r ≥ 1.8 is 'much bigger' / 'much smaller'. Use it when the ratio is not
   //                        robust, or when the picture beside the words is not drawn to scale (see draw.forceScale:
   //                        { times: len.toScale(a) && len.toScale(b) }).
-  //   exact: true        → for forces set on matching slider steps: 'the same' only when they are equal, and
-  //                        1 < r < 1.1 is 'just a little bigger' / 'just a little smaller' (so "balanced" is never claimed
-  //                        for forces that are not)
+  //   exact: true        → for forces set on slider steps a student can count (squares of sail, steps of a slider,
+  //                        "3 times as fast"), where the model's ratio is exact:
+  //                          'the same' only when they are equal, and 1 < r < 1.1 is 'just a little bigger' / 'just a
+  //                          little smaller' (so "balanced" is never claimed for forces that are not);
+  //                          a whole-number ratio N = 2 … 20 is said exactly: 'N times as strong' (no "about": 8 squares
+  //                          of sail push 8 times as hard, 3 times as fast is 9 times the drag), and r = 2 is 'half as strong';
+  //                          otherwise 'about N times' / 'about half' only within 5% of N (strictly), and in the gaps
+  //                          'more than N times as strong' with N = r rounded down (4.5 → 'more than 4 times'),
+  //                          1.8 ≤ r ≤ 1.9 is 'bigger' / 'smaller', 'less than half' and 'much smaller' as above.
   // Boundaries are inclusive on the bigger side (exactly 1.1 is 'a little bigger', exactly 1.8 is 'about 2 times').
-  const CMP = { SAME: 1.1, LITTLE: 1.4, RATIO: 1.8, NEAR: 0.1, NICE: [2, 3, 4, 5, 10, 20], HALF_MAX: 2.2, MUCH_SMALLER: 4 };
-  const EPS = 1e-9;
+  const CMP = { SAME: 1.1, LITTLE: 1.4, RATIO: 1.8, NEAR: 0.1, NICE: [2, 3, 4, 5, 10, 20], HALF_MAX: 2.2, MUCH_SMALLER: 4,
+                EXACT_NEAR: 0.05, EXACT_MAX: 20 };
+  const EPS = 1e-9, WHOLE = 1e-6;   // WHOLE: how close (relative) a ratio must be to N to be "exactly N" (rounding only)
   function sizes(a, b) { return [Math.abs(num(a)), Math.abs(num(b))]; }
-  // the "nice" whole number r is about (within 10%), or null
-  function niceTimes(r) {
-    for (let i = 0; i < CMP.NICE.length; i++) if (Math.abs(r / CMP.NICE[i] - 1) <= CMP.NEAR + EPS) return CMP.NICE[i];
+  // the "nice" whole number r is about (within 10%, or strictly within 5% for exact settings), or null
+  function niceTimes(r, exact) {
+    for (let i = 0; i < CMP.NICE.length; i++) {
+      const off = Math.abs(r / CMP.NICE[i] - 1);
+      if (exact ? off < CMP.EXACT_NEAR : off <= CMP.NEAR + EPS) return CMP.NICE[i];
+    }
     return null;
+  }
+  // exact settings: r ≥ 1.8 (the bigger ÷ the smaller), up = a is the bigger one
+  function exactTimes(r, up) {
+    const n = Math.round(r), whole = n >= 2 && n <= CMP.EXACT_MAX && Math.abs(r / n - 1) < WHOLE;
+    if (up) {
+      if (whole) return n + ' times as strong';
+      const near = niceTimes(r, true);
+      if (near) return 'about ' + near + ' times as strong';
+      if (r < 2) return 'bigger';                       // 1.8 … 1.9: too far from 2 to say "about 2 times"
+      return 'more than ' + Math.min(Math.floor(r * (1 + EPS)), CMP.EXACT_MAX) + ' times as strong';
+    }
+    if (whole && n === 2) return 'half as strong';
+    if (Math.abs(r / 2 - 1) < CMP.EXACT_NEAR) return 'about half as strong';
+    if (r < 2) return 'smaller';
+    return r * (1 + EPS) < CMP.MUCH_SMALLER ? 'less than half as strong' : 'much smaller';
   }
   function comparePhrase(a, b, o) {
     const s = sizes(a, b), big = Math.max(s[0], s[1]), small = Math.min(s[0], s[1]);
@@ -187,6 +212,7 @@
     if (rr < CMP.LITTLE) return up ? 'a little bigger' : 'a little smaller';
     if (rr < CMP.RATIO) return up ? 'bigger' : 'smaller';
     if (o.times === false || r === Infinity) return up ? 'much bigger' : 'much smaller';
+    if (o.exact) return exactTimes(r, up);
     if (up) {
       const n = niceTimes(r);
       if (n) return 'about ' + n + ' times as strong';
@@ -336,9 +362,13 @@
 
   // ── UI HELPERS ────────────────────────────────────────────────────────────
   let uid = 0;
-  // The hallway simulator's force arrows: about 260 px per newton up to 90 px (as before), a push or drag under 0.002 N
-  // is not drawn, and a tiny friction is drawn at least 16 px long so it can be seen on a phone.
-  const TRACK_LEN = forceScale(90 / 260, 90, { min: 16, over: 20, zero: 0.002 });
+  // The hallway simulator's force arrows, scaled for FRICTION (the force the push has to beat down the hall), not for
+  // the big push at the start line: 1000 px per newton, to scale from 8 px (0.008 N) to 80 px (0.08 N). So every wheel
+  // friction on a typical car is to scale (Spin freely 8 px, OK 17 px, Rubbing 48 px; Jammed 82 px is just squeezed),
+  // and so is the faded push down the hall it is compared with. A bigger force (the start push) is squeezed into
+  // 80–94 px: still the longest arrow, and never off the left edge at the start line. A push or drag under 0.001 N
+  // (an eighth of the smallest friction) is not drawn.
+  const TRACK_LEN = forceScale(0.08, 80, { min: 4, over: 14, zero: 0.001 });
   const ui = {
     // labelled slider: returns { get(), set(v), input }
     //   o = { label, min, max, step, value, onInput(v), format(v) → the text after the label (default: v + unit),

@@ -31,7 +31,7 @@
   // The hallway step starts on its first test: Low fan + Jammed wheels (0 ft: it never moves).
   const START = { fan: 'low', wheels: 'jam' };
   function hallOpts(fan) { return { fan: { v0: FAN_V[fan], L: P.FAN.L } }; }
-  // Can any car on the hallway step catch up with the fading wind? (High fan + Spin freely does, for a few feet.)
+  // Can any car on the hallway step catch up with the fading wind? (High fan + Spin freely does, from about 20 to 36 ft.)
   // The step's text says so only when simulate() agrees. The trace's last point is the "stopped" marker, so it is skipped.
   // DRAG_MAX = the biggest push back (drag) any of those runs ever feels: step 1 draws drag's dashed arrow that big.
   let CATCHES_UP = false, DRAG_MAX = 0;
@@ -354,8 +354,11 @@
           api.ui.note(el, 'tip', '👀 Watch the arrows on the car. <span style="color:#40e080">Green</span> is the wind’s push. ' +
             '<span style="color:#ffa040">Orange</span> is friction. When green is longer, the car speeds up. When orange is longer, it slows down. ' +
             'Far from the fans, both arrows are short. So the car slows down only a little at a time.' +
-            (CATCHES_UP ? ' If the car ever goes faster than the wind, the green arrow turns <span style="color:#ff5050">red</span>. ' +
-                          'That is drag: the air pushes back.' : ''));
+            // (no promise about a drag arrow: whether the core's hallway scale draws a drag this tiny is the core's choice. The words under the hallway are
+            // the core's own readout, which says "faster than the wind!" only while the air pushes back: the check script
+            // replays every run and watches the real readout.)
+            (CATCHES_UP ? ' Sometimes the car rolls faster than the wind. Then the words under the hallway say <em>faster than the wind!</em> ' +
+                          'Now the air pushes back on the car. That push back is drag.' : ''));
         }
       },
       {
