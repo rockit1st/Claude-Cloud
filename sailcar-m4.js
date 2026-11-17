@@ -324,9 +324,13 @@
         challenge: 'Build a car that weighs at least 100 g. It must have less friction than the starting car (70 g, OK wheels).',
         render: function (el, api) {
           wordFirst(api, el, 'friction', 'a force that rubs against motion and slows things down.');
-          const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car with a long weight arrow pressing down and a short friction arrow holding it back' }, el);
-          // your car's friction against the starting car's: two arrows on ONE fixed scale, so a shorter arrow is less
-          // friction. The scale stays put as you change the car (the starting car's arrow never moves).
+          const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car with an arrow showing its weight pressing down. A heavier car gets a longer arrow.' }, el);
+          // The picture shows ONLY the weight arrow (exactly to scale, so it grows with the slider). Friction is about 40 times
+          // smaller than weight, so on the same scale it would be a dot: an arrow squeezed to stay visible would barely change
+          // across the slider, and it would look much too big next to the weight. So friction is shown only by the two bars
+          // right under the picture: your car's friction against the starting car's, on ONE fixed scale (a shorter arrow is
+          // less friction). The scale stays put as you change the car (the starting car's arrow never moves).
+          el.appendChild(api.h('p', { class: 'sl-muted', style: 'margin:8px 0 0;color:#c8b8ea', text: 'Watch the friction arrows below. A longer arrow means more friction.' }));
           const bars = api.ui.forceBars(el, [], { max: FR_BAR_MAX });
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
@@ -336,21 +340,19 @@
           el.appendChild(out);
           function draw() {
             const g = mass.get(), m = g / 1000, kind = wh.get(), crr = WHEELS[kind], wt = m * P.G, fr = P.rollingFriction(m, crr);
-            const W = boardWidth(el), FL = 150, H = 182;
+            const W = boardWidth(el), FL = 150, H = 176;
             startBoard(api, s, W, H);
-            // the car: weight presses down, friction holds it back at the wheels. ONE honest scale for both arrows (the
-            // heaviest car's weight just fits above the deck): friction is so much smaller that its arrow stays short.
+            // the car: its weight presses down. The arrow is exactly to scale (the heaviest car's weight just fits above the
+            // deck; min 9 puts even the 40 g car past the squeezed zone), so every slider step draws a longer arrow.
             const sc = W < 440 ? 2.6 : 3.2, len = 34 * sc, carX = Math.round(W * 0.36), deckY = FL - 7 * sc;
-            const flen = api.draw.forceScale(0.2 * P.G, deckY - 30, { min: 14, over: 0 });
+            const flen = api.draw.forceScale(0.2 * P.G, deckY - 30, { min: 9, over: 0 });
             line(api, s, 12, FL, W - 12, FL, '#4a3a6a', { 'stroke-width': 3 });
             api.draw.car(s, carX, FL, { scale: sc, length: 34 });
             const ax = carX + len * 0.8, wl = flen(wt);
             api.draw.arrow(s, ax, deckY - 2 - wl, ax, deckY - 2, BLUE, '', { width: 5 });
             label(api, s, ax + 10, deckY - 2 - wl / 2 + 5, 'weight', BLUE);
-            api.draw.arrow(s, carX + 6, FL + 12, carX + 6 - flen(fr), FL + 12, ORANGE, '', { width: 4, head: 5 });
-            label(api, s, carX + 14, FL + 18, 'friction', ORANGE);
             label(api, s, W - 14, FL + 18, 'rolling →', GREY, { anchor: 'end', size: 13, light: true });
-            // the two friction arrows: your car's against the starting car's
+            // the two friction arrows, right under the picture: your car's against the starting car's
             bars.update([{ label: 'your car’s friction', value: fr, color: ORANGE, dir: 'left' },
                          { label: 'the starting car’s friction', value: FR, color: GREY, dir: 'left' }]);
             // the readout, in words (exact: the settings come in steps, so "the same" only when they are equal)

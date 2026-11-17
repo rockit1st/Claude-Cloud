@@ -321,7 +321,9 @@
       const g = svg('g', { class: 'sl-arrow' }, parent);
       const len = Math.hypot(x2 - x1, y2 - y1);
       if (len < 2) return g;
-      const ux = (x2 - x1) / len, uy = (y2 - y1) / len, hw = opts.head || 7;
+      // (a short arrow gets a smaller head: the head is never longer than 80% of the arrow, so a 5 px arrow is still a little arrow;
+      //  an arrow of 14 px or more is drawn exactly as before)
+      const ux = (x2 - x1) / len, uy = (y2 - y1) / len, hw = Math.min(opts.head || 7, len * 0.5);
       svg('line', { x1: x1, y1: y1, x2: x2 - ux * hw, y2: y2 - uy * hw, stroke: color, 'stroke-width': opts.width || 4, 'stroke-linecap': 'round' }, g);
       svg('polygon', { points: [x2, y2, x2 - ux * hw * 1.6 - uy * hw, y2 - uy * hw * 1.6 + ux * hw, x2 - ux * hw * 1.6 + uy * hw, y2 - uy * hw * 1.6 - ux * hw].join(','), fill: color }, g);
       if (label) svg('text', { x: (x1 + x2) / 2 + (opts.dx || 0), y: (y1 + y2) / 2 + (opts.dy == null ? -9 : opts.dy), 'text-anchor': 'middle', fill: color, 'font-size': opts.size || 12, 'font-weight': 700, class: 'sl-lbl' }, g, label);
@@ -363,12 +365,12 @@
   // ── UI HELPERS ────────────────────────────────────────────────────────────
   let uid = 0;
   // The hallway simulator's force arrows, scaled for FRICTION (the force the push has to beat down the hall), not for
-  // the big push at the start line: 1000 px per newton, to scale from 8 px (0.008 N) to 80 px (0.08 N). So every wheel
+  // the big push at the start line: 1000 px per newton, to scale from 6 px (0.006 N) to 80 px (0.08 N). So every wheel
   // friction on a typical car is to scale (Spin freely 8 px, OK 17 px, Rubbing 48 px; Jammed 82 px is just squeezed),
   // and so is the faded push down the hall it is compared with. A bigger force (the start push) is squeezed into
   // 80–94 px: still the longest arrow, and never off the left edge at the start line. A push or drag under 0.001 N
-  // (an eighth of the smallest friction) is not drawn.
-  const TRACK_LEN = forceScale(0.08, 80, { min: 4, over: 14, zero: 0.001 });
+  // (an eighth of the smallest friction) is not drawn; one just above it is a little 3 px arrow.
+  const TRACK_LEN = forceScale(0.08, 80, { min: 3, over: 14, zero: 0.001 });
   const ui = {
     // labelled slider: returns { get(), set(v), input }
     //   o = { label, min, max, step, value, onInput(v), format(v) → the text after the label (default: v + unit),
@@ -619,7 +621,7 @@
         const o = cur();
         for (let m = 0.2; m < scaleM; m += scaleM / 22) {
           const w = windAt(m + (o.startX || 0.3), o.fan), len = Math.min(26, w * 8), op = Math.min(0.55, w / FAN.v0 * 0.6);
-          [70, 100, 130].forEach(function (y, i) {
+          [40, 65, 90].forEach(function (y, i) {
             const px = pxOf(m) + (i % 2) * 8;
             svg('line', { x1: px, y1: FLOOR - y, x2: px + len, y2: FLOOR - y, stroke: '#7ad7ff', 'stroke-width': 1.5, opacity: op.toFixed(2), 'stroke-linecap': 'round' }, sv);
           });
@@ -629,16 +631,24 @@
           svg('line', { x1: fx, y1: FLOOR - 150, x2: fx, y2: FLOOR, stroke: '#f0c040', 'stroke-dasharray': '4,4', 'stroke-width': 1.5 }, sv);
         }
         const c = Object.assign({}, DEFAULT_CAR, getCar());
-        const sailSide = Math.sqrt(c.sailArea) * 100, carScale = W < 600 ? 1.8 : 2.4;
+        const sailSide = Math.sqrt(c.sailArea) * 100, carScale = W < 600 ? 1.8 : 2.4, mastH = Math.max(sailSide, c.sailHeight * 100 + sailSide / 2);
         const st = carState || { x: 0, tilt: 0 };
-        draw.car(sv, pxOf(st.x) - 12, FLOOR, { scale: carScale, sailW: sailSide, sailH: Math.max(6, sailSide * Math.max(0.2, Math.cos(c.sailAngle * Math.PI / 180))), mastH: Math.max(sailSide, c.sailHeight * 100 + sailSide / 2), cupped: c.sailCd > 1.3, tilt: st.tilt || 0 });
+        draw.car(sv, pxOf(st.x) - 12, FLOOR, { scale: carScale, sailW: sailSide, sailH: Math.max(6, sailSide * Math.max(0.2, Math.cos(c.sailAngle * Math.PI / 180))), mastH: mastH, cupped: c.sailCd > 1.3, tilt: st.tilt || 0 });
         if (st.forces && opts.showForces !== false) {
-          // the push (or drag) and friction on ONE honest scale (TRACK_LEN): a longer arrow is always the bigger force,
-          // equal forces get equal arrows, and a small friction stays visible. Word labels only, never numbers.
-          const cx = pxOf(st.x) + 10;
-          const push = st.forces.thrust + st.forces.body, pl = TRACK_LEN(push), fl = TRACK_LEN(st.forces.friction);
-          if (pl > 0) draw.arrow(sv, cx, FLOOR - 120, cx + (push >= 0 ? pl : -pl), FLOOR - 120, push >= 0 ? '#40e080' : '#ff5050', push >= 0 ? 'wind push' : 'drag', { width: 4 });
-          if (fl > 0) draw.arrow(sv, cx, FLOOR - 4, cx - fl, FLOOR - 4, '#ffa040', 'friction', { width: 3, dy: 16 });
+          // The push and friction, side by side on ONE line from ONE point above the car's mast (where the wind pushes):
+          // the push goes right, friction goes left. Same height, same start, ONE honest scale (TRACK_LEN): the longer
+          // arrow is always the bigger force, and equal arrows are balanced. Word labels only, never numbers.
+          const f = st.forces, push = f.thrust + f.body, ox = pxOf(st.x) - 12 + 24 * carScale * 0.45, y0 = FLOOR - 134;   // (draw.car: 24 long, mast 45% along)
+          // a still car (never moved): friction holds it back exactly as hard as the wind pushes: two equal arrows
+          const pl = f.still ? Math.max(TRACK_LEN(push), 10) : TRACK_LEN(Math.abs(push)), fl = f.still ? pl : TRACK_LEN(f.friction);
+          const carTop = FLOOR - carScale * (7 + mastH);                   // the mast's top (draw.car: wheels 3, deck 1)
+          if (carTop - 4 > y0 + 10) svg('line', { x1: ox, y1: y0 + 8, x2: ox, y2: carTop - 4, stroke: '#9080b0', 'stroke-width': 1.5, 'stroke-dasharray': '3,3', opacity: 0.8 }, sv);
+          function tag(g, text, color, x, y, anchor) { svg('text', { x: x, y: y, 'text-anchor': anchor, fill: color, 'font-size': 13, 'font-weight': 700, class: 'sl-lbl' }, g, text); }
+          if (pl > 0 && push >= 0) tag(draw.arrow(sv, ox, y0, ox + pl, y0, '#40e080', '', { width: 4 }), 'wind push', '#40e080', ox + 4, y0 - 11, 'start');
+          if (fl > 0) tag(draw.arrow(sv, ox, y0, ox - fl, y0, '#ffa040', '', { width: 4 }), 'friction', '#ffa040', ox - 4, y0 - 11, 'end');
+          // the air pushing BACK on a car that outruns the wind (drag) is a second backward arrow: its own line under friction's
+          if (pl > 0 && push < 0) tag(draw.arrow(sv, ox, y0 + 26, ox - pl, y0 + 26, '#ff5050', '', { width: 4 }), 'drag', '#ff5050', ox - 4, y0 + 52, 'end');
+          svg('circle', { cx: ox, cy: y0, r: 3.5, fill: '#f0e6ff', stroke: '#120826', 'stroke-width': 1.5 }, sv);
         }
       }
       function show(text) { readout.textContent = text; }
@@ -684,11 +694,15 @@
           const tt = (now - t0) / 1000 * speedUp;
           while (i < tr.length - 1 && tr[i + 1].t <= tt) i++;
           const p = tr[i], done = i >= tr.length - 1;
-          const tipped = res.reason === 'tipped over' && done;
-          scene(done ? res.distance : null, { x: p.x, tilt: tipped ? 35 : 0, forces: done ? null : { thrust: p.thrust, body: p.body, friction: p.friction } });
+          const tipped = res.reason === 'tipped over' && done, still = res.reason === 'never moved';
+          // a car that never moved keeps two EQUAL arrows on screen (friction holds it back exactly as hard as the wind pushes);
+          // every other run ends with the car stopped, so no arrows
+          scene(done && !still ? res.distance : null, { x: p.x, tilt: tipped ? 35 : 0,
+            forces: still ? { thrust: res.startPush, body: 0, friction: res.startPush, still: true } : done ? null : { thrust: p.thrust, body: p.body, friction: p.friction } });
           if (!done) { show(liveText(p)); raf = requestAnimationFrame(frame); return; }
-          // (never moved: the push was at most the most friction can hold back at the start — not always less than rolling friction)
-          const why = { 'never moved': '😴 It never moved. The wind’s push was too small to beat friction.',
+          // (never moved: the push was at most the most friction can hold back at the start — not always less than rolling friction.
+          //  Friction matches the push exactly, so the two arrows above are the same length: "balanced")
+          const why = { 'never moved': '😴 It never moved. Friction held back just as hard as the wind pushed. The forces were balanced.',
                         'tipped over': '🤸 It tipped over! The wind pushed high on the sail and flipped the car forward.',
                         'hit the wall': '🧱 It curved off course and hit the wall.',
                         'reached the end of the hall': '🏆 It made it to the end of the ' + kid.dist(res.opts.hallLength) + ' hall!',
