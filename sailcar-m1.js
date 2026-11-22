@@ -393,7 +393,7 @@
         why: 'Balanced forces cancel out. The car keeps doing what it was doing.' },
       { q: 'The fans are on, but the car does not move at all. What is the most likely reason?', options: ['Gravity pulls harder than the floor pushes', 'The wind’s push can’t beat friction', 'The wind only pushes rolling cars', 'The forces on it are unbalanced'], answer: 1,
         why: 'A car only starts rolling when the push beats friction. Weak wind or jammed wheels mean no motion.' },
-      { q: 'Which two forces cancel out, so the car does not sink or float?', options: ['Thrust and the air that pushes back', 'The wind’s push and friction', 'Gravity and the floor pushing up', 'Drag and friction at the wheels'], answer: 2,
+      { q: 'A car sits still on the floor. Which two forces are balanced?', options: ['Thrust and the air that pushes back', 'The wind’s push and friction', 'Gravity and the floor pushing up', 'Drag and friction at the wheels'], answer: 2,
         why: 'Gravity pulls the car down. The floor pushes up just as hard.' },
       { q: 'A car is rolling when the fans turn off. What happens next?', options: ['It stops the moment the fans turn off', 'It slows down bit by bit, then stops', 'It keeps rolling forever at the same speed', 'It rolls back toward the fans'], answer: 1,
         why: 'Friction and air drag push back on the moving car. They slow it down bit by bit.' },

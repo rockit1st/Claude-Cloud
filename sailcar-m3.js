@@ -5,42 +5,54 @@
 // the same model the hallway and Design Studio use. Students never see a force as a number: a force is an arrow
 // or bar whose LENGTH shows its size (draw.forceScale: ONE honest scale per picture, so a bigger force is never
 // drawn shorter), and the words COMPARE two forces with the lab's shared vocabulary (kid.compare). A sentence
-// states a ratio only when both forces are drawn to scale beside it. Distances are feet then metres (kid.dist);
-// speeds are ft per second or words (kid.ftPerSec / kid.speed).
+// states a ratio only when both forces are drawn to scale beside it. Distances are FEET (kid.dist / kid.feet);
+// sizes a student can measure with a ruler are INCHES (kid.by / kid.lenIn / kid.areaIn); speeds are ft per second
+// or words (kid.ftPerSec / kid.speed). The physics itself stays metric: the words and the picks are in feet and inches,
+// and kid.inToM turns an inch size into the units the physics uses.
 (function () {
   'use strict';
   const P = SailLab.physics, KID = SailLab.kid, HALL = P.HALL, C = P.DEFAULT_CAR;
   const FT = KID.FT_PER_M;
   function fps(f) { return f / FT; }                           // whole ft per second → the model's units
+  // In a paragraph, a number and its unit stay on one line on a phone ("8 × 8 in" never breaks before "in").
+  function nb(t) { return String(t).replace(/ /g, '\u00a0'); }
   // car bodies seen from the front (cd = how hard the shape hits the air). The lab's default body is the flat box.
   const SHAPES = [
     { name: 'Flat box front', cd: C.bodyCd, kind: 'flat' },
     { name: 'Pointed wedge', cd: 0.6, kind: 'wedge' },
     { name: 'Rounded nose', cd: 0.5, kind: 'round' }
   ];
-  const FRONTS = [0.0015, 0.003, 0.006];                        // step 2's front sizes: 15, 30 and 60 square cm
+  // step 2's front sizes in SQUARE INCHES: slim, normal and bulky (a 1 × 2 in, a 2 × 2 in and a 2 × 4 in front).
+  // Each is double the one before, so "twice the front size" is exactly twice the area; kid.inToM gives the model's m².
+  const FRONT_SQIN = { slim: 2, normal: 4, bulky: 8 };
+  const SQIN_M2 = KID.inToM(1) * KID.inToM(1);
+  const FRONTS = [FRONT_SQIN.slim, FRONT_SQIN.normal, FRONT_SQIN.bulky].map(function (n) { return n * SQIN_M2; });
   // The hallway's size lives ONLY in sailcar-core.js (SailLab.physics.HALL). Every hallway number and every
   // simulator result quoted below is worked out from it and from simulate().
   const END = 'reached the end of the hall';                    // simulate()'s reason when a car rolls the whole hallway
   // wheels: Rubbing, OK (the standard car) and Spin freely mean the SAME stickiness (crr) in Modules 1, 3 and 4
   const CRR = { rub: 0.07, ok: C.crr, free: 0.012 };
   const WHEEL_NAME = { rub: 'rubbing wheels', ok: 'OK wheels', free: 'wheels that spin freely' };
-  const HALL_TXT = KID.dist(HALL.length);                       // "70 ft (21 m)"
+  const HALL_TXT = KID.dist(HALL.length);                       // "70 ft"
   function longRun(car, opts) { return P.simulate(car, Object.assign({}, opts, { hallLength: 1000 })); }
   const STD = P.simulate({});                                   // the typical 70 g car: 53 ft, then it coasts to a stop
-  const START = STD.opts.startX;                                // simulate() starts every car 30 cm in front of the fans
+  const START = STD.opts.startX;                                // simulate() starts every car about 1 ft in front of the fans
   const FREE = P.simulate({ crr: CRR.free });                   // …the same car with wheels that spin freely
   const FREE_TXT = FREE.reason === END
-    ? 'Wheels that spin freely matter much more. They carry the same car to the end of our ' + HALL_TXT + ' hall!'
-    : 'Wheels that spin freely matter much more. They carry the same car about ' + KID.dist(FREE.distance - STD.distance) + ' farther!';
+    ? 'Wheels that spin freely matter much more. They carry the same car to the end of our ' + nb(HALL_TXT) + ' hall!'
+    : 'Wheels that spin freely matter much more. They carry the same car about ' + nb(KID.dist(FREE.distance - STD.distance)) + ' farther!';
   // the most any body shape and front size from step 2 changes the typical car's run, rounded UP to whole feet
   const BODY_FT = (function () {
     let worst = 0;
     SHAPES.forEach(function (sh) { FRONTS.forEach(function (a) { worst = Math.max(worst, Math.abs(P.simulate({ bodyArea: a, bodyCd: sh.cd }).distance - STD.distance)); }); });
     return Math.ceil(worst * FT);
   })();
-  const BODY_TXT = 'A typical car rolls ' + KID.dist(STD.distance) + '. Changing its body’s shape or size changes that by less than ' + KID.dist(BODY_FT / FT) + '.';
-  const SMALL_SAIL = P.simulate({ sailArea: 0.01 });           // the typical car with a 10 × 10 cm sail
+  const BODY_TXT = 'A typical car rolls ' + nb(KID.dist(STD.distance)) + '. Changing its body’s shape or size changes that by less than ' + nb(KID.feet(BODY_FT)) + '.';
+  // step 5 and the quiz: the same typical car with a square sail 8 in on a side (its own sail is about that big) and with a 4 in one
+  const SAIL_IN = 8, SMALL_SAIL_IN = 4;
+  function sailRun(inches) { return P.simulate({ sailArea: KID.inToM(inches) * KID.inToM(inches) }); }
+  const BIG_SAIL = sailRun(SAIL_IN), SMALL_SAIL = sailRun(SMALL_SAIL_IN);
+  const BIG_TXT = nb(KID.by(SAIL_IN, SAIL_IN)), SMALL_TXT = nb(KID.by(SMALL_SAIL_IN, SMALL_SAIL_IN));   // "8 × 8 in", "4 × 4 in"
   // step 4's cars, and the fastest any of them goes (step 2 runs its bodies at about that speed)
   const MASS = { 50: 0.05, 70: 0.07, 100: 0.1 };
   const FASTEST = (function () {
@@ -140,7 +152,7 @@
               const x1 = W - 14 - (i % 2) * 14, len = narrow ? 10 + f * 4 : Math.min(x1 - g.front - 8, 10 + f * 4);
               if (len > 6) api.draw.arrow(s, x1, y, x1 - len, y, '#7ad7ff', '', { width: 2, head: 4 });
             });
-            api.draw.car(s, x, FL, { scale: sc, length: 30, sailW: 20, sailH: 20, mastH: 30 });
+            api.draw.car(s, x, FL, { scale: sc, length: 30, sailW: 20, sailH: 20, mastH: 30 });   // drawing units, never shown
             // which way the car moves, and how fast in words
             label(api, s, W - 16, 30, f > 0 ? K.speed(fps(f)) + ' →' : 'standing still', { anchor: 'end', color: '#d8a8ff' });
             // The drag now (red) and the drag at 3 ft per second (yellow) on ONE honest scale, both backward from the
@@ -174,11 +186,13 @@
           '<p>A bigger front hits more air. Twice the front size means about 2 times the drag.</p>' +
           '<p>Here every car body moves at ' + KID.ftPerSec(fps(BODY_F)) + '. That’s about as fast as the fastest cars go in our hall.</p>',
         render: function (el, api) {
-          const K = api.kid, v = fps(BODY_F), HALF = { 15: 11, 30: 16, 60: 22 };
+          const K = api.kid, v = fps(BODY_F), HALF = {};
+          HALF[FRONT_SQIN.slim] = 11; HALF[FRONT_SQIN.normal] = 16; HALF[FRONT_SQIN.bulky] = 22;   // how tall each front is drawn
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const size = api.ui.choice(row, { label: 'Front size', value: 30, onChange: draw,
-            options: [{ value: 15, label: 'Slim (15 square cm)' }, { value: 30, label: 'Normal (30 square cm)' }, { value: 60, label: 'Bulky (60 square cm)' }] });
+          const size = api.ui.choice(row, { label: 'Front size', value: FRONT_SQIN.normal, onChange: draw,
+            options: [{ value: FRONT_SQIN.slim, label: 'Slim (' + K.areaIn(FRONT_SQIN.slim) + ')' }, { value: FRONT_SQIN.normal, label: 'Normal (' + K.areaIn(FRONT_SQIN.normal) + ')' },
+              { value: FRONT_SQIN.bulky, label: 'Bulky (' + K.areaIn(FRONT_SQIN.bulky) + ')' }] });
           const cmpWith = api.ui.choice(row, { label: 'Compare with', value: 'body', onChange: draw,
             options: [{ value: 'body', label: 'Car bodies only' }, { value: 'sail', label: '+ the sail' }] });
           const s = api.svg('svg', { role: 'img', 'aria-label': 'Bars comparing the drag on three car fronts, and on the sail, at the same speed' }, el);
@@ -198,10 +212,10 @@
             for (let i = 0; i < swirls; i++) api.svg('path', { d: 'M' + (wx - 2 - i * 3) + ',' + (cy - 14 + i * 9) + ' a4,4 0 1 0 -5,3', fill: 'none', stroke: '#7ad7ff', 'stroke-width': 1.5, opacity: 0.7 }, s);
           }
           function draw() {
-            const area = size.get() / 10000, hh = HALF[size.get()], W = boardWidth(el);
+            const area = size.get() * SQIN_M2, hh = HALF[size.get()], W = boardWidth(el);
             const rows = SHAPES.map(function (sh) { return { label: sh.name, kind: sh.kind, f: -P.airForce(-v, area, sh.cd, 0) }; });
             const withSail = cmpWith.get() === 'sail', sailDrag = -P.airForce(-v, C.sailArea, C.sailCd, 0);
-            if (withSail) rows.push({ label: 'Sail (20 × 20 cm)', kind: 'sail', f: sailDrag });
+            if (withSail) rows.push({ label: 'Sail (' + K.by(SAIL_IN, SAIL_IN) + ')', kind: 'sail', f: sailDrag });
             // the drag bars share ONE honest scale, fixed for each view, so a bigger front draws a longer bar from one
             // choice to the next: bodies only → the bulky flat front fills the row; + the sail → the sail fills it
             // (then a tiny body drag is drawn a bit long)
@@ -221,7 +235,7 @@
             else {
               const parts = ['🚀 The rounded nose’s drag is ', [cmp(round, flat, 'the flat front’s', { times: len.toScale(round) && len.toScale(flat) })], '. '];
               // a slim or bulky front next to the normal one (the bar a normal flat front draws on this same scale)
-              if (size.get() !== 30) parts.push('The ' + (size.get() < 30 ? 'slim' : 'bulky') + ' flat front’s drag is ',
+              if (size.get() !== FRONT_SQIN.normal) parts.push('The ' + (size.get() < FRONT_SQIN.normal ? 'slim' : 'bulky') + ' flat front’s drag is ',
                 [cmp(flat, normal, 'a normal one’s', { times: len.toScale(flat) && len.toScale(normal) })], '. ');
               parts.push('But all three are tiny next to the sail. Tap “+ the sail” to compare.');
               say(api, out, parts);
@@ -240,7 +254,7 @@
           '<p>Ride along with the car below. The blue streaks show the air the way the sail feels it.</p>',
         challenge: 'Find two settings. In one, the sail feels no wind at all (with the fans on). In the other, the sail turns into a parachute (a red arrow).',
         render: function (el, api) {
-          const K = api.kid, H = 250, FLOOR = 214, PX = 40;    // PX = screen px per metre in the animation
+          const K = api.kid, H = 250, FLOOR = 214, PX = 40;    // PX = screen px the animation moves for each unit of speed
           const guess = api.ui.predict(el, {
             question: 'What if the car goes FASTER than the wind? What will the air do to the sail?',
             choices: [{ value: 'fwd', label: 'Push the car forward' }, { value: 'none', label: 'Not push at all' }, { value: 'back', label: 'Push the car backward' }],
@@ -340,7 +354,7 @@
       {
         title: 'Spot the parachute in the hallway',
         html:
-          '<p>Back to our ' + HALL_TXT + ' hallway. At the start line, the wind moves at ' + KID.speed(P.windAt(START)) + ' (about ' + KID.ftPerSec(P.windAt(START)) + '). ' +
+          '<p>Back to our ' + nb(HALL_TXT) + ' hallway. At the start line, the wind moves at ' + KID.speed(P.windAt(START)) + ' (about ' + KID.ftPerSec(P.windAt(START)) + '). ' +
           'It fades as it spreads down the hall. At the far end, it is only ' + KID.speed(P.windAt(START + HALL.length)) + ' (about ' + KID.ftPerSec(P.windAt(START + HALL.length)) + ').</p>' +
           '<p>A car speeds up near the fans. Then it rolls into weaker wind. Can it end up <strong>faster than the wind</strong>? If it does, its sail is a parachute.</p>' +
           '<p>The graph under the hallway shows speeds. The <span style="color:#7ad7ff">blue line</span> is the wind. ' +
@@ -359,7 +373,7 @@
               const z = zone(r), car = r.car, free = car.crr <= CRR.free, light = car.mass <= MASS[70];
               if (r.reason === 'tipped over') return { text: 'This car tipped over at the start.', right: null, why: 'Try another car.' };
               if (z.outran) {
-                const text = 'The car outran the wind from ' + K.dist(z.from) + ' to ' + K.dist(z.to) + '.';
+                const text = 'The car outran the wind from ' + nb(K.dist(z.from)) + ' to ' + nb(K.dist(z.to)) + '.';
                 if (v === 'light') return { text: text, right: true, why: 'It isn’t heavy and it rolls easily. So it keeps its speed while the wind fades.' };
                 if (v === 'heavy') return { text: text, right: false, why: 'It was a light car with wheels that spin freely. It keeps its speed while the wind fades.' };
                 return { text: text, right: false, why: 'A car can be faster than the wind! It speeds up near the fans. Then it rolls on into the weaker wind.' };
@@ -431,7 +445,7 @@
             text((L + R) / 2, B + 42, 'feet down the hall', '#a090c0', { anchor: 'middle' });
             // the far end of the hallway is the right edge of the graph
             api.svg('line', { x1: R, y1: T - 6, x2: R, y2: B, stroke: '#c8b8ea', 'stroke-width': 1.5, 'stroke-dasharray': '5,4' }, g);
-            text(R - 5, T + 14, 'end of hall · ' + K.ft(HALL.length) + ' ft', '#c8b8ea', { anchor: 'end', bold: true });
+            text(R - 5, T + 14, 'end of hall · ' + K.dist(HALL.length), '#c8b8ea', { anchor: 'end', bold: true });
             const wpts = [];
             for (let i = 0; i <= 100; i++) { const m = HALL.length * i / 100; wpts.push(X(m).toFixed(1) + ',' + Y(P.windAt(START + m)).toFixed(1)); }
             api.svg('polyline', { points: wpts.join(' '), fill: 'none', stroke: '#7ad7ff', 'stroke-width': 3 }, g);
@@ -458,7 +472,7 @@
           function judge(r) {
             const z = zone(r);
             // a car that reaches the end of the hall was still rolling: the same run in a longer hall tells the cars apart
-            const endTxt = r.reason === END ? ' It reached the end of the hall. In a longer hall, it would have rolled about ' + K.dist(longRun(r.car, r.opts).distance) + '.' : '';
+            const endTxt = r.reason === END ? ' It reached the end of the hall. In a longer hall, it would have rolled about ' + nb(K.dist(longRun(r.car, r.opts).distance)) + '.' : '';
             outran = z.outran;
             if (outran) {
               out.className = 'sl-note sl-note-good';
@@ -509,16 +523,16 @@
           '<ul><li>Near the fans, the wind is faster than your car. So the air pushes it forward. Drag only slows your car where the car is faster than the wind.</li>' +
           '<li>The <strong>body’s</strong> drag is tiny. At the same speed, the sail’s drag is ' + KID.compare(SAIL_TOP, BODY_TOP) + '. ' + BODY_TXT + '</li>' +
           '<li>The <strong>sail</strong> makes the most drag. But it’s also your engine! <strong>Don’t shrink it.</strong> ' +
-          'In the simulator, a 20 × 20 cm sail rolls ' + KID.dist(STD.distance) + '. A 10 × 10 cm sail rolls only ' + KID.dist(SMALL_SAIL.distance) + '.</li></ul>' +
+          'In the simulator, an ' + BIG_TXT + ' sail rolls ' + nb(KID.dist(BIG_SAIL.distance)) + '. A ' + SMALL_TXT + ' sail rolls only ' + nb(KID.dist(SMALL_SAIL.distance)) + '.</li></ul>' +
           '<p><strong>Tidy up</strong> (small wins that also save weight):</p>' +
           '<ol><li>Trim cardstock edges. Tape down loose flaps and corners.</li>' +
-          '<li>Cut axle ends short. Leave about 5 mm of skewer past each wheel.</li>' +
+          '<li>Cut axle ends short. Leave about 1/4&nbsp;in of skewer past each wheel.</li>' +
           '<li>Nothing sticking out: no wide bumper, no pipe-cleaner antennas, no long tape tails.</li>' +
           '<li>Make the sail tight, not floppy. Tape it to a frame of straws or skewers. A flapping sail wastes the wind.</li></ol>' +
           '<p><strong>Test drag in the hall:</strong></p>' +
           '<ol><li><strong>Ramp test (fans off):</strong> Make a small ramp with a binder. Let your car roll down it and measure how far it goes. ' +
           'Then turn the sail edge-on and try again. The difference shows the sail’s drag.</li>' +
-          '<li><strong>Wind strip (fans on):</strong> Tape a thin paper strip to the top of the mast. Make it about 5 cm long. Walk beside your car. ' +
+          '<li><strong>Wind strip (fans on):</strong> Tape a thin paper strip to the top of the mast. Make it about ' + nb(KID.lenIn(2)) + ' long. Walk beside your car. ' +
           'Near the fans, the strip blows forward. If it goes limp, your car has caught up with the wind!</li>' +
           '<li><strong>Flutter check:</strong> Hold your car in front of the fans. Look at the sail from the side. If it flaps, tighten it.</li></ol>',
         render: function (el, api) {
@@ -549,9 +563,10 @@
       { q: 'Which change cuts extra drag on the car’s body?', options: ['Glue on a big flat shield to block the air', 'Make the body heavier so the air can’t push it', 'Tape down loose flaps and trim axle ends', 'Leave flaps loose so the air slips past them'], answer: 2,
         why: 'Loose flaps and long axle ends catch the air. Trimming them cuts drag and saves weight too.' },
       { q: 'A classmate wants a much smaller sail to cut drag. Is that a good idea?', options: ['Yes, because the smallest sail always wins', 'No, because the sail is the car’s engine', 'Yes, because the car will roll much farther', 'It won’t matter, since all sails push the same'], answer: 1,
-        why: 'In the simulator, a 20 × 20 cm sail rolls about ' + KID.ft(STD.distance) + ' ft. A 10 × 10 cm sail rolls only about ' + KID.ft(SMALL_SAIL.distance) + ' ft.' }
+        why: 'In the simulator, an ' + BIG_TXT + ' sail rolls about ' + nb(KID.dist(BIG_SAIL.distance)) + '. A ' + SMALL_TXT + ' sail rolls only about ' + nb(KID.dist(SMALL_SAIL.distance)) + '.' }
     ],
     // the wheel table and computed sentences, for the node check script (not used by the page)
-    _model: { CRR: CRR, FREE_TXT: FREE_TXT, BODY_TXT: BODY_TXT, BODY_FT: BODY_FT, FASTEST: FASTEST, EPS: EPS, MASS: MASS, zone: zone, BODY_F: BODY_F }
+    _model: { CRR: CRR, FREE_TXT: FREE_TXT, BODY_TXT: BODY_TXT, BODY_FT: BODY_FT, FASTEST: FASTEST, EPS: EPS, MASS: MASS, zone: zone, BODY_F: BODY_F,
+      FRONT_SQIN: FRONT_SQIN, FRONTS: FRONTS, SAIL_IN: SAIL_IN, SMALL_SAIL_IN: SMALL_SAIL_IN, BIG_SAIL: BIG_SAIL, SMALL_SAIL: SMALL_SAIL }
   });
 })();

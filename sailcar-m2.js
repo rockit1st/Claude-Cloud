@@ -37,7 +37,7 @@
   // Step 4's readout: the wind's push on the WHOLE car at the start line (sail + body), the same force as
   // simulate(car).startPush (the force Modules 1, 4 and 5 draw for the standard car, give or take 3%: an 8 in sail is a little bigger than the standard car's)
   function carPush(c) { return push(START, c.sailArea, c.sailCd, c.sailAngle) + push(START, P.DEFAULT_CAR.bodyArea, P.DEFAULT_CAR.bodyCd, 0); }
-  // Step 2's wind meter: whole feet from the fans, 0 to 70 ft (the hall). Where a still 8 × 8 in sail's push
+  // Step 2's wind gauge: whole feet from the fans, 0 to 70 ft (the hall). Where a still 8 × 8 in sail's push
   // first drops below the typical car's friction, in those same whole feet.
   const GAUGE_FT = Math.round(HALL_M * KID.FT_PER_M);
   const FRICTION = P.rollingFriction(P.DEFAULT_CAR.mass, P.DEFAULT_CAR.crr);
@@ -199,7 +199,7 @@
         html:
           '<p><strong>Secret #2: the wind fades.</strong> The moving air spreads out as it goes down the hall. ' +
           'So it slows down the farther it gets from the fans.</p>' +
-          '<p>Slide the wind meter (the yellow line) down our ' + nb(HALL_TXT) + ' hall. Watch the wind speed and the push on an ' + nb(STD_TXT) + ' sail.</p>',
+          '<p>Slide the yellow line down our ' + nb(HALL_TXT) + ' hall. Watch the wind speed and the push on an ' + nb(STD_TXT) + ' sail.</p>',
         challenge: 'Find the spot where the wind is half as fast as at the fans (50%). Then look at the push.',
         render: function (el, api) {
           const K = api.kid;
@@ -236,7 +236,7 @@
                 api.draw.arrow(g, gx(m) + (i % 2) * 4, y, gx(m) + (i % 2) * 4 + Math.max(6, maxLen * k), y, '#7ad7ff', '', { width: 2, head: 4 });
               });
             }
-            // the wind meter
+            // the yellow wind line
             const mx = gx(f);
             api.svg('line', { x1: mx, y1: FL - 104, x2: mx, y2: FL, stroke: '#f0c040', 'stroke-width': 3, 'stroke-dasharray': '6,4' }, s);
             api.svg('circle', { cx: mx, cy: FL - 104, r: 7, fill: '#f0c040' }, s);
