@@ -4,55 +4,69 @@
 // then in the Firebase console go to Firestore Database -> Rules, select all,
 // paste, and press Publish.
 //
-// WHEN: publish these rules only AFTER the new altitude-calculator.html is live
-// on the website (pull request merged and deployed). Then ask students to
-// refresh any copy of the page they already have open.
+// WHEN: the order of publishing does not matter. The pages go live by
+// themselves when they are merged; these rules go live when you press Publish.
+//  - New rules, old pages: every page keeps working exactly as before.
+//  - New pages, old rules: the Classes page works as before for you, and its
+//    "Teachers" panel shows a yellow note asking you to publish the new rules.
+//    Nobody else can be added as a teacher until you do.
 //
-// AFTER PUBLISHING: open the Classes page once, signed in as the teacher. It
-// moves every class's join code into the new protected "joinCodes" list and
-// takes it off the class. The codes stay the same, so nothing has to be handed
-// out again, and joining keeps working before, during and after that step.
-// Every student could see those old codes, though, so then check each roster;
-// "New code" on a class gives it a fresh code and the old one stops working
-// (students already in the class stay in it).
+// NEVER GO BACK to an older version of these rules (the console's revert
+// button, or pasting an older copy of this file) once the Classes page has
+// moved the join codes into "joinCodes": students could not join a class, and
+// the codes would show as "hidden", until these rules are published again.
 //
-// AFTER OPENING CLASSES, NEVER GO BACK to an older version of these rules (the
-// console's revert button, or pasting an older copy of this file): no student
-// could join a class, and the codes would show as "hidden", until these rules
-// are published again.
+// THE PEOPLE
+//  - The OWNER is ncapellini@hhh.k12.ny.us (written into isOwner() below). The
+//    owner keeps every power he has always had over the whole site: all altitude
+//    results, the settings, the races, the Sail Car Lab progress and runs, and
+//    the Rocket Lab builds.
+//  - A TEACHER is anyone the owner has added on the Classes page ("Teachers"
+//    panel). That adds a small document to the "teachers" list, named with the
+//    teacher's lowercase school email. Removing the teacher deletes it; their
+//    classes stay in the database but they lose access to them.
+//  - A STUDENT is every other signed-in school account.
+//  - Only verified Google accounts @hhh.k12.ny.us can read or write anything.
 //
-// What changed most recently (join codes):
-//  - Before, every signed-in student could list all the classes WITH their
-//    join codes from the browser console, then join any class and read its
-//    boards. Now each code is kept in "joinCodes/{CODE}". A student can look up
-//    only the one code they type; only the teacher can list the codes.
-//  - Class names stay readable to every signed-in student (the game pages and
-//    the boards need them), but the classes no longer carry their codes.
+// WHAT A TEACHER CAN DO (the owner is a teacher too)
+//  - Make classes, give them join codes, see the roster and remove students,
+//    for their OWN classes only. A teacher cannot read, change or delete
+//    another teacher's classes, join codes or rosters. That includes the owner:
+//    his Classes page shows and manages his own classes only.
+//  - Read the altitude results and the Sail Car Lab runs that were saved for
+//    one of their own classes (the school boards of the future).
+//  - A teacher who is not the owner has none of the owner's site-wide powers:
+//    they cannot read everyone's results or progress, change the settings or
+//    the races, or change or delete a result or a run.
+//  - A teacher can update only three fields of their own "teachers" entry: when
+//    they were last here and how many classes and students they have. The
+//    Classes page does that so the owner can see who is using the site.
+//
+// WHAT A STUDENT CAN DO
+//  - Altitude Calculator results ("results"): read only their own results and
+//    the results of a class they have joined; save their own.
+//  - Look up the one join code they type (nobody can list the codes except a
+//    teacher, and only their own), and join a class with it. Class names are
+//    readable by every signed-in account, because the game pages list them, but
+//    a class no longer carries its code.
 //  - A class the Classes page has not moved over yet keeps working with the
 //    code still stored on it, so the order of publishing does not matter.
-//  - "New code" on the Classes page replaces a class's code. New codes have 8
-//    characters, which makes guessing one hopeless; older 6-character codes
-//    keep working until they are replaced.
-//
-// What these rules do:
-//  - Altitude Calculator results ("results"): a student can read only their own
-//    results and the results of a class they have joined. Only the teacher can
-//    read everything, and only the teacher can change or delete a result.
-//  - "settings/altitude-top20" is the public Top 20 board every signed-in
-//    student may read. "settings/altitude-rankings" (the lock) is teacher-only.
-//  - Only verified Google accounts @hhh.k12.ny.us can read or write anything.
-//  - A student can only join a class with its join code (no back-door joins),
-//    and cannot list the join codes ("joinCodes": only the teacher can).
 //  - A student's altitude above the teacher's limit (Launch-Day Setup, 300 ft
 //    by default) is saved as "waiting for teacher check" and stays off the boards.
+//  - "settings/altitude-top20" is the public Top 20 board every signed-in
+//    student may read. "settings/altitude-rankings" (the lock) is owner-only.
 //  - rocket_builds: each student's "I'm building this one" design from Rocket Lab.
 //  - Sail Car Lab: sailcar_progress (each student's modules and Design Studio
-//    design; only the student and the teacher can read or save it) and
+//    design; only the student and the owner can read or save it) and
 //    sailcar_runs (real hallway runs, private to the class like the altitude
 //    boards). A student can save only their own progress and runs, only in the
-//    shape the lab saves them and under their own Google name, and only the
-//    teacher can change or delete a run.
+//    shape the lab saves them and under their own Google name.
 //  - Everything else behaves as before.
+//
+// JOIN CODES: each code is kept in "joinCodes/{CODE}" with its class and its
+// teacher. "New code" on the Classes page replaces a class's code (new codes
+// have 8 characters, which makes guessing one hopeless; older 6-character codes
+// keep working until they are replaced).
 
 rules_version = '2';
 service cloud.firestore {
@@ -66,8 +80,41 @@ service cloud.firestore {
              && request.auth.token.firebase.sign_in_provider == 'google.com'
              && request.auth.token.email.matches('^.+@hhh[.]k12[.]ny[.]us$');
     }
-    function isTeacher() {
+    // The site owner. Written here on purpose: it needs no database lookup, so
+    // the owner can never be locked out.
+    function isOwner() {
       return signedIn() && request.auth.token.email == 'ncapellini@hhh.k12.ny.us';
+    }
+    // The owner, or a teacher the owner has added (teachers/{lowercase email}).
+    function isTeacher() {
+      return signedIn()
+             && (isOwner()
+                 || exists(/databases/$(database)/documents/teachers/$(request.auth.token.email.lower())));
+    }
+    // The class exists and belongs to the signed-in teacher (the state before
+    // this request's writes; a class deleted in the same batch is still seen).
+    function ownsClass(classId) {
+      return classId is string && classId != ''
+             && get(/databases/$(database)/documents/classes/$(classId)).data.teacherEmail == request.auth.token.email;
+    }
+    // The same, but as the class will be once this batch or transaction commits
+    // (for a join code written in the same batch as the class it points at).
+    function ownsClassAfter(classId) {
+      return classId is string && classId != ''
+             && getAfter(/databases/$(database)/documents/classes/$(classId)).data.teacherEmail == request.auth.token.email;
+    }
+    // The signed-in account is the one named by this teachers/{email} id.
+    function isThisTeacher(email) {
+      return signedIn() && email == request.auth.token.email.lower();
+    }
+    // A school email address in lowercase, usable as a teachers/{email} id.
+    function schoolEmailId(email) {
+      return email.size() <= 100
+             && email == email.lower()
+             && email.matches('^[^@/]+@hhh[.]k12[.]ny[.]us$');
+    }
+    function validCount(n) {
+      return n is number && n >= 0 && n <= 5000;
     }
     // A student may only add themselves to a class with that class's join code,
     // exactly as the Join form on classes.html does it. The code must be the
@@ -93,6 +140,13 @@ service cloud.firestore {
       let c = get(/databases/$(database)/documents/classes/$(d.classId)).data.get('code', '');
       return c is string && c != '' && d.code == c;
     }
+    // A teacher writing a roster entry (enrollments/{classId}_{uid}) for one of
+    // their own classes. The id must start with that class's id: otherwise a
+    // teacher could plant an entry that makes someone "in" another teacher's class.
+    function teacherRosterWrite(id) {
+      let c = request.resource.data.classId;
+      return isTeacher() && c is string && id.split('_')[0] == c && ownsClass(c);
+    }
     // Highest believable altitude in feet, from the teacher's launch-day setup
     // (settings/altitude-setup); 300 ft until the teacher sets one.
     function maxFt() {
@@ -110,12 +164,38 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/enrollments/$(classId + '_' + request.auth.uid));
     }
 
+    // ── Teachers ────────────────────────────────────────────────────────────
+    // teachers/{lowercase email} = {email, addedAt, addedBy, lastSeen,
+    // classCount, studentCount}. Only the owner adds or removes teachers. A
+    // teacher can read their own entry (the Classes page checks it to know to
+    // show the teacher view) and update only lastSeen, classCount and studentCount.
+    match /teachers/{email} {
+      allow get: if isOwner() || isThisTeacher(email);
+      allow list: if isOwner();
+      allow create: if isOwner()
+                    && schoolEmailId(email)
+                    && request.resource.data.email == email;
+      allow delete: if isOwner() && schoolEmailId(email);
+      allow update: if isOwner()
+                    || (isThisTeacher(email)
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['lastSeen', 'classCount', 'studentCount'])
+                        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastSeen'])
+                            || request.resource.data.lastSeen == request.time)
+                        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['classCount'])
+                            || validCount(request.resource.data.classCount))
+                        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['studentCount'])
+                            || validCount(request.resource.data.studentCount)));
+    }
+
     // ── Rocket Altitude Calculator ──────────────────────────────────────────
     match /results/{id} {
-      allow read: if isTeacher()
+      allow read: if isOwner()
                   || (signedIn() && resource.data.userEmail == request.auth.token.email)
-                  || (signedIn() && inClass(resource.data.classId));
-      allow create: if isTeacher()
+                  || (signedIn() && inClass(resource.data.classId))
+                  // a teacher reads the results saved for one of their own classes
+                  || (isTeacher() && ownsClass(resource.data.classId));
+      allow create: if isOwner()
                     || (signedIn()
                         && request.resource.data.userEmail == request.auth.token.email
                         && request.resource.data.name is string
@@ -129,12 +209,12 @@ service cloud.firestore {
                                 && altitudeFt(request.resource.data) <= maxFt()))
                         && (request.resource.data.get('classId', '') == ''
                             || inClass(request.resource.data.classId)));
-      allow update, delete: if isTeacher();
+      allow update, delete: if isOwner();
     }
 
     match /settings/{id} {
       allow read: if signedIn();
-      allow write: if isTeacher()
+      allow write: if isOwner()
                    || (signedIn()
                        && id == 'altitude-top20'
                        && request.resource.data.entries is list
@@ -196,61 +276,91 @@ service cloud.firestore {
              && d.classId is string
              && (d.classId == '' || inClass(d.classId));
     }
-    // Each student's module progress and design (the teacher reads everyone's)
+    // Each student's module progress and design (the owner reads everyone's)
     match /sailcar_progress/{uid} {
-      allow read: if isTeacher() || (signedIn() && request.auth.uid == uid);
-      allow create, update: if isTeacher()
+      allow read: if isOwner() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if isOwner()
                             || (signedIn() && request.auth.uid == uid && validProgress(uid));
-      allow delete: if isTeacher();
+      allow delete: if isOwner();
     }
-    // Real hallway runs: visible to the student, their class, and the teacher
+    // Real hallway runs: visible to the student, their class, the owner, and
+    // the teacher whose class the run was saved for
     match /sailcar_runs/{id} {
-      allow read: if isTeacher()
+      allow read: if isOwner()
                   || (signedIn() && resource.data.userEmail == request.auth.token.email)
-                  || (signedIn() && inClass(resource.data.classId));
-      allow create: if isTeacher() || (signedIn() && validRun());
-      allow update, delete: if isTeacher();
+                  || (signedIn() && inClass(resource.data.classId))
+                  || (isTeacher() && ownsClass(resource.data.classId));
+      allow create: if isOwner() || (signedIn() && validRun());
+      allow update, delete: if isOwner();
     }
 
     // Rocket Lab: the design a student says they are really building
     match /rocket_builds/{uid} {
-      allow read: if isTeacher() || (signedIn() && request.auth.uid == uid);
+      allow read: if isOwner() || (signedIn() && request.auth.uid == uid);
       allow write: if signedIn() && request.auth.uid == uid;
     }
 
     // ── Classes, join codes and rosters ─────────────────────────────────────
+    // Each class belongs to the teacher in its teacherEmail, and only that
+    // teacher (the owner included) can change or delete it.
     // Class names: readable to everyone signed in (other pages list them).
     // classes.html no longer stores the join code here (see joinCodes).
     match /classes/{id} {
       allow read: if signedIn();
-      allow write: if isTeacher();
+      allow create: if isTeacher()
+                    && request.resource.data.teacherEmail == request.auth.token.email;
+      allow update: if isTeacher()
+                    && resource.data.teacherEmail == request.auth.token.email
+                    && request.resource.data.teacherEmail == resource.data.teacherEmail;
+      allow delete: if isTeacher()
+                    && resource.data.teacherEmail == request.auth.token.email;
     }
     // One doc per join code; the doc id IS the code:
     // {classId, className, teacherEmail, createdAt}. Anyone signed in may look
-    // up the one code they typed; only the teacher may list or change codes,
-    // so nobody can collect every class's code.
+    // up the one code they typed. A teacher may list only the codes of their own
+    // classes (the Classes page asks for "teacherEmail == me" or "classId == one
+    // of mine"), so nobody can collect another teacher's codes, and may write
+    // only a code of their own that points at one of their own classes.
+    // A code is often written in the same batch as its class, so create and
+    // update look at the class as it will be (getAfter). A code is deleted
+    // together with its class, so delete goes by the code's own teacherEmail.
     match /joinCodes/{code} {
       allow get: if signedIn();
-      allow list: if isTeacher();
-      allow create, update, delete: if isTeacher();
-    }
-    match /enrollments/{id} {
-      allow read: if isTeacher()
-                  || (signedIn() && resource.data.uid == request.auth.uid);
-      allow create: if isTeacher() || (signedIn() && validJoin(id));
+      allow list: if isTeacher()
+                  && (resource.data.teacherEmail == request.auth.token.email
+                      || ownsClass(resource.data.classId));
+      allow create: if isTeacher()
+                    && request.resource.data.teacherEmail == request.auth.token.email
+                    && ownsClassAfter(request.resource.data.classId);
       allow update: if isTeacher()
-                    || (signedIn() && validJoin(id) && resource.data.uid == request.auth.uid);
+                    && resource.data.teacherEmail == request.auth.token.email
+                    && request.resource.data.teacherEmail == request.auth.token.email
+                    && ownsClassAfter(request.resource.data.classId);
       allow delete: if isTeacher()
-                    || (signedIn() && resource.data.uid == request.auth.uid);
+                    && resource.data.teacherEmail == request.auth.token.email;
+    }
+    // A student's own entry: the student can read, join (validJoin) and leave.
+    // A teacher can read and change the entries of their own classes only.
+    // (One batch may delete a class and its whole roster: the class is still
+    // seen as it was before the batch.)
+    match /enrollments/{id} {
+      allow read: if (signedIn() && resource.data.uid == request.auth.uid)
+                  || (isTeacher() && ownsClass(resource.data.classId));
+      allow create: if (signedIn() && validJoin(id))
+                    || teacherRosterWrite(id);
+      allow update: if (signedIn() && validJoin(id) && resource.data.uid == request.auth.uid)
+                    || (teacherRosterWrite(id) && ownsClass(resource.data.classId));
+      allow delete: if (signedIn() && resource.data.uid == request.auth.uid)
+                    || (isTeacher() && ownsClass(resource.data.classId));
     }
 
     // ── Ruler game Race Mode (unchanged) ────────────────────────────────────
     match /races/{raceId} {
       allow read: if signedIn();
-      allow write: if isTeacher();
+      allow write: if isOwner();
       match /players/{uid} {
         allow read: if signedIn();
-        allow write: if isTeacher() || (signedIn() && request.auth.uid == uid);
+        allow write: if isOwner() || (signedIn() && request.auth.uid == uid);
       }
     }
   }
