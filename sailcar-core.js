@@ -1104,18 +1104,38 @@
 
     const st = steps[state.step], key = m.id + ':' + state.step;
     body.appendChild(h('h2', { class: 'sl-step-title', text: st.title }));
+    // The job comes first, right under the title, so a student who skips the reading still knows what to do.
+    //   st.challenge = a challenge that must be finished before Next (the box turns green when it is done)
+    //   st.job       = a plain "Your job" box that never blocks Next (steps with no challenge)
+    //   st.todo      = 2-4 short numbered lines: how to do it
+    const jobText = st.challenge || st.job;
+    let jobBox = null;
+    if (jobText) {
+      jobBox = h('div', { class: 'sl-challenge' + (st.challenge ? '' : ' sl-job'), role: 'group', 'aria-label': st.challenge ? 'Your challenge' : 'Your job' });
+      jobBox.appendChild(h('div', { class: 'sl-challenge-head' }, [h('strong', { text: st.challenge ? '🎯 Your challenge' : '👉 Your job' }), h('span', { class: 'sl-tick', text: '✅ Done!' })]));
+      jobBox.appendChild(h('p', { class: 'sl-challenge-text', text: jobText }));
+      if (st.todo && st.todo.length) {
+        jobBox.appendChild(h('div', { class: 'sl-todo-label', text: 'How to do it:' }));
+        const ol = h('ol', { class: 'sl-todo' });
+        st.todo.forEach(function (t) { ol.appendChild(h('li', { text: t })); });
+        jobBox.appendChild(ol);
+      }
+      body.appendChild(jobBox);
+    }
     const content = h('div', { class: 'sl-step-body' });
     body.appendChild(content);
     const doneMsg = h('div', { class: 'sl-done', 'aria-live': 'polite' });
+    const nextHint = h('div', { class: 'sl-next-hint', 'aria-live': 'polite' });
     const nextBtn = h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: state.step === steps.length - 1 ? (m.noQuiz ? 'Finish' : 'Take the check →') : 'Next →' });
     function refreshNext() {
       const ok = !st.challenge || state.doneSteps[key] || state.isTeacher;
       nextBtn.disabled = !ok;
       nextBtn.title = ok ? '' : 'Finish the challenge first.';
+      nextHint.textContent = ok ? '' : '🎯 Finish the challenge at the top to go on.';
     }
     const api = {
       done: function (msg) {
-        if (!state.doneSteps[key]) { state.doneSteps[key] = true; doneMsg.textContent = '✅ ' + (msg || 'Challenge complete!'); doneMsg.classList.add('show'); refreshNext(); }
+        if (!state.doneSteps[key]) { state.doneSteps[key] = true; doneMsg.textContent = '✅ ' + (msg || 'Challenge complete!'); doneMsg.classList.add('show'); if (jobBox && st.challenge) jobBox.classList.add('done'); refreshNext(); }
       },
       isDone: function () { return !!state.doneSteps[key]; },
       onLeave: function (fn) { state.cleanups.push(fn); },
@@ -1123,11 +1143,9 @@
     };
     if (st.html) content.innerHTML = st.html;
     if (st.render) st.render(content, api);
-    if (st.challenge) {
-      body.appendChild(h('div', { class: 'sl-challenge' }, [h('strong', { text: '🎯 Challenge: ' }), st.challenge]));
-      if (state.doneSteps[key]) { doneMsg.textContent = '✅ Challenge complete!'; doneMsg.classList.add('show'); }
-    }
+    if (st.challenge && state.doneSteps[key]) { doneMsg.textContent = '✅ Challenge complete!'; doneMsg.classList.add('show'); jobBox.classList.add('done'); }
     body.appendChild(doneMsg);
+    body.appendChild(nextHint);
     if (state.step > 0) nav.appendChild(h('button', { type: 'button', class: 'sl-btn', text: '← Back', onclick: function () { state.step--; renderStep(); } }));
     nav.appendChild(nextBtn);
     nextBtn.addEventListener('click', function () {
