@@ -147,6 +147,7 @@
   <div class="gate-card">
     <div class="gate-title">TEACHER ACCESS</div>
     <div class="gate-sub" style="margin-bottom:0">This page is for the teacher. It opens automatically when you are signed in with the teacher account.</div>
+    <div class="gate-sub" id="gate-teacher-note" style="display:none;margin:14px 0 0">You are signed in as a teacher, but this page is only for the site owner. <a href="classes.html" style="color:#b44fff">Your classes are on the Classes page.</a></div>
   </div>
 </div>
 
@@ -195,6 +196,11 @@
       document.getElementById('gate').style.display = 'none';
       document.getElementById('dashboard-content').style.display = 'block';
       loadResults();
+    } else if (user) {
+      // A teacher the owner has added has no dashboard: point them to their Classes page.
+      // (If the database says no, they are not a teacher and see nothing extra.)
+      firebase.firestore().collection('teachers').doc(String(user.email || '').toLowerCase()).get()
+        .then(function(s) { if (s.exists) document.getElementById('gate-teacher-note').style.display = ''; }, function() {});
     }
   });
   var allResults = [], allGameResults = [], activeFilter = 'all', activeTab = 'altitude';

@@ -556,9 +556,10 @@
     rosterUnsubs.forEach(function(u) { u(); });
     rosterUnsubs = [];
     classDocs = {};
+    rosterCount = {};
     snap.forEach(function(d) { classDocs[d.id] = d.data(); });
     const wrap = document.getElementById('class-list');
-    if (snap.empty) { wrap.innerHTML = '<div class="empty">No classes yet. Create one above.</div>'; updateNotes(); return; }
+    if (snap.empty) { wrap.innerHTML = '<div class="empty">No classes yet. Create one above.</div>'; updateNotes(); scheduleUsage(); return; }
     wrap.innerHTML = '';
     const docs = snap.docs.slice().sort(function(a, b) { return (a.data().name || '').localeCompare(b.data().name || ''); });
     docs.forEach(function(doc) {
@@ -593,6 +594,8 @@
             .sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
           const countEl = document.getElementById('count-' + id);
           const rosterEl = document.getElementById('roster-' + id);
+          rosterCount[id] = names.length;
+          scheduleUsage();
           if (countEl) countEl.textContent = names.length + ' student' + (names.length === 1 ? '' : 's');
           if (rosterEl) rosterEl.innerHTML = names.length
             ? names.map(function(n) { return '<li>' + esc(n.name || n.email) + '<span class="rm" title="Remove" onclick="removeStudent(\'' + esc(n.classId) + '\', \'' + esc(n.uid) + '\')">✕</span></li>'; }).join('')
@@ -674,6 +677,140 @@
     if (!confirm('Remove this student from the class?\n\nIf they should not have had the join code, also press “🔄 New code” so they cannot join again.')) return;
     db().collection('enrollments').doc(classId + '_' + uid).delete()
       .catch(function(e) { alert('Remove failed: ' + e.message); });
+  }
+
+  // ── Usage (a teacher who is not the owner) ───────────────
+  // Once this teacher's classes and rosters have loaded, tell the owner's Teachers
+  // list when they were here and how many classes and students they have. It uses
+  // only what this page already loaded, runs again only if the numbers change, and
+  // its result is ignored: it can never get in the teacher's way.
+  let rosterCount = {};      // classId -> students in that class (once its roster has loaded)
+  let usageSent = '';        // "classes:students" last sent
+  let usageTimer = null;
+  function scheduleUsage() {
+    if (isOwner || !isTeacher) return;
+    clearTimeout(usageTimer);
+    usageTimer = setTimeout(sendUsage, 1200);
+  }
+  function sendUsage() {
+    const ids = Object.keys(classDocs);
+    if (!ids.every(function(id) { return typeof rosterCount[id] === 'number'; })) return;   // a roster is still loading
+    let students = 0;
+    ids.forEach(function(id) { students += rosterCount[id]; });
+    const sig = ids.length + ':' + students;
+    if (sig === usageSent) return;
+    usageSent = sig;
+    try {
+      db().collection('teachers').doc(String(me.email || '').toLowerCase())
+        .update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp(), classCount: ids.length, studentCount: students })
+        .catch(function() {});
+    } catch (e) {}
+  }
+
+  // ── Teachers panel (owner only) ──────────────────────────
+  let teacherDocs = null;          // null until the list has loaded
+  let teachersBlocked = false;     // the database refused the list: the older rules are still published
+  let teachersFailed = false;      // some other problem reading the list
+  let teachersUnsub = null;
+
+  function initTeachersPanel() {
+    if (teachersUnsub) { teachersUnsub(); teachersUnsub = null; }
+    teachersBlocked = false; teachersFailed = false;
+    renderTeachers();
+    teachersUnsub = db().collection('teachers').onSnapshot(function(snap) {
+      teachersBlocked = false; teachersFailed = false;
+      teacherDocs = snap.docs.map(function(d) { return { id: d.id, data: d.data({ serverTimestamps: 'estimate' }) }; })
+        .sort(function(a, b) { return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
+      renderTeachers();
+    }, function(e) {
+      teachersUnsub = null;
+      if (isDenied(e)) teachersBlocked = true; else { teachersFailed = true; console.error(e); }
+      renderTeachers();
+    });
+  }
+
+  function fmtDay(ts) {
+    const d = ts && typeof ts.toDate === 'function' ? ts.toDate() : null;
+    if (!d || isNaN(d.getTime())) return '';
+    const o = { month: 'short', day: 'numeric' };
+    if (d.getFullYear() !== new Date().getFullYear()) o.year = 'numeric';
+    return d.toLocaleDateString('en-US', o);
+  }
+  function countOf(n) { return typeof n === 'number' && isFinite(n) ? n : 0; }
+  function el(tag, cls, text) {
+    const x = document.createElement(tag);
+    if (cls) x.className = cls;
+    if (text != null) x.textContent = text;
+    return x;
+  }
+
+  function renderTeachers() {
+    document.getElementById('teachers-warn').style.display = teachersBlocked ? '' : 'none';
+    document.getElementById('teacher-form').style.display = teachersBlocked ? 'none' : '';
+    const list = document.getElementById('teacher-list');
+    list.textContent = '';
+    if (teachersBlocked) return;
+    if (teachersFailed) { list.appendChild(el('div', 'empty', 'Could not load the teachers list. Reload this page to try again.')); return; }
+    if (teacherDocs === null) { list.appendChild(el('div', 'empty', 'Loading…')); return; }
+    if (!teacherDocs.length) { list.appendChild(el('div', 'empty', 'No other teachers yet. Add one below.')); return; }
+    teacherDocs.forEach(function(t) {
+      const d = t.data, email = typeof d.email === 'string' && d.email ? d.email : t.id;
+      const day = fmtDay(d.lastSeen);
+      const row = el('div', 't-row');
+      row.appendChild(el('span', 't-email', email));
+      row.appendChild(el('span', 't-meta', day ? 'Last active: ' + day : 'Hasn\'t signed in yet'));
+      row.appendChild(el('span', 't-meta', 'Classes: ' + countOf(d.classCount) + ' - Students: ' + countOf(d.studentCount)));
+      const rm = el('button', 'mini-btn del-btn', 'Remove');
+      rm.addEventListener('click', function() { removeTeacher(t.id, email); });
+      row.appendChild(rm);
+      list.appendChild(row);
+    });
+  }
+
+  function teacherMsg(text, ok) {
+    const m = document.getElementById('teacher-msg');
+    m.textContent = text;
+    m.className = ok === undefined ? 'msg' : ok ? 'msg ok' : 'msg err';
+  }
+
+  function addTeacher() {
+    const input = document.getElementById('new-teacher-email');
+    const email = input.value.trim().toLowerCase();
+    if (!email) return teacherMsg('Type the teacher\'s school email address.', false);
+    if (!SCHOOL_EMAIL.test(email)) return teacherMsg('That does not look like a school email. It has to end in @hhh.k12.ny.us.', false);
+    if (email === TEACHER_EMAIL) return teacherMsg('That is your own email. You already have full access.', false);
+    if ((teacherDocs || []).some(function(t) { return t.id === email; })) return teacherMsg('That teacher is already on your list.', false);
+    const btn = document.getElementById('add-teacher-btn');
+    btn.disabled = true;
+    teacherMsg('Adding…');
+    const ref = db().collection('teachers').doc(email);
+    db().runTransaction(function(tx) {
+      return tx.get(ref).then(function(s) {
+        if (s.exists) throw { dup: true };
+        tx.set(ref, { email: email, addedAt: firebase.firestore.FieldValue.serverTimestamp(), addedBy: me.email,
+                      lastSeen: null, classCount: 0, studentCount: 0 });
+      });
+    }).then(function() {
+      btn.disabled = false;
+      input.value = '';
+      teacherMsg('Added ' + email + ' ✓ They can now open this page and make their own classes.', true);
+    }, function(e) {
+      btn.disabled = false;
+      if (e && e.dup) return teacherMsg('That teacher is already on your list.', false);
+      if (isDenied(e)) { teacherMsg(''); teachersBlocked = true; renderTeachers(); return; }
+      console.error(e);
+      teacherMsg('Could not add the teacher: ' + (e && e.message || e), false);
+    });
+  }
+
+  function removeTeacher(id, email) {
+    if (!confirm('Remove ' + email + ' as a teacher?\n\nTheir classes stay in the database, but they lose access to them. Add them again later and they get their classes back.')) return;
+    db().collection('teachers').doc(id).delete().then(function() {
+      teacherMsg('Removed ' + email + '.', true);
+    }, function(e) {
+      console.error(e);
+      alert('Could not remove the teacher: ' + (e && e.message || e));
+    });
   }
 
   // ── Student ──────────────────────────────────────────────

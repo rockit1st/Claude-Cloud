@@ -1,11 +1,13 @@
 // Firestore security rules for technoteacher.org
 //
-// HOW TO USE: this file is NOT deployed automatically. Copy everything in it,
-// then in the Firebase console go to Firestore Database -> Rules, select all,
-// paste, and press Publish.
+// HOW TO USE: the "Publish Firestore rules on merge" workflow on GitHub
+// publishes this file when it changes on main (once its one-time setup is
+// done). To publish by hand instead, copy everything in this file, then in the
+// Firebase console go to Firestore Database -> Rules, select all, paste, and
+// press Publish.
 //
 // WHEN: the order of publishing does not matter. The pages go live by
-// themselves when they are merged; these rules go live when you press Publish.
+// themselves when they are merged; these rules go live when they are published.
 //  - New rules, old pages: every page keeps working exactly as before.
 //  - New pages, old rules: the Classes page works as before for you, and its
 //    "Teachers" panel shows a yellow note asking you to publish the new rules.
