@@ -97,6 +97,20 @@
     body.light-mode .old-tag, body.light-mode .code-chip.code-hidden { color: #8a5a00; }
     .mini-btn:disabled { opacity: 0.6; cursor: wait; }
 
+    /* One line for a teacher who is not the owner; the owner's Teachers panel */
+    .teacher-line { background: rgba(180,79,255,0.08); border: 1px solid rgba(180,79,255,0.35); border-radius: 12px; padding: 10px 16px; margin-bottom: 26px; color: #d9c2ff; font-size: 0.9rem; line-height: 1.5; }
+    body.light-mode .teacher-line { color: #4a2a8a; background: rgba(180,79,255,0.1); }
+    .teacher-list { display: grid; gap: 10px; margin: 16px 0; }
+    .t-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(180,79,255,0.15); border-radius: 10px; padding: 10px 14px; }
+    .t-email { flex: 1 1 100%; min-width: 0; font-weight: 600; font-size: 0.95rem; overflow-wrap: anywhere; }
+    .t-meta { font-size: 0.82rem; color: #9080b0; }
+    .t-row .mini-btn { margin-left: auto; }
+    body.light-mode .t-row { color: #1a0030; }
+    body.light-mode .t-meta { color: #5a4a8a; }
+    #teachers-section .panel > .hint:first-child { margin-top: 0; }
+    #teachers-section .rules-note { margin: 14px 0 0; }
+    @media (min-width: 640px) { .t-email { flex: 1 1 260px; } }
+
     .empty { text-align: center; padding: 32px 20px; background: rgba(180,79,255,0.03); border: 1px dashed rgba(180,79,255,0.25); border-radius: 14px; color: #6050a0; font-size: 0.9rem; line-height: 1.7; }
 
     /* Full-screen "Present" code display (for projecting one class's code) */
@@ -155,6 +169,7 @@
 
   <!-- TEACHER VIEW -->
   <div id="teacher-view" style="display:none">
+    <div class="teacher-line" id="teacher-line" style="display:none">You are signed in as a teacher. Your classes are only yours - other teachers can't see them.</div>
     <div class="rules-note" id="rules-note" style="display:none">
       <span id="rules-note-title">Paste the new database rules to protect your join codes.</span>
       <div class="hint" id="rules-note-hint">Until then everything keeps working the old way. Open this page again after you publish them.</div>
@@ -178,6 +193,27 @@
     <div class="section-label">Your Classes</div>
     <div class="class-list" id="class-list">
       <div class="empty">Loading…</div>
+    </div>
+
+    <!-- Owner only: who else can make classes here -->
+    <div id="teachers-section" style="display:none; margin-top:44px">
+      <div class="section-label">Teachers</div>
+      <div class="panel">
+        <div class="hint">Add a teacher by their school email so they can make their own classes and join codes here; each teacher sees only their own classes.</div>
+        <div class="rules-note" id="teachers-warn" style="display:none">
+          <span>Publish the new database rules to use the Teachers list.</span>
+          <div class="hint">The database is still using the older rules, so it does not know about teachers yet. Paste the new rules into the Firebase console and press Publish, then press “Check again”.</div>
+          <button class="mini-btn" onclick="initTeachersPanel()">Check again</button>
+        </div>
+        <div class="teacher-list" id="teacher-list"><div class="empty">Loading…</div></div>
+        <div id="teacher-form">
+          <div class="panel-row">
+            <input type="email" id="new-teacher-email" placeholder="Teacher's school email" maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false" />
+            <button class="btn" id="add-teacher-btn" onclick="addTeacher()">Add a teacher</button>
+          </div>
+          <div class="msg" id="teacher-msg"></div>
+        </div>
+      </div>
     </div>
   </div>
 
