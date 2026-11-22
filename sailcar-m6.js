@@ -1,7 +1,8 @@
 // Sail Car Lab — Module 6: Balance & Stability
 // The balance point (center of gravity), why the wind from the two box fans flips a car forward over its
 // front wheels, and why crooked axles curve a car into the wall.
-// Written for 6th graders: short sentences, no formulas, distances in feet first (SailLab.kid.dist), and NO force
+// Written for 6th graders: short sentences, no formulas, distances in FEET (SailLab.kid.dist), sizes in INCHES (kid.lenIn,
+// kid.by), and NO force
 // numbers or force units: a force is an arrow whose LENGTH shows its size (draw.forceScale: ONE honest scale per
 // picture, so a bigger force is never drawn shorter), with a word label, and the words COMPARE two forces with the
 // lab's shared vocabulary (kid.compare). Tipping is shown as a tug-of-war of two bars, "tipping" against "holding
@@ -9,7 +10,10 @@
 // bars or arrows it compares are drawn to scale. Behind the bars is simulate()'s own rule (students never see it):
 //   the car flips if  sail push × (sail height − balance-point height)  >  weight × (balance point to front axle)
 // and a front axle turned off square makes simulate() steer the car round a circle (radius = wheelbase ÷ tan(angle)).
-// Every number a student reads (grams, cm, feet) is worked out from SailLab.physics and simulate() when the page loads.
+// Every number a student reads (grams, inches, feet) is worked out from SailLab.physics and simulate() when the page loads.
+// UNITS: students set and read INCHES (sliders, chips, labels) and FEET (distances). The physics stays metric inside:
+// makeCar() turns the inches into centimetres (kid.inToCm, × 2.54) before anything reaches simulate(). The module's own
+// drawing sizes (px per cm) are internal and never shown.
 (function () {
   'use strict';
   const P = SailLab.physics, D = P.DEFAULT_CAR, G = P.G, kid = SailLab.kid;
@@ -17,21 +21,28 @@
   // below — the goals, the map, the text — is worked out from it and from simulate(), so re-measuring the hall needs no edit here.
   const HALL = P.HALL;
   const LONG_HALL = 1000;                               // "in a longer hall": the same run with no end wall, so cars that reach the end can still be compared
-  const START = 0.3;                                    // the start line: 30 cm from the fans (simulate's default startX)
+  const START = 0.3;                                    // the start line: 0.3 m (about 1 ft) from the fans (simulate's default startX)
   const PAPER = 0.08;                                   // printer paper weighs about 80 g per square metre
-  const FRAME = D.mass - D.sailArea * PAPER;            // the default 70 g car without its 20 × 20 cm paper sail (66.8 g)
-  const FRAME_H = 0.025;                                // its balance point is 2.5 cm up (3 cm with the sail, like DEFAULT_CAR)
-  const NICKEL = 0.005, COIN_H = 0.03;                  // a US nickel is 5 g; taped flat on the chassis, 3 cm off the floor
-  const STICK = 0.0005;                                 // a longer chassis needs more stick and glue: about 0.5 g per cm
+  const FRAME = D.mass - D.sailArea * PAPER;            // the everyday 70 g car without its paper sail (66.8 g)
+  const FRAME_H = 0.025;                                // its balance point is 2.5 cm (1 in) up (3 cm with the sail, like DEFAULT_CAR)
+  const NICKEL = 0.005, COIN_H = 0.03;                  // a US nickel is 5 g; taped flat on the chassis, about 1 in (3 cm) off the floor
+  const STICK = 0.0005;                                 // a longer chassis needs more stick and glue: about 0.5 g per cm (1.3 g per in)
   const MAP_M = HALL.length;                            // step 4: the top-down map shows the whole hallway, start line to far end
-  // A car built from the default one: a wb-cm wheelbase, a side × side cm paper sail whose bottom sits gap cm above the
-  // chassis (so its middle is 3 cm + gap + half the sail above the floor), and nickels taped over the back axle.
-  // Chassis, wheels, mast and sail sit mid-way between the axles. cgCm (optional) sets the balance point directly.
-  function makeCar(side, gap, wb, nickels, cgCm) {
-    const area = side * side / 10000, sail = area * PAPER, frame = FRAME + (wb - 16) * STICK, coins = nickels * NICKEL;
-    const mass = frame + sail + coins, sh = 0.03 + gap / 100 + side / 200;
-    return { mass: mass, sailArea: area, sailHeight: sh, wheelbase: wb / 100,
-             cgToFront: cgCm != null ? cgCm / 100 : ((frame + sail) * wb / 200 + coins * wb / 100) / mass,
+  // THE EVERYDAY CAR (steps 1 and 2): an 8 in square sail on a 6 in chassis, 70 g. Its size in INCHES is what students read;
+  // toCm() turns every inch a student sets into the centimetres the physics uses (inches × 2.54).
+  const toCm = kid.inToCm;
+  const SAIL_IN = 8, CHASSIS_IN = 6;
+  const CHASSIS_CM = toCm(CHASSIS_IN);                  // drawing units: px per cm, never shown
+  // A car built from the everyday one, every size in INCHES: a wb in chassis (front axle to back axle), a side × side in
+  // paper sail whose bottom sits gap in above the chassis (so its middle is 1 in + gap + half the sail above the floor), and
+  // nickels taped over the back axle. Chassis, wheels, mast and sail sit mid-way between the axles. cgIn (optional) sets
+  // the balance point directly (inches behind the front axle).
+  function makeCar(side, gap, wb, nickels, cgIn) {
+    const sideCm = toCm(side), gapCm = toCm(gap), wbCm = toCm(wb);
+    const area = sideCm * sideCm / 10000, sail = area * PAPER, frame = FRAME + (wbCm - CHASSIS_CM) * STICK, coins = nickels * NICKEL;
+    const mass = frame + sail + coins, sh = 0.03 + gapCm / 100 + sideCm / 200;
+    return { mass: mass, sailArea: area, sailHeight: sh, wheelbase: wbCm / 100,
+             cgToFront: cgIn != null ? toCm(cgIn) / 100 : ((frame + sail) * wbCm / 200 + coins * wbCm / 100) / mass,
              cgHeight: (frame * FRAME_H + sail * sh + coins * COIN_H) / mass };
   }
   // The tug-of-war at the start line, where the push is biggest (the car is still and the wind is strongest).
@@ -74,7 +85,6 @@
   const RED = '#ff6060', BLUE = '#7ad7ff', GREEN = '#40e080', MUTED = '#9080b0';
   const nickels = function (v) { return v + ' (' + v * 5 + ' g)'; };
   const deg = function (v) { return (Math.round(v * 100) / 100) + '°'; };
-  const cm = function (v) { return String(Number(SailLab.fmt(v, 1))); };            // 8 · 9.4 (never 8.000000000000002)
 
   // ── Step 1: the finger test ─────────────────────────────────────────────
   // The everyday car (20 cm sail, 16 cm chassis) with n nickels on the back: where its balance point is, and whether a
