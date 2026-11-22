@@ -13,6 +13,8 @@
 // The side picture draws the wind as faint streaks (no arrowhead, the same for every design): the card's rows are the
 // one place that compares sizes, so two pictures on one screen never show two different push lengths.
 // Every number a student reads (grams, inches, feet) is worked out from simulate().
+// CHALLENGE FIRST: every step opens with a "Your job" box right under its title (the core draws it from step.job and step.todo: one short
+// sentence and 2-4 short numbered lines that use the control names exactly as they are on screen). The text under it only explains.
 // UNITS: students see feet and inches (and grams for the car's mass), never metres or centimetres. The physics, the
 // stored design and the run log stay metric: a design keeps its sail sizes as plain numbers of CENTIMETRES, exactly as
 // designs saved before the change did, so an old design loads and looks right (cm → the nearest inch on the sliders).
@@ -84,7 +86,7 @@
   const CHOICES = { chassis: CHASSIS, bearing: BEARING, sailMat: SAIL_GSM, mastPos: MAST_POS, glue: GLUE };
   const RANGES = { rails: [2, 5], sailW: [cmOf(SIZES.sailW.min), cmOf(SIZES.sailW.max)], sailH: [cmOf(SIZES.sailH.min), cmOf(SIZES.sailH.max)],
                    sailGap: [cmOf(SIZES.sailGap.min), cmOf(SIZES.sailGap.max)], guys: [0, 2], pennies: [0, 6] };
-  const FLAGS = ['wobbly', 'rubbing', 'bigWheels', 'square'];
+  const FLAGS = ['wobbly', 'rubbing', 'bigWheels', 'square', 'cupped'];
 
   // Turn a design into the numbers the physics model needs
   function analyse(d) {
@@ -579,8 +581,7 @@
     el.appendChild(h('p', { text: 'In the simulator, your car starts ' + kid.dist(START_X) + ' in front of the two fans. The hallway is ' +
       hallLenText() + ' long and ' + hallWideText() + ' wide, just like ours.' }));
     // PREDICT FIRST: the student commits to a guess; ▶ Run stays off until they pick one
-    // ("prediction" is taught in a Word-to-know box above Module 1's first predict card: here it is only a reminder)
-    el.appendChild(h('p', { text: '🔮 Remember: make your prediction first. Then test it.' }));
+    // ("prediction" is taught in a Word-to-know box above Module 1's first predict card; the job box above says "Answer the Predict first question")
     const q = guessQuestion();
     const guess = api.ui.predict(el, { question: q.question, choices: q.choices, hint: q.hint, judge: guessJudge });
     const best = h('div', { class: 'sl-note sl-note-good', 'aria-live': 'polite' });
@@ -615,7 +616,7 @@
       }
     });
     el.appendChild(best);
-    el.appendChild(h('p', { text: '💡 Go back, change one thing, and test again. Which change helps the most?' }));
+    el.appendChild(h('p', { text: '💡 Which change helps the most?' }));
     el.appendChild(h('p', { class: 'sl-muted', text: 'Every car that reaches the far end ties. So the simulator also says how far it would roll in a longer hall. Use that number to compare.' }));
     showLast();
     // a design that arrives from another device mid-step is a different car: the guess was about the old one
@@ -634,7 +635,6 @@
     }
     useDesignFor(me);
     const life = lifetime(api);
-    el.appendChild(h('p', { html: 'After each real run, measure from the start line to where your car <strong>stopped</strong>. Then log it here.' }));
     el.appendChild(h('p', { text: 'Did your car reach the far end, about ' + hallLenText() + ' away? Then measure to the end. Every car that gets there ties.' }));
     el.appendChild(h('p', { text: 'Your teacher and your class will see your best run on the class board.' }));
     const designLine = h('div', { class: 'sl-note sl-note-tip' });
@@ -653,7 +653,7 @@
     const form = h('div', { class: 'sl-row' });
     el.appendChild(form);
     const distIn = h('input', { type: 'number', min: '0', step: 'any', inputmode: 'decimal', id: 'sl-run-dist', 'aria-describedby': 'sl-run-hint', placeholder: 'e.g. 52 ft', style: 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-size:1rem' });
-    form.appendChild(h('div', { class: 'sl-ctrl' }, [h('label', { for: 'sl-run-dist', class: 'sl-ctrl-lbl', text: 'How far your real car went, in feet' }), distIn,
+    form.appendChild(h('div', { class: 'sl-ctrl' }, [h('label', { for: 'sl-run-dist', class: 'sl-ctrl-lbl', text: 'Real distance, in feet' }), distIn,
       h('p', { id: 'sl-run-hint', class: 'sl-muted', style: 'margin:6px 0 0;font-size:0.85rem;line-height:1.45', text: 'Your tape shows feet and inches? Type 13 ft 6 in as 13.5.' })]));
     let confirmKey = null;          // a surprising distance needs a second tap on Log
     distIn.addEventListener('input', function () { confirmKey = null; });
@@ -925,12 +925,21 @@
     blurb: 'Design your own car. Test it in the simulator. Then race it in the real hallway!',
     noQuiz: true,
     steps: [
-      { title: 'Design your car', html: '<p>Now use everything you learned! Pick the parts for your car below.</p>' +
+      { title: 'Design your car',
+        job: 'Design a car that will not tip over or get stuck.',
+        todo: ['Pick parts in “Frame & wheels”.', 'Pick parts in “Sail & balance”.', 'Check that “Tipping” says “Safe”.', 'Fix any red or yellow warning.'],
+        html: '<p>Now use everything you learned!</p>' +
           '<p>Every choice changes the <span class="key">mass</span>, the wind’s <span class="key">push</span>, the <span class="key">friction</span> and the <span class="key">balance</span>.</p>' +
           '<p>Your design is saved with your account. You can pick it up on any Chromebook or phone.</p>', render: renderDesign },
-      { title: 'Test it in the simulator', render: renderPredict },
-      { title: 'Race day: log your real runs', render: renderRace },
-      { title: 'Class board', render: renderBoard }
+      { title: 'Test it in the simulator', job: 'Guess how far your car will go. Then run it.',
+        todo: ['Answer the “Predict first” question.', 'Press ▶ Run and watch your car.', 'Read the 🔮 prediction under the picture.', 'Press “← Back”. Change one thing. Test again.'],
+        render: renderPredict },
+      { title: 'Race day: log your real runs', job: 'Race your real car. Log how far it goes.',
+        todo: ['Run your real car down the hall.', 'Measure from the start to where it stopped.', 'Type your feet in “Real distance, in feet”.', 'Press “🏁 Log this run”.'],
+        render: renderRace },
+      { title: 'Class board', job: 'Find your run on the class board.',
+        todo: ['Tap your class name above the table.', 'Find your name in the “Name” column.', 'Check your “Best real run”.', 'Read the “Car design” of the top runs.'],
+        render: renderBoard }
     ],
     _analyse: analyse,
     _studio: { clean: clean, predictionText: predictionText, forecast: forecast, rankRows: rankRows, LONG_HALL_M: LONG_HALL_M,

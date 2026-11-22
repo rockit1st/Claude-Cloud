@@ -115,7 +115,10 @@
           '<p><strong>Secret #1: a bigger sail catches more air.</strong> The size of the sail’s face is its <span class="key">area</span>. ' +
           'For a rectangle, area = width × height. A sail 4 inches by 4 inches has an area of 16 square inches.</p>' +
           '<p>We check the push at the start line, about ' + nb(KID.dist(START)) + ' from the fans.</p>',
-        challenge: 'Make a sail that is not a square. Give it the same push as the ' + STD_TXT + ' sail. Hint: it needs the same area, ' + KID.areaIn(STD_IN * STD_IN) + '.',
+        // the challenge says what draw() checks: area = the 8 × 8 in sail's area (so the same push) and width ≠ height
+        challenge: 'Match an ' + STD_TXT + ' sail’s push with a non-square sail.',
+        todo: ['Answer the Predict first question.', 'Slide Sail width and Sail height.', 'Make the green arrow match the purple arrow.',
+               'Keep the width and height different.'],
         render: function (el, api) {
           const K = api.kid;
           afterFirst(el, api.ui.word(el, 'thrust', 'the push that moves your car forward. For a sail car, thrust is the wind’s push on the sail.'));
@@ -199,8 +202,10 @@
         html:
           '<p><strong>Secret #2: the wind fades.</strong> The moving air spreads out as it goes down the hall. ' +
           'So it slows down the farther it gets from the fans.</p>' +
-          '<p>Slide the yellow line down our ' + nb(HALL_TXT) + ' hall. Watch the wind speed and the push on an ' + nb(STD_TXT) + ' sail.</p>',
-        challenge: 'Find the spot where the wind is half as fast as at the fans (50%). Then look at the push.',
+          '<p>The yellow line is a spot in our ' + nb(HALL_TXT) + ' hall. The bars show the wind speed there and the push on an ' + nb(STD_TXT) + ' sail.</p>',
+        // the challenge says what draw() checks: the wind speed the readout shows is exactly 50%
+        challenge: 'Find where the wind is 50% as fast as at the fans.',
+        todo: ['Drag the Distance from the fans slider.', 'Watch the yellow wind label.', 'Stop when it says wind 50%.', 'Look at the Push on the sail bar.'],
         render: function (el, api) {
           const K = api.kid;
           const s = api.svg('svg', { role: 'img', 'aria-label': 'The hallway seen from the side, with the wind from the two fans getting weaker down the hall, and bars for the wind speed and the push on the sail' }, el);
@@ -278,7 +283,9 @@
           'It holds the air, so less air slides off the edges. A cupped sail gets a little more push than a flat one.</p>' +
           '<p><strong>Angle:</strong> A sail turned away from the fans catches less wind. The fans see a thinner sail, so less air hits it. ' +
           'And that air hits at a slant, so it slides off.</p>',
-        challenge: 'Turn the FLAT sail until it gets half the push it gets at 0°. Its arrow will end at the “half” mark.',
+        // the challenge says what draw() checks: a FLAT sail whose push is half of the flat sail's push at 0°
+        challenge: 'Turn the flat sail to half the push it gets at 0°.',
+        todo: ['Keep Sail shape on Flat.', 'Slide Angle away from the fans.', 'Stop when the green arrow ends at “half”.'],
         render: function (el, api) {
           const K = api.kid;
           const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail seen from above, turned at an angle to the wind from the two fans' }, el);
@@ -351,11 +358,14 @@
       {
         title: 'Hallway challenge: catch the wind',
         html:
-          '<p>Time to put it all together! Pick your sail’s size and shape. Then send the car down the hall. The sail faces straight at the fans.</p>' +
+          '<p>Time to put it all together! The sail faces straight at the fans.</p>' +
           '<p>A bigger sail catches more wind. But watch out! The wind pushes high on the sail, above the wheels. ' +
           'Too much push up there can flip the car onto its nose.</p>' +
-          '<p>Your goal is ' + nb(GOAL_TXT) + '. That’s twice as far as last year’s paper sleds usually went (about 25\u00a0ft).</p>',
-        challenge: 'Roll at least ' + GOAL_TXT + ' without tipping over.',
+          '<p>' + nb(GOAL_TXT) + ' is twice as far as last year’s paper sleds usually went (about 25\u00a0ft).</p>',
+        // the challenge says what onResult checks: no tip-over and at least GOAL_FT shown feet
+        challenge: 'Make the car roll at least ' + GOAL_TXT + ' without tipping over.',
+        todo: ['Pick a Sail size (square) and Sail shape.', 'Answer the Predict first question.', 'Press ▶ Run and watch the car.',
+               'Change the sail until it rolls ' + GOAL_TXT + '.'],
         render: function (el, api) {
           const K = api.kid;
           const row = api.h('div', { class: 'sl-row' });
@@ -440,10 +450,12 @@
       },
       {
         title: 'Real build: make a sail that catches the wind',
+        job: 'Build your real sail. Do the 3 hall tests.',
+        todo: ['Make an ' + STD_TXT + ' paper sail.', 'Tape the sail to a mast.', 'Do the 3 tests in the hall.', 'Lower the sail if the back wheels lift.'],
         html:
           '<p><strong>Build tips:</strong></p>' +
-          '<ul><li><strong>Paper or cardstock?</strong> Paper is light but floppy. It bends back and spills air. ' +
-          'Cardstock keeps its shape, but it is 2 to 3 times as heavy. A good trick: tape straws or pipe cleaners along the edges of a paper sail.</li>' +
+          '<ul><li><strong>Paper or cardstock?</strong> Paper is light but floppy, so it spills air. ' +
+          'Cardstock keeps its shape, but it is 2 to 3 times as heavy. A good trick: tape straws or pipe cleaners along a paper sail’s edges.</li>' +
           '<li><strong>Size:</strong> About ' + nb(KID.lenIn(STD_IN)) + ' on each side is a good start. It fits on one sheet of printer paper (' + nb(KID.by(8.5, 11)) + '). ' +
           'A bigger sail can tip the car. Modules 5 and 6 help with that.</li>' +
           '<li><strong>Make it cupped:</strong> Gently roll cardstock around a water bottle so it curves. The hollow side faces the fans. Keep the curve gentle.</li>' +

@@ -1064,6 +1064,16 @@
 
   function cleanup() { state.cleanups.forEach(function (fn) { try { fn(); } catch (e) {} }); state.cleanups = []; }
 
+  // A new step starts with the module's own top (back button, title, the job box) just under the fixed top bar. Scrolling
+  // to the very top of the page would show the banner first and push "Your challenge" below the fold on a Chromebook.
+  function scrollToStep() {
+    let top = 0;
+    try {
+      const mod = $('sl-module'), bar = document.querySelector('.topnav');
+      top = Math.max(0, mod.getBoundingClientRect().top + (window.pageYOffset || 0) - ((bar ? bar.offsetHeight : 0) + 8));
+    } catch (e) {}
+    window.scrollTo({ top: top, behavior: 'smooth' });
+  }
   function openModule(i, stepIdx) {
     cleanup();
     state.current = i; state.step = stepIdx || 0;
@@ -1071,7 +1081,7 @@
     $('sl-teacher').style.display = 'none';
     $('sl-module').style.display = 'block';
     renderStep();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToStep();
   }
   function closeModule() {
     cleanup();
@@ -1146,12 +1156,11 @@
     if (st.challenge && state.doneSteps[key]) { doneMsg.textContent = '✅ Challenge complete!'; doneMsg.classList.add('show'); jobBox.classList.add('done'); }
     body.appendChild(doneMsg);
     body.appendChild(nextHint);
-    if (state.step > 0) nav.appendChild(h('button', { type: 'button', class: 'sl-btn', text: '← Back', onclick: function () { state.step--; renderStep(); } }));
+    if (state.step > 0) nav.appendChild(h('button', { type: 'button', class: 'sl-btn', text: '← Back', onclick: function () { state.step--; renderStep(); scrollToStep(); } }));
     nav.appendChild(nextBtn);
     nextBtn.addEventListener('click', function () {
       if (nextBtn.disabled) return;
-      if (state.step < steps.length - 1 || !m.noQuiz) { state.step++; renderStep(); } else closeModule();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (state.step < steps.length - 1 || !m.noQuiz) { state.step++; renderStep(); scrollToStep(); } else { closeModule(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     });
     refreshNext();
   }

@@ -273,7 +273,8 @@
           '<p>Does mass change how fast a push gets something going? Let’s race two cars to find out. ' +
           'Pretend there is no friction. Each car gets a steady push. They race to a line ' + RACE_TXT + ' away.</p>' +
           '<p>The light car is ' + RACE.lightG + ' g. Your car is ' + MASS_S.start + ' g. Each red block on a car is 25 g.</p>',
-        challenge: 'Make YOUR car ' + TIE_MIN_G + ' g or heavier. Then find the push that makes it TIE the light car.',
+        challenge: 'Make YOUR car tie the light car at ' + TIE_MIN_G + ' g or more.',
+        todo: ['Answer the “Predict first” question.', 'Press ▶ Race to unlock the sliders.', 'Slide “Push on YOUR car”. Press ▶ Race.', 'Get “A tie!” at ' + TIE_MIN_G + ' g or more.'],
         render: function (el, api) {
           wordFirst(api, el, 'mass', 'how much stuff is in an object. We measure mass in grams (g). A nickel is about 5 g.');
           const s = api.svg('svg', { role: 'img', 'aria-label': 'A race to a line ' + RACE.ft + ' feet away between a light car and your car' }, el);
@@ -363,7 +364,9 @@
           'This is not the grip from Module 4. The race had no friction at all.</p>' +
           '<p>Inertia also makes a heavy car <strong>harder to stop</strong>. Think about catching a rolling bowling ball. Now think about a soccer ball!</p>' +
           '<p>Here is the catch. A heavy car presses down harder on its wheels. So its wheels and axles rub more. ' +
-          '<strong>More mass means more friction.</strong> Move the slider and watch.</p>',
+          '<strong>More mass means more friction.</strong></p>',
+        job: 'Move the slider to see what more mass does.',
+        todo: ['Slide “Car mass” up to ' + MASS2.max + ' g.', 'Watch the friction arrow grow.', 'Slide “Car mass” down to ' + MASS2.min + ' g.', 'Read the red warning.'],
         render: function (el, api) {
           wordFirst(api, el, 'inertia', 'objects keep doing what they are doing. A still car stays still. A rolling car keeps rolling. More mass means more inertia.');
           const s = api.svg('svg', { role: 'img', 'aria-label': 'Forces on the car at the start line, and how quickly it speeds up' }, el);
@@ -426,9 +429,10 @@
         html:
           '<p>Engineers keep a <strong>mass budget</strong>. It lists every part and its mass. Then they add them all up. ' +
           'It shows where the grams come from before you build.</p>' +
-          '<p>Here is a first-draft car. The masses are close, but your parts may be a little different. Use − and + to change the parts.</p>' +
-          '<p>Careful! The fans push hard at the start line, so a car can be <em>too</em> light. The checklist tells you if the car would tip over.</p>',
-        challenge: 'Trim this ' + tenths(START_TENTHS) + ' car to ' + tenths(BUDGET_GOAL) + ' or less. Keep every checklist item ✓. The simulator must say it won’t tip over.',
+          '<p>Here is a first-draft car. The masses are close, but your parts may be a little different.</p>' +
+          '<p>Careful! The fans push hard at the start line, so a car can be <em>too</em> light. The simulator tells you if the car would tip over.</p>',
+        challenge: 'Make a complete car of ' + tenths(BUDGET_GOAL) + ' or less that won’t tip.',
+        todo: ['Press − and + to change the parts.', 'Keep every checklist line a green ✓.', 'Get the “Total” to ' + tenths(BUDGET_GOAL) + ' or less.', 'Check the simulator says it won’t tip.'],
         render: function (el, api) {
           const parts = PARTS.map(function (p) { return Object.assign({}, p); });
           const CELL = 'padding:6px 4px;white-space:normal';
@@ -499,11 +503,11 @@
         // only a neutral setup above the "Predict first" card: why light cars roll farther, and why too light tips,
         // come AFTER the runs (in the prediction's answer and the done message)
         html:
-          '<p>Your car has an ' + SAIL_TXT + ' sail and OK wheels. This time, you change only its <strong>mass</strong>.</p>' +
-          '<p>Start at ' + MASS.start + ' g. Run the car. Then make it lighter and run it again.</p>' +
-          (GOAL_IS_END ? '' : '<p>The goal is ' + GOAL_TXT + '. That is a little short of the end of the hall.</p>'),
-        challenge: GOAL_IS_END ? 'Find a mass that rolls all the way to the end of the ' + HALL_TXT + ' hallway without tipping over.'
-                               : 'Find a mass that rolls at least ' + GOAL_TXT + ' without tipping over.',
+          '<p>Your car has an ' + SAIL_TXT + ' sail and OK wheels. This time, you change only its <strong>mass</strong>.</p>',
+        // (no word about tipping up here: the "Predict first" card below it asks what happens when the car gets very light)
+        challenge: GOAL_IS_END ? 'Pick a mass so the car reaches the end of the hall.'
+                               : 'Pick a mass so the car rolls at least ' + GOAL_TXT + '.',
+        todo: ['Answer the “Predict first” question.', 'Press ▶ Run at ' + MASS.start + ' g.', 'Lower “Total mass of the car”. Run again.', 'Get a green dot to the goal line.'],
         render: function (el, api) {
           const runs = [];                                  // every run on this visit (the chart shows the last 30)
           const pred = api.ui.predict(el, { question: HALL_PREDICT.question, choices: HALL_PREDICT.choices,
@@ -569,8 +573,9 @@
       },
       {
         title: 'Real build: light, but not too light',
+        job: 'Make your real car lighter, but not too light.',
+        todo: ['Weigh your car on a kitchen scale.', 'Trim glue blobs and extra stick ends.', 'Do the 3 hallway tests below.', 'Add weight at the back if it tips.'],
         html:
-          '<p>Here is how to use mass to help your real car.</p>' +
           '<ul><li><strong>Weigh it.</strong> Use a kitchen scale that reads grams. Weigh the parts before you glue them. No scale? Make a mass budget like the one in Step 3.</li>' +
           '<li><strong>Glue smart.</strong> A small dot of hot glue holds a joint fine. Big blobs just add grams.</li>' +
           '<li><strong>Trim the extras.</strong> Cut off stick ends that hang past the frame. Trim long skewer ends, but leave a little so the wheels stay on.</li>' +

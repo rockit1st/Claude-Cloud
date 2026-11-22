@@ -141,6 +141,9 @@
     steps: [
       {
         title: 'Forces are pushes and pulls',
+        job: 'Find the four forces on the sail car.',
+        todo: ['Look at the arrows on the car.', 'Find THRUST, FRICTION, GRAVITY and FLOOR.', 'Find the short dashed DRAG arrow.',
+               'Remember: a longer arrow means a bigger force.'],
         html:
           '<p>Scientists measure force in units called <strong>newtons</strong>. ' +
           'In this lab we compare forces with arrows: <strong>a longer arrow means a bigger force</strong>.</p>' +
@@ -237,7 +240,9 @@
           '<p>Forces that point opposite ways work against each other. It is like a tug of war!</p>' +
           '<p><strong>Balanced:</strong> the motion stays the same. A still car stays still. A rolling car keeps the same speed.</p>' +
           '<p><strong>Unbalanced:</strong> one force is bigger, so it wins. The car speeds up or slows down.</p>',
-        challenge: 'Make the push arrow and the friction arrow the same length. Keep the push slider at least halfway across.',
+        // the challenge says what balanceDone() checks: equal arrows (p === b), both sliders at least halfway (p >= HALF)
+        challenge: 'Make both arrows the same length, with sliders halfway or more.',
+        todo: ['Slide Friction (pushes back) to the right.', 'Watch the friction arrow get longer.', 'Stop when both arrows are the same length.'],
         render: function (el, api) {
           wordFirst(api, el, 'balanced forces', 'forces that are the same size but push opposite ways. They cancel out. ' +
             'If one force is bigger, the forces are <strong>unbalanced</strong>.');
@@ -315,9 +320,11 @@
           '<p>This hallway is ' + kid.dist(HALL.length) + ' long, like ours. Two box fans sit side by side at the start.</p>' +
           '<p>The car starts rolling only if the wind’s push beats friction. The wind fades as it spreads down the hall. ' +
           'When friction wins, the car slows down and stops.</p>' +
-          '<p><strong>How to test:</strong> pick a fan speed and wheels. Make a prediction. Then press ▶ Run. ' +
-          'Your first test is set up: the <strong>Low</strong> fan and <strong>Jammed</strong> wheels.</p>',
-        challenge: 'Change the fan and the wheels. Make the car roll at least ' + kid.feet(GOAL_FT) + '.',
+          '<p>Your first test is set up: the <strong>Low</strong> fan and <strong>Jammed</strong> wheels.</p>',
+        // the challenge says what onResult checks: the run went at least GOAL_FT (reachesGoal); the start (Low + Jammed) never moves
+        challenge: 'Make the car roll at least ' + kid.feet(GOAL_FT) + '.',
+        todo: ['Pick a Fan speed and Wheels.', 'Answer the Predict first question.', 'Press ▶ Run and watch the car.',
+               'Try new settings until it rolls ' + kid.feet(GOAL_FT) + '.'],
         render: function (el, api) {
           // the lab's first "Predict first" card: the word is taught at the top of the step, before the step text
           // uses it ("Make a prediction"), like steps 1 and 2 (the Studio only reminds)
@@ -364,6 +371,8 @@
       },
       {
         title: 'Real build: test your forces',
+        job: 'Test your real car. Do the 3 tests.',
+        todo: ['Do the Push test on the hallway floor.', 'Do the Blow test on the sail.', 'Do the Hold test by the fans.'],
         html:
           '<p>You can feel these forces with your real car before race day.</p>' +
           '<ol><li><strong>Push test (friction):</strong> give the car a gentle push on the hallway floor. Let go. ' +

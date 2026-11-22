@@ -124,9 +124,11 @@
         title: 'Drag: the air pushes back',
         html:
           '<p>Think of your hand out the window of a moving car. The faster the car goes, the harder the air pushes your hand back.</p>' +
-          '<p>Here the fans are <strong>off</strong>. Your car rolls through still air. Change its speed. Watch the red drag arrow. ' +
+          '<p>Here the fans are <strong>off</strong>. Your car rolls through still air. The red arrow shows the drag now. ' +
           'The yellow arrow shows the drag at 3 ft per second, so you can compare.</p>',
-        challenge: 'Find the speed that gives 4 times the drag of 3 ft per second.',
+        // the challenge says what draw() checks: the drag is exactly 4 times the drag at 3 ft per second (both arrows to scale)
+        challenge: 'Make the red arrow 4 times as long as the yellow arrow.',
+        todo: ['Slide Car speed to the right.', 'Watch the red arrow get longer.', 'Stop at 4 times the yellow arrow.'],
         render: function (el, api) {
           const K = api.kid, REF = 3;
           afterFirst(el, api.ui.word(el, 'drag', 'the air pushing back on something that moves through it. Drag is also called air resistance.'));
@@ -181,6 +183,8 @@
       },
       {
         title: 'Front size and shape',
+        job: 'Find which car front has the most drag.',
+        todo: ['Look at the three red drag bars.', 'Pick Slim, Normal or Bulky in Front size.', 'Tap + the sail in Compare with.'],
         html:
           '<p>The front of your car matters too. A flat front slams into the air. A pointed or rounded front lets the air slide around it.</p>' +
           '<p>A bigger front hits more air. Twice the front size means about 2 times the drag.</p>' +
@@ -252,7 +256,9 @@
           '<p>A sail works the same way. It only feels how much faster the wind is than the car. ' +
           'If the wind is faster, air hits the sail from behind. It pushes the car forward.</p>' +
           '<p>Ride along with the car below. The blue streaks show the air the way the sail feels it.</p>',
-        challenge: 'Find two settings. In one, the sail feels no wind at all (with the fans on). In the other, the sail turns into a parachute (a red arrow).',
+        // the challenge says what update() checks: seenZero (fans on, car as fast as the wind) AND seenChute (car faster than the wind)
+        challenge: 'Find 2 settings: sail feels no wind (fans on), and a parachute.',
+        todo: ['Answer the Predict first question.', 'Slide Car speed up to match the wind.', 'Slide Car speed above the wind.', 'Look for the red drag arrow.'],
         render: function (el, api) {
           const K = api.kid, H = 250, FLOOR = 214, PX = 40;    // PX = screen px the animation moves for each unit of speed
           const guess = api.ui.predict(el, {
@@ -359,7 +365,10 @@
           '<p>A car speeds up near the fans. Then it rolls into weaker wind. Can it end up <strong>faster than the wind</strong>? If it does, its sail is a parachute.</p>' +
           '<p>The graph under the hallway shows speeds. The <span style="color:#7ad7ff">blue line</span> is the wind. ' +
           'The <span style="color:#f0c040">yellow line</span> is your car. Where yellow climbs above blue, the graph turns <span style="color:#ff5050">red</span>.</p>',
-        challenge: 'Make a car outrun the wind (a red zone shows on the graph). Then answer the question about the red zone.',
+        // the challenge says what the answer's onChange checks: a run that outran the wind (the red zone) AND the right answer (backward)
+        challenge: 'Find which way the air pushes the sail in the red zone.',
+        todo: ['Answer the Predict first question.', 'Pick a Car weight and Wheels.', 'Press ▶ Run and find a red zone.',
+               'Answer the question under the graph.'],
         render: function (el, api) {
           const K = api.kid;
           // 50 g is the lightest choice on purpose: a car under 40 g with this sail tips forward in the two fans' strong start push
@@ -518,6 +527,8 @@
       },
       {
         title: 'Real build: beat the drag',
+        job: 'Tidy up your real car. Do the 3 tests for drag.',
+        todo: ['Tidy up: tape flaps and trim axle ends.', 'Keep your sail big and tight.', 'Do the Ramp test with the fans off.', 'Do the Wind strip and Flutter check.'],
         html:
           '<p>Here’s the truth about drag on <strong>your</strong> car.</p>' +
           '<ul><li>Near the fans, the wind is faster than your car. So the air pushes it forward. Drag only slows your car where the car is faster than the wind.</li>' +

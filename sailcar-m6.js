@@ -11,6 +11,9 @@
 //   the car flips if  sail push × (sail height − balance-point height)  >  weight × (balance point to front axle)
 // and a front axle turned off square makes simulate() steer the car round a circle (radius = wheelbase ÷ tan(angle)).
 // Every number a student reads (grams, inches, feet) is worked out from SailLab.physics and simulate() when the page loads.
+// CHALLENGE FIRST: every step opens with a box right under its title (the core draws it): step.challenge (one short sentence, must be
+// finished before Next) or step.job (steps with no challenge), plus step.todo (2-4 short numbered lines, using the control names exactly as
+// they are on screen). The lesson text under it only explains. The challenge sentence says exactly what api.done() checks.
 // UNITS: students set and read INCHES (sliders, chips, labels) and FEET (distances). The physics stays metric inside:
 // makeCar() turns the inches into centimetres (kid.inToCm, × 2.54) before anything reaches simulate(). The module's own
 // drawing sizes (px per cm) are internal and never shown.
@@ -186,6 +189,7 @@
     return m;
   })();
   const GOAL3_TXT = GOAL_IS_END ? 'the end of the ' + kid.dist(HALL.length) + ' hall' : kid.dist(HALL_GOAL);
+  const GOAL3_SHORT = GOAL_IS_END ? 'to the end of the hall' : kid.dist(HALL_GOAL);      // the challenge sentence: "Get the big-sail car to the end of the hall without flipping."
 
   // ── Step 4: square axles (predict first) ────────────────────────────────
   // The goal: at least 40 ft without hitting a wall, checked on the distance as the student sees it (kid.ft rounds).
@@ -271,15 +275,15 @@
         html:
           '<p>Every object has a balance point. Scientists call it the <strong>center of gravity</strong>.</p>' +
           '<p>The balance point is always closer to the heavy parts. Where it sits decides if your car stays on its wheels. ' +
-          'You will see how in the next step.</p>' +
-          '<p>Try it! Balance this car on your finger. If one end drops, slide your finger toward that end.</p>',
-        challenge: 'Tape 2 or more nickels on the back of the car. Then slide your finger until the car balances.',
+          'You will see how in the next step.</p>',
+        challenge: 'Balance the car on your finger with 2 or more nickels.',
+        todo: ['Slide “Nickels at the back” to 2.', 'Slide “Your finger, behind the front axle”.', 'Move your finger toward the end that drops.', 'Stop when you see “Balanced!”.'],
         render: function (el, api) {
           wordFirst(api, el, 'balance point', 'the spot where an object balances on your finger. It acts as if all its weight were right there.');
           const s = newBoard(api, el, 'A sail car resting on a fingertip');
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const coins = api.ui.slider(row, { label: 'Nickels taped over the back axle', min: 0, max: 4, step: 1, value: FINGER_START.n, format: nickels, onInput: draw });
+          const coins = api.ui.slider(row, { label: 'Nickels at the back', min: 0, max: 4, step: 1, value: FINGER_START.n, format: nickels, onInput: draw });
           const finger = api.ui.slider(row, { label: 'Your finger, behind the front axle', min: FINGER.min, max: FINGER.max, step: FINGER.step, value: FINGER_START.f, inches: true, onInput: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
@@ -317,6 +321,8 @@
         title: 'Will it flip?',
         html:
           '<p>Let’s test a car at the start line. It sits close to the two fans, where the wind is strongest.</p>',
+        job: 'Test the car. Then find what keeps a car from flipping.',
+        todo: ['Answer the “Predict first” question.', 'Press “▶ Turn on the fans”.', 'Move the 3 sliders, one at a time.', 'Find which changes shrink the red bar.'],
         render: function (el, api) {
           wordFirst(api, el, 'stable', 'hard to tip over. A stable car stays on all four wheels.');
           const pr = api.ui.predict(el, { question: FLIP_PREDICT.question, choices: FLIP_PREDICT.choices });
@@ -467,7 +473,7 @@
           paint(); explain();
           // the sliders' "try this" appears with the sliders (after the first test), like "How tipping works"
           const tryIt = api.ui.note(el, 'tip', '💡 <strong>Try this:</strong> Set the gap under the sail to 0 in. Slide the balance point back. Make the sail smaller. ' +
-            'Which changes shrink the red bar? Which one grows the blue bar? On a real car, weight at the back moves the balance point back. So does a longer chassis.');
+            'Which one grows the blue bar? On a real car, weight at the back moves the balance point back. So does a longer chassis.');
           tryIt.hidden = true;
         }
       },
@@ -475,20 +481,19 @@
         title: 'Hallway challenge: tame the big sail',
         html:
           '<p>This car has a big <strong>' + BIG_TXT + '</strong> sail on a tall mast. A big sail catches lots of wind. ' +
-          'Press ▶ Run and watch the start line!</p>' +
-          '<p>Make the car <strong>stable</strong>, and keep the big sail. You can mount the sail lower. You can use a longer chassis. ' +
-          'You can tape nickels over the back axle.</p>' +
-          '<p>' + (ALL_THREE ? 'This sail needs <strong>all three</strong> fixes.' : 'This sail needs <strong>more than one</strong> fix.') +
+          'At the start line, the wind can flip it!</p>' +
+          '<p>To make the car <strong>stable</strong>, ' + (ALL_THREE ? 'this sail needs <strong>all three</strong> fixes.' : 'this sail needs <strong>more than one</strong> fix.') +
           ' Watch the tug-of-war bars as you try each one. But add only the weight you need. Extra weight means extra friction.</p>',
-        challenge: 'Keep the ' + BIG_TXT + ' sail. Get the car to ' + GOAL3_TXT + ' without flipping.',
+        challenge: 'Get the big-sail car ' + GOAL3_SHORT + ' without flipping.',
+        todo: ['Keep “Sail size” at ' + BIG_TXT + '.', 'Pick a lower “Gap under the sail”.', 'Pick a longer “Chassis length”.', 'Add “Nickels at the back”. Press ▶ Run.'],
         render: function (el, api) {
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
           let sim = null;
-          const side = api.ui.choice(row, { label: 'Sail size (square)', value: BIG_START.side, options: SIDES.map(function (v) { return { value: v, label: kid.by(v, v) }; }), onChange: info });
-          const gap = api.ui.choice(row, { label: 'Gap under the sail (mast height)', value: BIG_START.gap, options: [{ value: GAPS[0], label: 'None (low)' }, { value: GAPS[1], label: kid.lenIn(GAPS[1]) }, { value: GAPS[2], label: kid.lenIn(GAPS[2]) + ' (tall)' }], onChange: info });
-          const wb = api.ui.choice(row, { label: 'Chassis: front axle to back axle', value: BIG_START.wb, options: [{ value: BASES[0], label: 'Short ' + kid.lenIn(BASES[0]) }, { value: BASES[1], label: 'Normal ' + kid.lenIn(BASES[1]) }, { value: BASES[2], label: 'Long ' + kid.lenIn(BASES[2]) }], onChange: info });
-          const coins = api.ui.slider(row, { label: 'Nickels taped over the back axle', min: 0, max: 4, step: 1, value: BIG_START.n, format: nickels, onInput: info });
+          const side = api.ui.choice(row, { label: 'Sail size', value: BIG_START.side, options: SIDES.map(function (v) { return { value: v, label: kid.by(v, v) }; }), onChange: info });
+          const gap = api.ui.choice(row, { label: 'Gap under the sail', value: BIG_START.gap, options: [{ value: GAPS[0], label: 'None (low)' }, { value: GAPS[1], label: kid.lenIn(GAPS[1]) }, { value: GAPS[2], label: kid.lenIn(GAPS[2]) + ' (tall)' }], onChange: info });
+          const wb = api.ui.choice(row, { label: 'Chassis length', value: BIG_START.wb, options: [{ value: BASES[0], label: 'Short ' + kid.lenIn(BASES[0]) }, { value: BASES[1], label: 'Normal ' + kid.lenIn(BASES[1]) }, { value: BASES[2], label: 'Long ' + kid.lenIn(BASES[2]) }], onChange: info });
+          const coins = api.ui.slider(row, { label: 'Nickels at the back', min: 0, max: 4, step: 1, value: BIG_START.n, format: nickels, onInput: info });
           const bs = newBoard(api, el, 'The tug-of-war for this car at the start line: tipping against holding down');
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
@@ -551,7 +556,8 @@
           '<p>Here is your car from above. Its front axle is turned just ' + deg(START_DEG) + ' off square. Can you even see it?</p>' +
           '<p>Our hall is ' + kid.dist(HALL_W) + ' wide. Your car starts in the middle. So it has about ' + kid.dist(ROOM) + ' of room on each side.</p>' +
           '<p>The map below shows the whole ' + kid.dist(HALL.length) + ' hall from above. It is squeezed to fit. So the hall looks shorter and wider than it really is.</p>',
-        challenge: 'Make the car roll at least ' + kid.dist(GOAL_FT / kid.FT_PER_M) + ' without hitting a wall. Change the front axle, then press ▶ Roll to test.',
+        challenge: 'Make the car roll at least ' + kid.dist(GOAL_FT / kid.FT_PER_M) + ' without hitting a wall.',
+        todo: ['Answer the “Predict first” question.', 'Press ▶ Roll and watch the car.', 'Slide “Front axle turned off square” to 0°.', 'Answer again. Press ▶ Roll.'],
         render: function (el, api) {
           wordFirst(api, el, 'square axle', 'an axle that sits straight across the car. It makes a perfect corner (90°), like the corner of a sheet of paper.');
           const top = newBoard(api, el, 'Your car seen from above, with its two axles');
@@ -696,7 +702,7 @@
       {
         title: 'Real build: stable and straight',
         html:
-          '<p>Use these tricks on your real car:</p>' +
+          '<p>Five tricks for your real car:</p>' +
           '<ul><li><strong>Mount the sail low.</strong> Tape the bottom of the sail close to the chassis. Leave no big gap under it.</li>' +
           '<li><strong>Brace a tall mast.</strong> Twist pipe cleaners from the top of the mast to the back corners. They stop the mast from bending forward.</li>' +
           '<li><strong>Make the chassis longer.</strong> Hot-glue two popsicle sticks end to end, overlapping about 1 inch. ' +
@@ -708,8 +714,10 @@
           '<li><strong>Flip test:</strong> set the car at the start line. Turn both fans on high. Watch from the side, at floor level. ' +
           'Do the back wheels lift? Then lower the sail, use a longer chassis or add a coin at the back.</li>' +
           '<li><strong>Straight test:</strong> stick a long strip of tape on the floor. Give the car a gentle push along it. ' +
-          'Does it curve away? Then an axle is crooked, or a wheel rubs. Fix it and test again.</li>' +
-          '<li><strong>Race day:</strong> start in the middle of the hall, in front of both fans. Point the car straight down the hall.</li></ol>',
+          'Does it curve away? Then an axle is crooked, or a wheel rubs. Fix it and test again.</li></ol>' +
+          '<p><strong>Race day:</strong> start in the middle of the hall, in front of both fans. Point the car straight down the hall.</p>',
+        job: 'Build your real car. Then do the 3 tests.',
+        todo: ['Use the 5 tricks below on your car.', 'Do the finger test. Mark the balance point.', 'Do the flip test with both fans on.', 'Do the straight test along a tape line.'],
         render: function (el, api) {
           api.ui.note(el, 'build', '🛠️ <strong>Your materials:</strong> popsicle sticks, straws, paper and cardstock. Also pipe cleaners, plastic wheels, skewers or dowels, tape and hot glue. ' +
             'Add a few coins for weight. A nickel is 5 g. <strong>Change one thing at a time</strong>, then test again. That way you know which fix worked.');

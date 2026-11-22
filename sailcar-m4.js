@@ -325,7 +325,8 @@
           '<li><strong>The wheels.</strong> With wheels that spin freely, friction is ' + SMOOTH_VS_OK + '. With rubbing wheels, it is ' + RUB_VS_OK + '.</li></ul>' +
           '<p>The starting car’s friction is tiny. It is ' + FR_VS_WEIGHT + '! ' +
           'But far down the hall, the wind is weak too. ' + kid.feet(FAR_FT) + ' from the fans, its push is only ' + FAR_VS_FR + '.</p>',
-        challenge: 'Build a car that weighs at least 100 g. It must have less friction than the starting car (70 g, OK wheels).',
+        challenge: 'Get less friction than the starting car at 100 g or more.',
+        todo: ['Slide “How heavy the car is” to 100.', 'Try each choice under “Wheels”.', 'Make “your car’s friction” the shorter arrow.'],
         render: function (el, api) {
           wordFirst(api, el, 'friction', 'a force that rubs against motion and slows things down.');
           const s = api.svg('svg', { role: 'img', 'aria-label': 'A sail car with an arrow showing its weight pressing down. A heavier car gets a longer arrow.' }, el);
@@ -380,7 +381,8 @@
           '<p>A sled <strong>slides</strong>. Its whole bottom scrapes along the floor. Wheels <strong>roll</strong> instead. ' +
           'Give a sled and a car the same weight. The sled’s friction is ' + SLED_VS_OK + '.</p>' +
           '<p>Race our model sled against the 70 g lab car. The sled weighs only 20 g. Its low, tent-shaped sail keeps it from tipping over.</p>',
-        challenge: 'Pick wheels so the car rolls at least twice as far as the sled.',
+        challenge: 'Make the car go at least twice as far as the sled.',
+        todo: ['Pick a choice under “The car’s wheels”.', 'Answer the “Predict first” question.', 'Press ▶ Race!', 'Try new wheels until it’s twice as far.'],
         render: function (el, api) {
           const s = api.svg('svg', { role: 'img', 'aria-label': 'Two lanes of the ' + HALL_TXT + ' hallway in front of the same two fans: last year’s sled and this year’s wheeled car race' }, el);
           const row = api.h('div', { class: 'sl-row' });
@@ -504,9 +506,9 @@
           '<p>Wheels work the same way. Parts that sit still grip each other a little more. ' +
           'So a still car needs ' + kid.compare(ST, FR) + ' push to <strong>start</strong> than to <strong>keep</strong> rolling.</p>' +
           '<p>A car that is already rolling keeps going until friction slows it to a stop. ' +
-          'A still car is different. It needs the <strong>starting push</strong>, which is ' + ST_VS_FR + '. ' +
-          'Set the car down at different spots and compare the arrows.</p>',
-        challenge: 'Find a spot where a still car can’t start. But the same car, rolling in from the start line, rolls right past.',
+          'A still car is different. It needs the <strong>starting push</strong>, which is ' + ST_VS_FR + '.</p>',
+        challenge: 'Find a spot where only a rolling car keeps going.',
+        todo: ['Slide “Where you set the car down”.', 'Read the message under the arrows.', 'Stop when it says “keeps going past.”'],
         render: function (el, api) {
           const s = api.svg('svg', { role: 'img', 'aria-label': 'A hallway with the fans and your car, and arrows comparing the wind’s push with friction and with the starting push' }, el);
           const d = api.ui.slider(el, { label: 'Where you set the car down (from the fans):', min: 1, max: SPOT_MAX_FT, step: 1, value: 5,
@@ -571,9 +573,10 @@
           '<ul><li><strong>The bearing.</strong> A skewer spinning in a straw turns easily. A skewer in a tight hole scrapes as it turns.</li>' +
           '<li><strong>Wheel fit.</strong> A wheel that is off-center, or has a blob of glue, wobbles. It bumps and scrubs as it rolls.</li>' +
           '<li><strong>The gap.</strong> A wheel rubbing the chassis is like dragging your foot. A short piece of straw on the axle keeps a gap. It is called a <strong>spacer</strong>.</li></ul>' +
-          '<p>Build an axle below. Then do a <strong>push test</strong> on the bare chassis, with no sail yet. Give it the same gentle push each time, about ' + kid.speed(PUSH_V) + '. ' +
+          '<p>A <strong>push test</strong> shows how much friction there is. Give the bare chassis, with no sail yet, the same gentle push each time, about ' + kid.speed(PUSH_V) + '. ' +
           'Less friction means it coasts farther. A sliding sled would stop in only about ' + SLED_COAST + '!</p>',
-        challenge: 'Fix the axle. In the push test, the chassis must coast at least ' + kid.feet(PUSH_GOAL_FT) + '.',
+        challenge: 'Make the chassis coast at least ' + kid.feet(PUSH_GOAL_FT) + ' in the push test.',
+        todo: ['Change “Bearing”, “Wheel fit” and “Wheel gap”.', 'Watch how far the chassis coasts.', 'Get it past the yellow “goal” line.'],
         render: function (el, api) {
           // two words to know, in reading order: "bearing" first, then "chassis" (its first use in the lab)
           wordFirst(api, el, 'chassis', 'the flat frame of your car. The axles and the sail attach to it.');
@@ -678,11 +681,11 @@
         html:
           '<p>Here is the lab car with <strong>terrible axles</strong>. The skewers sit in tight cardstock holes. The wheels wobble and rub the chassis.</p>' +
           '<p>It rolls only about ' + kid.dist(TERRIBLE_D) + '. That is no better than last year’s sleds!</p>' +
-          '<p>First, test each fix <strong>on its own</strong>. Change just one thing and press ▶ Run. ' +
-          'Then press <strong>' + BACK_BTN + '</strong> and try another fix. That shows which fix helps most. ' +
-          'Last, put on all three fixes to reach the end!</p>',
-        challenge: GOAL_IS_END ? 'Fix the axles. Make the car roll all the way to the end of the ' + HALL_TXT + ' hallway.'
-                               : 'Fix the axles. Make the car roll at least ' + kid.feet(HALL_GOAL_FT) + '.',
+          '<p>A fair test changes <strong>just one thing</strong> at a time. That shows which fix helps most. ' +
+          'After that, put all three fixes together!</p>',
+        challenge: GOAL_IS_END ? 'Make the car roll to the end of the ' + HALL_TXT + ' hall.'
+                               : 'Make the car roll at least ' + kid.feet(HALL_GOAL_FT) + '.',
+        todo: ['Answer the “Predict first” question.', 'Change just ONE axle part. Press ▶ Run.', 'Press ' + BACK_BTN + '. Try another fix.', 'Put on all three fixes. Press ▶ Run.'],
         render: function (el, api) {
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
@@ -746,8 +749,8 @@
       },
       {
         title: 'Real build: wheels that spin and spin',
-        html:
-          '<p>Build real axles that spin and spin! Do part 1, then part 2. Tick each box when it is done.</p>',
+        job: 'Build your real axles and test your car.',
+        todo: ['Do the ' + BUILD_LIST.length + ' steps in “1. Build it”.', 'Tick each box when it is done.', 'Press “Next: part 2, test it →”.', 'Do the ' + TEST_LIST.length + ' tests in “2. Test it”.'],
         render: function (el, api) {
           // part 1 (build it) or part 2 (test it): only one checklist on screen at a time
           const which = api.ui.choice(el, { label: 'Which part?', value: BUILD_STATE.part, onChange: show,
