@@ -253,8 +253,11 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 <script>
+  // The owner: always a teacher, with no database lookup (matches isOwner() in firestore.rules).
   const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
-  let me = null, isTeacher = false;
+  // Anyone else is a teacher only while the owner has them on the Teachers list (teachers/{email}).
+  const SCHOOL_EMAIL = /^[a-z0-9][a-z0-9._+'-]*@hhh\.k12\.ny\.us$/;
+  let me = null, isTeacher = false, isOwner = false;
   let rosterUnsubs = [];
   // Join codes live in joinCodes/{CODE} = {classId, className, teacherEmail, createdAt}.
   // Students can look up one code but cannot list them; only the teacher can.
@@ -749,12 +752,31 @@
       .catch(function(e) { alert('Error: ' + e.message); });
   }
 
+  function startTeacher(owner) {
+    isTeacher = true; isOwner = owner;
+    document.getElementById('teacher-view').style.display = 'block';
+    document.getElementById('teacher-line').style.display = owner ? 'none' : '';
+    document.getElementById('teachers-section').style.display = owner ? '' : 'none';
+    initTeacher();
+    if (owner) initTeachersPanel();
+  }
+  function startStudent() {
+    isTeacher = false; isOwner = false;
+    document.getElementById('student-view').style.display = 'block';
+    initStudent();
+  }
+
+  let startedFor = null;
   firebase.auth().onAuthStateChanged(function(user) {
-    if (!user) return;
+    if (!user || startedFor === user.uid) return;
+    startedFor = user.uid;
     me = user;
-    isTeacher = (user.email === TEACHER_EMAIL);
-    document.getElementById(isTeacher ? 'teacher-view' : 'student-view').style.display = 'block';
-    if (isTeacher) initTeacher(); else initStudent();
+    if (user.email === TEACHER_EMAIL) { startTeacher(true); return; }
+    // Somebody else is a teacher only if the owner has added them. If the database
+    // says no, or cannot be read (older rules, no connection), show the student page.
+    db().collection('teachers').doc(String(user.email || '').toLowerCase()).get().then(function(s) {
+      if (s.exists) startTeacher(false); else startStudent();
+    }, function() { startStudent(); });
   });
 </script>
 </body>
