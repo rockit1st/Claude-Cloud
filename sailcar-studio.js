@@ -6,19 +6,23 @@
 // Each student's design + prediction is kept with their account (sailcar_progress/{uid}.design,
 // written only here and never touching 'modules') and on this device ('sailcar-design-v2-<uid>');
 // whichever copy was saved last (savedMs) wins.
-// Written for 6th graders: short sentences, distances in feet first (SailLab.kid.dist), no formulas, and NO force
+// Written for 6th graders: short sentences, distances in FEET (SailLab.kid.dist) and sizes in INCHES (kid.len / kid.lenIn),
+// no formulas, and NO force
 // numbers or force units: on the design card a force is an arrow whose LENGTH shows its size (draw.forceScale: one
 // honest scale per row), with a word label, and the words COMPARE two forces (kid.compare, the whole lab's vocabulary).
 // The side picture draws the wind as faint streaks (no arrowhead, the same for every design): the card's rows are the
 // one place that compares sizes, so two pictures on one screen never show two different push lengths.
-// Every number a student reads (grams, cm, feet) is worked out from simulate().
+// Every number a student reads (grams, inches, feet) is worked out from simulate().
+// UNITS: students see feet and inches (and grams for the car's mass), never metres or centimetres. The physics, the
+// stored design and the run log stay metric: a design keeps its sail sizes as plain numbers of CENTIMETRES, exactly as
+// designs saved before the change did, so an old design loads and looks right (cm → the nearest inch on the sliders).
+// The sliders are in inches; the module turns inches into cm (× 2.54) before anything is stored or simulated.
 (function () {
   const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
   const kid = SailLab.kid;
   const FT_PER_M = kid.FT_PER_M;
-  const UNIT_KEY = 'sailcar-run-unit';          // the unit this device last logged a run in
   const SAVE_WAIT_MS = 4000;                    // after this long without the server's OK, the write is waiting for Wi-Fi
-  const START_X = 0.3;                          // simulate()'s start line: 30 cm in front of the fans
+  const START_X = 0.3;                          // simulate()'s start line: 0.3 m (1 ft) in front of the fans
   const LOG_TEXT = '🏁 Log this run';
   function modelVersion() { return String(SailLab.physics.MODEL_VERSION || 'unversioned').slice(0, 24); }
   // The hallway's size lives ONLY in sailcar-core.js (SailLab.physics.HALL, 70 ft × 11 ft today):
@@ -41,29 +45,45 @@
   const MID_FT = 50;                            // the predict-first question's other edge: "25 to 50 ft"
 
   // Part data (approximate masses of the classroom materials)
+  // The real sticks are 11 cm, 15 cm and 21 cm long (two regular sticks end to end): the labels say it in inches
+  // (kid.len: 4 1/2 in, 6 in, 8 1/2 in). The wheelbases below are the physics' numbers and are not shown.
   const CHASSIS = {
-    regular: { label: 'Regular sticks (11 cm)', stick: 1.8, cross: 1.8, wheelbase: 0.10 },
-    jumbo:   { label: 'Jumbo sticks (15 cm)',   stick: 4.0, cross: 4.0, wheelbase: 0.13 },
+    regular: { label: 'Regular sticks (' + kid.len(11) + ')', stick: 1.8, cross: 1.8, wheelbase: 0.10 },
+    jumbo:   { label: 'Jumbo sticks (' + kid.len(15) + ')',   stick: 4.0, cross: 4.0, wheelbase: 0.13 },
     // the rails are two sticks glued end to end; the 2 cross pieces are single regular sticks
-    double:  { label: 'Two sticks end-to-end (21 cm)', stick: 3.6, cross: 1.8, wheelbase: 0.18 }
+    double:  { label: 'Two sticks end-to-end (' + kid.len(21) + ')', stick: 3.6, cross: 1.8, wheelbase: 0.18 }
   };
-  const BEARING = {      // crr with the small (3 cm) wheels
+  const BEARING = {      // crr with the small wheels
     straw: { label: 'Skewer spins in a straw', crr: 0.012 },
     taped: { label: 'Wheels spin on a taped skewer', crr: 0.022 },
     hole:  { label: 'Skewer through a cardstock hole', crr: 0.03 }
   };
-  const SMALL_R = 0.015, BIG_R = 0.025;                       // wheel radius, m (3 cm and 5 cm wheels)
+  const SMALL_R = 0.015, BIG_R = 0.025;                       // wheel radius, m (the small wheels are 3 cm = about 1 in across, the big ones 5 cm = 2 in)
+  const SMALL_WHEEL = kid.len(3), BIG_WHEEL = kid.len(5);     // '1 in' and '2 in': what the wheel choices say
   const SMALL_G = 3, BIG_G = 5;                               // grams per wheel
   const GLUE = { light: 3, normal: 6, heavy: 10 };            // grams of hot glue
   const SAIL_GSM = { paper: 80, cardstock: 200 };             // grams per square metre
   const MAST_POS = { front: 0.3, middle: 0.5, back: 0.7 };     // fraction of the wheelbase behind the front axle
   const PENNY_G = 2.5;
 
-  // a sensible, ordinary first car — students improve it from here
+  // The sail's size is set on sliders in INCHES (whole inches; the gap under the sail in half inches) but is stored, as it
+  // always was, as a number of CENTIMETRES (inches × 2.54, to 0.01), which is what analyse() and the physics use.
+  // SIZES = each slider's range and step, in inches.
+  const SIZES = { sailW: { min: 3, max: 14, step: 1 }, sailH: { min: 3, max: 14, step: 1 }, sailGap: { min: 0, max: 6, step: 0.5 } };
+  function cmOf(inches) { return Math.round(kid.inToCm(inches) * 100) / 100; }
+  // a stored number of cm → the inches shown on its slider (and everywhere else): the nearest whole inch (half inch for the
+  // gap). A design saved in cm before the change (22 cm) shows as 9 in; its stored numbers, and so its physics, are kept.
+  function inchesOf(key, cm) {
+    const z = SIZES[key], v = Math.round(kid.cmToIn(Number(cm) || 0) / z.step) * z.step;
+    return Math.min(z.max, Math.max(z.min, v));
+  }
+  // a sensible, ordinary first car — students improve it from here (a sail 8 in wide and 6 in tall, 1 in above the deck:
+  // its card still says "Safe. Holding down is bigger than tipping", as before)
   const DEFAULT = { chassis: 'double', rails: 3, bearing: 'taped', wobbly: false, rubbing: false, bigWheels: false, square: true,
-                    sailMat: 'paper', sailW: 20, sailH: 16, cupped: false, sailGap: 1, mastPos: 'middle', guys: 0, pennies: 1, glue: 'normal' };
+                    sailMat: 'paper', sailW: cmOf(8), sailH: cmOf(6), cupped: false, sailGap: cmOf(1), mastPos: 'middle', guys: 0, pennies: 1, glue: 'normal' };
   const CHOICES = { chassis: CHASSIS, bearing: BEARING, sailMat: SAIL_GSM, mastPos: MAST_POS, glue: GLUE };
-  const RANGES = { rails: [2, 5], sailW: [8, 35], sailH: [8, 35], sailGap: [0, 15], guys: [0, 2], pennies: [0, 6] };
+  const RANGES = { rails: [2, 5], sailW: [cmOf(SIZES.sailW.min), cmOf(SIZES.sailW.max)], sailH: [cmOf(SIZES.sailH.min), cmOf(SIZES.sailH.max)],
+                   sailGap: [cmOf(SIZES.sailGap.min), cmOf(SIZES.sailGap.max)], guys: [0, 2], pennies: [0, 6] };
   const FLAGS = ['wobbly', 'rubbing', 'bigWheels', 'square'];
 
   // Turn a design into the numbers the physics model needs
@@ -92,7 +112,7 @@
     const cgHeight = parts.reduce(function (s, p) { return s + p.g * p.h; }, 0) / grams;
     // Axle friction: the skewer rubs at its own tiny radius. The wheel is a lever that turns that
     // rubbing into a much smaller drag where the tyre meets the floor — the bigger the wheel, the
-    // smaller the drag (drag ∝ axle radius ÷ wheel radius, so 5 cm wheels have 3/5 the drag of 3 cm ones).
+    // smaller the drag (drag ∝ axle radius ÷ wheel radius, so the 2 in wheels have 3/5 the drag of the 1 in ones).
     const axleCrr = (BEARING[d.bearing] || BEARING.straw).crr * (SMALL_R / wheelR);
     const crr = axleCrr + (d.wobbly ? 0.012 : 0) + (d.rubbing ? 0.03 : 0);
     const car = {
@@ -108,11 +128,19 @@
     return { car: car, parts: parts, grams: grams, push: push, startPush: startPush, friction: friction,
              canStart: startPush > friction * P.STICKY, tipMargin: holdMoment / tipMoment };
   }
-  // the design in a few words; it is also stored with each logged run (design.summary)
+  // the design in a few words (the sail in inches); it is also stored with each logged run (design.summary)
   function summary(d) {
-    return (CHASSIS[d.chassis] || CHASSIS.jumbo).label.replace(/ \(.*/, '') + ' · ' + d.sailW + '×' + d.sailH + ' cm ' + (d.cupped ? 'cupped ' : '') + d.sailMat + ' sail · ' +
+    return (CHASSIS[d.chassis] || CHASSIS.jumbo).label.replace(/ \(.*/, '') + ' · ' + kid.by(inchesOf('sailW', d.sailW), inchesOf('sailH', d.sailH)) + ' ' + (d.cupped ? 'cupped ' : '') + d.sailMat + ' sail · ' +
       (BEARING[d.bearing] || BEARING.straw).label.toLowerCase() + (d.bigWheels ? ' · big wheels' : '') +
       (d.pennies ? ' · ' + d.pennies + (d.pennies === 1 ? ' penny' : ' pennies') : '');
+  }
+
+  // A run logged before the change stored its design's summary with the sail in centimetres ("20×16 cm paper sail"). The
+  // class board shows it in inches, the nearest whole inch, like the sliders: "8 × 6 in paper sail".
+  function summaryText(s) {
+    return String(s == null ? '' : s).replace(/(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?) cm\b/, function (all, w, h) {
+      return kid.by(inchesOf('sailW', Number(w)), inchesOf('sailH', Number(h)));
+    });
   }
 
   // ── numbers for people ──
@@ -133,7 +161,9 @@
     const a = analyse(d), rows = [];
     // grams are shown whole (as on race day and in the run log)
     rows.push({ label: 'Mass', text: Math.round(a.grams) + ' g' });
-    rows.push({ label: 'Sail', text: d.sailW + ' cm × ' + d.sailH + ' cm = ' + (d.sailW * d.sailH) + ' square cm' });
+    // the sail as the sliders show it (whole inches), and its area worked out from those two numbers on screen
+    const sw = inchesOf('sailW', d.sailW), sh = inchesOf('sailH', d.sailH);
+    rows.push({ label: 'Sail', text: kid.lenIn(sw) + ' × ' + kid.lenIn(sh) + ' = ' + kid.areaIn(sw * sh) });
     // the wind's push against friction at the start line: the bigger one fills the row, so the two lengths show how they compare
     const push = a.startPush, fr = a.friction, fl = barScale(Math.max(push, fr));
     const pf = 'The push is ' + kid.compare(push, fr, { noun: 'friction', times: fl.toScale(push) && fl.toScale(fr) });
@@ -173,11 +203,11 @@
   }
 
   // The model is calibrated only from past years' sled runs, so predictions are shown as a rounded
-  // range (about ±20 %), never to the centimetre. predictedM itself stays exact for the % comparison.
+  // range (about ±20 %), never to the inch. predictedM itself stays exact for the % comparison.
   const TUNED_NOTE = 'The simulator was set up using last year’s paper sleds, which had no wheels. So its number is a good guess, not a promise. Your real run in the hallway is the true test.';
-  function aboutText(m) { return 'about ' + kid.dist(m); }                       // "about 53 ft (16 m)"
-  function hallLenText() { return kid.dist(hall().length); }                     // "70 ft (21 m)"
-  function hallWideText() { return kid.dist(hall().width); }                     // "11 ft (3.4 m)"
+  function aboutText(m) { return 'about ' + kid.dist(m); }                       // "about 53 ft"
+  function hallLenText() { return kid.dist(hall().length); }                     // "70 ft"
+  function hallWideText() { return kid.dist(hall().width); }                     // "11 ft"
   // a predicted (simulated) distance that is the whole hallway: simulate() stops every such car at exactly HALL.length
   function atEnd(m) { return m >= hall().length - 0.005; }
 
@@ -188,23 +218,27 @@
   function judge(r) { const end = r.reason === END_REASON; return { distance: r.distance, reason: r.reason, end: end, longer: end ? longerRun(r.car) : r.distance }; }
   function forecast(d) { const H = hall(); return judge(SailLab.physics.simulate(analyse(d).car, { hallLength: H.length, hallWidth: H.width })); }
 
+  // two distances as one range, the unit said once when it is the same: "42 to 64 ft" · "7 in to 1.2 ft"
+  function rangeText(lo, hi) {
+    const a = kid.dist(lo), b = kid.dist(hi), u = a.slice(a.lastIndexOf(' ') + 1);
+    return b.slice(b.lastIndexOf(' ') + 1) === u ? a.slice(0, a.length - u.length - 1) + ' to ' + b : a + ' to ' + b;
+  }
   // m = the simulated distance in the hallway; longer = the same car in a longer hall (only used when m is the whole hallway)
-  // "about 53 ft (16 m). A real car will likely go 42 to 64 ft (13 to 19 m)"
+  // "about 53 ft. A real car will likely go 42 to 64 ft"
   function predictionText(m, longer) {
     const H = hall().length;
     if (atEnd(m)) return 'all the way to the end of our ' + hallLenText() + ' hallway. ' +
       (longer >= H + 0.5 ? 'In a longer hall, it would roll ' + aboutText(longer) : 'It would stop right about there anyway');
     // the real car can't go past the end of the hallway, so the likely range stops there
     const lo = m * 0.8, hi = m * 1.2;
-    return aboutText(m) + '. A real car will likely go ' + (hi >= H ? kid.dist(lo) + ' up to the end of the hall'
-                                                                    : kid.ft(lo) + ' to ' + kid.ft(hi) + ' ft (' + kid.m(lo) + ' to ' + kid.m(hi) + ' m)');
+    return aboutText(m) + '. A real car will likely go ' + (hi >= H ? kid.dist(lo) + ' up to the end of the hall' : rangeText(lo, hi));
   }
   // bestM is a longer-hall distance: more than the hallway means that design reaches the end of ours
   function bestLine(m) {
     return m >= hall().length + 0.5 ? 'Your best design so far makes it to the end. In a longer hall, it would roll ' + aboutText(m) + '.'
                                     : 'Your best design so far: ' + aboutText(m) + '.';
   }
-  // a stored prediction, short: "to reach the end of the 70 ft (21 m) hallway" / "about 53 ft (16 m)"
+  // a stored prediction, short: "to reach the end of the 70 ft hallway" / "about 53 ft"
   function predictedText(m) { return atEnd(m) ? 'to reach the end of the ' + hallLenText() + ' hallway' : aboutText(m); }
   // a prediction in a table cell; one made with another physics model (another hallway) is shown as it was
   function predictedCell(r) { return r.predictedM > 0 ? (r.model === modelVersion() && atEnd(r.predictedM) ? 'end of hall' : kid.dist(r.predictedM)) : '—'; }
@@ -212,12 +246,14 @@
   function realAtEnd(m) { return m >= hall().length - END_SLACK_M; }
   function trimNum(v) { return String(Math.round(v * 100) / 100); }
   function r1(v) { return Math.round(v * 10) / 10; }
-  // A real, hand-measured distance, feet first like kid.dist. The number the student typed is their measurement,
-  // so it is shown just as typed; the other unit gets one decimal (not kid.ft / kid.m's whole numbers), so a
-  // board with runs typed in both units still reads in rank order: no "45 ft (13.8 m)" above "45 ft (14 m)":
-  // 45 ft typed → "45 ft (13.7 m)" · 13.5 ft → "13.5 ft (4.1 m)" · 4.2 m typed → "13.8 ft (4.2 m)"
-  // (Only the text changes: distance, unit and distanceM are stored exactly as before.)
-  function realDist(v, unit) { return unit === 'ft' ? trimNum(v) + ' ft (' + r1(v / FT_PER_M) + ' m)' : r1(v * FT_PER_M) + ' ft (' + trimNum(v) + ' m)'; }
+  // A real, hand-measured distance, in FEET. The number the student typed is their measurement, so it is shown just as
+  // typed ("45 ft", "13.5 ft"); under a foot it is in inches (0.5 ft → "6 in"). A run logged before the change in metres
+  // (unit 'm', 4.2 m) is shown in feet with one decimal ("13.8 ft"), so a board that mixes the two still reads in rank order.
+  // (Only the text changes: distance, unit and distanceM are stored exactly as before; new runs are always unit 'ft'.)
+  function realDist(v, unit) {
+    const ft = unit === 'm' ? r1(v * FT_PER_M) : Math.round(v * 100) / 100;
+    return ft < 1 ? kid.feet(ft) : trimNum(ft) + ' ft';
+  }
   // a logged run's real distance with the number the student typed. distanceM is what the board ranks by (and
   // the database caps at 100 m); the typed number is only shown when it agrees with it, so a hand-made run
   // can't show a different distance from the one it is ranked by. Otherwise distanceM is shown, as kid.dist.
@@ -307,7 +343,11 @@
     const d = Object.assign({}, DEFAULT, { predictedM: 0, predictedWhy: '', bestM: 0, model: modelVersion(), savedMs: 0 });
     if (!raw || typeof raw !== 'object') return d;
     Object.keys(CHOICES).forEach(function (k) { if (typeof raw[k] === 'string' && Object.prototype.hasOwnProperty.call(CHOICES[k], raw[k])) d[k] = raw[k]; });
-    Object.keys(RANGES).forEach(function (k) { if (typeof raw[k] === 'number' && isFinite(raw[k])) d[k] = Math.round(clamp(raw[k], RANGES[k][0], RANGES[k][1])); });
+    // the sail sizes are centimetres (kept to 0.01: an inch is 2.54 cm), the rest are whole numbers. A design saved in whole
+    // centimetres comes through exactly as it was.
+    Object.keys(RANGES).forEach(function (k) {
+      if (typeof raw[k] === 'number' && isFinite(raw[k])) d[k] = SIZES[k] ? Math.round(clamp(raw[k], RANGES[k][0], RANGES[k][1]) * 100) / 100 : Math.round(clamp(raw[k], RANGES[k][0], RANGES[k][1]));
+    });
     FLAGS.forEach(function (k) { if (typeof raw[k] === 'boolean') d[k] = raw[k]; });
     d.savedMs = clamp(raw.savedMs, 0, 1e15);
     // a prediction made with a different physics model (e.g. the old one-fan wind) no longer counts
@@ -443,22 +483,27 @@
       const left = h('div'), right = h('div');
       wrap.appendChild(left); wrap.appendChild(right);
       function set(k) { return function (v) { design[k] = v; design.predictedM = 0; design.predictedWhy = ''; touch(); refresh(); }; }
+      // a size slider is in inches; the design keeps the sail's size in centimetres (inches × 2.54), as it always did
+      function sizeSlider(parent, k, label) {
+        const z = SIZES[k];
+        ui.slider(parent, { label: label, min: z.min, max: z.max, step: z.step, value: inchesOf(k, design[k]), inches: true, onInput: function (v) { set(k)(cmOf(v)); } });
+      }
       function tip(parent, text) { parent.appendChild(h('p', { class: 'sl-muted', style: 'margin:-6px 0 10px;font-size:0.85rem;line-height:1.45', text: text })); }
       left.appendChild(h('h3', { class: 'sl-step-title', style: 'font-size:0.9rem;margin:6px 0', text: '🪵 Frame & wheels' }));
       ui.choice(left, { label: 'Frame (popsicle sticks)', value: design.chassis, options: Object.keys(CHASSIS).map(function (k) { return { value: k, label: CHASSIS[k].label }; }), onChange: set('chassis') });
       ui.slider(left, { label: 'Sticks along the frame', min: 2, max: 5, step: 1, value: design.rails, format: function (v) { return v + ' (plus 2 across)'; }, onInput: set('rails') });
       ui.choice(left, { label: 'Axles', value: design.bearing, options: Object.keys(BEARING).map(function (k) { return { value: k, label: BEARING[k].label }; }), onChange: set('bearing') });
-      ui.choice(left, { label: 'Wheels', value: design.bigWheels ? 'big' : 'small', options: [{ value: 'small', label: 'Small (3 cm)' }, { value: 'big', label: 'Big (5 cm)' }], onChange: function (v) { set('bigWheels')(v === 'big'); } });
+      ui.choice(left, { label: 'Wheels', value: design.bigWheels ? 'big' : 'small', options: [{ value: 'small', label: 'Small (' + SMALL_WHEEL + ')' }, { value: 'big', label: 'Big (' + BIG_WHEEL + ')' }], onChange: function (v) { set('bigWheels')(v === 'big'); } });
       tip(left, 'Big wheels roll more easily. The axle’s rubbing slows them less. But 4 big wheels add ' + (4 * (BIG_G - SMALL_G)) + ' g.');
       ui.choice(left, { label: 'Do the wheels wobble?', value: design.wobbly ? 'y' : 'n', options: [{ value: 'n', label: 'They spin straight' }, { value: 'y', label: 'Wobbly' }], onChange: function (v) { set('wobbly')(v === 'y'); } });
       ui.choice(left, { label: 'Do the wheels rub the frame?', value: design.rubbing ? 'y' : 'n', options: [{ value: 'n', label: 'No, there’s a gap' }, { value: 'y', label: 'Yes, they rub' }], onChange: function (v) { set('rubbing')(v === 'y'); } });
       ui.choice(left, { label: 'Are the axles lined up?', value: design.square ? 'y' : 'n', options: [{ value: 'y', label: 'Lined up with a ruler' }, { value: 'n', label: 'Just by eye' }], onChange: function (v) { set('square')(v === 'y'); } });
       right.appendChild(h('h3', { class: 'sl-step-title', style: 'font-size:0.9rem;margin:6px 0', text: '⛵ Sail & balance' }));
       ui.choice(right, { label: 'Sail material', value: design.sailMat, options: [{ value: 'paper', label: 'Paper' }, { value: 'cardstock', label: 'Cardstock' }], onChange: set('sailMat') });
-      ui.slider(right, { label: 'Sail width', min: 8, max: 35, step: 1, value: design.sailW, unit: 'cm', onInput: set('sailW') });
-      ui.slider(right, { label: 'Sail height', min: 8, max: 35, step: 1, value: design.sailH, unit: 'cm', onInput: set('sailH') });
+      sizeSlider(right, 'sailW', 'Sail width');
+      sizeSlider(right, 'sailH', 'Sail height');
       ui.choice(right, { label: 'Sail shape', value: design.cupped ? 'cup' : 'flat', options: [{ value: 'flat', label: 'Flat' }, { value: 'cup', label: 'Cupped (bent with a pipe cleaner)' }], onChange: function (v) { set('cupped')(v === 'cup'); } });
-      ui.slider(right, { label: 'Gap under the sail', min: 0, max: 15, step: 1, value: design.sailGap, unit: 'cm', onInput: set('sailGap') });
+      sizeSlider(right, 'sailGap', 'Gap under the sail');
       ui.choice(right, { label: 'Mast (the stick that holds the sail)', value: design.mastPos, options: [{ value: 'front', label: 'Front' }, { value: 'middle', label: 'Middle' }, { value: 'back', label: 'Back' }], onChange: set('mastPos') });
       ui.slider(right, { label: 'Pennies taped low at the back', min: 0, max: 6, step: 1, value: design.pennies, format: function (v) { return v + ' (' + (v * PENNY_G) + ' g)'; }, onInput: set('pennies') });
       ui.slider(right, { label: 'Pipe cleaners to brace the mast', min: 0, max: 2, step: 1, value: design.guys, onInput: set('guys') });
@@ -481,7 +526,7 @@
         pic.textContent = '';
         api.svg('rect', { x: 0, y: 0, width: W, height: 200, rx: 12, fill: '#120826' }, pic);
         api.svg('line', { x1: 16, y1: FLOOR, x2: W - 16, y2: FLOOR, stroke: '#4a3a6a', 'stroke-width': 3 }, pic);
-        // the whole car (wheels + deck + mast) must fit in the picture
+        // the whole car (wheels + deck + mast) must fit in the picture (sizes here are drawing units of 1 px per cm × scale: never shown)
         const wr = design.bigWheels ? 2.5 : 1.5, len = a.car.wheelbase * 100 + 2 * wr, tallCm = 2 * wr + 1.5 + design.sailGap + design.sailH;
         const scale = Math.min(4.5, 150 / tallCm, (W - 120) / len), carW = len * scale;
         // the sail's front edge, measured from the car's back end; the car moves right (never off the picture) when
@@ -584,7 +629,7 @@
     const me = currentUser();
     const isTeacher = !!(me && me.email === TEACHER_EMAIL);
     if (isTeacher) {
-      api.ui.note(el, 'tip', '👩‍🏫 <strong>Teacher:</strong> students log their own runs here after each hallway run (in feet or metres, plus an optional note). The design and prediction saved with their account are logged with it. You see every class on the next step and can delete a run there.');
+      api.ui.note(el, 'tip', '👩‍🏫 <strong>Teacher:</strong> students log their own runs here after each hallway run (in feet, plus an optional note). The design and prediction saved with their account are logged with it. You see every class on the next step and can delete a run there.');
       return;
     }
     useDesignFor(me);
@@ -602,17 +647,15 @@
     el.appendChild(designLine);
     watch(api, function (what) { if (what === 'design') showDesignLine(); });
 
-    // feet by default (US tape measures; the hallway is marked in feet); this device remembers the last unit
-    let unit = 'ft';
-    try { const u = localStorage.getItem(UNIT_KEY); if (u === 'm' || u === 'ft') unit = u; } catch (e) {}
-    function placeholder() { return unit === 'ft' ? 'e.g. 52 ft' : 'e.g. 16 m'; }
+    // FEET only (US tape measures; the hallway is marked in feet). A run is always stored with unit 'ft'; runs saved in
+    // metres before the change are still shown, in feet (realDist).
+    const unit = 'ft';
     const form = h('div', { class: 'sl-row' });
     el.appendChild(form);
-    const distIn = h('input', { type: 'number', min: '0', step: 'any', inputmode: 'decimal', id: 'sl-run-dist', placeholder: placeholder(), style: 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-size:1rem' });
-    form.appendChild(h('div', { class: 'sl-ctrl' }, [h('label', { for: 'sl-run-dist', class: 'sl-ctrl-lbl', text: 'How far your real car went' }), distIn]));
+    const distIn = h('input', { type: 'number', min: '0', step: 'any', inputmode: 'decimal', id: 'sl-run-dist', 'aria-describedby': 'sl-run-hint', placeholder: 'e.g. 52 ft', style: 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-size:1rem' });
+    form.appendChild(h('div', { class: 'sl-ctrl' }, [h('label', { for: 'sl-run-dist', class: 'sl-ctrl-lbl', text: 'How far your real car went, in feet' }), distIn,
+      h('p', { id: 'sl-run-hint', class: 'sl-muted', style: 'margin:6px 0 0;font-size:0.85rem;line-height:1.45', text: 'Your tape shows feet and inches? Type 13 ft 6 in as 13.5.' })]));
     let confirmKey = null;          // a surprising distance needs a second tap on Log
-    api.ui.choice(form, { label: 'Measured in', value: unit, options: [{ value: 'ft', label: 'feet' }, { value: 'm', label: 'metres' }],
-      onChange: function (v) { unit = v; confirmKey = null; distIn.placeholder = placeholder(); try { localStorage.setItem(UNIT_KEY, v); } catch (e) {} } });
     distIn.addEventListener('input', function () { confirmKey = null; });
     const noteIn = h('input', { type: 'text', maxlength: '80', id: 'sl-run-note', placeholder: 'What did you change? (you can skip this)', style: 'width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-size:0.95rem' });
     el.appendChild(h('div', { class: 'sl-ctrl' }, [h('label', { for: 'sl-run-note', class: 'sl-ctrl-lbl', text: 'Note' }), noteIn]));
@@ -683,7 +726,7 @@
       const tb = h('tbody');
       runs.forEach(function (r, i) {
         const pct = r.predictedM > 0 ? Math.round(r.distanceM / r.predictedM * 100) + '%' : '—';
-        const real = realRunText(r);          // feet first, the typed number as typed: "13.5 ft (4.1 m)"
+        const real = realRunText(r);          // feet, the typed number as typed: "13.5 ft"
         tb.appendChild(h('tr', null, [h('td', { text: String(i + 1) }), h('td', { text: real }),
           h('td', { text: predictedCell(r) }), h('td', { text: pct }), h('td', { text: String(r.note || ''), style: 'text-align:left;white-space:normal;min-width:' + (r.note ? 140 : 0) + 'px' })]));
       });
@@ -725,23 +768,23 @@
       if (!classesOk) return;
       say('');
       const v = parseFloat(distIn.value), u = unit;
-      const m = u === 'ft' ? v / FT_PER_M : v;
-      if (!(v >= 0) || !(m <= 100)) { say('Type how far your car went (0 to ' + (u === 'ft' ? '328 ft' : '100 m') + ').', true); return; }
+      const m = v / FT_PER_M;
+      if (!(v >= 0) || !(m <= 100)) { say('Type how far your car went (0 to 328 ft).', true); return; }
       let cls = { id: '', name: '' };
       if (myClasses.length === 1) cls = myClasses[0];
       else if (myClasses.length > 1) {
         if (!classSel.value) { say('Choose your class first.', true); return; }
         cls = myClasses.find(function (c) { return c.id === classSel.value; }) || cls;
       }
-      // a typo (an extra digit, or metres typed as feet) gets a second look before it goes on the board
+      // a typo (an extra digit) gets a second look before it goes on the board
       // (5 % slack: the hallway is "about" that long, and a car that reaches the end is measured by hand)
       const H = hall().length, pred = design.predictedM > 0 ? design.predictedM : 0, key = u + ':' + v;
       const why = m > H * 1.05 ? 'That’s longer than our ' + hallLenText() + ' hallway!'
                 : pred > 0 && m > 2.5 * pred ? 'That’s more than 2½ times the simulator’s prediction (' + aboutText(pred) + ')!' : '';
       if (why && confirmKey !== key) {
         confirmKey = key;
-        // what they typed, in the unit they typed it in (the other unit with one decimal, as realDist logs it)
-        say('You typed ' + (u === 'ft' ? trimNum(v) + ' ft (' + r1(m) + ' m)' : trimNum(v) + ' m (' + r1(v * FT_PER_M) + ' ft)') + '. ' + why + ' Tap Log again if that’s right.', true);
+        // what they typed, as realDist logs it
+        say('You typed ' + realDist(v, u) + '. ' + why + ' Tap Log again if that’s right.', true);
         return;
       }
       confirmKey = null;
@@ -807,9 +850,9 @@
         // the teacher (only) sees whose account posted each row: hover the name, and in the delete question
         const cells = [h('td', { text: r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : String(r.rank) }),
           h('td', { text: name, title: isTeacher && email ? 'Posted by ' + email : null }),
-          h('td', { text: (r.atEnd ? '🏁 ' : '') + realRunText(r) }),          // feet first, the typed number as typed, like "My runs"
+          h('td', { text: (r.atEnd ? '🏁 ' : '') + realRunText(r) }),          // feet, the typed number as typed, like "My runs"
           h('td', { text: predictedCell(r) }),
-          h('td', { text: String((r.design && r.design.summary) || ''), style: 'text-align:left;white-space:normal;font-size:0.85rem;min-width:170px' })];
+          h('td', { text: summaryText(r.design && r.design.summary), style: 'text-align:left;white-space:normal;font-size:0.85rem;min-width:170px' })];
         if (isTeacher) {
           const who = name + (email ? ' (' + email + ')' : '');
           const del = h('button', { type: 'button', class: 'sl-btn', text: '✕', 'aria-label': 'Delete the run for ' + who, title: 'Delete the run for ' + who, style: 'padding:4px 10px' });
@@ -894,6 +937,7 @@
                designFacts: designFacts, guessQuestion: guessQuestion, guessOutcome: guessOutcome, guessJudge: guessJudge,
                bestLine: bestLine, designLineText: designLineText, loggedText: loggedText, summary: summary,
                barScale: barScale, WIND_PX: WIND_PX,
+               SIZES: SIZES, cmOf: cmOf, inchesOf: inchesOf, summaryText: summaryText, realRunText: realRunText, predictedCell: predictedCell, rangeText: rangeText,
                SLED_FT: SLED_FT, MID_FT: MID_FT, START_X: START_X,
                state: function () { return { design: design, uid: designUid, status: cloudStatus }; } }
   });

@@ -87,22 +87,27 @@
   const deg = function (v) { return (Math.round(v * 100) / 100) + '°'; };
 
   // ── Step 1: the finger test ─────────────────────────────────────────────
-  // The everyday car (20 cm sail, 16 cm chassis) with n nickels on the back: where its balance point is, and whether a
-  // finger f cm behind the front axle holds it level. The finger slider moves in half-cm steps and the tolerance is a
-  // quarter cm, so exactly one finger spot balances each car. The challenge: level, with 2 or more nickels.
+  // The everyday car (8 in sail, 6 in chassis) with n nickels on the back: where its balance point is, and whether a
+  // finger f INCHES behind the front axle holds it level. The balance point only moves a few tenths of an inch, so the
+  // finger slider moves in HALF inches (a whole inch is too coarse) and the tolerance is a quarter inch: exactly one
+  // finger spot balances each car. The challenge: level, with 2 or more nickels.
   const BAL_TOL = 0.25;
+  const FINGER = { min: 1, max: 6, step: 0.5 };
   function fingerTest(n, f) {
-    const cg = makeCar(20, 0, 16, n).cgToFront * 100, ok = Math.abs(f - cg) <= BAL_TOL;
+    const cg = kid.cmToIn(makeCar(SAIL_IN, 0, CHASSIS_IN, n).cgToFront * 100), ok = Math.abs(f - cg) <= BAL_TOL + 1e-9;
     return { cg: cg, ok: ok, done: ok && n >= 2 };
   }
-  const FINGER_START = { n: 0, f: 5 };
-  const CG0 = fingerTest(0, 0).cg;                      // 8 cm: the everyday car with no nickels
+  const FINGER_START = { n: 0, f: 2 };
+  const CG0 = fingerTest(0, 0).cg;                      // 3 in: the everyday car with no nickels (the middle of its chassis)
 
   // ── Step 2: will it flip? (predict first) ───────────────────────────────
   // Nothing above the prediction says what happens: the "door hinge" idea and "the wind tips the car forward" come
   // only after the first test (in flipJudge's answer and the "How tipping works" note that appears then).
-  function flipCar(side, gap, cg) { return makeCar(side, gap, 16, 0, cg); }
-  const FLIP_START = { side: 30, gap: 10, cg: 8 };       // a big sail on a tall mast: it flips
+  // The three sliders, all in INCHES and whole inches (the sail and the gap move 2 in at a time, like the old 5 cm steps).
+  const S2 = { side: { min: 4, max: 14, step: 2 }, gap: { min: 0, max: 6, step: 2 }, cg: { min: 1, max: 5, step: 1 } };
+  const MAX_SIDE_CM = toCm(S2.side.max);
+  function flipCar(side, gap, cg) { return makeCar(side, gap, CHASSIS_IN, 0, cg); }
+  const FLIP_START = { side: 12, gap: 4, cg: 3 };        // a big sail on a tall mast: it flips
   const FLIP_PREDICT = {
     question: 'This car has a big sail on a tall mast. What will it do when the fans turn on?',
     choices: [{ value: 'stay', label: 'Stay on its wheels and roll away' },
@@ -120,18 +125,20 @@
     return { text: text, right: (flips ? 'nose' : 'stay') === v, why: why };
   }
   // the biggest push and the biggest bar the step-2 sliders can make, so the arrows and the bars always fit
-  const MAXPUSH = P.airForce(P.windAt(START), 0.35 * 0.35, D.sailCd, 0);
+  const MAXPUSH = P.airForce(P.windAt(START), MAX_SIDE_CM * MAX_SIDE_CM / 10000, D.sailCd, 0);
   const MAX2 = (function () {
     let m = 0;
-    for (let s = 10; s <= 35; s += 5) for (let g = 0; g <= 15; g += 5) [2, 14].forEach(function (cg) { const t = turns(flipCar(s, g, cg)); m = Math.max(m, t.tip, t.hold); });
+    for (let s = S2.side.min; s <= S2.side.max; s += S2.side.step) for (let g = S2.gap.min; g <= S2.gap.max; g += S2.gap.step) [S2.cg.min, S2.cg.max].forEach(function (cg) { const t = turns(flipCar(s, g, cg)); m = Math.max(m, t.tip, t.hold); });
     return m;
   })();
   // Step 2's picture draws the wind's push and the car's weight as two arrows on ONE scale: F2MAX (the biggest push
   // or weight the sliders can make) is px long. A force under 30% of F2MAX is drawn a bit too long (min = 15% of px),
   // so which arrows are to scale does not depend on the screen width.
-  const MAXW2 = flipCar(35, 0, 8).mass * G;                 // the heaviest step-2 car: the biggest sail
+  const MAXW2 = flipCar(S2.side.max, 0, S2.cg.min).mass * G;   // the heaviest step-2 car: the biggest sail
   const F2MAX = Math.max(MAXPUSH, MAXW2);
   function pushScale(px) { return SailLab.draw.forceScale(F2MAX, px, { min: px * 0.15, over: 0 }); }
+  // how long (px) the biggest push is drawn: it must just fit between the fans and the biggest sail (drawing px per cm K)
+  function pushPx(FA, K, fanR) { return Math.max(40, Math.min(90, Math.floor(FA - CHASSIS_CM / 2 * K - MAX_SIDE_CM * 0.45 * K - 6 - (fanR + 8)))); }
   // "The push is about the same as the weight." (a ratio only when both arrows are drawn to scale)
   function pushVsWeight(t) {
     const len = pushScale(100);
@@ -139,11 +146,12 @@
   }
 
   // ── Step 3: tame the big sail ───────────────────────────────────────────
-  // The 30 × 30 cm sail's farthest non-flipping run with the step's controls (gap 0/5/10 cm, chassis 12/16/22 cm,
+  // The 12 × 12 in sail's farthest non-flipping run with the step's controls (gap 0/2/4 in, chassis 5/6/9 in,
   // 0–4 nickels), in a hall with no end: only a low sail + long chassis + 2–3 nickels gets past the end of our hall.
-  const BIG = 30, BIG_AREA = BIG * BIG / 10000;
-  const SIDES = [20, 25, 30], GAPS = [0, 5, 10], BASES = [12, 16, 22];
-  const BIG_START = { side: 30, gap: 10, wb: 16, n: 0 };
+  // (All in inches: makeCar turns them into centimetres for simulate().)
+  const BIG = 12, BIG_AREA = toCm(BIG) * toCm(BIG) / 10000, BIG_TXT = kid.by(BIG, BIG);   // '12 × 12 in'
+  const SIDES = [8, 10, 12], GAPS = [0, 2, 4], BASES = [5, 6, 9];
+  const BIG_START = { side: 12, gap: 4, wb: 6, n: 0 };
   function longer(car, opts) { return P.simulate(car, Object.assign({}, opts || {}, { hallLength: LONG_HALL })).distance; }
   const BIG_BEST = (function () {
     let best = 0;
@@ -163,15 +171,15 @@
     return r.car.sailArea >= BIG_AREA - 1e-6 && r.reason !== 'tipped over' &&
            (GOAL_IS_END ? r.reason === 'reached the end of the hall' : r.distance >= HALL_GOAL - 1e-9);
   }
-  // The builds that pass, and whether every one of them uses all three fixes (a lower sail than the 10 cm gap it starts
-  // with, a longer chassis than 16 cm, and nickels). Today: gap 0 + 22 cm + 2 or 3 nickels, so the page says "all three".
+  // The builds that pass, and whether every one of them uses all three fixes (a lower sail than the 4 in gap it starts
+  // with, a longer chassis than 6 in, and nickels). Today: gap 0 + 9 in + 2 or 3 nickels, so the page says "all three".
   const BIG_WINNERS = [];
   GAPS.forEach(function (gap) {
     BASES.forEach(function (wb) {
       for (let n = 0; n <= 4; n++) if (tamed(P.simulate(makeCar(BIG, gap, wb, n)))) BIG_WINNERS.push({ gap: gap, wb: wb, n: n });
     });
   });
-  const ALL_THREE = BIG_WINNERS.length > 0 && BIG_WINNERS.every(function (w) { return w.gap < 10 && w.wb > 16 && w.n > 0; });
+  const ALL_THREE = BIG_WINNERS.length > 0 && BIG_WINNERS.every(function (w) { return w.gap < BIG_START.gap && w.wb > BIG_START.wb && w.n > BIG_START.n; });
   const MAX3 = (function () {
     let m = 0;
     SIDES.forEach(function (s) { GAPS.forEach(function (g) { BASES.forEach(function (wb) { for (let n = 0; n <= 4; n++) { const t = turns(makeCar(s, g, wb, n)); m = Math.max(m, t.tip, t.hold); } }); }); });
@@ -188,9 +196,9 @@
   const GOAL_FT = 40, START_DEG = 1;
   function straightOK(r) { return r.reason !== 'hit the wall' && kid.ft(r.distance) >= GOAL_FT; }
   const DEFAULT_RUN = P.simulate({});
-  const STRAIGHT_RUN = DEFAULT_RUN.distance;                        // a square-axled default car (≈ 16 m: it coasts to a stop inside the hall)
-  const HALL_W = DEFAULT_RUN.opts.hallWidth;                        // = HALL.width (3.35 m today)
-  const ROOM = HALL_W / 2 - 0.1;                                    // simulate() calls it a wall hit 10 cm (half a car) before the wall
+  const STRAIGHT_RUN = DEFAULT_RUN.distance;                        // a square-axled default car (about 53 ft: it coasts to a stop inside the hall)
+  const HALL_W = DEFAULT_RUN.opts.hallWidth;                        // = HALL.width (11 ft today)
+  const ROOM = HALL_W / 2 - 0.1;                                    // simulate() calls it a wall hit 4 in (half a car) before the wall
   const WALL_AT = function (a) { return P.simulate({ veerDeg: a }).distance; };
   const AXLE_PREDICT = {
     question: 'What will the car do when you press ▶ Roll?',
@@ -272,31 +280,31 @@
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
           const coins = api.ui.slider(row, { label: 'Nickels taped over the back axle', min: 0, max: 4, step: 1, value: FINGER_START.n, format: nickels, onInput: draw });
-          const finger = api.ui.slider(row, { label: 'Your finger, behind the front axle', min: 2, max: 14, step: 0.5, value: FINGER_START.f, format: function (v) { return v + ' cm'; }, onInput: draw });
+          const finger = api.ui.slider(row, { label: 'Your finger, behind the front axle', min: FINGER.min, max: FINGER.max, step: FINGER.step, value: FINGER_START.f, inches: true, onInput: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
           function draw() {
-            const W = boardWidth(el), K = Math.max(4.2, Math.min(8, W / 55)), PY = Math.round(22 * K + 46), H = PY + 44;   // px per cm · fingertip
+            const W = boardWidth(el), K = Math.max(4.2, Math.min(8, W / 55)), PY = Math.round(22 * K + 46), H = PY + 44;   // drawing px per cm · fingertip
             const n = coins.get(), f = finger.get(), test = fingerTest(n, f), cg = test.cg, ok = test.ok;
-            const FA = Math.round(W / 2 + 8 * K), fx = FA - f * K;                                                        // front axle · finger
+            const FA = Math.round(W / 2 + CHASSIS_CM / 2 * K), fx = FA - toCm(f) * K;                                     // front axle · finger
             startBoard(api, s, W, H);
             label(api, s, 14, 24, '← back (fans side)', { bold: false, color: MUTED, size: 13 });
             label(api, s, W - 14, 24, 'front →', { anchor: 'end', bold: false, color: MUTED, size: 13 });
             // the car rests on the fingertip; if the balance point isn't right above it, the heavy end drops
             const g = api.svg('g', { transform: 'rotate(' + (ok ? 0 : cg > f ? -8 : 8) + ',' + fx + ',' + PY + ')' }, s);
-            api.draw.car(g, FA - 17.5 * K, PY + 2 * K, { scale: K, length: 19, wheelR: 1.5, sailW: 20, sailH: 20, mastH: 20, mastAt: 0.5 });
-            for (let i = 0; i < n; i++) api.svg('rect', { x: FA - 16 * K - 9, y: PY - 2 * K - 4.5 * (i + 1), width: 19, height: 4, rx: 1, fill: '#c8c8d0', stroke: '#80808a', 'stroke-width': 0.8 }, g);
-            if (n) label(api, g, FA - 16 * K - 14, PY - 2 * K - 4.5 * n + 4, n + ' nickel' + (n === 1 ? ' →' : 's →'), { anchor: 'end', color: '#c8c8d0', size: 13 });
+            api.draw.car(g, FA - (CHASSIS_CM + 1.5) * K, PY + 2 * K, { scale: K, length: CHASSIS_CM + 3, wheelR: 1.5, sailW: toCm(SAIL_IN), sailH: toCm(SAIL_IN), mastH: toCm(SAIL_IN), mastAt: 0.5 });
+            for (let i = 0; i < n; i++) api.svg('rect', { x: FA - CHASSIS_CM * K - 9, y: PY - 2 * K - 4.5 * (i + 1), width: 19, height: 4, rx: 1, fill: '#c8c8d0', stroke: '#80808a', 'stroke-width': 0.8 }, g);
+            if (n) label(api, g, FA - CHASSIS_CM * K - 14, PY - 2 * K - 4.5 * n + 4, n + ' nickel' + (n === 1 ? ' →' : 's →'), { anchor: 'end', color: '#c8c8d0', size: 13 });
             if (ok) {
-              api.svg('circle', { cx: FA - cg * K, cy: PY - K, r: 6, fill: '#00a8ff', stroke: '#fff', 'stroke-width': 1.5 }, g);
-              label(api, s, FA - cg * K + 14, PY - 30, 'balance point', { color: BLUE });
+              api.svg('circle', { cx: FA - toCm(cg) * K, cy: PY - K, r: 6, fill: '#00a8ff', stroke: '#fff', 'stroke-width': 1.5 }, g);
+              label(api, s, FA - toCm(cg) * K + 14, PY - 30, 'balance point', { color: BLUE });
             }
             api.svg('rect', { x: fx - 11, y: PY, width: 22, height: H - PY + 20, rx: 11, fill: '#e2b08a', stroke: '#b07850', 'stroke-width': 1.5 }, s);
             api.svg('ellipse', { cx: fx, cy: PY + 9, rx: 6.5, ry: 5, fill: '#f4d4c0' }, s);
             if (ok) {
-              say(api, out, ['⚖️ ', ['Balanced!'], ' The balance point is right above your finger, about ', [f + ' cm'], ' behind the front axle.' +
+              say(api, out, ['⚖️ ', ['Balanced!'], ' The balance point is right above your finger, about ', [kid.lenIn(f)], ' behind the front axle.' +
                 (n < 2 ? ' Now tape on 2 or more nickels. Then find the new balance point.' : '')]);
-              if (test.done) api.done('The balance point moved toward the heavy end. It went from ' + cm(CG0) + ' cm to about ' + f + ' cm behind the front axle. ' +
+              if (test.done) api.done('The balance point moved toward the heavy end. It went from ' + kid.lenIn(CG0) + ' to about ' + kid.lenIn(f) + ' behind the front axle. ' +
                 'Weight at the back moves the balance point back.');
             } else if (cg > f) say(api, out, ['↙️ The ', ['back'], ' end drops. The balance point is behind your finger. Slide your finger toward the back (a bigger number).']);
             else say(api, out, ['↘️ The ', ['front'], ' end drops. The balance point is in front of your finger. Slide your finger toward the front (a smaller number).']);
@@ -327,9 +335,10 @@
           how.hidden = true;
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const size = api.ui.slider(row, { label: 'Sail size (square)', min: 10, max: 35, step: 5, value: FLIP_START.side, format: function (v) { return v + ' × ' + v + ' cm'; }, onInput: slid });
-          const gap = api.ui.slider(row, { label: 'Gap under the sail (tall mast)', min: 0, max: 15, step: 5, value: FLIP_START.gap, unit: 'cm', onInput: slid });
-          const cgS = api.ui.slider(row, { label: 'Balance point, behind the front wheels', min: 2, max: 14, step: 1, value: FLIP_START.cg, unit: 'cm', onInput: slid });
+          const by = function (v) { return kid.by(v, v); };                                    // '8 × 8 in'
+          const size = api.ui.slider(row, { label: 'Sail size (square)', min: S2.side.min, max: S2.side.max, step: S2.side.step, value: FLIP_START.side, format: by, valueText: by, onInput: slid });
+          const gap = api.ui.slider(row, { label: 'Gap under the sail (tall mast)', min: S2.gap.min, max: S2.gap.max, step: S2.gap.step, value: FLIP_START.gap, inches: true, onInput: slid });
+          const cgS = api.ui.slider(row, { label: 'Balance point, behind the front wheels', min: S2.cg.min, max: S2.cg.max, step: S2.cg.step, value: FLIP_START.cg, inches: true, onInput: slid });
           const sliders = [size, gap, cgS];
           const lock = api.h('div', { class: 'sl-predict-hint', text: '🔒 The sliders unlock after you test your prediction.' });
           el.appendChild(lock);
@@ -343,23 +352,23 @@
           function car() { return flipCar(size.get(), gap.get(), cgS.get()); }
           function paint() {
             const W = boardWidth(el), wide = W >= 520, K = wide ? 4.2 : 3.6;                 // wide: bars beside the car · narrow: below it
-            const side = size.get(), c = car(), t = turns(c), flips = t.tip > t.hold;
-            const FL = Math.round(53 * K + 20);                                              // floor: room for the tallest sail (3 + 15 + 35 cm)
+            const sideCm = toCm(size.get()), gapCm = toCm(gap.get()), c = car(), t = turns(c), flips = t.tip > t.hold;
+            const FL = Math.round((3 + toCm(S2.gap.max) + MAX_SIDE_CM) * K + 20);            // floor: room for the tallest sail (1 in + 6 in + 14 in), drawing px per cm
             const FA = wide ? 230 : W - 108, fanS = wide ? 70 : 60, fanR = 10 + fanS * 0.32;  // the front wheels (the hinge) · the fans
-            // ONE scale for the push and weight arrows (pushScale): the push on the biggest sail (35 cm) just fits between the
+            // ONE scale for the push and weight arrows (pushScale): the push on the biggest sail (14 in) just fits between the
             // fans and the sail. The "how far back" bracket sits below the longest weight arrow, so it never moves.
-            const PX = Math.max(40, Math.min(90, Math.floor(FA - 8 * K - 35 * 0.45 * K - 6 - (fanR + 8)))), flen = pushScale(PX);
+            const PX = pushPx(FA, K, fanR), flen = pushScale(PX);
             const BY = FL + Math.ceil(flen(MAXW2)) + 10, sceneH = BY + 22, H = wide ? sceneH : sceneH + 188;
-            const mastX = FA - 8 * K, sailY = FL - c.sailHeight * 100 * K, sailL = mastX - side * 0.45 * K;
+            const mastX = FA - CHASSIS_CM / 2 * K, sailY = FL - c.sailHeight * 100 * K, sailL = mastX - sideCm * 0.45 * K;
             const cgX = FA - t.holdArm * K, cgY = FL - c.cgHeight * 100 * K, LX = FA + 24;
             startBoard(api, s, W, H);
             api.svg('line', { x1: 8, y1: FL, x2: wide ? 330 : W - 8, y2: FL, stroke: '#4a3a6a', 'stroke-width': 3 }, s);
             api.draw.fan(s, 10, FL, fanS, ' ');
             label(api, s, 6, FL - fanS - 8, '2 fans', { color: MUTED, bold: false, size: 13 });
             // the car (sail bottom 3 cm + gap off the floor); a faint copy shows it flipping
-            const carO = { scale: K, length: 19, wheelR: 1.5, sailW: side, sailH: side, mastH: gap.get() + side - 1, mastAt: 0.5 };
-            if (tilt > 0) api.draw.car(s, FA - 17.5 * K, FL, Object.assign({ tilt: 24 * tilt }, carO)).setAttribute('opacity', 0.35);
-            api.draw.car(s, FA - 17.5 * K, FL, carO);
+            const carO = { scale: K, length: CHASSIS_CM + 3, wheelR: 1.5, sailW: sideCm, sailH: sideCm, mastH: gapCm + sideCm - 1, mastAt: 0.5 };
+            if (tilt > 0) api.draw.car(s, FA - (CHASSIS_CM + 1.5) * K, FL, Object.assign({ tilt: 24 * tilt }, carO)).setAttribute('opacity', 0.35);
+            api.draw.car(s, FA - (CHASSIS_CM + 1.5) * K, FL, carO);
             if (fansOn) {                                                          // the hinge would hint "forward", so not before the test
               api.svg('polygon', { points: [FA, FL + 1, FA - 7, FL + 13, FA + 7, FL + 13].join(','), fill: '#ffa040' }, s);
               label(api, s, FA + 11, FL + 14, 'hinge', { color: '#ffa040', size: 13 });
@@ -457,7 +466,7 @@
           keepFitted(api, el, paint);
           paint(); explain();
           // the sliders' "try this" appears with the sliders (after the first test), like "How tipping works"
-          const tryIt = api.ui.note(el, 'tip', '💡 <strong>Try this:</strong> Set the gap under the sail to 0 cm. Slide the balance point back. Make the sail smaller. ' +
+          const tryIt = api.ui.note(el, 'tip', '💡 <strong>Try this:</strong> Set the gap under the sail to 0 in. Slide the balance point back. Make the sail smaller. ' +
             'Which changes shrink the red bar? Which one grows the blue bar? On a real car, weight at the back moves the balance point back. So does a longer chassis.');
           tryIt.hidden = true;
         }
@@ -465,20 +474,20 @@
       {
         title: 'Hallway challenge: tame the big sail',
         html:
-          '<p>This car has a big <strong>30 × 30 cm</strong> sail on a tall mast. A big sail catches lots of wind. ' +
+          '<p>This car has a big <strong>' + BIG_TXT + '</strong> sail on a tall mast. A big sail catches lots of wind. ' +
           'Press ▶ Run and watch the start line!</p>' +
           '<p>Make the car <strong>stable</strong>, and keep the big sail. You can mount the sail lower. You can use a longer chassis. ' +
           'You can tape nickels over the back axle.</p>' +
           '<p>' + (ALL_THREE ? 'This sail needs <strong>all three</strong> fixes.' : 'This sail needs <strong>more than one</strong> fix.') +
           ' Watch the tug-of-war bars as you try each one. But add only the weight you need. Extra weight means extra friction.</p>',
-        challenge: 'Keep the 30 × 30 cm sail. Get the car to ' + GOAL3_TXT + ' without flipping.',
+        challenge: 'Keep the ' + BIG_TXT + ' sail. Get the car to ' + GOAL3_TXT + ' without flipping.',
         render: function (el, api) {
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
           let sim = null;
-          const side = api.ui.choice(row, { label: 'Sail size (square)', value: BIG_START.side, options: SIDES.map(function (v) { return { value: v, label: v + ' × ' + v + ' cm' }; }), onChange: info });
-          const gap = api.ui.choice(row, { label: 'Gap under the sail (mast height)', value: BIG_START.gap, options: [{ value: 0, label: 'None (low)' }, { value: 5, label: '5 cm' }, { value: 10, label: '10 cm (tall)' }], onChange: info });
-          const wb = api.ui.choice(row, { label: 'Chassis: front axle to back axle', value: BIG_START.wb, options: [{ value: 12, label: 'Short 12 cm' }, { value: 16, label: 'Normal 16 cm' }, { value: 22, label: 'Long 22 cm' }], onChange: info });
+          const side = api.ui.choice(row, { label: 'Sail size (square)', value: BIG_START.side, options: SIDES.map(function (v) { return { value: v, label: kid.by(v, v) }; }), onChange: info });
+          const gap = api.ui.choice(row, { label: 'Gap under the sail (mast height)', value: BIG_START.gap, options: [{ value: GAPS[0], label: 'None (low)' }, { value: GAPS[1], label: kid.lenIn(GAPS[1]) }, { value: GAPS[2], label: kid.lenIn(GAPS[2]) + ' (tall)' }], onChange: info });
+          const wb = api.ui.choice(row, { label: 'Chassis: front axle to back axle', value: BIG_START.wb, options: [{ value: BASES[0], label: 'Short ' + kid.lenIn(BASES[0]) }, { value: BASES[1], label: 'Normal ' + kid.lenIn(BASES[1]) }, { value: BASES[2], label: 'Long ' + kid.lenIn(BASES[2]) }], onChange: info });
           const coins = api.ui.slider(row, { label: 'Nickels taped over the back axle', min: 0, max: 4, step: 1, value: BIG_START.n, format: nickels, onInput: info });
           const bs = newBoard(api, el, 'The tug-of-war for this car at the start line: tipping against holding down');
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
@@ -515,8 +524,8 @@
                   (three ? ' This big sail needs all three fixes.' : '')]);
               }
               else if (!big) say(api, fb, end
-                ? ['No flip, and it reached the end. But it has a smaller sail. This challenge is to tame the BIG sail. Put the 30 × 30 cm sail back and fix the balance.']
-                : ['No flip, but it stopped at ', [d], '. A smaller sail catches less wind. Keep the 30 cm sail and fix the balance instead.']);
+                ? ['No flip, and it reached the end. But it has a smaller sail. This challenge is to tame the BIG sail. Put the ' + BIG_TXT + ' sail back and fix the balance.']
+                : ['No flip, but it stopped at ', [d], '. A smaller sail catches less wind. Keep the ' + BIG_TXT + ' sail and fix the balance instead.']);
               else if (tamed(r)) {
                 const need = fewestNickels(side.get(), gap.get(), wb.get()), fewer = need != null && coins.get() > need;
                 const lightFar = fewer ? longer(makeCar(side.get(), gap.get(), wb.get(), need), r.opts) : 0;
@@ -611,7 +620,7 @@
             label(api, hs, m.SX + 2, m.WT - 14, 'start', { anchor: 'middle', color: '#f0c040', size: m.fs });
             api.svg('line', { x1: m.SX, y1: m.WT, x2: m.SX, y2: m.WB, stroke: '#f0c040', 'stroke-width': 1.5, 'stroke-dasharray': '4,4', opacity: 0.6 }, hs);
             api.svg('line', { x1: m.SX, y1: m.YC, x2: m.EX, y2: m.YC, stroke: '#4a3a6a', 'stroke-width': 2, 'stroke-dasharray': '6,8' }, hs);
-            // two box fans side by side, about 50 cm wide each, facing down the hall
+            // two box fans side by side, about 20 in wide each, facing down the hall
             const FW = 0.5 * m.KY;
             [m.YC - FW - 1, m.YC + 1].forEach(function (y) { api.svg('rect', { x: m.X0 - 14, y: y, width: 14, height: FW, rx: 3, fill: '#3a2a5a', stroke: MUTED, 'stroke-width': 2 }, hs); });
             label(api, hs, m.SX + 8, m.YC + 24, '← 2 fans', { bold: false, color: MUTED, size: m.fs });   // lower half: paths only ever drift up
@@ -690,7 +699,7 @@
           '<p>Use these tricks on your real car:</p>' +
           '<ul><li><strong>Mount the sail low.</strong> Tape the bottom of the sail close to the chassis. Leave no big gap under it.</li>' +
           '<li><strong>Brace a tall mast.</strong> Twist pipe cleaners from the top of the mast to the back corners. They stop the mast from bending forward.</li>' +
-          '<li><strong>Make the chassis longer.</strong> Hot-glue two popsicle sticks end to end, overlapping about 3 cm. ' +
+          '<li><strong>Make the chassis longer.</strong> Hot-glue two popsicle sticks end to end, overlapping about 1 inch. ' +
           'Now the balance point is farther behind the front wheels.</li>' +
           '<li><strong>Add weight at the back, only if you need it.</strong> Tape a coin over the back axle. Every gram adds friction, so add just enough.</li>' +
           '<li><strong>Square the axles.</strong> Line up each straw with a ruler or the corner of a sheet of paper. Do it before the glue sets.</li></ul>' +
@@ -718,7 +727,7 @@
         why: 'The wind pushes high on the sail, away from the fans. So the car tips forward over its front wheels.' },
       { q: 'Why does a sail high on a tall mast make a car flip more easily?', options: ['A high sail makes the fans blow harder', 'A push up high has more turning power', 'A tall mast makes the car lighter', 'A high sail adds friction to the wheels'], answer: 1,
         why: 'The front wheels act like a hinge. Like a door, a push far from the hinge has more turning power.' },
-      { q: 'Car A’s balance point is 4 cm behind its front wheels. Car B’s is 10 cm behind. Same sail, same weight. Which is harder to flip?',
+      { q: 'Car A’s balance point is 2 in behind its front wheels. Car B’s is 4 in behind. Same sail, same weight. Which is harder to flip?',
         options: ['Car A, because its weight is up front', 'Car B, because its weight sits farther back', 'They tie, because both cars weigh the same', 'It depends on how hard the fans blow'], answer: 1,
         why: 'The farther back the balance point is, the better the weight holds the back down. So Car B is harder to flip.' },
       { q: 'Your car flips every time the fans turn on. Which change helps?', options: ['Tape a few coins on the very front', 'Move the sail higher up on the mast', 'Mount the sail lower, near the chassis', 'Use a shorter chassis, so it is lighter'], answer: 2,
@@ -741,6 +750,8 @@
              tamed: tamed, longer: longer, BIG_START: BIG_START, HALL_GOAL: HALL_GOAL, GOAL_IS_END: GOAL_IS_END, GOAL3_TXT: GOAL3_TXT,
              BIG_BEST: BIG_BEST, BIG_WINNERS: BIG_WINNERS, ALL_THREE: ALL_THREE, MAX3: MAX3, SIDES: SIDES, GAPS: GAPS, BASES: BASES,
              GOAL_FT: GOAL_FT, START_DEG: START_DEG, straightOK: straightOK, AXLE_PREDICT: AXLE_PREDICT, axleJudge: axleJudge,
-             WALL_AT: WALL_AT, STRAIGHT_RUN: STRAIGHT_RUN, MAP_M: MAP_M, ROOM: ROOM, HALL_W: HALL_W }
+             WALL_AT: WALL_AT, STRAIGHT_RUN: STRAIGHT_RUN, MAP_M: MAP_M, ROOM: ROOM, HALL_W: HALL_W,
+             SAIL_IN: SAIL_IN, CHASSIS_IN: CHASSIS_IN, CHASSIS_CM: CHASSIS_CM, MAX_SIDE_CM: MAX_SIDE_CM, S2: S2, FINGER: FINGER, BIG: BIG, BIG_TXT: BIG_TXT,
+             pushPx: pushPx }
   });
 })();
