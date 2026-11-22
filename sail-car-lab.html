@@ -69,7 +69,18 @@
     .sl-step-body strong { color: #fff; }
     .sl-step-body .key { color: #00f5ff; font-weight: 700; }
     .sl-step-body svg { max-width: 100%; height: auto; display: block; margin: 8px auto; }
-    .sl-challenge { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: rgba(240,192,64,0.08); border: 1px solid rgba(240,192,64,0.35); color: #ffe6a0; font-size: 0.92rem; }
+    .sl-challenge { margin: 0 0 16px; padding: 12px 14px; border-radius: 10px; background: rgba(240,192,64,0.1); border: 2px solid rgba(240,192,64,0.55); color: #ffe6a0; font-size: 1.05rem; line-height: 1.45; }
+    .sl-challenge.done { background: rgba(64,224,128,0.1); border-color: rgba(64,224,128,0.6); color: #b8f5d0; }
+    .sl-challenge.sl-job { background: rgba(0,245,255,0.07); border-color: rgba(0,245,255,0.45); color: #c8f8ff; }
+    .sl-challenge-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase; }
+    .sl-challenge-text { margin: 0; font-weight: 700; color: #fff; }
+    .sl-tick { display: none; font-weight: 800; color: #80f0b0; text-transform: none; }
+    .sl-challenge.done .sl-tick { display: inline; }
+    .sl-todo-label { margin-top: 10px; font-size: 0.8rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; }
+    .sl-todo { margin: 4px 0 0 22px; color: #fff; font-size: 1rem; line-height: 1.5; }
+    .sl-todo li { margin-bottom: 3px; }
+    .sl-next-hint { margin-top: 8px; font-size: 0.9rem; color: #ffd27a; }
+    .sl-next-hint:empty { display: none; }
     .sl-done { display: none; margin-top: 10px; padding: 10px 14px; border-radius: 10px; background: rgba(64,224,128,0.1); border: 1px solid rgba(64,224,128,0.4); color: #80f0b0; font-weight: 700; }
     .sl-done.show { display: block; }
     .sl-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
@@ -85,7 +96,7 @@
     /* controls */
     .sl-ctrl { margin: 12px 0; }
     .sl-ctrl-lbl { display: block; font-size: 0.85rem; font-weight: 700; color: #c8b8ea; margin-bottom: 6px; }
-    .sl-val { color: #00f5ff; font-family: 'Orbitron', sans-serif; font-size: 0.82rem; margin-left: 6px; }
+    .sl-val { color: #00f5ff; font-family: 'Orbitron', sans-serif; font-size: 0.82rem; margin-left: 6px; white-space: nowrap; }   /* '6 1/2 in' never splits across two lines */
     .sl-ctrl input[type=range] { width: 100%; accent-color: #b44fff; height: 28px; }
     .sl-chips { display: flex; gap: 8px; flex-wrap: wrap; }
     .sl-chip { background: transparent; border: 1px solid rgba(180,79,255,0.45); color: #c8b8ea; border-radius: 20px; padding: 7px 14px; font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.85rem; cursor: pointer; }

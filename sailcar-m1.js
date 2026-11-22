@@ -4,7 +4,7 @@
 //          A step with `challenge` keeps the Next button locked until the step calls api.done().
 //   quiz:  a pool of questions; the lab draws 5 of them each try (4 right = 80% to pass).
 //          `answer` is the index of the right option in `options`; `why` explains it.
-// Written for 6th graders: short sentences, distances in feet first (SailLab.kid.dist), no formulas.
+// Written for 6th graders: short sentences, distances in FEET only (SailLab.kid.dist / kid.feet; inches under a foot), no formulas.
 // Forces are NEVER numbers here: each force is an arrow whose LENGTH shows its size (one honest scale per
 // picture, SailLab.draw.forceScale), with a word label, and the words COMPARE forces (SailLab.kid.compare).
 // Every distance and every comparison a student reads is worked out from simulate().
@@ -18,7 +18,8 @@
   // (kid.ft rounds to whole feet), so "40 ft" on the readout always counts. That is 39.5 ft or more:
   const GOAL_FT = 40, GOAL_M = (GOAL_FT - 0.5) / kid.FT_PER_M;
   function reachesGoal(distM) { return kid.ft(distM) >= GOAL_FT; }
-  // Fan speeds for the hallway step (High = the real fans, SailLab.physics.FAN.v0 = 3.5 m/s at the grilles).
+  // Fan speeds for the hallway step, in the physics' own units (High = the real fans, SailLab.physics.FAN.v0 at the grilles).
+  // Students never see these numbers: the fan is Low, Medium or High.
   const FAN_V = { low: 1.8, med: 2.6, high: P.FAN.v0 };
   const FAN_OPTS = [{ value: 'low', label: 'Low' }, { value: 'med', label: 'Medium' }, { value: 'high', label: 'High' }];
   // Wheel stickiness (crr). Rubbing / OK / Spin freely mean the SAME numbers in Modules 1, 3 and 4
@@ -140,6 +141,9 @@
     steps: [
       {
         title: 'Forces are pushes and pulls',
+        job: 'Find the four forces on the sail car.',
+        todo: ['Look at the arrows on the car.', 'Find THRUST, FRICTION, GRAVITY and FLOOR.', 'Find the short dashed DRAG arrow.',
+               'Remember: a longer arrow means a bigger force.'],
         html:
           '<p>Scientists measure force in units called <strong>newtons</strong>. ' +
           'In this lab we compare forces with arrows: <strong>a longer arrow means a bigger force</strong>.</p>' +
@@ -236,7 +240,9 @@
           '<p>Forces that point opposite ways work against each other. It is like a tug of war!</p>' +
           '<p><strong>Balanced:</strong> the motion stays the same. A still car stays still. A rolling car keeps the same speed.</p>' +
           '<p><strong>Unbalanced:</strong> one force is bigger, so it wins. The car speeds up or slows down.</p>',
-        challenge: 'Make the push arrow and the friction arrow the same length. Keep the push slider at least halfway across.',
+        // the challenge says what balanceDone() checks: equal arrows (p === b), both sliders at least halfway (p >= HALF)
+        challenge: 'Make both arrows the same length, with sliders halfway or more.',
+        todo: ['Slide Friction (pushes back) to the right.', 'Watch the friction arrow get longer.', 'Stop when both arrows are the same length.'],
         render: function (el, api) {
           wordFirst(api, el, 'balanced forces', 'forces that are the same size but push opposite ways. They cancel out. ' +
             'If one force is bigger, the forces are <strong>unbalanced</strong>.');
@@ -314,9 +320,11 @@
           '<p>This hallway is ' + kid.dist(HALL.length) + ' long, like ours. Two box fans sit side by side at the start.</p>' +
           '<p>The car starts rolling only if the wind’s push beats friction. The wind fades as it spreads down the hall. ' +
           'When friction wins, the car slows down and stops.</p>' +
-          '<p><strong>How to test:</strong> pick a fan speed and wheels. Make a prediction. Then press ▶ Run. ' +
-          'Your first test is set up: the <strong>Low</strong> fan and <strong>Jammed</strong> wheels.</p>',
-        challenge: 'Change the fan and the wheels. Make the car roll at least ' + kid.dist(GOAL_FT / kid.FT_PER_M) + '.',
+          '<p>Your first test is set up: the <strong>Low</strong> fan and <strong>Jammed</strong> wheels.</p>',
+        // the challenge says what onResult checks: the run went at least GOAL_FT (reachesGoal); the start (Low + Jammed) never moves
+        challenge: 'Make the car roll at least ' + kid.feet(GOAL_FT) + '.',
+        todo: ['Pick a Fan speed and Wheels.', 'Answer the Predict first question.', 'Press ▶ Run and watch the car.',
+               'Try new settings until it rolls ' + kid.feet(GOAL_FT) + '.'],
         render: function (el, api) {
           // the lab's first "Predict first" card: the word is taught at the top of the step, before the step text
           // uses it ("Make a prediction"), like steps 1 and 2 (the Studio only reminds)
@@ -363,6 +371,8 @@
       },
       {
         title: 'Real build: test your forces',
+        job: 'Test your real car. Do the 3 tests.',
+        todo: ['Do the Push test on the hallway floor.', 'Do the Blow test on the sail.', 'Do the Hold test by the fans.'],
         html:
           '<p>You can feel these forces with your real car before race day.</p>' +
           '<ol><li><strong>Push test (friction):</strong> give the car a gentle push on the hallway floor. Let go. ' +
@@ -373,7 +383,7 @@
           'Does the front dip? Does it pull to one side?</li></ol>',
         render: function (el, api) {
           // wheels that spin freely vs a sled sliding on the tile, for the same car (crr vs SLED_FRICTION): "much smaller"
-          api.ui.note(el, 'good', '🏁 Last year’s sail sleds slid about ' + kid.dist(25 / kid.FT_PER_M) + '. The best one went ' + kid.dist(30 / kid.FT_PER_M) + '. ' +
+          api.ui.note(el, 'good', '🏁 Last year’s sail sleds slid about ' + kid.feet(25) + '. The best one went ' + kid.feet(30) + '. ' +
             'With wheels that spin freely, friction is ' + kid.compare(WHEELS.free, P.SLED_FRICTION, { noun: 'when a sled slides', times: false }) + '. ' +
             'So your car can beat that!');
           api.ui.note(el, 'build', '🛠️ <strong>Your materials:</strong> popsicle sticks, straws, paper, pipe cleaners and cardstock. ' +
@@ -392,7 +402,7 @@
         why: 'Balanced forces cancel out. The car keeps doing what it was doing.' },
       { q: 'The fans are on, but the car does not move at all. What is the most likely reason?', options: ['Gravity pulls harder than the floor pushes', 'The wind’s push can’t beat friction', 'The wind only pushes rolling cars', 'The forces on it are unbalanced'], answer: 1,
         why: 'A car only starts rolling when the push beats friction. Weak wind or jammed wheels mean no motion.' },
-      { q: 'Which two forces cancel out, so the car does not sink or float?', options: ['Thrust and the air that pushes back', 'The wind’s push and friction', 'Gravity and the floor pushing up', 'Drag and friction at the wheels'], answer: 2,
+      { q: 'A car sits still on the floor. Which two forces are balanced?', options: ['Thrust and the air that pushes back', 'The wind’s push and friction', 'Gravity and the floor pushing up', 'Drag and friction at the wheels'], answer: 2,
         why: 'Gravity pulls the car down. The floor pushes up just as hard.' },
       { q: 'A car is rolling when the fans turn off. What happens next?', options: ['It stops the moment the fans turn off', 'It slows down bit by bit, then stops', 'It keeps rolling forever at the same speed', 'It rolls back toward the fans'], answer: 1,
         why: 'Friction and air drag push back on the moving car. They slow it down bit by bit.' },
