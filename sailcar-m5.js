@@ -1,5 +1,6 @@
 // Sail Car Lab — Module 5: Mass & Inertia
-// Written for 6th graders: short sentences, mass in grams, distances in feet first (SailLab.kid.dist), no formulas,
+// Written for 6th graders: short sentences, mass in grams, distances in FEET only (SailLab.kid.dist / kid.feet; inches under a foot),
+// sizes in INCHES (SailLab.kid.by / kid.lenIn), no formulas,
 // and NO force numbers or force units: every force is an arrow or bar whose LENGTH shows its size
 // (draw.forceScale / ui.forceBars: ONE honest scale per picture, so a bigger force is never drawn shorter), with a
 // word label, and the words COMPARE (kid.compare, the lab's shared vocabulary). A sentence beside a picture states a
@@ -12,7 +13,7 @@
   'use strict';
   const P = SailLab.physics, kid = SailLab.kid, D = P.DEFAULT_CAR, G = P.G, FT = kid.FT_PER_M;
   const START = P.simulate(D, { maxTime: 0 }).opts.startX;   // the start line, metres from the two fans (simulate's own default)
-  // the wind's push on the standard car (20 × 20 cm sail + chassis) sitting still x metres from the fans
+  // the wind's push on the standard car (its sail is 0.2 m on a side, so 8 × 8 in in the words; + chassis) sitting still x metres from the fans
   function pushAt(x) { const w = P.windAt(x); return P.airForce(w, D.sailArea, D.sailCd, D.sailAngle) + P.airForce(w, D.bodyArea, D.bodyCd, 0); }
   const SAIL0 = P.airForce(P.windAt(START), D.sailArea, D.sailCd, D.sailAngle);   // on the sail alone, at the start line
   const PUSH0 = pushAt(START);                                                    // the wind's push at the start line (≈ 0.33 N, never shown)
@@ -20,6 +21,8 @@
   function tips(g) { return SAIL0 * (D.sailHeight - D.cgHeight) > (g / 1000) * G * D.cgToFront; }
   const TIP_G = SAIL0 * (D.sailHeight - D.cgHeight) / (G * D.cgToFront) * 1000;   // ≈ 40 g: lighter than this, the standard car flips
   const FAR_FT = 50, FAR_PUSH = pushAt(FAR_FT / FT);                              // step 2's note: the wind 50 ft from the fans
+  // the standard car's sail, in the words a student can measure with a ruler: 0.2 m each way is 7.87 in, so "8 × 8 in" (to the nearest inch)
+  const SAIL_IN = kid.cmToIn(Math.sqrt(D.sailArea) * 100), SAIL_TXT = kid.by(SAIL_IN, SAIL_IN);
   const REF_G = Math.round(D.mass * 1000);                                        // 70: the standard car from Modules 1–4
   function weightN(g) { return g / 1000 * G; }
   function frictionN(g) { return P.rollingFriction(g / 1000, D.crr); }
@@ -50,7 +53,7 @@
   // 50, 100, 150 or 200 g (whole multiples of the light car's 50 g). So every mass on the slider has exactly ONE push
   // that ties (k × 50 = g, integers, no rounding): "a car 3 times as heavy needs 3 times the push".
   const RACE = { lightG: 50, lightPush: 1, ft: 3 };          // the light car (its push = 1 step), and the finish line 3 ft away
-  const RACE_M = RACE.ft / FT, RACE_TXT = kid.dist(RACE_M);  // "3 ft (0.9 m)"
+  const RACE_M = RACE.ft / FT, RACE_TXT = kid.feet(RACE.ft); // 3 ft (RACE_M = the same in metres, for the physics)
   const PUSH_S = { min: 1, max: 4, step: 1, start: 1 };      // YOUR car's push, in whole multiples of the light car's push
   const MASS_S = { min: 50, max: 200, step: 50, start: 150 };
   const TIE_MIN_G = 150;
@@ -109,7 +112,7 @@
   // the tip under the picture: the wind's push near the fans and 50 ft away, against friction (no ratio: the picture's
   // friction arrow is squeezed in at the short end, not drawn to scale)
   const NOTE2 = '💡 Near the fans, the wind’s push is ' + kid.compare(PUSH0, frictionN(REF_G), { noun: 'friction', times: false }) + '. ' +
-    'But the wind fades down the hall. Picture a spot ' + kid.dist(FAR_FT / FT).replace(' ft', '&nbsp;ft') + ' from the fans. ' +
+    'But the wind fades down the hall. Picture a spot ' + kid.feet(FAR_FT).replace(' ft', '&nbsp;ft') + ' from the fans. ' +
     'There, the push is only ' + kid.compare(FAR_PUSH, frictionN(REF_G), { noun: 'the ' + REF_G + ' g car’s friction', times: false }) + '. ' +
     'A 100 g car’s friction is ' + kid.compare(frictionN(100), FAR_PUSH, { noun: 'that push', times: false }) + '! ' +
     'So out there, a heavy car’s extra friction stops it sooner.';
@@ -120,7 +123,7 @@
     { name: 'Plastic wheel', each: 4, n: 4, grp: 0 }, { name: 'Skewer or dowel', each: 1, n: 3, grp: 3 },
     { name: 'Straw', each: 0.5, n: 2, grp: 3 }, { name: 'Paper (1 sheet)', each: 4.5, n: 0, grp: 2 },
     { name: 'Cardstock (1 sheet)', each: 10, n: 1, grp: 2 }, { name: 'Hot glue (1 dot)', each: 0.5, n: 20, grp: 4 },
-    { name: 'Tape (10 cm)', each: 0.3, n: 5, grp: 4 }, { name: 'Pipe cleaner', each: 1.5, n: 2, grp: 5 }
+    { name: 'Tape (4 in)', each: 0.3, n: 5, grp: 4 }, { name: 'Pipe cleaner', each: 1.5, n: 2, grp: 5 }
   ];
   const GROUPS = [['Wheels', '#40e080'], ['Sticks', '#d8b070'], ['Sail', '#f0e6ff'], ['Skewers & straws', '#7ad7ff'], ['Glue & tape', '#ff9a70'], ['Pipe cleaners', '#ff5fa0']];
   const BUDGET_GOAL = 500;                                   // tenths of a gram: 50 g
@@ -137,7 +140,7 @@
   function budgetSim(t) {
     const r = P.simulate({ mass: t / 10000 }), far = longer(r);
     if (r.reason === 'tipped over') return { r: r, parts: ['⚠️ The simulator says this car ', ['tips onto its nose'], ' at the start line. It is too light to hold its back end down. Add a few grams back.'] };
-    const SAIL = ' (That is with a 20 × 20 cm sail and OK wheels.)';
+    const SAIL = ' (That is with an ' + SAIL_TXT + ' sail and OK wheels.)';
     if (atEnd(r)) return { r: r, parts: ['🏁 The simulator says this car rolls ', ['all the way to the end of the ' + HALL_TXT + ' hall'],
       (kid.ft(far) === kid.ft(HALL.length) ? '!' : '. In a longer hall it would go about ' + kid.dist(far) + '.') + SAIL] };
     return { r: r, parts: ['🏁 The simulator says this car rolls ', [kid.dist(r.distance)], '.' + SAIL] };
@@ -154,7 +157,7 @@
   const MARGIN_RUN = P.simulate({ mass: (LIGHTEST + MARGIN_G) / 1000 });
   const GOAL_IS_END = atEnd(MARGIN_RUN);
   const GOAL_FT = GOAL_IS_END ? kid.ft(HALL.length) : Math.floor(MARGIN_RUN.distance * FT);
-  const GOAL_TXT = GOAL_IS_END ? HALL_TXT : kid.dist(GOAL_FT / FT);   // "64 ft (20 m)"
+  const GOAL_TXT = GOAL_IS_END ? HALL_TXT : kid.feet(GOAL_FT);        // "64 ft"
   // the check uses the feet the student sees in the readout (kid.ft rounds to whole feet)
   function reachedGoal(r) { return r.reason !== 'tipped over' && (GOAL_IS_END ? atEnd(r) : kid.ft(r.distance) >= GOAL_FT); }
   // the masses on the slider that pass, heavier than the lightest safe one: "a few grams of margin" (45 and 50 g today)
@@ -496,7 +499,7 @@
         // only a neutral setup above the "Predict first" card: why light cars roll farther, and why too light tips,
         // come AFTER the runs (in the prediction's answer and the done message)
         html:
-          '<p>Your car has a 20 × 20 cm sail and OK wheels. This time, you change only its <strong>mass</strong>.</p>' +
+          '<p>Your car has an ' + SAIL_TXT + ' sail and OK wheels. This time, you change only its <strong>mass</strong>.</p>' +
           '<p>Start at ' + MASS.start + ' g. Run the car. Then make it lighter and run it again.</p>' +
           (GOAL_IS_END ? '' : '<p>The goal is ' + GOAL_TXT + '. That is a little short of the end of the hall.</p>'),
         challenge: GOAL_IS_END ? 'Find a mass that rolls all the way to the end of the ' + HALL_TXT + ' hallway without tipping over.'
@@ -506,7 +509,7 @@
           const pred = api.ui.predict(el, { question: HALL_PREDICT.question, choices: HALL_PREDICT.choices,
             judge: function (r, v) { return hallJudge(runs.concat([hallEntry(r)]), v); } });
           // changing the mass clears the hallway, so a run with the old mass can't finish (and count) after the slider moves
-          const massS = api.ui.slider(el, { label: 'Total mass of the car (20 × 20 cm sail, OK wheels):', min: MASS.min, max: MASS.max, step: MASS.step, value: MASS.start,
+          const massS = api.ui.slider(el, { label: 'Total mass of the car (' + SAIL_TXT + ' sail, OK wheels):', min: MASS.min, max: MASS.max, step: MASS.step, value: MASS.start,
             format: function (v) { return v + ' g'; }, onInput: function () { sim.reset(); } });
           const sim = api.ui.trackSim(el, function () { return { mass: massS.get() / 1000 }; }, {
             scaleM: HALL.length,                            // the whole hallway, start line to end wall, every run — easy to compare
@@ -580,7 +583,7 @@
         render: function (el, api) {
           // one part per line (two columns when there is room)
           const list = ['Popsicle stick: 2 g', 'Jumbo stick: 4 g', 'Plastic wheel: 4 g', 'Skewer: 1 g', 'Straw: 0.5 g', 'Paper: 4.5 g a sheet',
-                        'Cardstock: 10 g a sheet', 'Hot glue: 0.5 g a dot', 'Pipe cleaner: 1.5 g', 'Tape: 0.3 g for 10 cm'];
+                        'Cardstock: 10 g a sheet', 'Hot glue: 0.5 g a dot', 'Pipe cleaner: 1.5 g', 'Tape: 0.3 g for 4 in'];
           api.ui.note(el, 'build', '🛠️ <strong>About how much parts weigh.</strong> Weigh yours to be sure!' +
             '<ul style="margin:6px 0 0 20px;columns:2 150px;column-gap:28px">' + list.map(function (t) { return '<li style="margin:0 0 2px">' + t + '</li>'; }).join('') + '</ul>');
         }
@@ -606,14 +609,14 @@
       { q: 'You make your car lighter, from 150 g to 45 g. The sail and wheels stay the same. What happens in the hallway?', options: ['It rolls about as far', 'It rolls much farther', 'It rolls less far', 'It is too light to get going'], answer: 1,
         why: 'In the simulator, it goes from ' + rolls(Q_MASS.heavy) + ' to ' + rolls(Q_MASS.light) + '. A light car speeds up faster and has less friction.' },
       { q: 'A super-light 25 g car flips onto its nose in front of the fans. Why?', options: ['Light cars have too much friction', 'It has too much inertia to roll', 'It is too light for its sail', 'It is going too fast to stay up'], answer: 2,
-        why: 'The wind pushes high on the sail and tries to flip the car forward. With a 20 × 20 cm sail, a car lighter than about ' + Math.round(TIP_G) + ' g flips.' },
-      { q: 'Your car has a cardstock sail. Which change takes the MOST mass off it?', options: ['Using two fewer strips of tape', 'Leaving out one of the straws', 'Cutting 1 cm off each skewer', 'Using plain paper for the sail'], answer: 3,
+        why: 'The wind pushes high on the sail and tries to flip the car forward. With an ' + SAIL_TXT + ' sail, a car lighter than about ' + Math.round(TIP_G) + ' g flips.' },
+      { q: 'Your car has a cardstock sail. Which change takes the MOST mass off it?', options: ['Using two fewer strips of tape', 'Leaving out one of the straws', 'Cutting 1 in off each skewer', 'Using plain paper for the sail'], answer: 3,
         why: 'Paper is about 4.5 g and cardstock is about 10 g. That swap saves about 5.5 g, more than all the others put together.' },
       { q: 'Your car rolls ' + kid.dist(Q_NICKEL.before.distance) + '. You tape on two nickels (10 g). Now it rolls ' + kid.dist(Q_NICKEL.after.distance) + '. What does this show?', options: ['More mass made it roll less far', 'Heavier cars roll farther', 'The nickels gave the car more push', 'Heavy cars have less friction'], answer: 0,
         why: 'Only the mass changed, so the extra 10 g made the runs shorter. Taking grams off should help, as long as the car doesn’t tip.' }
     ],
     // the numbers and rules behind the text, for checking (not used by the page)
-    _model: { START: START, PUSH0: PUSH0, SAIL0: SAIL0, TIP_G: TIP_G, tips: tips, FAR_FT: FAR_FT, FAR_PUSH: FAR_PUSH, REF_G: REF_G, speedUp: speedUp,
+    _model: { START: START, PUSH0: PUSH0, SAIL0: SAIL0, SAIL_TXT: SAIL_TXT, TIP_G: TIP_G, tips: tips, FAR_FT: FAR_FT, FAR_PUSH: FAR_PUSH, REF_G: REF_G, speedUp: speedUp,
               weightN: weightN, frictionN: frictionN, asHeavy: asHeavy, asFast: asFast, times: times, secs: secs,
               RACE: RACE, RACE_M: RACE_M, RACE_TXT: RACE_TXT, PUSH_S: PUSH_S, MASS_S: MASS_S, TIE_MIN_G: TIE_MIN_G, STEP_N: STEP_N, pushN: pushN,
               raceTime: raceTime, tie: tie, raceWinner: raceWinner, pushWords: pushWords, pushSlider: pushSlider,

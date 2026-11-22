@@ -4,7 +4,7 @@
 //          A step with `challenge` keeps the Next button locked until the step calls api.done().
 //   quiz:  a pool of questions; the lab draws 5 of them each try (4 right = 80% to pass).
 //          `answer` is the index of the right option in `options`; `why` explains it.
-// Written for 6th graders: short sentences, distances in feet first (SailLab.kid.dist), no formulas.
+// Written for 6th graders: short sentences, distances in FEET only (SailLab.kid.dist / kid.feet; inches under a foot), no formulas.
 // Forces are NEVER numbers here: each force is an arrow whose LENGTH shows its size (one honest scale per
 // picture, SailLab.draw.forceScale), with a word label, and the words COMPARE forces (SailLab.kid.compare).
 // Every distance and every comparison a student reads is worked out from simulate().
@@ -18,7 +18,8 @@
   // (kid.ft rounds to whole feet), so "40 ft" on the readout always counts. That is 39.5 ft or more:
   const GOAL_FT = 40, GOAL_M = (GOAL_FT - 0.5) / kid.FT_PER_M;
   function reachesGoal(distM) { return kid.ft(distM) >= GOAL_FT; }
-  // Fan speeds for the hallway step (High = the real fans, SailLab.physics.FAN.v0 = 3.5 m/s at the grilles).
+  // Fan speeds for the hallway step, in the physics' own units (High = the real fans, SailLab.physics.FAN.v0 at the grilles).
+  // Students never see these numbers: the fan is Low, Medium or High.
   const FAN_V = { low: 1.8, med: 2.6, high: P.FAN.v0 };
   const FAN_OPTS = [{ value: 'low', label: 'Low' }, { value: 'med', label: 'Medium' }, { value: 'high', label: 'High' }];
   // Wheel stickiness (crr). Rubbing / OK / Spin freely mean the SAME numbers in Modules 1, 3 and 4
@@ -316,7 +317,7 @@
           'When friction wins, the car slows down and stops.</p>' +
           '<p><strong>How to test:</strong> pick a fan speed and wheels. Make a prediction. Then press ▶ Run. ' +
           'Your first test is set up: the <strong>Low</strong> fan and <strong>Jammed</strong> wheels.</p>',
-        challenge: 'Change the fan and the wheels. Make the car roll at least ' + kid.dist(GOAL_FT / kid.FT_PER_M) + '.',
+        challenge: 'Change the fan and the wheels. Make the car roll at least ' + kid.feet(GOAL_FT) + '.',
         render: function (el, api) {
           // the lab's first "Predict first" card: the word is taught at the top of the step, before the step text
           // uses it ("Make a prediction"), like steps 1 and 2 (the Studio only reminds)
@@ -373,7 +374,7 @@
           'Does the front dip? Does it pull to one side?</li></ol>',
         render: function (el, api) {
           // wheels that spin freely vs a sled sliding on the tile, for the same car (crr vs SLED_FRICTION): "much smaller"
-          api.ui.note(el, 'good', '🏁 Last year’s sail sleds slid about ' + kid.dist(25 / kid.FT_PER_M) + '. The best one went ' + kid.dist(30 / kid.FT_PER_M) + '. ' +
+          api.ui.note(el, 'good', '🏁 Last year’s sail sleds slid about ' + kid.feet(25) + '. The best one went ' + kid.feet(30) + '. ' +
             'With wheels that spin freely, friction is ' + kid.compare(WHEELS.free, P.SLED_FRICTION, { noun: 'when a sled slides', times: false }) + '. ' +
             'So your car can beat that!');
           api.ui.note(el, 'build', '🛠️ <strong>Your materials:</strong> popsicle sticks, straws, paper, pipe cleaners and cardstock. ' +

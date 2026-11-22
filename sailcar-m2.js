@@ -5,49 +5,60 @@
 // Studio use. Students never see a force as a number: a force is an arrow or bar whose LENGTH shows its size
 // (draw.forceScale / ui.forceBars: ONE honest scale per picture, so a bigger force is never drawn shorter), and
 // the words COMPARE two forces with the lab's shared vocabulary (kid.compare / kid.times). A sentence states a
-// ratio ("about 4 times as strong") only when both arrows beside it are drawn to scale. Distances: kid.dist.
+// ratio ("about 4 times as strong") only when both arrows beside it are drawn to scale. Distances are FEET
+// (kid.dist / kid.feet); a sail's size is INCHES (the sliders turn inches into metres with kid.inToM before the
+// physics runs; the physics itself stays metric).
 (function () {
   'use strict';
   const P = SailLab.physics, KID = SailLab.kid;
-  const START = 0.3;                                    // the start line: 30 cm from the fans (simulate's default startX)
+  const START = 0.3;                                    // the start line: 0.3 m (about 1 ft) from the fans (simulate's default startX)
   const PAPER = 0.08;                                   // printer paper weighs about 80 g per square metre
-  const FRAME = P.DEFAULT_CAR.mass - P.DEFAULT_CAR.sailArea * PAPER;   // the default car without its 20 × 20 cm paper sail
+  const FRAME = P.DEFAULT_CAR.mass - P.DEFAULT_CAR.sailArea * PAPER;   // the default car without its paper sail
   const FLAT = 1.2, CUPPED = 1.4;                       // how well a flat and a cupped sail catch the wind (sailCd)
   // The real hallway lives in ONE place (SailLab.physics.HALL, 70 ft × 11 ft today); everything here reads it from there.
   const HALL_M = P.HALL.length;                         // metres a car can roll from the start line before it reaches the far end
-  const HALL_TXT = KID.dist(HALL_M);                    // "70 ft (21 m)"
+  const HALL_TXT = KID.dist(HALL_M);                    // "70 ft"
   function ftToM(f) { return f / KID.FT_PER_M; }
-  // A w × h cm paper sail mounted low on the mast: its middle sits 3 cm + half its height above the floor.
-  function sailCar(w, h, cd, ang) {
-    const area = w * h / 10000;
-    return { sailArea: area, sailCd: cd, sailAngle: ang || 0, sailHeight: 0.03 + h / 200, mass: FRAME + area * PAPER };
+  // In the page's paragraphs a number and its unit stay on one line on a phone ("8 1/2 × 11 in" never breaks before "in").
+  function nb(t) { return String(t).replace(/ /g, '\u00a0'); }
+  // The three sails every step talks about, in INCHES (what a student can measure with a ruler): the small 4 × 4 in
+  // sail (Steps 1 and 4 compare with it) and the standard 8 × 8 in sail (Steps 1, 2 and 3 use it).
+  const SMALL_IN = 4, STD_IN = 8;
+  const SMALL_TXT = KID.by(SMALL_IN, SMALL_IN), STD_TXT = KID.by(STD_IN, STD_IN);   // "4 × 4 in", "8 × 8 in"
+  const SMALL_AREA = KID.inToM(SMALL_IN) * KID.inToM(SMALL_IN), STD_AREA = KID.inToM(STD_IN) * KID.inToM(STD_IN);   // m²
+  // A w × h inch paper sail mounted low on the mast: its middle sits 0.03 m + half its height above the floor.
+  // The sliders give inches; kid.inToM turns them into the metres the physics uses.
+  function sailCar(wIn, hIn, cd, ang) {
+    const w = KID.inToM(wIn), h = KID.inToM(hIn), area = w * h;
+    return { sailArea: area, sailCd: cd, sailAngle: ang || 0, sailHeight: 0.03 + h / 2, mass: FRAME + area * PAPER };
   }
   // push on a sail sitting still x metres from the fans
   function push(x, area, cd, ang) { return P.airForce(P.windAt(x), area, cd, ang || 0); }
   // Step 4's readout: the wind's push on the WHOLE car at the start line (sail + body), the same force as
-  // simulate(car).startPush (the force Modules 1, 4 and 5 draw for the standard 20 × 20 cm car)
+  // simulate(car).startPush (the force Modules 1, 4 and 5 draw for the standard car, give or take 3%: an 8 in sail is a little bigger than the standard car's)
   function carPush(c) { return push(START, c.sailArea, c.sailCd, c.sailAngle) + push(START, P.DEFAULT_CAR.bodyArea, P.DEFAULT_CAR.bodyCd, 0); }
-  // Step 2's wind meter: whole feet from the fans, 0 to 70 ft (the hall). Where a still 20 × 20 cm sail's push
-  // first drops below the typical car's friction, in those same whole feet (56 ft today).
+  // Step 2's wind meter: whole feet from the fans, 0 to 70 ft (the hall). Where a still 8 × 8 in sail's push
+  // first drops below the typical car's friction, in those same whole feet.
   const GAUGE_FT = Math.round(HALL_M * KID.FT_PER_M);
   const FRICTION = P.rollingFriction(P.DEFAULT_CAR.mass, P.DEFAULT_CAR.crr);
   let WEAK_FT = null;
-  for (let f = 0; f <= GAUGE_FT && WEAK_FT == null; f++) if (push(ftToM(f), 0.04, FLAT) < FRICTION) WEAK_FT = f;
-  const TYPICAL_RUN = P.simulate({});                   // the typical 70 g car with a 20 × 20 cm sail coasts to a stop at 53 ft
+  for (let f = 0; f <= GAUGE_FT && WEAK_FT == null; f++) if (push(ftToM(f), STD_AREA, FLAT) < FRICTION) WEAK_FT = f;
+  const TYPICAL_RUN = P.simulate({});                   // the typical 70 g car (its sail is about 8 × 8 in) coasts to a stop at 53 ft
   // Step 4: the goal in feet, judged on the SAME rounded feet the hallway readout shows
   const GOAL_FT = 50;                                   // twice a paper sled's typical 25 ft
-  const GOAL_TXT = KID.dist(ftToM(GOAL_FT));            // "50 ft (15 m)"
-  // Step 4's sail-size slider, and the biggest square sail on it that doesn't flip the car, flat OR cupped (20 cm today)
-  const SIZES = { min: 10, max: 40, step: 5, start: 15 };
+  const GOAL_TXT = KID.feet(GOAL_FT);                   // "50 ft"
+  // Step 4's sail-size slider (inches, in 2 in steps from 4 in to 16 in), and the biggest square sail
+  // on it that doesn't flip the car, flat OR cupped (8 in today)
+  const SIZES = { min: 4, max: 16, step: 2, start: 6 };
   let BIGGEST_SAFE = 0;
   for (let s = SIZES.min; s <= SIZES.max; s += SIZES.step) {
     if ([FLAT, CUPPED].every(function (cd) { return P.simulate(sailCar(s, s, cd, 0)).reason !== 'tipped over'; })) BIGGEST_SAFE = s;
   }
   // Step 4's prediction: which band a run lands in (the same rounded feet the readout shows)
   function band(r) { if (r.reason === 'tipped over') return 'tip'; const f = KID.ft(r.distance); return f < 30 ? 'short' : f < GOAL_FT ? 'mid' : 'far'; }
-  // Step 4's arrows: your car's start push next to a car with a small 10 × 10 cm sail. The arrows fill at the
-  // first sail size that tips (25 × 25 cm, cupped), so every sail that rolls is drawn to scale; bigger sails grow a little more.
-  const SMALL_PUSH = carPush(sailCar(10, 10, FLAT, 0));
+  // Step 4's arrows: your car's start push next to a car with a small 4 × 4 in sail. The arrows fill at the
+  // first sail size that tips (10 × 10 in, cupped), so every sail that rolls is drawn to scale; bigger sails grow a little more.
+  const SMALL_PUSH = carPush(sailCar(SMALL_IN, SMALL_IN, FLAT, 0));
   const BAR_MAX = carPush(sailCar(BIGGEST_SAFE + SIZES.step, BIGGEST_SAFE + SIZES.step, CUPPED, 0));
   // how force a compares with force b, in the lab's shared words, with "as" or "than" and the noun
   function cmp(a, b, noun, o) { return KID.compare(a, b, Object.assign({ noun: noun }, o)); }
@@ -102,30 +113,30 @@
         html:
           '<p>The two fans blow air down the hall. When the air hits your sail, it pushes the car forward.</p>' +
           '<p><strong>Secret #1: a bigger sail catches more air.</strong> The size of the sail’s face is its <span class="key">area</span>. ' +
-          'For a rectangle, area = width × height. A 10 cm by 10 cm sail has an area of 100 square cm.</p>' +
-          '<p>We check the push at the start line, ' + KID.dist(START) + ' from the fans.</p>',
-        challenge: 'Make a sail that is not a square. Give it the same push as the 20 × 20 cm sail. Hint: it needs the same area, 400 square cm.',
+          'For a rectangle, area = width × height. A sail 4 inches by 4 inches has an area of 16 square inches.</p>' +
+          '<p>We check the push at the start line, about ' + nb(KID.dist(START)) + ' from the fans.</p>',
+        challenge: 'Make a sail that is not a square. Give it the same push as the ' + STD_TXT + ' sail. Hint: it needs the same area, ' + KID.areaIn(STD_IN * STD_IN) + '.',
         render: function (el, api) {
           const K = api.kid;
           afterFirst(el, api.ui.word(el, 'thrust', 'the push that moves your car forward. For a sail car, thrust is the wind’s push on the sail.'));
-          const ref = push(START, 0.01, FLAT), p20 = push(START, 0.04, FLAT);      // the 10 × 10 and 20 × 20 cm sails
+          const ref = push(START, SMALL_AREA, FLAT), p20 = push(START, STD_AREA, FLAT);      // the 4 × 4 in and 8 × 8 in sails
           const guess = api.ui.predict(el, {
-            question: 'Start with a 10 × 10 cm sail. Now make it twice as wide AND twice as tall (20 × 20 cm). ' +
-              'How much push will it get, compared with the 10 × 10 cm sail?',
+            question: 'Start with a ' + SMALL_TXT + ' sail. Now make it twice as wide AND twice as tall (' + STD_TXT + '). ' +
+              'How much push will it get, compared with the ' + SMALL_TXT + ' sail?',
             choices: [{ value: 1, label: 'The same push' }, { value: 2, label: '2 times the push' }, { value: 4, label: '4 times the push' }, { value: 8, label: '8 times the push' }],
             hint: 'Pick one. Any guess is OK! Then test it below.'
           });
           function reveal() {
-            guess.reveal('Look at the arrows. The 20 × 20 cm sail gets about ' + K.times(p20, ref) + ' times as much push!',
-              guess.get() === 4, 'It is twice as wide and twice as tall. So it holds 4 squares of 10 × 10 cm. It has 4 times the area, so it catches 4 times the air.');
+            guess.reveal('Look at the arrows. The ' + STD_TXT + ' sail gets about ' + K.times(p20, ref) + ' times as much push!',
+              guess.get() === 4, 'It is twice as wide and twice as tall. So it holds 4 squares of ' + SMALL_TXT + '. It has 4 times the area, so it catches 4 times the air.');
           }
-          const s = api.svg('svg', { role: 'img', 'aria-label': 'Your sail on a grid, and arrows that compare its push with the push on a 10 by 10 and a 20 by 20 centimetre sail' }, el);
+          const s = api.svg('svg', { role: 'img', 'aria-label': 'Your sail on a grid, and arrows that compare its push with the push on a 4 by 4 inch and an 8 by 8 inch sail' }, el);
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const cm = function (v) { return v + ' cm'; };
-          const wS = api.ui.slider(row, { label: 'Sail width', min: 10, max: 40, step: 5, value: 10, format: cm, onInput: changed });
-          const hS = api.ui.slider(row, { label: 'Sail height', min: 10, max: 40, step: 5, value: 10, format: cm, onInput: changed });
-          const test = api.h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '🧪 Test it: make a 20 × 20 cm sail' });
+          // the sliders are in INCHES (4 to 16 in, 2 in at a time); the physics gets metres from kid.inToM
+          const wS = api.ui.slider(row, { label: 'Sail width', min: 4, max: 16, step: 2, value: SMALL_IN, inches: true, onInput: changed });
+          const hS = api.ui.slider(row, { label: 'Sail height', min: 4, max: 16, step: 2, value: SMALL_IN, inches: true, onInput: changed });
+          const test = api.h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '🧪 Test it: make an ' + STD_TXT + ' sail' });
           el.appendChild(test);
           [wS.input, hS.input, test].forEach(function (b) { if (b) guess.gate(b); });   // commit to a guess first
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
@@ -135,48 +146,48 @@
           let was20 = false;
           function changed() {
             draw();
-            const is20 = wS.get() === 20 && hS.get() === 20;
-            if (is20 && !was20) reveal();                    // sliding to 20 × 20 by hand answers the question too
+            const is20 = wS.get() === STD_IN && hS.get() === STD_IN;
+            if (is20 && !was20) reveal();                    // sliding to 8 × 8 by hand answers the question too
             was20 = is20;
           }
-          if (test.addEventListener) test.addEventListener('click', function () { wS.set(20); hS.set(20); was20 = false; changed(); });
+          if (test.addEventListener) test.addEventListener('click', function () { wS.set(STD_IN); hS.set(STD_IN); was20 = false; changed(); });
           function draw() {
-            const w = wS.get(), hh = hS.get(), p = push(START, w * hh / 10000, FLAT);
-            const W = boardWidth(el), wide = W >= 470, CM = 4.4;           // 4.4 px per cm: a 40 cm sail is 176 px
-            const SX = wide ? 40 : 36, SY = 40 + 40 * CM;                   // bottom-left corner of the sail
+            const w = wS.get(), hh = hS.get(), p = push(START, KID.inToM(w) * KID.inToM(hh), FLAT);
+            const W = boardWidth(el), wide = W >= 470, IN = 11;            // 11 px per inch: a 16 in sail is 176 px
+            const SX = wide ? 40 : 36, SY = 40 + 16 * IN;                   // bottom-left corner of the sail
             const BX = wide ? 262 : 14, BY = wide ? 0 : SY + 34;            // where the push arrows start
             const RH = 50, H = wide ? 252 : BY + 40 + 3 * RH + 10;
             startBoard(api, s, W, H);
-            // the sail as the fans see it, on a grid: thin lines every 5 cm, thick lines every 10 cm
+            // the sail as the fans see it, on a grid: thin lines every 2 in, thick lines every 4 in
             label(api, s, SX, 26, 'Your sail', { color: '#f0e6ff', size: 16 });
-            // faint graph paper: the room the sail can grow into (up to 40 × 40 cm), in 5 cm squares
-            for (let i = 0; i <= 40; i += 5) {
-              api.svg('line', { x1: SX + i * CM, y1: SY - 40 * CM, x2: SX + i * CM, y2: SY, stroke: '#2e2050', 'stroke-width': 1 }, s);
-              api.svg('line', { x1: SX, y1: SY - i * CM, x2: SX + 40 * CM, y2: SY - i * CM, stroke: '#2e2050', 'stroke-width': 1 }, s);
+            // faint graph paper: the room the sail can grow into (up to 16 × 16 in), in 2 in squares
+            for (let i = 0; i <= 16; i += 2) {
+              api.svg('line', { x1: SX + i * IN, y1: SY - 16 * IN, x2: SX + i * IN, y2: SY, stroke: '#2e2050', 'stroke-width': 1 }, s);
+              api.svg('line', { x1: SX, y1: SY - i * IN, x2: SX + 16 * IN, y2: SY - i * IN, stroke: '#2e2050', 'stroke-width': 1 }, s);
             }
-            api.svg('rect', { x: SX, y: SY - hh * CM, width: w * CM, height: hh * CM, fill: '#f0e6ff', opacity: 0.92, stroke: '#9080b0', 'stroke-width': 2 }, s);
-            for (let i = 5; i < w; i += 5) api.svg('line', { x1: SX + i * CM, y1: SY - hh * CM, x2: SX + i * CM, y2: SY, stroke: '#9a88c4', 'stroke-width': i % 10 ? 1 : 2 }, s);
-            for (let j = 5; j < hh; j += 5) api.svg('line', { x1: SX, y1: SY - j * CM, x2: SX + w * CM, y2: SY - j * CM, stroke: '#9a88c4', 'stroke-width': j % 10 ? 1 : 2 }, s);
-            api.svg('rect', { x: SX, y: SY - 10 * CM, width: 10 * CM, height: 10 * CM, fill: 'none', stroke: '#f0c040', 'stroke-width': 3, 'stroke-dasharray': '6,4' }, s);
-            label(api, s, SX + w * CM / 2, SY + 20, w + ' cm', { anchor: 'middle' });
-            label(api, s, SX - 14, SY - hh * CM / 2, hh + ' cm', { anchor: 'middle', rotate: -90 });
-            // the push arrows: the 10 × 10 cm sail, the 20 × 20 cm sail and yours, on ONE honest scale. The biggest
-            // sail (40 × 40 cm) fills the row, and even the 10 × 10 cm arrow is drawn to scale, so "about 4 times" is true on screen too.
-            const len = api.draw.forceScale(push(START, 0.16, FLAT), W - BX - 16, { min: 5, over: 0 });
+            api.svg('rect', { x: SX, y: SY - hh * IN, width: w * IN, height: hh * IN, fill: '#f0e6ff', opacity: 0.92, stroke: '#9080b0', 'stroke-width': 2 }, s);
+            for (let i = 2; i < w; i += 2) api.svg('line', { x1: SX + i * IN, y1: SY - hh * IN, x2: SX + i * IN, y2: SY, stroke: '#9a88c4', 'stroke-width': i % 4 ? 1 : 2 }, s);
+            for (let j = 2; j < hh; j += 2) api.svg('line', { x1: SX, y1: SY - j * IN, x2: SX + w * IN, y2: SY - j * IN, stroke: '#9a88c4', 'stroke-width': j % 4 ? 1 : 2 }, s);
+            api.svg('rect', { x: SX, y: SY - SMALL_IN * IN, width: SMALL_IN * IN, height: SMALL_IN * IN, fill: 'none', stroke: '#f0c040', 'stroke-width': 3, 'stroke-dasharray': '6,4' }, s);
+            label(api, s, SX + w * IN / 2, SY + 20, KID.lenIn(w), { anchor: 'middle' });
+            label(api, s, SX - 14, SY - hh * IN / 2, KID.lenIn(hh), { anchor: 'middle', rotate: -90 });
+            // the push arrows: the 4 × 4 in sail, the 8 × 8 in sail and yours, on ONE honest scale. The biggest
+            // sail (16 × 16 in) fills the row, and even the 4 × 4 in arrow is drawn to scale, so "about 4 times" is true on screen too.
+            const len = api.draw.forceScale(push(START, KID.inToM(16) * KID.inToM(16), FLAT), W - BX - 16, { min: 5, over: 0 });
             label(api, s, BX, BY + 28, 'Push at the start line', { color: '#f0e6ff', size: 16 });
-            [[ref, '10 × 10 cm sail', '#f0c040'], [p20, '20 × 20 cm sail', '#c8a0ff'], [p, 'Your sail', '#40e080']].forEach(function (b, i) {
+            [[ref, SMALL_TXT + ' sail', '#f0c040'], [p20, STD_TXT + ' sail', '#c8a0ff'], [p, 'Your sail', '#40e080']].forEach(function (b, i) {
               const y = BY + 56 + i * RH;
               label(api, s, BX, y, b[1], { color: b[2] });
               forceArrow(api, s, BX, y + 7, len(b[0]), b[2]);
             });
             const fair = len.toScale(p) && len.toScale(ref) && len.toScale(p20);
-            const parts = ['📐 Area: ' + w + ' cm × ' + hh + ' cm = ', [w * hh + ' square cm'], '. '];
-            if (w === 10 && hh === 10) parts.push('This is the 10 × 10 cm sail: the yellow dashed square. ');
-            else parts.push('Your sail’s push is ', [cmp(p, ref, 'the 10 × 10 cm sail’s', { exact: true, times: fair })], '. ');
-            if (w === 20 && hh === 20) parts.push('This is the 20 × 20 cm sail.');
-            else parts.push(w === 10 && hh === 10 ? 'Its push is ' : 'It is ', [cmp(p, p20, 'the 20 × 20 cm sail’s', { exact: true, times: fair })], '.');
+            const parts = ['📐 Area: ' + w + ' in × ' + hh + ' in = ', [KID.areaIn(w * hh)], '. '];
+            if (w === SMALL_IN && hh === SMALL_IN) parts.push('This is the ' + SMALL_TXT + ' sail: the yellow dashed square. ');
+            else parts.push('Your sail’s push is ', [cmp(p, ref, 'the ' + SMALL_TXT + ' sail’s', { exact: true, times: fair })], '. ');
+            if (w === STD_IN && hh === STD_IN) parts.push('This is the ' + STD_TXT + ' sail.');
+            else parts.push(w === SMALL_IN && hh === SMALL_IN ? 'Its push is ' : 'It is ', [cmp(p, p20, 'the ' + STD_TXT + ' sail’s', { exact: true, times: fair })], '.');
             say(api, out, parts);
-            if (w * hh === 400 && w !== hh) api.done('Yes! ' + w + ' × ' + hh + ' = 400 square cm. That’s the same area as 20 × 20. Same area, same push! ' +
+            if (w * hh === STD_IN * STD_IN && w !== hh) api.done('Yes! ' + w + ' × ' + hh + ' = ' + KID.areaIn(w * hh) + '. That’s the same area as ' + STD_IN + ' × ' + STD_IN + '. Same area, same push! ' +
               'The shape doesn’t change the push. The area does.');
           }
           draw();
@@ -188,19 +199,19 @@
         html:
           '<p><strong>Secret #2: the wind fades.</strong> The moving air spreads out as it goes down the hall. ' +
           'So it slows down the farther it gets from the fans.</p>' +
-          '<p>Slide the wind meter (the yellow line) down our ' + HALL_TXT + ' hall. Watch the wind speed and the push on a 20 × 20 cm sail.</p>',
+          '<p>Slide the wind meter (the yellow line) down our ' + nb(HALL_TXT) + ' hall. Watch the wind speed and the push on an ' + nb(STD_TXT) + ' sail.</p>',
         challenge: 'Find the spot where the wind is half as fast as at the fans (50%). Then look at the push.',
         render: function (el, api) {
           const K = api.kid;
           const s = api.svg('svg', { role: 'img', 'aria-label': 'The hallway seen from the side, with the wind from the two fans getting weaker down the hall, and bars for the wind speed and the push on the sail' }, el);
-          const d = api.ui.slider(el, { label: 'Distance from the fans', min: 0, max: GAUGE_FT, step: 1, value: 0, format: function (f) { return K.dist(ftToM(f)); }, onInput: draw });
+          const d = api.ui.slider(el, { label: 'Distance from the fans', min: 0, max: GAUGE_FT, step: 1, value: 0, format: function (f) { return K.feet(f); }, onInput: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          const AREA = 0.04, V0 = P.FAN.v0, p0 = push(0, AREA, FLAT);   // the biggest push in the hall: right at the fans
+          const AREA = STD_AREA, V0 = P.FAN.v0, p0 = push(0, AREA, FLAT);   // the biggest push in the hall: right at the fans
           api.ui.note(el, 'good', '🏁 <strong>This is why your car stops.</strong> Far down the hall, the wind is weak. ' +
-            'Past about ' + K.dist(ftToM(WEAK_FT)) + ', its push on the sail is smaller than friction. ' +
+            'Past about ' + nb(K.feet(WEAK_FT)) + ', its push on the sail is smaller than friction. ' +
             'A rolling car feels even less push, because it moves along with the air. ' +
-            'So a typical car slows down and stops at about ' + K.dist(TYPICAL_RUN.distance) + '.');
+            'So a typical car slows down and stops at about ' + nb(K.dist(TYPICAL_RUN.distance)) + '.');
           api.ui.note(el, 'tip', '💡 <strong>The start line matters.</strong> Close to the fans, the wind is fast. Fast wind pushes much harder. ' +
             'Wind twice as fast gives about 4 times the push!');
           function draw() {
@@ -247,12 +258,12 @@
             const vsFriction = cmp(p, FRICTION, 'friction', { exact: true, times: len.toScale(p) && len.toScale(FRICTION) });
             const parts = f === 0
               ? ['📍 Right at the fans, the wind moves at ' + K.speed(v) + '. This is the fastest wind in the hall. So the push is biggest here. It is ', [vsFriction], '.']
-              : ['📍 ' + K.dist(x) + ' from the fans, the wind moves at ' + K.speed(v) + '. That’s ', [pct + '% as fast'], ' as at the fans. At the fans, the push is ',
+              : ['📍 ' + K.feet(f) + ' from the fans, the wind moves at ' + K.speed(v) + '. That’s ', [pct + '% as fast'], ' as at the fans. At the fans, the push is ',
                  [cmp(p0, p, 'it is here', { times: len.toScale(p0) && len.toScale(p) })], '. Here, the push is ' + (p > FRICTION ? 'still ' : ''), [vsFriction], '.'];
             if (p < FRICTION) parts.push(' So the wind can’t keep a car rolling here.');
             say(api, out, parts);
             // exactly what the readout shows: 50%
-            if (pct === 50) api.done('At ' + K.dist(x) + ', the wind is half as fast. But the push at the fans is ' + K.compare(p0, p, { noun: 'it is here' }) + '! ' +
+            if (pct === 50) api.done('At ' + K.feet(f) + ', the wind is half as fast. But the push at the fans is ' + K.compare(p0, p, { noun: 'it is here' }) + '! ' +
               'Slow air hits the sail more gently. And less air hits it each second. So the push drops a lot.');
           }
           draw();
@@ -277,7 +288,7 @@
           const ang = api.ui.slider(row, { label: 'Angle away from the fans', min: 0, max: 90, step: 5, value: 0, format: function (v) { return v + '°'; }, onInput: draw });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          const AREA = 0.04, full = push(START, AREA, FLAT, 0);
+          const AREA = STD_AREA, full = push(START, AREA, FLAT, 0);
           function draw() {
             const cd = shape.get(), a = ang.get(), rad = a * Math.PI / 180, c = Math.cos(rad), sn = Math.sin(rad);
             const p = push(START, AREA, cd, a);
@@ -343,17 +354,17 @@
           '<p>Time to put it all together! Pick your sail’s size and shape. Then send the car down the hall. The sail faces straight at the fans.</p>' +
           '<p>A bigger sail catches more wind. But watch out! The wind pushes high on the sail, above the wheels. ' +
           'Too much push up there can flip the car onto its nose.</p>' +
-          '<p>Your goal is ' + GOAL_TXT + '. That’s twice as far as last year’s paper sleds usually went (about 25 ft).</p>',
+          '<p>Your goal is ' + nb(GOAL_TXT) + '. That’s twice as far as last year’s paper sleds usually went (about 25\u00a0ft).</p>',
         challenge: 'Roll at least ' + GOAL_TXT + ' without tipping over.',
         render: function (el, api) {
           const K = api.kid;
           const row = api.h('div', { class: 'sl-row' });
           el.appendChild(row);
-          const size = api.ui.slider(row, { label: 'Sail size (square)', min: SIZES.min, max: SIZES.max, step: SIZES.step, value: SIZES.start, format: function (v) { return v + ' × ' + v + ' cm'; }, onInput: info });
+          const size = api.ui.slider(row, { label: 'Sail size (square)', min: SIZES.min, max: SIZES.max, step: SIZES.step, value: SIZES.start, inches: true, format: function (v) { return K.by(v, v); }, valueText: function (v) { return K.by(v, v); }, onInput: info });
           const shape = api.ui.choice(row, { label: 'Sail shape', value: FLAT, options: [{ value: FLAT, label: 'Flat' }, { value: CUPPED, label: 'Cupped' }], onChange: info });
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
-          // your car's start push next to a car with a small 10 × 10 cm sail, as arrows on one fixed scale (so a
+          // your car's start push next to a car with a small 4 × 4 in sail, as arrows on one fixed scale (so a
           // bigger sail always draws a longer arrow than a smaller one, from one setting to the next)
           const bars = api.ui.forceBars(el, [], { max: BAR_MAX });
           // A prediction is judged once, by the first run after it is picked (as in Module 6, step 2). Then it is spent:
@@ -376,9 +387,9 @@
           }
           function info() {
             const c = car(), p = carPush(c);
-            bars.update([{ label: 'your car’s push', value: p, color: '#40e080' }, { label: 'push with a 10 × 10 cm sail', value: SMALL_PUSH, color: '#f0c040' }]);
-            say(api, out, ['⛵ Sail area: ', [Math.round(c.sailArea * 10000) + ' square cm'], '. The car weighs ', [K.grams(c.mass)],
-              '. Your start-line push is ', [cmp(p, SMALL_PUSH, 'with a 10 × 10 cm sail', { exact: true, times: bars.len.toScale(p) && bars.len.toScale(SMALL_PUSH) })], '.']);
+            bars.update([{ label: 'your car’s push', value: p, color: '#40e080' }, { label: 'push with a ' + SMALL_TXT + ' sail', value: SMALL_PUSH, color: '#f0c040' }]);
+            say(api, out, ['⛵ Sail area: ', [K.area(c.sailArea)], '. The car weighs ', [K.grams(c.mass)],
+              '. Your start-line push is ', [cmp(p, SMALL_PUSH, 'with a ' + SMALL_TXT + ' sail', { exact: true, times: bars.len.toScale(p) && bars.len.toScale(SMALL_PUSH) })], '.']);
             if (sim) sim.reset();                               // redraw the car with its new sail, ready for the next run
             nudge();
           }
@@ -386,7 +397,7 @@
           const WHY = {
             tip: 'This big sail gets a huge push high above the wheels. That push flipped the car forward.',
             short: 'A small sail catches only a little wind. Down the hall, the weak wind soon loses to friction.',
-            mid: 'This sail catches more wind than a small 10 × 10 cm sail. So it rolls farther. ' +
+            mid: 'This sail catches more wind than a small ' + SMALL_TXT + ' sail. So it rolls farther. ' +
               'But the fading wind still loses to friction before ' + GOAL_FT + ' ft.',
             far: 'This big sail catches more wind than a smaller one. So the push beats friction for longer, and the car rolls ' + GOAL_FT + ' ft or more.'
           };
@@ -418,7 +429,7 @@
               api.done((r.reason === 'reached the end of the hall'
                 ? 'It rolled all the way to the end of the ' + HALL_TXT + ' hall without tipping! '
                 : 'It rolled ' + K.dist(r.distance) + ' without tipping! ') +
-                'A bigger sail catches more wind, so it goes farther. But a sail bigger than ' + BIGGEST_SAFE + ' × ' + BIGGEST_SAFE + ' cm flips the car. Its push is too big and too high up. ' +
+                'A bigger sail catches more wind, so it goes farther. But a sail bigger than ' + KID.by(BIGGEST_SAFE, BIGGEST_SAFE) + ' flips the car. Its push is too big and too high up. ' +
                 'Modules 5 and 6 show how to fix that.');
             }
           });
@@ -433,16 +444,16 @@
           '<p><strong>Build tips:</strong></p>' +
           '<ul><li><strong>Paper or cardstock?</strong> Paper is light but floppy. It bends back and spills air. ' +
           'Cardstock keeps its shape, but it is 2 to 3 times as heavy. A good trick: tape straws or pipe cleaners along the edges of a paper sail.</li>' +
-          '<li><strong>Size:</strong> About 20 cm on each side is a good start. It fits on one sheet of printer paper (about 21 × 28 cm). ' +
+          '<li><strong>Size:</strong> About ' + nb(KID.lenIn(STD_IN)) + ' on each side is a good start. It fits on one sheet of printer paper (' + nb(KID.by(8.5, 11)) + '). ' +
           'A bigger sail can tip the car. Modules 5 and 6 help with that.</li>' +
           '<li><strong>Make it cupped:</strong> Gently roll cardstock around a water bottle so it curves. The hollow side faces the fans. Keep the curve gentle.</li>' +
           '<li><strong>Mast:</strong> Hot-glue a skewer straight up in the middle of the car. Tape the sail to it at the top, middle and bottom.</li>' +
           '<li><strong>No flapping:</strong> Tape a popsicle stick or straw across the bottom edge of the sail.</li>' +
           '<li><strong>Face the fans:</strong> Crouch next to the fans and look at your car. You should see the whole sail, not its edge.</li></ul>' +
           '<p><strong>Test it in the hall:</strong></p>' +
-          '<ol><li><strong>Feel the fade:</strong> Hold a strip of paper ' + KID.dist(ftToM(3)) + ' from the fans. ' +
-          'Then try ' + [15, 30].map(function (f) { return KID.dist(ftToM(f)); }).join(', ') + ' and ' + KID.dist(ftToM(60)) + '. Watch it flutter less and less.</li>' +
-          '<li><strong>Sail swap:</strong> Run your car with two sails, like 15 cm and 20 cm. Do 3 runs with each. Change only ONE thing at a time.</li>' +
+          '<ol><li><strong>Feel the fade:</strong> Hold a strip of paper ' + nb(KID.feet(3)) + ' from the fans. ' +
+          'Then try ' + [15, 30].map(function (f) { return nb(KID.feet(f)); }).join(', ') + ' and ' + nb(KID.feet(60)) + '. Watch it flutter less and less.</li>' +
+          '<li><strong>Sail swap:</strong> Try a ' + nb(KID.lenIn(6)) + ' sail and an ' + nb(KID.lenIn(STD_IN)) + ' sail. Do 3 runs with each. Change only ONE thing at a time.</li>' +
           '<li><strong>Tip check:</strong> Watch from the side as the car starts. Do the back wheels lift? Then move the sail lower, or make it shorter.</li></ol>',
         render: function (el, api) {
           api.ui.note(el, 'build', '🛠️ <strong>Your materials:</strong> Use paper or cardstock for the sail. Use a skewer or thin dowel for the mast. ' +
@@ -458,13 +469,13 @@
         why: 'Thrust is the push that moves the car forward. For a sail car, it is the wind pushing on the sail.' },
       { q: 'You make your sail twice as wide AND twice as tall. How much push does it get now?', options: ['The same push as before', '2 times as much push', '4 times as much push', '8 times as much push'], answer: 2,
         why: 'The new sail holds 4 of the old sails (2 × 2). So it has 4 times the area and gets 4 times the push.' },
-      { q: 'Sail A is 20 cm × 20 cm. Sail B is 10 cm × 40 cm. Both face the fans. Which gets more push?', options: ['Sail A, because it is a square', 'Sail B, because it is taller', 'The same, because the areas match', 'It depends on how strong the wind is'], answer: 2,
-        why: 'Both sails have an area of 400 square cm. Same area, same push.' },
+      { q: 'Sail A is ' + KID.by(8, 8) + '. Sail B is ' + KID.by(4, 16) + '. Both face the fans. Which gets more push?', options: ['Sail A, because it is a square', 'Sail B, because it is taller', 'The same, because the areas match', 'It depends on how strong the wind is'], answer: 2,
+        why: 'Both sails have an area of ' + KID.areaIn(64) + '. Same area, same push.' },
       { q: 'Where in the hall does your sail get the biggest push?', options: ['Near the fans, at the start line', 'Far down the hall, near the end', 'In the middle, once it gets going', 'The same everywhere in the hall'], answer: 0,
         why: 'The wind spreads out and fades down the hall. So the push is biggest close to the fans.' },
       { q: 'Wind A blows twice as fast as Wind B. How does Wind A’s push on the same sail compare?', options: ['About the same as Wind B', 'About 2 times as strong', 'About 4 times as strong', 'About 8 times as strong'], answer: 2,
         why: 'Faster air hits harder, and more of it hits each second. So wind twice as fast gives about 4 times the push.' },
-      { q: 'Your car slows down and stops about ' + KID.ft(TYPICAL_RUN.distance) + ' ft down the hall. The fans are still on. Why?', options: ['Gravity pulls harder at the far end', 'The wind is weak there, so friction wins', 'The car gets heavier the farther it rolls', 'The wind turns around and blows back'], answer: 1,
+      { q: 'Your car slows down and stops about ' + KID.dist(TYPICAL_RUN.distance) + ' down the hall. The fans are still on. Why?', options: ['Gravity pulls harder at the far end', 'The wind is weak there, so friction wins', 'The car gets heavier the farther it rolls', 'The wind turns around and blows back'], answer: 1,
         why: 'The wind fades down the hall. Far away, its push is smaller than friction, so the car slows down and stops.' },
       { q: 'Two sails are the same size. Which one gets a little MORE push?', options: ['A flat sail, held stiff and straight', 'A cupped sail, hollow side to the fans', 'A cupped sail, bulging side to the fans', 'A sail with holes to let the air through'], answer: 1,
         why: 'The hollow side holds the air like a cupped hand. So it gets a little more push than a flat sail.' },
@@ -472,7 +483,7 @@
         why: 'When it faces straight at the fans, the whole sail catches the wind. A turned sail catches less.' },
       { q: 'Your paper sail bends back and flaps in the wind. What is the best fix?', options: ['Use thin, light paper instead', 'Tape straws along the sail’s edges', 'Turn its edge toward the fans', 'Tape it to the mast only at the top'], answer: 1,
         why: 'The straws make a frame that keeps the sail stiff. Then it keeps catching the wind instead of spilling it.' },
-      { q: 'You build a giant sail, 40 cm tall. At the start, the car flips onto its nose. Why?', options: ['The heavy sail pulls the front down', 'The wind gets under the car and lifts it', 'Its big push up high tips the car forward', 'The wheels roll too fast at the start'], answer: 2,
+      { q: 'You build a giant sail, ' + KID.lenIn(16) + ' tall. At the start, the car flips onto its nose. Why?', options: ['The heavy sail pulls the front down', 'The wind gets under the car and lifts it', 'Its big push up high tips the car forward', 'The wheels roll too fast at the start'], answer: 2,
         why: 'The wind pushes high above the wheels. A big, tall sail gets so much push that it flips the car.' }
     ]
   });

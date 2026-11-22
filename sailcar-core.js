@@ -5,10 +5,12 @@
 //                               the hallway, used by every simulator and the Design Studio
 // • SailLab.ui / SailLab.draw — small helpers so every module looks and behaves the same
 //                               (ui.predict = the "Predict first" card; ui.word = a "Word to know" box)
-// • SailLab.kid               — words and numbers for 6th graders: distances in feet (then metres), mass in
+// • SailLab.kid               — words and numbers for 6th graders: distances in FEET (inches under a foot),
+//                               sizes they build and measure in INCHES (square inches for area), mass in
 //                               grams, speeds in words, and forces NEVER as numbers: a force is an arrow
 //                               (longer = bigger) and kid.compare() says how two forces compare in words.
-//                               Students never see newtons, kg or m/s.
+//                               Students never see newtons, kg, m/s, metres, cm or mm. (The physics below
+//                               stays in metres, kilograms and seconds: only the words are in feet and inches.)
 // • Progress (which modules a student has passed) is saved in Firestore
 //   (sailcar_progress/{uid}); if the database refuses, it falls back to this browser.
 (function () {
@@ -141,13 +143,44 @@
   //           and words that COMPARE two forces:
   //             kid.compare(push, friction, { noun: 'friction' }) → 'about 20 times as strong as friction'
   //             kid.bigger(push, friction)                        → 'bigger'
-  //   kid.dist(15.85)  → '52 ft (16 m)'           (feet first: US tape measures; whole feet, one decimal under 10 ft)
+  //   LENGTHS: US units only. The physics works in metres (and the stored runs and designs keep their numbers), so
+  //   every length that reaches a student goes through one of these. Never write 'm', 'cm' or 'mm' in student text.
+  //     DISTANCES (down the hall, from the fans, how far a car rolled) are FEET; under a foot they are inches:
+  //       kid.dist(15.85)  → '52 ft'    kid.dist(7.62) → '25 ft'    kid.dist(2) → '6.6 ft'    kid.dist(0.1778) → '7 in'
+  //       whole feet from 10 ft up, one decimal under 10 ft, whole inches under 1 ft, '0 ft' for nothing. No metres.
+  //       kid.feet(25)     → '25 ft'   the same from a number of FEET (kid.feet(0.5) → '6 in')
+  //     SIZES a student sets, builds or measures with a ruler (a sail, a stick, a mast, a wheel) are INCHES, to the nearest
+  //     HALF inch: whole numbers as '8 in', halves as '6 1/2 in' (a fraction, never '6.5 in'):
+  //       kid.len(20.32)   → '8 in'     kid.len(11) → '4 1/2 in'      (the real 11 cm craft stick)   kid.len(3) → '1 in'
+  //       kid.lenIn(6.5)   → '6 1/2 in' the same from a number of INCHES (a slider's value): format: kid.lenIn
+  //       kid.by(8, 8)     → '8 × 8 in'  (a sail's width and height)
+  //       kid.area(0.04129) → '64 square inches'   from m²;   kid.areaIn(64) → '64 square inches' from square inches
+  //     NUMBERS for sums and physics (not text): kid.inToCm(8) → 20.32, kid.inToM(8) → 0.2032, kid.cmToIn(20.32) → 8,
+  //       kid.ftToM(70) → 21.34, kid.inches(11) → 4.5 (cm → inches, to the nearest half inch, the number kid.len shows).
   //   kid.grams(0.07)  → '70 g'                   (mass stays in grams: students weigh their real cars)
   //   kid.speed(1.4)   → 'walking speed'          (words, not m/s)
-  const CLIP_N = 0.001 * G, FT_PER_M = 3.28084;
+  const CLIP_N = 0.001 * G, FT_PER_M = 3.28084, CM_PER_IN = 2.54, SQIN_PER_M2 = 1 / (0.0254 * 0.0254);
   function r1(v) { return Math.round(v * 10) / 10; }
   function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
   function clipsRaw(N) { return Math.abs(num(N)) / CLIP_N; }
+  // feet, rounded the way they are shown: whole feet, one decimal under 10 ft
+  function ftRound(f) { return Math.abs(f) < 9.95 ? r1(f) : Math.round(f); }
+  // a length in FEET as text: '52 ft' · '6.6 ft' · '1 ft' · under a foot, whole inches: '7 in' · nothing: '0 ft'
+  function feetText(f) {
+    f = num(f);
+    const inch = Math.round(Math.abs(f) * 12);        // 0.96 ft and up rounds to 12 in: that is '1 ft'
+    if (inch === 0) return '0 ft';
+    if (inch < 12) return (f < 0 ? '-' : '') + inch + ' in';
+    return ftRound(f) + ' ft';
+  }
+  // inches to the nearest HALF inch (a ruler's friendly step); never negative
+  function halfIn(inches) { return Math.round(Math.abs(num(inches)) * 2) / 2; }
+  // that number as text, no unit: 8 → '8' · 4.5 → '4 1/2' · 0.5 → '1/2' · 0 → '0'
+  function inNum(inches) {
+    const v = halfIn(inches), w = Math.floor(v);
+    return v - w >= 0.5 ? (w ? w + ' 1/2' : '1/2') : String(w);
+  }
+  function sqText(n) { n = Math.round(Math.abs(num(n))); return n + (n === 1 ? ' square inch' : ' square inches'); }
 
   // COMPARING TWO FORCES IN WORDS — the ONE vocabulary every module uses, so the whole lab sounds the same.
   // r = the bigger size ÷ the smaller size (signs are ignored: a force's direction is the arrow's job).
@@ -265,12 +298,36 @@
       const n = kid.clips(N);
       return n + (n === 1 ? ' clip' : ' clips');
     },
-    // metres → feet, rounded the way it is shown: whole feet, one decimal under 10 ft
-    ft: function (m) { const f = num(m) * FT_PER_M; return Math.abs(f) < 9.95 ? r1(f) : Math.round(f); },
-    // metres, rounded the way it is shown: whole metres, one decimal under 10 m
+    // ── LENGTHS: feet and inches (see the list above). The physics gives metres; students only ever see these. ──
+    // metres → a NUMBER of feet, rounded the way it is shown: whole feet, one decimal under 10 ft (0.6 for 7 in).
+    // For a sum or a comparison (kid.ft(d) >= 40). For TEXT use kid.dist: it also says inches under a foot.
+    ft: function (m) { return ftRound(num(m) * FT_PER_M); },
+    // NOT FOR STUDENT TEXT: metres, rounded one decimal under 10 m. Kept so older callers and teacher-only checks still
+    // run; students see feet (kid.dist) and inches (kid.len), never metres.
     m: function (m) { m = num(m); return Math.abs(m) < 9.95 ? r1(m) : Math.round(m); },
-    // '52 ft (16 m)' · '25 ft (7.6 m)' · '6.6 ft (2 m)'
-    dist: function (m) { return kid.ft(m) + ' ft (' + kid.m(m) + ' m)'; },
+    // metres → TEXT in feet only: '52 ft' · '25 ft' · '6.6 ft' · '10 ft' · under 1 ft whole inches '7 in' · '0 ft'
+    dist: function (m) { return feetText(num(m) * FT_PER_M); },
+    // the same from a number of FEET (no metres round trip): kid.feet(25) → '25 ft' · kid.feet(6.6) → '6.6 ft' · kid.feet(0.5) → '6 in'
+    feet: function (ft) { return feetText(ft); },
+    // centimetres → TEXT in inches to the nearest half inch: '8 in' · '4 1/2 in' · '1 in' · '1/2 in' · '0 in'
+    // (for the real objects: a 11 cm craft stick '4 1/2 in', a 15 cm jumbo stick '6 in', 21 cm '8 1/2 in', 3 cm wheels '1 in', 5 cm '2 in')
+    len: function (cm) { return inNum(num(cm) / CM_PER_IN) + ' in'; },
+    // a number of INCHES → TEXT, to the nearest half inch: kid.lenIn(8) '8 in' · kid.lenIn(6.5) '6 1/2 in' · kid.lenIn(6.4) '6 1/2 in'
+    lenIn: function (inches) { return inNum(inches) + ' in'; },
+    // a width and a height in INCHES → '8 × 8 in' · '4 1/2 × 6 in'
+    by: function (w, h) { return inNum(w) + ' × ' + inNum(h) + ' in'; },
+    // an area in m² → '64 square inches' · '1 square inch' (whole square inches)
+    area: function (m2) { return sqText(num(m2) * SQIN_PER_M2); },
+    // an area in SQUARE INCHES (a slider's width × height) → '64 square inches'
+    areaIn: function (sqIn) { return sqText(sqIn); },
+    // ── numbers (not text) ──
+    CM_PER_IN: CM_PER_IN,
+    inToCm: function (inches) { return num(inches) * CM_PER_IN; },        // 8 → 20.32: a slider's inches into the physics' centimetres
+    inToM: function (inches) { return num(inches) * CM_PER_IN / 100; },   // 8 → 0.2032
+    cmToIn: function (cm) { return num(cm) / CM_PER_IN; },                // 20.32 → 8 (not rounded: a saved design's cm back to a slider)
+    ftToM: function (ft) { return num(ft) / FT_PER_M; },                  // 70 → 21.34
+    // centimetres → a NUMBER of inches, to the nearest half inch (the number kid.len shows): kid.inches(11) → 4.5 · kid.inches(15) → 6
+    inches: function (cm) { return halfIn(num(cm) / CM_PER_IN); },
     // kilograms → '70 g'
     grams: function (kg) { return Math.round(num(kg) * 1000) + ' g'; },
     // a speed (m/s) in words. The cars in our hallway top out around walking speed; the wind at the fans is a run.
@@ -338,7 +395,8 @@
       svg('text', { x: x + size * 0.16, y: floorY + 14, 'text-anchor': 'middle', fill: '#9080b0', 'font-size': 12 }, g, label || '2 FANS');
       return g;
     },
-    // a sail car seen from the side; (x, floorY) = back wheel contact point. 1 unit ≈ 1 px per cm × scale
+    // a sail car seen from the side; (x, floorY) = back wheel contact point. The sizes (length, sailW, sailH, mastH, wheelR) are
+    // drawing units of 1 px per CENTIMETRE × scale: internal, never shown. From a student's inches pass kid.inToCm(inches).
     car: function (parent, x, floorY, o) {
       o = Object.assign({ scale: 1, length: 24, sailW: 20, sailH: 20, mastH: 26, cupped: false, wheelR: 3, color: '#b44fff', sailColor: '#f0e6ff', tilt: 0 }, o || {});
       const s = o.scale, g = svg('g', { class: 'sl-car' }, parent);
@@ -377,19 +435,23 @@
     //         bar: { color, max (default o.max), px (default 110) } → a FORCE slider: a little arrow whose length shows
     //              the setting (draw.forceScale, so equal settings = equal arrows) and NO number (unless format is given),
     //         ends: ['small push', 'big push'] → words under the two ends of the slider,
+    //         inches: true → a SIZE slider in inches (min, max, step, value and onInput are all inches; use whole inches, or
+    //              half inches where a whole one is too coarse): shows '8 in' / '6 1/2 in' (kid.lenIn), and a screen reader
+    //              hears the same. Convert to centimetres with kid.inToCm(v) before calling the physics,
     //         valueText(v) → what a screen reader says for the setting (e.g. kid.compare words) }
     slider: function (parent, o) {
       const id = 'sl-s' + (++uid);
       const out = h('span', { class: 'sl-val' });
       const input = h('input', { type: 'range', id: id, min: o.min, max: o.max, step: o.step || 1, value: o.value });
-      const fmtV = o.format || (o.bar ? null : function (v) { return v + (o.unit ? ' ' + o.unit : ''); });
+      const fmtV = o.format || (o.inches ? kid.lenIn : o.bar ? null : function (v) { return v + (o.unit ? ' ' + o.unit : ''); });
+      const aria = o.valueText || (o.inches && !o.format ? kid.lenIn : null);
       const bar = o.bar ? h('span', { class: 'sl-vbar', 'aria-hidden': 'true', style: 'background:' + (o.bar.color || '#40e080') }) : null;
       const barLen = o.bar ? forceScale(o.bar.max == null ? o.max : o.bar.max, o.bar.px || 110, { min: 10, over: 0 }) : null;
       function show() {
         const v = Number(input.value);
         out.textContent = fmtV ? fmtV(v) : '';
         if (bar) { const w = barLen(v); bar.style.width = w + 'px'; bar.hidden = !(w > 0); out.appendChild(bar); }
-        if (o.valueText) input.setAttribute('aria-valuetext', o.valueText(v));
+        if (aria) input.setAttribute('aria-valuetext', aria(v));
       }
       input.addEventListener('input', function () { show(); if (o.onInput) o.onInput(Number(input.value)); });
       const kids = [h('label', { for: id, class: 'sl-ctrl-lbl' }, [o.label + ' ', out]), input];
@@ -555,7 +617,8 @@
     //   getCar()  → car parameters (merged over DEFAULT_CAR)
     //   opts      → simulate() options (fan, startX, hallLength…), plus
     //               { getOpts() → options read fresh on every run (e.g. a fan-speed control),
-    //                 showForces (default true), scaleM (metres shown; default fits the run),
+    //                 showForces (default true), scaleM (the hallway length drawn, in METRES: internal, the marks on
+    //                 the picture are always feet; default fits the run),
     //                 playSpeed (default: 2×, faster for long runs so it lasts ≤ ~9 s), onResult(result),
     //                 needPrediction: a ui.predict() card — ▶ Run stays disabled until a choice is picked,
     //                                 each run and Reset hide its old answer (the choice stays), and if the card
