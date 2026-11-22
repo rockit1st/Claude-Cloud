@@ -526,7 +526,7 @@
           'In the simulator, an ' + BIG_TXT + ' sail rolls ' + nb(KID.dist(BIG_SAIL.distance)) + '. A ' + SMALL_TXT + ' sail rolls only ' + nb(KID.dist(SMALL_SAIL.distance)) + '.</li></ul>' +
           '<p><strong>Tidy up</strong> (small wins that also save weight):</p>' +
           '<ol><li>Trim cardstock edges. Tape down loose flaps and corners.</li>' +
-          '<li>Cut axle ends short. Leave about 1/4&nbsp;in of skewer past each wheel.</li>' +
+          '<li>Cut axle ends short. Leave about ' + nb('1/4 in') + ' of skewer past each wheel.</li>' +
           '<li>Nothing sticking out: no wide bumper, no pipe-cleaner antennas, no long tape tails.</li>' +
           '<li>Make the sail tight, not floppy. Tape it to a frame of straws or skewers. A flapping sail wastes the wind.</li></ol>' +
           '<p><strong>Test drag in the hall:</strong></p>' +
