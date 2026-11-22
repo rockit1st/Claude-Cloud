@@ -340,7 +340,12 @@
     });
   }
 
+  // Only the owner can be on the older rules (a teacher he adds exists only under the new ones),
+  // so for anyone else a refusal means their teacher access is gone: say that, never "paste the rules".
+  function lostAccess() { return new Error('you are no longer set up as a teacher. Reload this page, and ask the site owner if it keeps happening.'); }
+
   function setOldRules(on) {
+    if (on && !isOwner) return;
     const was = oldRules;
     oldRules = on;
     if (on) { joinCodeByClass = {}; wasVisible = {}; }   // older rules: joinCodes entries open nothing
@@ -482,7 +487,7 @@
           if (attempt < 3) return addClass(name, attempt + 1);
           throw new Error('could not find an unused join code. Please try again.');
         }
-        if (isDenied(e)) return oldWay();
+        if (isDenied(e)) { if (!isOwner) throw lostAccess(); return oldWay(); }
         throw e;
       });
     });
@@ -546,7 +551,7 @@
           if (attempt < 3) return rotateCode(id, attempt + 1);
           throw new Error('could not find an unused join code. Please try again.');
         }
-        if (isDenied(e)) return oldWay();
+        if (isDenied(e)) { if (!isOwner) throw lostAccess(); return oldWay(); }
         throw e;
       });
     });
@@ -598,7 +603,7 @@
           scheduleUsage();
           if (countEl) countEl.textContent = names.length + ' student' + (names.length === 1 ? '' : 's');
           if (rosterEl) rosterEl.innerHTML = names.length
-            ? names.map(function(n) { return '<li>' + esc(n.name || n.email) + '<span class="rm" title="Remove" onclick="removeStudent(\'' + esc(n.classId) + '\', \'' + esc(n.uid) + '\')">✕</span></li>'; }).join('')
+            ? names.map(function(n) { return '<li>' + esc(n.name || n.email) + '<span class="rm" title="Remove" onclick="removeStudent(\'' + attrJs(n.classId) + '\', \'' + attrJs(n.uid) + '\')">✕</span></li>'; }).join('')
             : '<li class="none">No students have joined yet.</li>';
         }, console.error);
       rosterUnsubs.push(u);
@@ -878,7 +883,7 @@
       card.innerHTML =
         '<div class="cc-name">' + esc(e.className || 'Class') + '</div>' +
         '<div class="cc-meta">Joined &bull; code <strong>' + esc(e.code || '') + '</strong></div>' +
-        '<button class="leave-btn" onclick="leaveClass(\'' + doc.id + '\', \'' + attrJs(e.className || '') + '\')">Leave class</button>';
+        '<button class="leave-btn" onclick="leaveClass(\'' + attrJs(doc.id) + '\', \'' + attrJs(e.className || '') + '\')">Leave class</button>';
       wrap.appendChild(card);
     });
   }

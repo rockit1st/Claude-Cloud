@@ -36,7 +36,8 @@
 //    another teacher's classes, join codes or rosters. That includes the owner:
 //    his Classes page shows and manages his own classes only.
 //  - Read the altitude results and the Sail Car Lab runs that were saved for
-//    one of their own classes (the school boards of the future).
+//    one of their own classes (so a later update can show each teacher their
+//    own classes' boards).
 //  - A teacher who is not the owner has none of the owner's site-wide powers:
 //    they cannot read everyone's results or progress, change the settings or
 //    the races, or change or delete a result or a run.
@@ -145,9 +146,12 @@ service cloud.firestore {
     // A teacher writing a roster entry (enrollments/{classId}_{uid}) for one of
     // their own classes. The id must start with that class's id: otherwise a
     // teacher could plant an entry that makes someone "in" another teacher's class.
+    // Both halves of the id are plain letters and digits (as the pages make them): pages
+    // put these ids into buttons, so a teacher cannot plant an id that carries code.
     function teacherRosterWrite(id) {
       let c = request.resource.data.classId;
-      return isTeacher() && c is string && id.split('_')[0] == c && ownsClass(c);
+      return isTeacher() && c is string && id.matches('^[A-Za-z0-9]+_[A-Za-z0-9]+$')
+             && id.split('_')[0] == c && ownsClass(c);
     }
     // Highest believable altitude in feet, from the teacher's launch-day setup
     // (settings/altitude-setup); 300 ft until the teacher sets one.
@@ -309,7 +313,10 @@ service cloud.firestore {
     // classes.html no longer stores the join code here (see joinCodes).
     match /classes/{id} {
       allow read: if signedIn();
+      // A class id must be plain letters and digits (the ids the Classes page makes):
+      // the pages put it into buttons and links on every student's screen.
       allow create: if isTeacher()
+                    && id.matches('^[A-Za-z0-9]{1,40}$')
                     && request.resource.data.teacherEmail == request.auth.token.email;
       allow update: if isTeacher()
                     && resource.data.teacherEmail == request.auth.token.email
