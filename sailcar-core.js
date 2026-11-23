@@ -1253,7 +1253,16 @@
         if (right) score++;
         li.classList.add(right ? 'right' : 'wrong');
         li.querySelectorAll('input').forEach(function (inp) { inp.disabled = true; });
-        li.querySelector('.sl-q-why').textContent = (right ? '✓ ' : '✗ Correct answer: ' + item.q.options[item.q.answer] + '. ') + (item.q.why || '');
+        const whyBox = li.querySelector('.sl-q-why');
+        whyBox.textContent = '';
+        if (right) {
+          whyBox.appendChild(h('div', { text: '✓ Right! ' + (item.q.why || '') }));
+        } else {
+          // a wrong answer gets three short parts: what you picked and why it is not right, the right answer, and why it is right
+          const notWhy = item.q.whyNot && item.q.whyNot[item.picked];
+          whyBox.appendChild(h('div', { class: 'sl-why-pick', text: '✗ You picked: ' + item.q.options[item.picked] + (notWhy ? ' — ' + notWhy : '') }));
+          whyBox.appendChild(h('div', { class: 'sl-why-right', text: '✓ The right answer: ' + item.q.options[item.q.answer] + '. ' + (item.q.why || '') }));
+        }
       });
       submit.disabled = true;
       // saved on this device at once, so the result shows straight away; the upload runs in the background
