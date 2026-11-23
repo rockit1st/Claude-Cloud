@@ -117,7 +117,7 @@
           '<p>We check the push at the start line, about ' + nb(KID.dist(START)) + ' from the fans.</p>',
         // the challenge says what draw() checks: area = the 8 × 8 in sail's area (so the same push) and width ≠ height
         challenge: 'Match an ' + STD_TXT + ' sail’s push with a non-square sail.',
-        todo: ['Answer the Predict first question.', 'Slide Sail width and Sail height.', 'Make the green arrow match the purple arrow.',
+        todo: ['Answer the Predict first question.', 'Press Check my guess to see the answer.', 'Slide Sail width and Sail height for your challenge.', 'Make the green arrow match the purple arrow.',
                'Keep the width and height different.'],
         render: function (el, api) {
           const K = api.kid;
@@ -139,8 +139,9 @@
           // the sliders are in INCHES (4 to 16 in, 2 in at a time); the physics gets metres from kid.inToM
           const wS = api.ui.slider(row, { label: 'Sail width', min: 4, max: 16, step: 2, value: SMALL_IN, inches: true, onInput: changed });
           const hS = api.ui.slider(row, { label: 'Sail height', min: 4, max: 16, step: 2, value: SMALL_IN, inches: true, onInput: changed });
-          const test = api.h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '🧪 Test it: make an ' + STD_TXT + ' sail' });
+          const test = api.h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: '🔍 Check my guess: show an ' + STD_TXT + ' sail' });
           el.appendChild(test);
+          api.ui.note(el, 'tip', 'This button is only for the Predict question. It shows the ' + STD_TXT + ' sail. <strong>Your challenge is different:</strong> make a sail that is NOT square but gets the same push. Use the sliders.');
           [wS.input, hS.input, test].forEach(function (b) { if (b) guess.gate(b); });   // commit to a guess first
           const out = api.h('div', { class: 'sl-note sl-note-tip', 'aria-live': 'polite' });
           el.appendChild(out);
