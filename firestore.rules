@@ -69,18 +69,49 @@
 //    shape the lab saves them and under their own Google name.
 //  - Tech Bucks: a student reads their own ledger (techbucks) and can earn only
 //    the fixed awards listed there, each at most once (see the Tech Bucks block below).
+//    They can spend them in the Avatar Shop (stage B) and show an avatar (avatars/{uid}).
 //  - Everything else behaves as before.
 //
-// TECH BUCKS: every award is its own document, techbucks/{uid}_{key}. The balance is
-// the sum of a student's documents (there is no balance number to forge). A student
-// can create an award only if its key is on the list in amountFor() below, its amount
-// is the fixed amount for that key, and no award with that key exists yet; they can never
-// change or delete one. Awards that can repeat carry today's date (UTC, taken from the
-// server's clock) and a slot number, which caps them per day. A teacher can give a
-// bonus of 1 to 50 to a student in one of their own classes, and can read and remove the
-// awards that carry one of their own classes. New rules, old pages: nothing changes for
-// anyone. New pages, old rules: awards are quietly refused and tried again later.
-// What a determined student could still claim is listed above amountFor().
+// TECH BUCKS: every award is its own document, techbucks/{uid}_{key}. The ledger is the
+// truth: a student's balance is the sum of their ledger documents (earnings are positive,
+// purchases are negative). A student can create an award only if its key is on the list
+// in amountFor() below, its amount is the fixed amount for that key, and no award with
+// that key exists yet; they can never delete one. Awards that can repeat carry today's date
+// (UTC, taken from the server's clock) and a slot number, which caps them per day. A teacher
+// can give a bonus of 1 to 50 to a student in one of their own classes, and can read and
+// remove the awards that carry one of their own classes.
+//
+// STAGE B (the Avatar Shop). Rules cannot add up a ledger, so spending needs a running
+// total: techbucks_totals/{uid} = {uid, earned, spent, last, updatedAt}; the balance is
+// earned - spent. Nobody can write earned or spent freely. A totals document changes ONLY
+// in the same batch as one matching ledger change, and "last" names that ledger document:
+//   - a student's earn (counted: true)  -> earned goes up by exactly its amount
+//   - a teacher's bonus (counted: true) -> earned goes up by exactly its amount
+//   - a purchase  techbucks/{uid}_buy_{itemId}  (kind "spend", amount = -priceFor(itemId),
+//     one per item)                     -> spent goes up by exactly the price, and
+//                                          earned - spent stays at 0 or more
+//   - a teacher removing a counted award -> earned goes down by exactly its amount (the
+//     balance may drop below zero; buying is blocked until it is back above the price)
+//   - "counted" marks an award the totals already include. Awards made before totals existed
+//     (and awards from an old page, which are created without the mark) are counted later by
+//     their student: counted flips from missing to true, once, in the same batch as earned
+//     going up by exactly that award's amount.
+//   - A totals document may also be created as {earned: 0, spent: 0}, never with other numbers.
+// "last" is the one addition to the plan: without it a totals rule cannot know which ledger
+// document it is coupled to. The ledger side also requires that the totals document was
+// written in the same request (updatedAt == request.time), so an old coupling cannot be reused.
+// A purchase can never be deleted or changed, by anyone. A teacher can read the purchases of
+// their classes (they carry the class, like awards) but not remove them.
+// AVATARS: avatars/{uid} = {uid, equipped: {slot: itemId}, updatedAt}. A student writes only
+// their own, only the six known slots, and only items that are free (price 0) or that they
+// own (their purchase document exists, or is created in the same batch). Any signed-in school
+// account can read them (cosmetic only: presets, no text, no personal data).
+// priceFor() below is the single price list; avatar.js carries a copy and a test fails if
+// they ever differ.
+// New rules, old pages: nothing changes for anyone (an old page's award has no "counted"
+// mark and is accepted as before; it is counted the next time its student opens a new page).
+// New pages, old rules: awards are written exactly as before (ledger only), the shop shows
+// "opens soon". What a determined student could still claim is listed above amountFor().
 //
 // JOIN CODES: each code is kept in "joinCodes/{CODE}" with its class and its
 // teacher. "New code" on the Classes page replaces a class's code (new codes
@@ -426,47 +457,186 @@ service cloud.firestore {
              && (key != 'rocket_build' || exists(/databases/$(database)/documents/rocket_builds/$(uid)))
              && (!key.matches('^ruler_race_.*') || racePlayed(uid, key.split('_')[2]));
     }
-    // Fields every award has; classId and by are the only optional ones.
+    // Fields every ledger document has; classId, by and counted are the only optional ones.
     function techShape(d) {
-      return d.keys().hasOnly(['uid', 'key', 'amount', 'kind', 'reason', 'classId', 'createdAt', 'by'])
+      return d.keys().hasOnly(['uid', 'key', 'amount', 'kind', 'reason', 'classId', 'createdAt', 'by', 'counted'])
              && d.keys().hasAll(['uid', 'key', 'amount', 'kind', 'reason', 'createdAt'])
              && d.uid is string && d.key is string
              && d.reason is string && d.reason.size() >= 1 && d.reason.size() <= 80
              && d.createdAt == request.time;
     }
-    // A student's own award.
+    // The student's totals document is written in this same request and names this ledger
+    // document as the change it goes with (see the STAGE B note above).
+    function coupledTotals(id, uid) {
+      let t = getAfter(/databases/$(database)/documents/techbucks_totals/$(uid)).data;
+      return t.get('last', '') == id && t.get('updatedAt', null) == request.time;
+    }
+    // A student's own award. It is either counted now (counted: true, with the totals raised in
+    // this batch) or has no mark yet (the shape old pages write; counted later by the migration).
     function validEarn(id) {
       let d = request.resource.data;
-      return techShape(d)
+      return d.get('kind', '') == 'earn'
+             && techShape(d)
              && d.uid == request.auth.uid
              && id == d.uid + '_' + d.key
-             && d.kind == 'earn'
              && !('by' in d)
              && d.amount == amountFor(d.key)
              && techProof(d.uid, d.key)
-             && (!('classId' in d) || (d.classId is string && inClass(d.classId)));
+             && (!('classId' in d) || (d.classId is string && inClass(d.classId)))
+             && (!('counted' in d) || (d.counted == true && coupledTotals(id, d.uid)));
     }
     // A teacher's bonus for a student in one of the teacher's own classes.
     function validBonus(id) {
       let d = request.resource.data;
-      return isTeacher()
+      return d.get('kind', '') == 'bonus'
+             && isTeacher()
              && techShape(d)
              && d.uid.matches('^[A-Za-z0-9]{1,128}$')
              && d.key.matches('^bonus_[A-Za-z0-9]{6,40}$')
              && id == d.uid + '_' + d.key
-             && d.kind == 'bonus'
              && d.amount is int && d.amount >= 1 && d.amount <= 50
              && d.get('by', '') == request.auth.token.email
              && d.get('classId', '') is string && d.get('classId', '') != ''
              && ownsClass(d.get('classId', ''))
-             && exists(/databases/$(database)/documents/enrollments/$(d.get('classId', '') + '_' + d.uid));
+             && exists(/databases/$(database)/documents/enrollments/$(d.get('classId', '') + '_' + d.uid))
+             && (!('counted' in d) || (d.counted == true && coupledTotals(id, d.uid)));
+    }
+
+    // ── Spending (stage B) ──
+    // THE price list: every item's price, 0 = free for everyone. Item ids are slot-name
+    // (slots: skin, face, hat, gear, back, bg). Keep avatar.js PRICES identical (a test checks).
+    // Any other "buy_<itemId>" later (games) is added here and nowhere else.
+    function priceFor(item) {
+      return item is string
+        ? {
+            'skin-peach': 0, 'skin-tan': 0, 'skin-brown': 0, 'skin-deep': 0, 'skin-alien': 0, 'skin-robot': 0, 'skin-gold': 60,
+            'face-smile': 0, 'face-grin': 5, 'face-wink': 5, 'face-surprised': 8, 'face-starry': 15,
+            'hat-beanie': 8, 'hat-propeller': 12, 'hat-hardhat': 15, 'hat-wizard': 25, 'hat-rocket': 30, 'hat-astronaut': 40, 'hat-crown': 60,
+            'gear-glasses': 10, 'gear-sunglasses': 12, 'gear-goggles': 15, 'gear-antenna': 18, 'gear-headphones': 20,
+            'back-backpack': 15, 'back-cape': 25, 'back-jetpack': 45, 'back-wings': 55,
+            'bg-sky': 0, 'bg-stars': 15, 'bg-hallway': 15, 'bg-lab': 20, 'bg-launchpad': 30, 'bg-moon': 40, 'bg-blackhole': 55
+          }.get(item, -1)
+        : -1;
+    }
+    // A student's purchase: techbucks/{uid}_buy_{itemId}, kind "spend", amount = -price,
+    // coupled with the totals going up in "spent" in this same batch (checked on the totals side).
+    function validSpend(id) {
+      let d = request.resource.data;
+      return d.get('kind', '') == 'spend'
+             && techShape(d)
+             && d.uid == request.auth.uid
+             && d.key.matches('^buy_[a-z]+-[a-z]+$')
+             && id == d.uid + '_' + d.key
+             && spendPriceOk(d, priceFor(d.key.split('_')[1]))
+             && !('by' in d) && !('counted' in d)
+             && (!('classId' in d) || (d.classId is string && inClass(d.classId)))
+             && coupledTotals(id, d.uid);
+    }
+    function spendPriceOk(d, price) {
+      return price > 0 && d.amount == -price;
+    }
+    // Counting an award that is already there (the migration): only "counted" changes, to true,
+    // in the same batch as earned going up by this award's amount.
+    function validCounting(id) {
+      let o = resource.data;
+      return o.get('kind', '') in ['earn', 'bonus']
+             && o.uid == request.auth.uid
+             && o.get('counted', false) != true
+             && request.resource.data.get('counted', false) == true
+             && request.resource.data.diff(o).affectedKeys().hasOnly(['counted'])
+             && coupledTotals(id, o.uid);
     }
     match /techbucks/{id} {
       allow read: if (signedIn() && resource.data.uid == request.auth.uid)
                   || (isTeacher() && ownsClass(resource.data.get('classId', '')));
-      allow create: if signedIn() && (validEarn(id) || validBonus(id));
-      allow update: if false;
-      allow delete: if isTeacher() && ownsClass(resource.data.get('classId', ''));
+      allow create: if signedIn() && (validEarn(id) || validBonus(id) || validSpend(id));
+      allow update: if signedIn() && validCounting(id);
+      // A teacher removes awards (never purchases) of their own classes; a counted one takes
+      // its amount out of the student's totals in the same batch.
+      allow delete: if isTeacher() && ownsClass(resource.data.get('classId', ''))
+                    && resource.data.get('kind', '') in ['earn', 'bonus']
+                    && (resource.data.get('counted', false) != true || coupledTotals(id, resource.data.uid));
+    }
+
+    // techbucks_totals/{uid}: {uid, earned, spent, last, updatedAt}. Changes only together with the
+    // ledger document "last" names (see the STAGE B note above). A student reads their own.
+    function totalsCreated(uid, a, b, l) {
+      // a ledger document written in this request (its createdAt is this request's time)
+      return l.get('createdAt', null) == request.time && l.uid == uid && a.last == uid + '_' + l.key
+             && (((l.kind == 'earn' && request.auth.uid == uid) || (l.kind == 'bonus' && isTeacher()))
+                  && l.get('counted', false) == true
+                  && a.earned == b.earned + l.amount && a.spent == b.spent
+                 || (l.kind == 'spend' && request.auth.uid == uid
+                     && a.spent == b.spent - l.amount && a.earned == b.earned
+                     && a.earned - a.spent >= 0));
+    }
+    function totalsCounted(uid, a, b, lb, la) {
+      // an award that was there before, flipped to counted
+      return request.auth.uid == uid && lb.uid == uid && lb.get('kind', '') in ['earn', 'bonus']
+             && lb.get('counted', false) != true && la.get('counted', false) == true
+             && a.earned == b.earned + lb.amount && a.spent == b.spent;
+    }
+    function totalsRemoved(uid, a, b, lb) {
+      // a counted award removed by a teacher
+      return isTeacher() && lb.uid == uid && lb.get('kind', '') in ['earn', 'bonus']
+             && lb.get('counted', false) == true
+             && a.earned == b.earned - lb.amount && a.spent == b.spent;
+    }
+    function validTotals(uid) {
+      let a = request.resource.data;
+      let b = resource == null ? {'earned': 0, 'spent': 0} : resource.data;
+      return a.keys().hasOnly(['uid', 'earned', 'spent', 'last', 'updatedAt'])
+             && a.keys().hasAll(['uid', 'earned', 'spent', 'updatedAt'])
+             && a.uid == uid && a.earned is int && a.spent is int && a.earned >= 0 && a.spent >= 0
+             && a.updatedAt == request.time
+             && (!('last' in a)
+                  ? (resource == null && request.auth.uid == uid && a.earned == 0 && a.spent == 0)
+                  : (a.last is string && a.last.size() <= 200
+                     && ((existsAfter(/databases/$(database)/documents/techbucks/$(a.last))
+                          && !exists(/databases/$(database)/documents/techbucks/$(a.last))
+                          && totalsCreated(uid, a, b, getAfter(/databases/$(database)/documents/techbucks/$(a.last)).data))
+                         || (existsAfter(/databases/$(database)/documents/techbucks/$(a.last))
+                             && exists(/databases/$(database)/documents/techbucks/$(a.last))
+                             && totalsCounted(uid, a, b, get(/databases/$(database)/documents/techbucks/$(a.last)).data,
+                                              getAfter(/databases/$(database)/documents/techbucks/$(a.last)).data))
+                         || (exists(/databases/$(database)/documents/techbucks/$(a.last))
+                             && !existsAfter(/databases/$(database)/documents/techbucks/$(a.last))
+                             && totalsRemoved(uid, a, b, get(/databases/$(database)/documents/techbucks/$(a.last)).data)))));
+    }
+    match /techbucks_totals/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && validTotals(uid);
+      allow delete: if false;
+    }
+
+    // ── Avatars (stage B) ──
+    // avatars/{uid} = {uid, equipped: {slot: itemId}, updatedAt}. Any signed-in school account reads;
+    // only the student writes their own, with items they may wear.
+    // one item in one slot: the right slot, in the catalog, and free or bought. (priceFor is a big
+    // table, so it is read once here: rules stop a request that evaluates too many expressions.)
+    function wearable(uid, slot, v) {
+      let p = priceFor(v);
+      return v is string && v.matches('^' + slot + '-[a-z]+$') && p >= 0
+             && (p == 0 || existsAfter(/databases/$(database)/documents/techbucks/$(uid + '_buy_' + v)));
+    }
+    function mayWear(uid, e, slot) {
+      return !(slot in e) || wearable(uid, slot, e[slot]);
+    }
+    function validAvatar(uid) {
+      let d = request.resource.data;
+      let e = d.get('equipped', null);
+      return d.keys().hasOnly(['uid', 'equipped', 'updatedAt'])
+             && d.keys().hasAll(['uid', 'equipped', 'updatedAt'])
+             && d.uid == uid && d.updatedAt == request.time
+             && e is map
+             && e.keys().hasOnly(['skin', 'face', 'hat', 'gear', 'back', 'bg'])
+             && mayWear(uid, e, 'skin') && mayWear(uid, e, 'face') && mayWear(uid, e, 'hat')
+             && mayWear(uid, e, 'gear') && mayWear(uid, e, 'back') && mayWear(uid, e, 'bg');
+    }
+    match /avatars/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid && validAvatar(uid);
+      allow delete: if false;
     }
 
     // ── Classes, join codes and rosters ─────────────────────────────────────
