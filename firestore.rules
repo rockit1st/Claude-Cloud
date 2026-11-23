@@ -67,7 +67,20 @@
 //    sailcar_runs (real hallway runs, private to the class like the altitude
 //    boards). A student can save only their own progress and runs, only in the
 //    shape the lab saves them and under their own Google name.
+//  - Tech Bucks: a student reads their own ledger (techbucks) and can earn only
+//    the fixed awards listed there, each at most once (see the Tech Bucks block below).
 //  - Everything else behaves as before.
+//
+// TECH BUCKS: every award is its own document, techbucks/{uid}_{key}. The balance is
+// the sum of a student's documents (there is no balance number to forge). A student
+// can create an award only if its key is on the list in amountFor() below, its amount
+// is the fixed amount for that key, and no award with that key exists yet; they can never
+// change or delete one. Awards that can repeat carry today's date (UTC, taken from the
+// server's clock) and a slot number, which caps them per day. A teacher can give a
+// bonus of 1 to 50 to a student in one of their own classes, and can read and remove the
+// awards that carry one of their own classes. New rules, old pages: nothing changes for
+// anyone. New pages, old rules: awards are quietly refused and tried again later.
+// What a determined student could still claim is listed above amountFor().
 //
 // JOIN CODES: each code is kept in "joinCodes/{CODE}" with its class and its
 // teacher. "New code" on the Classes page replaces a class's code (new codes
@@ -351,6 +364,109 @@ service cloud.firestore {
     match /rocket_builds/{uid} {
       allow read: if isOwner() || (signedIn() && request.auth.uid == uid);
       allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ── Tech Bucks ──────────────────────────────────────────────────────────
+    // techbucks/{uid}_{key}: one document per award, so an award can exist only
+    // once per key. Fields: uid, key, amount, kind ("earn" | "bonus"; later "spend"
+    // with a negative amount, which nobody can create yet), reason, createdAt (the
+    // server's time), classId (optional: a class the student is in; a teacher reads and
+    // removes the awards of their own classes), and for a bonus: by (the teacher's email).
+    // The balance is always the sum of a student's amounts.
+    //
+    // What a student with developer tools could still do: claim any award on the list
+    // below that has no proof, once (the first Sail Car run, the first Altitude launch,
+    // and the day slots for runs and launches: at most 2 and 3 a day). Their own
+    // progress and build records can also be written by hand, so those proofs only
+    // make the student do the step in the database. The most a student can reach by hand
+    // is the fixed total of the one-time awards plus the daily slots. A teacher sees every
+    // award that carries one of their own classes and can remove it.
+    function pad2(n) {
+      return (n < 10 ? '0' : '') + string(n);
+    }
+    // a date (UTC) as YYYYMMDD
+    function ymd(t) {
+      return string(t.year()) + pad2(t.month()) + pad2(t.day());
+    }
+    // today's date, from the server's clock
+    function techToday() {
+      return ymd(request.time);
+    }
+    // key looks like name_YYYYMMDD_slot, with today's date and a slot from 1 to max
+    function daySlot(key, max) {
+      let p = key.split('_');
+      return p.size() == 4 && p[2] == techToday() && int(p[3]) >= 1 && int(p[3]) <= max;
+    }
+    // The fixed amount for a key, or -1 when the key is not an award students can earn.
+    function amountFor(key) {
+      return !(key is string) ? -1
+           : key.matches('^sailcar_quiz_(forces|thrust|drag|friction|mass|balance)$') ? 10
+           : key == 'sailcar_firstrun' ? 5
+           : (key.matches('^sailcar_run_[0-9]{8}_[0-9]$') && daySlot(key, 2)) ? 2
+           : key == 'altitude_first' ? 10
+           : (key.matches('^altitude_launch_[0-9]{8}_[0-9]$') && daySlot(key, 3)) ? 2
+           : key == 'rocket_build' ? 5
+           : key.matches('^ruler_race_[A-Za-z0-9]{1,40}$') ? 2
+           : -1;
+    }
+    // The module's quiz is marked passed in the student's own Sail Car progress.
+    function sailcarPassed(uid, mod) {
+      return exists(/databases/$(database)/documents/sailcar_progress/$(uid))
+             && get(/databases/$(database)/documents/sailcar_progress/$(uid)).data.get('modules', {}).get(mod, {}).get('passed', false) == true;
+    }
+    // The race exists (only the owner makes races), the student played in it, and scored.
+    function racePlayed(uid, raceId) {
+      return exists(/databases/$(database)/documents/races/$(raceId))
+             && exists(/databases/$(database)/documents/races/$(raceId)/players/$(uid))
+             && get(/databases/$(database)/documents/races/$(raceId)/players/$(uid)).data.get('score', 0) > 0;
+    }
+    // The record that proves the award, where one can be found from the key.
+    function techProof(uid, key) {
+      return (!key.matches('^sailcar_quiz_.*') || sailcarPassed(uid, key.split('_')[2]))
+             && (key != 'rocket_build' || exists(/databases/$(database)/documents/rocket_builds/$(uid)))
+             && (!key.matches('^ruler_race_.*') || racePlayed(uid, key.split('_')[2]));
+    }
+    // Fields every award has; classId and by are the only optional ones.
+    function techShape(d) {
+      return d.keys().hasOnly(['uid', 'key', 'amount', 'kind', 'reason', 'classId', 'createdAt', 'by'])
+             && d.keys().hasAll(['uid', 'key', 'amount', 'kind', 'reason', 'createdAt'])
+             && d.uid is string && d.key is string
+             && d.reason is string && d.reason.size() >= 1 && d.reason.size() <= 80
+             && d.createdAt == request.time;
+    }
+    // A student's own award.
+    function validEarn(id) {
+      let d = request.resource.data;
+      return techShape(d)
+             && d.uid == request.auth.uid
+             && id == d.uid + '_' + d.key
+             && d.kind == 'earn'
+             && !('by' in d)
+             && d.amount == amountFor(d.key)
+             && techProof(d.uid, d.key)
+             && (!('classId' in d) || (d.classId is string && inClass(d.classId)));
+    }
+    // A teacher's bonus for a student in one of the teacher's own classes.
+    function validBonus(id) {
+      let d = request.resource.data;
+      return isTeacher()
+             && techShape(d)
+             && d.uid.matches('^[A-Za-z0-9]{1,128}$')
+             && d.key.matches('^bonus_[A-Za-z0-9]{6,40}$')
+             && id == d.uid + '_' + d.key
+             && d.kind == 'bonus'
+             && d.amount is int && d.amount >= 1 && d.amount <= 50
+             && d.get('by', '') == request.auth.token.email
+             && d.get('classId', '') is string && d.get('classId', '') != ''
+             && ownsClass(d.get('classId', ''))
+             && exists(/databases/$(database)/documents/enrollments/$(d.get('classId', '') + '_' + d.uid));
+    }
+    match /techbucks/{id} {
+      allow read: if (signedIn() && resource.data.uid == request.auth.uid)
+                  || (isTeacher() && ownsClass(resource.data.get('classId', '')));
+      allow create: if signedIn() && (validEarn(id) || validBonus(id));
+      allow update: if false;
+      allow delete: if isTeacher() && ownsClass(resource.data.get('classId', ''));
     }
 
     // ── Classes, join codes and rosters ─────────────────────────────────────

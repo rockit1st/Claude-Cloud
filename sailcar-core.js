@@ -967,6 +967,17 @@
     });
   }
 
+  // Tech Bucks: 10 for each module quiz that the database now shows as passed (students only; the
+  // helper does nothing for teachers, and quietly does nothing for a pass it has already paid).
+  function awardPasses() {
+    try {
+      if (!window.TechBucks || typeof window.TechBucks.award !== 'function') return;
+      modules.forEach(function (m) {
+        if (!m.noQuiz && progress.passed(m.id)) window.TechBucks.award('sailcar_quiz_' + m.id, 'Passed the ' + m.title + ' quiz');
+      });
+    } catch (e) { /* never get in the way of the lab */ }
+  }
+
   let running = null, queued = null, retryTimer = null, failures = 0, lastSig = '', onlineHooked = false;
   function changed() {
     const s = progress.mode + '|' + modsSig(progress.data.modules);
@@ -997,6 +1008,7 @@
       progress.data = Object.assign({}, res.server, {
         modules: mergeMods(combine(res.modules, res.local.modules, res.local.pending), progress.data.modules) });
       changed();
+      awardPasses();
       return true;
     }, function (err) {
       if (progress.user !== u) return false;

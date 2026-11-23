@@ -83,6 +83,35 @@
     .roster li .rm { margin-left: auto; color: #ff6060; cursor: pointer; font-size: 0.85rem; opacity: 0.6; padding: 0 4px; }
     .roster li .rm:hover { opacity: 1; }
     .roster li.none { color: #6050a0; justify-content: center; }
+    .roster li { flex-wrap: wrap; gap: 6px 8px; }
+    .roster li .rm { padding: 6px 8px; }
+    .tb-chip { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.8rem; color: #f0c040; background: rgba(240,192,64,0.1); border: 1px solid rgba(240,192,64,0.4); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+    .tb-btn { border-color: rgba(240,192,64,0.45); color: #f0c040; }
+    .tb-btn:hover { background: rgba(240,192,64,0.12); }
+    .tb-panel { flex: 1 1 100%; display: none; background: rgba(240,192,64,0.05); border: 1px solid rgba(240,192,64,0.3); border-radius: 10px; padding: 10px 12px; margin-top: 4px; }
+    .tb-panel.open { display: block; }
+    .tb-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .tb-form input { background: rgba(255,255,255,0.07); border: 1px solid rgba(180,79,255,0.3); border-radius: 8px; padding: 10px 12px; color: #f0e6ff; font-family: 'Exo 2', sans-serif; font-size: 0.95rem; outline: none; min-width: 0; }
+    .tb-form input:focus { border-color: #f0c040; }
+    .tb-form .tb-amt { width: 84px; }
+    .tb-form .tb-why { flex: 1 1 160px; }
+    .tb-msg { flex: 1 1 100%; font-size: 0.85rem; font-weight: 600; min-height: 1.1em; }
+    .tb-msg.ok { color: #40e080; }
+    .tb-msg.err { color: #ff7070; }
+    .tb-awards { list-style: none; margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+    .tb-awards li { background: rgba(255,255,255,0.04); border: 1px solid rgba(180,79,255,0.12); border-radius: 6px; padding: 5px 8px; font-size: 0.82rem; display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+    .tb-awards .tb-a-why { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    .tb-awards .tb-a-amt { font-weight: 700; color: #f0c040; white-space: nowrap; }
+    .tb-awards .tb-a-rm { background: none; border: 1px solid rgba(255,96,96,0.35); color: #ff8080; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; }
+    .tb-awards .tb-a-rm:hover { background: rgba(255,96,96,0.12); }
+    .tb-note { margin-top: 10px; font-size: 0.85rem; color: #ffcf6a; }
+    .tb-allpanel { display: none; margin-top: 10px; background: rgba(240,192,64,0.05); border: 1px solid rgba(240,192,64,0.3); border-radius: 10px; padding: 10px 12px; }
+    .tb-allpanel.open { display: block; }
+    .tb-allpanel .tb-label { font-size: 0.85rem; color: #9080b0; margin-bottom: 8px; }
+    body.light-mode .tb-chip, body.light-mode .tb-btn, body.light-mode .tb-awards .tb-a-amt { color: #8a5a00; }
+    body.light-mode .tb-note { color: #8a5a00; }
+    body.light-mode .tb-form input { background: rgba(255,255,255,0.92); color: #1a0030; }
+    body.light-mode .tb-awards li { color: #1a0030; }
     .cc-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
     .leave-btn { background: none; border: 1px solid rgba(255,96,96,0.35); color: #ff8080; border-radius: 6px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; font-family: 'Exo 2', sans-serif; margin-top: 12px; }
     .leave-btn:hover { background: rgba(255,96,96,0.1); }
@@ -151,6 +180,7 @@
     <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
     <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
     <a href="classes.html" class="nav-link active">👥 Classes</a>
+    <a href="tech-bucks.html" class="nav-link">🪙 Tech Bucks</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -562,6 +592,7 @@
     rosterUnsubs = [];
     classDocs = {};
     rosterCount = {};
+    rosterRows = {}; bucksBy = {}; bucksDocs = {}; bucksOff = {};
     snap.forEach(function(d) { classDocs[d.id] = d.data(); });
     const wrap = document.getElementById('class-list');
     if (snap.empty) { wrap.innerHTML = '<div class="empty">No classes yet. Create one above.</div>'; updateNotes(); scheduleUsage(); return; }
@@ -585,28 +616,46 @@
           '</span>' +
         '</div>' +
         '<div class="cc-meta" id="count-' + esc(id) + '">…</div>' +
+        '<div class="tb-note" id="tbnote-' + esc(id) + '" style="display:none">Tech Bucks turn on after the new rules are published.</div>' +
         '<ul class="roster' + (open ? ' open' : '') + '" id="roster-' + esc(id) + '"></ul>' +
         '<div class="cc-actions">' +
           '<button class="mini-btn" onclick="toggleRoster(\'' + jid + '\', this)">' + (open ? 'Hide roster' : 'View roster') + '</button>' +
           '<button class="mini-btn" id="newcode-' + esc(id) + '" title="Give this class a new join code; the old one stops working" onclick="newCode(\'' + jid + '\')"' + (rotating[id] ? ' disabled>Making a new code…' : '>🔄 New code') + '</button>' +
+          '<button class="mini-btn tb-btn" id="tball-' + esc(id) + '" style="display:none" onclick="toggleGiveAll(\'' + jid + '\')">🪙 Give everyone Tech Bucks</button>' +
           '<button class="mini-btn del-btn" onclick="deleteClass(\'' + jid + '\', \'' + attrJs(c.name) + '\')">Delete class</button>' +
           '<span class="old-tag" id="oldtag-' + esc(id) + '" style="display:none">⚠ Students could see this code before the update</span>' +
-        '</div>';
+        '</div>' +
+        '<div class="tb-allpanel" id="tballpanel-' + esc(id) + '"></div>';
       wrap.appendChild(card);
       const u = db().collection('enrollments').where('classId', '==', id)
         .onSnapshot(function(rs) {
           const names = rs.docs.map(function(d) { return d.data(); })
             .sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
           const countEl = document.getElementById('count-' + id);
-          const rosterEl = document.getElementById('roster-' + id);
           rosterCount[id] = names.length;
+          rosterRows[id] = names;
           scheduleUsage();
           if (countEl) countEl.textContent = names.length + ' student' + (names.length === 1 ? '' : 's');
-          if (rosterEl) rosterEl.innerHTML = names.length
-            ? names.map(function(n) { return '<li>' + esc(n.name || n.email) + '<span class="rm" title="Remove" onclick="removeStudent(\'' + attrJs(n.classId) + '\', \'' + attrJs(n.uid) + '\')">✕</span></li>'; }).join('')
-            : '<li class="none">No students have joined yet.</li>';
+          renderRoster(id);
         }, console.error);
       rosterUnsubs.push(u);
+      // Tech Bucks given in this class (only this teacher's own classes can be asked for). If the database
+      // refuses (the new rules are not published yet) the roster simply shows no Tech Bucks.
+      const ub = db().collection('techbucks').where('classId', '==', id).onSnapshot(function(bs) {
+        const by = {}, list = [];
+        bs.docs.forEach(function(d) {
+          const x = d.data() || {};
+          by[x.uid] = (by[x.uid] || 0) + (Number(x.amount) || 0);
+          list.push({ ref: d.ref, uid: String(x.uid || ''), amount: Number(x.amount) || 0, reason: String(x.reason || ''),
+                      kind: String(x.kind || 'earn'), at: x.createdAt && x.createdAt.toMillis ? x.createdAt.toMillis() : Date.now() });
+        });
+        bucksBy[id] = by; bucksDocs[id] = list; delete bucksOff[id];
+        paintBucks(id);
+      }, function(e) {
+        bucksBy[id] = null; bucksDocs[id] = []; bucksOff[id] = true;
+        paintBucks(id);
+      });
+      rosterUnsubs.push(ub);
     });
     paintCodes();
     migrateAll();
@@ -625,6 +674,161 @@
       if (tag) tag.style.display = !oldRules && wasVisible[id] ? '' : 'none';
     });
     updateNotes();
+  }
+
+  // ── Tech Bucks in the roster (a teacher's own classes only) ─────────────────
+  // techbucks/{uid}_{key}: one document per award. A student's balance is the sum of
+  // their awards that carry this class. A teacher can give 1 to 50 as a bonus to a
+  // student in a class of theirs, and can remove an award of one of their classes.
+  let rosterRows = {};   // classId -> [enrollment data], sorted by name
+  let bucksBy = {};      // classId -> { uid: total }  (null while the database refuses)
+  let bucksDocs = {};    // classId -> [{ ref, uid, amount, reason, kind, at }]
+  let bucksOff = {};     // classId -> true when the database refused the list (the new rules are not published)
+  let tbOpen = {};       // classId_uid -> true while that student's Tech Bucks panel is open
+  let tbAllOpen = {};    // classId -> true while "Give everyone" is open
+  let tbRefs = {};       // classId_uid -> { chip, btn, awards }
+
+  function tbEl(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function tbKey() {
+    const A = 'abcdefghijkmnpqrstuvwxyz23456789', r = new Uint32Array(12);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(r);
+    else for (let i = 0; i < r.length; i++) r[i] = Math.floor(Math.random() * 4294967296);
+    let k = 'bonus_';
+    for (let i = 0; i < r.length; i++) k += A[r[i] % A.length];
+    return k;
+  }
+  function tbDate(ms) {
+    try { return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (e) { return ''; }
+  }
+
+  // Give `amount` to each student in `uids` (a bonus, one doc each). Batches of 10: each bonus makes the
+  // database look at the class and at the student's roster entry, and one batch may look at only so many documents.
+  function giveBonus(classId, uids, amount, reason) {
+    const key = tbKey();
+    let i = 0, done = 0;
+    function next() {
+      if (i >= uids.length) return Promise.resolve(done);
+      const part = uids.slice(i, i + 10), batch = db().batch();
+      part.forEach(function(uid) {
+        batch.set(db().collection('techbucks').doc(uid + '_' + key), {
+          uid: uid, key: key, amount: amount, kind: 'bonus', reason: reason, classId: classId,
+          by: me.email, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+      return batch.commit().then(function() { done += part.length; i += 10; return next(); }, function(e) { e.doneCount = done; throw e; });
+    }
+    return next();
+  }
+
+  // The little "how many / why / Give" form. getUids() says who gets it when the button is pressed.
+  function buildGiveForm(classId, getUids, label, confirmText) {
+    const f = tbEl('div', 'tb-form');
+    const amt = tbEl('input', 'tb-amt'); amt.type = 'number'; amt.min = '1'; amt.max = '50'; amt.step = '1'; amt.value = '5';
+    amt.setAttribute('inputmode', 'numeric'); amt.setAttribute('aria-label', 'How many Tech Bucks (1 to 50)');
+    const why = tbEl('input', 'tb-why'); why.type = 'text'; why.maxLength = 60; why.placeholder = 'Why? (like: Great teamwork)';
+    why.setAttribute('aria-label', 'Why you are giving Tech Bucks');
+    const btn = tbEl('button', 'btn', label); btn.type = 'button'; btn.style.padding = '10px 16px';
+    const msg = tbEl('div', 'tb-msg'); msg.setAttribute('role', 'status');
+    function say(t, cls) { msg.textContent = t; msg.className = 'tb-msg' + (cls ? ' ' + cls : ''); }
+    btn.addEventListener('click', function() {
+      const n = Number(amt.value);
+      if (!(Number.isInteger(n) && n >= 1 && n <= 50)) { say('Type a whole number from 1 to 50.', 'err'); return; }
+      const uids = getUids();
+      if (!uids.length) { say('No students to give to yet.', 'err'); return; }
+      const reason = (why.value || '').trim().slice(0, 60) || 'Great work';
+      if (confirmText && !confirm(confirmText(n, uids.length))) return;
+      btn.disabled = true; say('Giving…');
+      giveBonus(classId, uids, n, reason).then(function(count) {
+        btn.disabled = false;
+        say('Gave ' + n + ' Tech Buck' + (n === 1 ? '' : 's') + ' to ' + count + ' student' + (count === 1 ? '' : 's') + '.', 'ok');
+        why.value = '';
+      }, function(e) {
+        btn.disabled = false;
+        const got = e && e.doneCount ? ' (' + e.doneCount + ' got it before it stopped.)' : '';
+        say(isDenied(e) ? 'Tech Bucks turn on after the new rules are published.' + got : 'Could not give Tech Bucks. Check the Wi-Fi and try again.' + got, 'err');
+      });
+    });
+    f.appendChild(amt); f.appendChild(why); f.appendChild(btn); f.appendChild(msg);
+    return f;
+  }
+
+  function toggleGiveAll(id) {
+    const panel = document.getElementById('tballpanel-' + id);
+    if (!panel) return;
+    const open = panel.classList.toggle('open');
+    if (open) tbAllOpen[id] = true; else delete tbAllOpen[id];
+  }
+
+  function renderRoster(id) {
+    const ul = document.getElementById('roster-' + id);
+    if (!ul) return;
+    const rows = rosterRows[id] || [];
+    Object.keys(tbRefs).forEach(function(k) { if (k.indexOf(id + '_') === 0) delete tbRefs[k]; });
+    ul.textContent = '';
+    if (!rows.length) { ul.appendChild(tbEl('li', 'none', 'No students have joined yet.')); paintBucks(id); return; }
+    rows.forEach(function(n) {
+      const ref = id + '_' + n.uid;
+      const li = tbEl('li');
+      li.appendChild(tbEl('span', null, n.name || n.email));
+      const chip = tbEl('span', 'tb-chip'); chip.title = 'Tech Bucks earned in this class'; chip.style.display = 'none';
+      const btn = tbEl('button', 'mini-btn tb-btn', 'Tech Bucks'); btn.type = 'button'; btn.style.display = 'none';
+      btn.title = 'Give Tech Bucks to this student, or take one away';
+      const rm = tbEl('span', 'rm', '✕'); rm.title = 'Remove';
+      rm.addEventListener('click', function() { removeStudent(n.classId, n.uid); });
+      li.appendChild(chip); li.appendChild(btn); li.appendChild(rm);
+      const panel = tbEl('div', 'tb-panel' + (tbOpen[ref] ? ' open' : ''));
+      panel.appendChild(buildGiveForm(id, function() { return [n.uid]; }, 'Give'));
+      const awards = tbEl('ul', 'tb-awards');
+      panel.appendChild(awards);
+      li.appendChild(panel);
+      btn.addEventListener('click', function() {
+        const open = panel.classList.toggle('open');
+        if (open) tbOpen[ref] = true; else delete tbOpen[ref];
+      });
+      tbRefs[ref] = { chip: chip, btn: btn, awards: awards, uid: n.uid };
+      ul.appendChild(li);
+    });
+    paintBucks(id);
+  }
+
+  // Show the balances and awards for one class (called whenever the roster or the ledger changes).
+  function paintBucks(id) {
+    const off = !!bucksOff[id], by = bucksBy[id] || {}, docs = bucksDocs[id] || [];
+    const note = document.getElementById('tbnote-' + id);
+    if (note) note.style.display = off ? '' : 'none';
+    const allBtn = document.getElementById('tball-' + id), allPanel = document.getElementById('tballpanel-' + id);
+    const ready = !off && bucksBy[id] !== undefined, hasRows = (rosterRows[id] || []).length > 0;
+    if (allBtn) allBtn.style.display = ready && hasRows ? '' : 'none';
+    if (allPanel) {
+      if (!allPanel.firstChild && ready) {
+        allPanel.appendChild(tbEl('div', 'tb-label', 'Give the same Tech Bucks to every student in this class:'));
+        allPanel.appendChild(buildGiveForm(id, function() { return (rosterRows[id] || []).map(function(n) { return n.uid; }).filter(Boolean); },
+          'Give everyone', function(n, count) { return 'Give ' + n + ' Tech Buck' + (n === 1 ? '' : 's') + ' to all ' + count + ' students?'; }));
+      }
+      allPanel.classList.toggle('open', ready && !!tbAllOpen[id]);
+    }
+    (rosterRows[id] || []).forEach(function(n) {
+      const r = tbRefs[id + '_' + n.uid];
+      if (!r) return;
+      r.chip.style.display = ready ? '' : 'none';
+      r.btn.style.display = ready ? '' : 'none';
+      r.chip.textContent = '🪙 ' + (by[n.uid] || 0);
+      r.awards.textContent = '';
+      docs.filter(function(d) { return d.uid === n.uid; }).sort(function(a, b) { return b.at - a.at; }).forEach(function(d) {
+        const li = tbEl('li');
+        li.appendChild(tbEl('span', 'tb-a-why', d.reason + (d.kind === 'bonus' ? ' (bonus)' : '') + ' · ' + tbDate(d.at)));
+        li.appendChild(tbEl('span', 'tb-a-amt', (d.amount > 0 ? '+' : '') + d.amount));
+        const rm = tbEl('button', 'tb-a-rm', 'Remove'); rm.type = 'button';
+        rm.title = 'Take this award away';
+        rm.addEventListener('click', function() {
+          if (!confirm('Take away ' + d.amount + ' Tech Buck' + (Math.abs(d.amount) === 1 ? '' : 's') + ' (' + d.reason + ')?')) return;
+          rm.disabled = true;
+          d.ref.delete().catch(function(e) { rm.disabled = false; alert(isDenied(e) ? 'Tech Bucks turn on after the new rules are published.' : 'Could not remove it. Check the Wi-Fi and try again.'); });
+        });
+        li.appendChild(rm);
+        r.awards.appendChild(li);
+      });
+    });
   }
 
   function toggleRoster(id, btn) {

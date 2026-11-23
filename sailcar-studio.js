@@ -752,6 +752,8 @@
       }, SAVE_WAIT_MS);
       db().collection('sailcar_runs').add(rec).then(function () {
         settled = true;
+        // Tech Bucks: 5 for the first real run, then 2 a run (up to 2 a day). Quiet if it cannot be saved.
+        try { if (window.TechBucks) window.TechBucks.awardFirstThenSlots('sailcar_firstrun', 'sailcar_run', 'Logged a real run', { classId: rec.classId }); } catch (e) { /* never get in the way */ }
         if (life.left) return;
         if (!queued) { btn.disabled = !classesOk; btn.textContent = LOG_TEXT; distIn.value = ''; noteIn.value = ''; }
         say(loggedText(rec, why) + (queued ? ' (It uploaded now that the Wi-Fi is back.)' : ''));
