@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sail Car Answer Key | Tech Class Hub</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { visibility: hidden; font-family: 'Exo 2', Arial, sans-serif; background: #0a000f; color: #f0e6ff; line-height: 1.5; }
+  .topnav { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 16px; background: rgba(10,0,15,0.9); border-bottom: 1px solid rgba(180,79,255,0.3); }
+  .topnav a { color: #b44fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+  .topnav button { font: inherit; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(180,79,255,0.5); background: transparent; color: #f0e6ff; cursor: pointer; }
+  main { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 1.5rem; margin-bottom: 6px; }
+  .note { color: #b8a8d8; font-size: 0.9rem; margin-bottom: 18px; }
+  .mod { margin-top: 26px; }
+  .mod h2 { font-size: 1.15rem; color: #00f5ff; border-bottom: 1px solid rgba(0,245,255,0.3); padding-bottom: 4px; margin-bottom: 10px; }
+  .q { background: rgba(255,255,255,0.04); border: 1px solid rgba(180,79,255,0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; break-inside: avoid; }
+  .q .qt { font-weight: 700; margin-bottom: 6px; }
+  .q ol { list-style: upper-alpha; padding-left: 26px; }
+  .q li { padding: 1px 0; }
+  .q li.right { color: #5dff9a; font-weight: 700; }
+  .q li.right::after { content: "  ✓ correct"; font-size: 0.8rem; }
+  .why { margin-top: 6px; font-size: 0.88rem; color: #b8a8d8; }
+  #deny { display: none; max-width: 520px; margin: 60px auto; padding: 16px; text-align: center; border: 1px solid rgba(255,45,120,0.4); border-radius: 10px; color: #ff6b9d; }
+  @media print {
+    body { background: #fff; color: #000; }
+    .topnav, .note.noprint { display: none; }
+    .mod h2 { color: #000; border-color: #000; }
+    .q { background: #fff; border-color: #888; }
+    .q li.right { color: #000; text-decoration: underline; }
+    .why { color: #333; }
+    .mod { break-before: page; } .mod:first-of-type { break-before: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="topnav"><a href="sail-car-lab.html">← Sail Car Lab</a><button type="button" onclick="window.print()">Print answer key</button></div>
+<div id="deny">This page is for teachers only.</div>
+<main id="main" style="display:none">
+  <h1>Sail Car Lab — Answer Key</h1>
+  <p class="note">Every question in each module's quiz pool, with the right answer marked. Each try, a student gets 5 questions picked from the pool of 10 for that module, and 4 right passes. This list is read straight from the quiz, so it is always up to date.</p>
+  <div id="key"></div>
+</main>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="teacher-role.js"></script>
+<script src="sailcar-core.js"></script>
+<script src="sailcar-m1.js"></script>
+<script src="sailcar-m2.js"></script>
+<script src="sailcar-m3.js"></script>
+<script src="sailcar-m4.js"></script>
+<script src="sailcar-m5.js"></script>
+<script src="sailcar-m6.js"></script>
+<script>
+  function render() {
+    var root = document.getElementById('key');
+    var mods = (window.SailLab && SailLab.modules) || [];
+    mods.forEach(function (m) {
+      if (!m.quiz || !m.quiz.length) return;
+      var sec = document.createElement('section'); sec.className = 'mod';
+      var h = document.createElement('h2');
+      h.textContent = (m.num ? 'Module ' + m.num + ': ' : '') + m.title + ' (' + m.quiz.length + ' questions)';
+      sec.appendChild(h);
+      m.quiz.forEach(function (q, i) {
+        var box = document.createElement('div'); box.className = 'q';
+        var t = document.createElement('div'); t.className = 'qt'; t.textContent = (i + 1) + '. ' + q.q;
+        var ol = document.createElement('ol');
+        q.options.forEach(function (o, j) {
+          var li = document.createElement('li'); li.textContent = o;
+          if (j === q.answer) li.className = 'right';
+          ol.appendChild(li);
+        });
+        box.appendChild(t); box.appendChild(ol);
+        if (q.why) { var w = document.createElement('div'); w.className = 'why'; w.textContent = 'Why: ' + q.why; box.appendChild(w); }
+        sec.appendChild(box);
+      });
+      root.appendChild(sec);
+    });
+  }
+  // auth.js shows the page for any @hhh account; this page then checks the person is a teacher
+  firebase.auth().onAuthStateChanged(function (user) {
+    if (!user) return;
+    TeacherRole.check(firebase.firestore(), user).then(function (r) {
+      if (r.isTeacher) { render(); document.getElementById('main').style.display = 'block'; }
+      else document.getElementById('deny').style.display = 'block';
+    });
+  });
+</script>
+</body>
+</html>
