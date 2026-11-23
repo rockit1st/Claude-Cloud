@@ -1304,6 +1304,7 @@
     box.style.display = 'block';
     box.textContent = '';
     box.appendChild(h('h2', { class: 'sl-teacher-title', text: '👩‍🏫 Class progress' }));
+    box.appendChild(h('p', {}, [h('a', { href: 'sailcar-answer-key.html', text: '📝 Answer key for the module questions (printable)' })]));
     const sel = h('select', { id: 'sl-class', 'aria-label': 'Class' }, [h('option', { value: '', text: 'Loading classes…' })]);
     const status = h('div');                       // a problem loading the classes stays visible here
     const table = h('div', { class: 'sl-table-wrap' });
