@@ -21,6 +21,7 @@
   .q li { padding: 1px 0; }
   .q li.right { color: #5dff9a; font-weight: 700; }
   .q li.right::after { content: "  ✓ correct"; font-size: 0.8rem; }
+  .q li .wn { display: block; font-weight: 400; font-size: 0.78rem; color: #b8a8d8; }
   .why { margin-top: 6px; font-size: 0.88rem; color: #b8a8d8; }
   #deny { display: none; max-width: 520px; margin: 60px auto; padding: 16px; text-align: center; border: 1px solid rgba(255,45,120,0.4); border-radius: 10px; color: #ff6b9d; }
   @media print {
@@ -29,7 +30,7 @@
     .mod h2 { color: #000; border-color: #000; }
     .q { background: #fff; border-color: #888; }
     .q li.right { color: #000; text-decoration: underline; }
-    .why { color: #333; }
+    .why, .q li .wn { color: #333; }
     .mod { break-before: page; } .mod:first-of-type { break-before: auto; }
   }
 </style>
@@ -71,6 +72,8 @@
         q.options.forEach(function (o, j) {
           var li = document.createElement('li'); li.textContent = o;
           if (j === q.answer) li.className = 'right';
+          var wn = q.whyNot && q.whyNot[j];
+          if (j !== q.answer && wn) { var sm = document.createElement('small'); sm.className = 'wn'; sm.textContent = wn; li.appendChild(sm); }
           ol.appendChild(li);
         });
         box.appendChild(t); box.appendChild(ol);
