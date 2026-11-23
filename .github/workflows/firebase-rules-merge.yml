@@ -31,5 +31,10 @@ jobs:
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TECHNO_TEACHER_6D631 }}'
 
+      - name: Show which service account is signing in (email only, not secret)
+        run: |
+          jq -r '.client_email' "$GOOGLE_APPLICATION_CREDENTIALS"
+          jq -r '.project_id' "$GOOGLE_APPLICATION_CREDENTIALS"
+
       - name: Publish firestore.rules
         run: npx --yes firebase-tools@13 deploy --only firestore:rules --project techno-teacher-6d631 --non-interactive
