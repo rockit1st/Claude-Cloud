@@ -962,6 +962,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script src="teacher-role.js"></script>
 <script src="student-classes.js"></script>
 <script>
   // One Firestore doc per run: the first save creates it, later saves in the
@@ -1045,7 +1046,6 @@
   }
 
   // ── Race Mode ──────────────────────────────────────────────
-  var RACE_TEACHER = 'ncapellini@hhh.k12.ny.us';
   var race = { on:false, isTeacher:false, id:null, ref:null, endsAt:0, score:0,
                timer:null, unsubPlayers:null, unsubRace:null, lastPlayers:[], pending:null };
 
@@ -1073,16 +1073,34 @@
     setTimeout(function(){ if (race.on) nextQuestion(); }, 600);
   };
 
+  // Race Mode: only the site owner starts races (the database allows nobody else to), and
+  // a race goes to the owner's own classes. Any other teacher gets no race controls.
+  // Every student joins the races of the classes they joined, whoever their teacher is.
+  // A failed or slow teacher check means student.
+  function raceRole(user){
+    var email = String(user.email || '').toLowerCase();
+    var owner = window.TeacherRole ? email === TeacherRole.OWNER : false;
+    var fallback = { isOwner: owner, isTeacher: owner, email: email };
+    if (!window.TeacherRole) return Promise.resolve(fallback);
+    return Promise.race([
+      TeacherRole.check(firebase.firestore(), user),
+      new Promise(function(res){ setTimeout(function(){ res(fallback); }, 8000); })
+    ]).catch(function(){ return fallback; });
+  }
+
+  var raceStarted = false;
   firebase.auth().onAuthStateChanged(function(user){
-    if (!user) return;
-    race.isTeacher = (user.email === RACE_TEACHER);
-    if (race.isTeacher) initRaceTeacher();
-    else initRaceStudent(user);
+    if (!user || raceStarted) return;
+    raceStarted = true;
+    raceRole(user).then(function(role){
+      if (role.isOwner){ race.isTeacher = true; initRaceTeacher(role.email); }
+      else if (!role.isTeacher) initRaceStudent(user);
+    });
   });
 
-  function initRaceTeacher(){
+  function initRaceTeacher(email){
     var sel = document.getElementById('race-class');
-    firebase.firestore().collection('classes').where('teacherEmail','==',RACE_TEACHER).get()
+    firebase.firestore().collection('classes').where('teacherEmail','==',email).get()
       .then(function(snap){
         if (!sel) return;
         sel.innerHTML = '<option value="">Class…</option>';
@@ -1095,9 +1113,9 @@
   }
 
   function initRaceStudent(user){
-    firebase.firestore().collection('enrollments').where('uid','==',user.uid).get()
-      .then(function(snap){
-        var ids = snap.docs.map(function(d){ return d.data().classId; }).filter(Boolean);
+    loadMyClasses(user.uid)
+      .then(function(list){
+        var ids = list.map(function(c){ return c.classId; });
         if (!ids.length) return;
         firebase.firestore().collection('races').where('classId','in', ids.slice(0,10))
           .onSnapshot(function(rs){ handleStudentRaces(rs); }, function(e){ console.error(e); });

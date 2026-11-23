@@ -311,6 +311,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script src="teacher-role.js"></script>
 <script src="student-classes.js"></script>
 <script>
   // ── Parts ──
@@ -713,19 +714,34 @@
 </script>
 <script>
   // ── Name auto-fill, class picker, Firestore leaderboard ──
-  const RB_TEACHER = 'ncapellini@hhh.k12.ny.us';
   let allRockets = [], allClasses = [], currentClass = 'all', myUid = null;
+  let isTeacher = false, isOwner = false, classesLoaded = false;   // a teacher's board shows only their own classes
 
   firebase.auth().onAuthStateChanged(function(user) {
     if (!user) return;
     myUid = user.uid;
     const nm = document.getElementById('player-name');
     if (nm && user.displayName) { nm.value = user.displayName; nm.readOnly = true; nm.style.opacity='0.85'; nm.title='From your school account'; }
-    subscribeRockets();
-    subscribeClasses();
+    findRole(user).then(function(role) {
+      isTeacher = role.isTeacher; isOwner = role.isOwner;
+      subscribeRockets();
+      subscribeClasses(user, role.email);
+    });
     showSavedBuild(user.uid);
     try { if (typeof setupClassPicker === 'function') setupClassPicker('player-class','player-period'); } catch (e) { console.error(e); }
   });
+
+  // Teacher (the owner or an added teacher) or student? A failed or slow check means student.
+  function findRole(user) {
+    const email = String(user.email || '').toLowerCase();
+    const owner = window.TeacherRole ? email === TeacherRole.OWNER : false;
+    const fallback = { isOwner: owner, isTeacher: owner, email: email };
+    if (!window.TeacherRole) return Promise.resolve(fallback);
+    return Promise.race([
+      TeacherRole.check(firebase.firestore(), user),
+      new Promise(function(res) { setTimeout(function() { res(fallback); }, 8000); })
+    ]).catch(function() { return fallback; });
+  }
 
   function rName() {
     const typed = (document.getElementById('player-name').value||'').trim();
@@ -794,13 +810,25 @@
       }, function(e){ console.error(e); document.getElementById('board-list').innerHTML='<li class="empty">Could not load the leaderboard. (A Firestore rule for "rocket_results" may be needed.)</li>'; });
   }
 
-  function subscribeClasses() {
-    firebase.firestore().collection('classes').where('teacherEmail','==',RB_TEACHER)
-      .onSnapshot(function(snap) {
-        allClasses = snap.docs.map(function(d){ return { id:d.id, name:(d.data().name||'Class') }; })
-          .sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
-        renderFilter();
-      }, function(e){ console.error(e); });
+  // The filter buttons: a teacher sees their OWN classes; a student sees the classes they joined,
+  // whoever the teacher is. A refused or failed read leaves just "All".
+  function setClasses(list) {
+    allClasses = list.sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
+    classesLoaded = true;
+    renderFilter();
+    renderBoard();
+  }
+  function subscribeClasses(user, email) {
+    if (isTeacher) {
+      firebase.firestore().collection('classes').where('teacherEmail','==',email)
+        .onSnapshot(function(snap) {
+          setClasses(snap.docs.map(function(d){ return { id:d.id, name:(d.data().name||'Class') }; }));
+        }, function(e){ console.warn('Classes not available:', e && e.code); setClasses([]); });
+    } else {
+      loadMyClasses(user.uid)
+        .then(function(list){ setClasses(list.map(function(c){ return { id:c.classId, name:c.className||'Class' }; })); })
+        .catch(function(e){ console.warn('Your classes are not available:', e && e.code); setClasses([]); });
+    }
   }
 
   function renderFilter() {
@@ -820,7 +848,14 @@
   }
 
   function renderBoard() {
-    const rows = (currentClass==='all' ? allRockets : allRockets.filter(r=>r.classId===currentClass))
+    if (isTeacher && !classesLoaded) return;
+    // a teacher sees only the launches of their own classes (the owner also keeps older launches with no class)
+    let base = allRockets;
+    if (isTeacher) {
+      const mine = {}; allClasses.forEach(function(c){ mine[c.id] = true; });
+      base = allRockets.filter(function(r){ return r.classId ? mine[r.classId] === true : isOwner; });
+    }
+    const rows = (currentClass==='all' ? base : base.filter(r=>r.classId===currentClass))
       .slice().sort(function(a,b){ return (b.apogee||0)-(a.apogee||0); }).slice(0,25);
     const el = document.getElementById('board-list');
     const medals = ['🥇','🥈','🥉'];

@@ -20,7 +20,6 @@
 // designs saved before the change did, so an old design loads and looks right (cm → the nearest inch on the sliders).
 // The sliders are in inches; the module turns inches into cm (× 2.54) before anything is stored or simulated.
 (function () {
-  const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
   const kid = SailLab.kid;
   const FT_PER_M = kid.FT_PER_M;
   const SAVE_WAIT_MS = 4000;                    // after this long without the server's OK, the write is waiting for Wi-Fi
@@ -628,9 +627,9 @@
   function renderRace(el, api) {
     const h = api.h;
     const me = currentUser();
-    const isTeacher = !!(me && me.email === TEACHER_EMAIL);
+    const isTeacher = !!(me && isTeacherNow());
     if (isTeacher) {
-      api.ui.note(el, 'tip', '👩‍🏫 <strong>Teacher:</strong> students log their own runs here after each hallway run (in feet, plus an optional note). The design and prediction saved with their account are logged with it. You see every class on the next step and can delete a run there.');
+      api.ui.note(el, 'tip', '👩‍🏫 <strong>Teacher:</strong> students log their own runs here after each hallway run (in feet, plus an optional note). The design and prediction saved with their account are logged with it. You see your own classes on the next step and can delete a run there.');
       return;
     }
     useDesignFor(me);
@@ -813,12 +812,14 @@
     });
     return rows;
   }
+  // a teacher is the owner or someone the owner added (the core worked it out at sign-in)
+  function isTeacherNow() { return !!(window.SailLab && SailLab.isTeacher && SailLab.isTeacher()); }
   function renderBoard(el, api) {
     const h = api.h;
     const me = currentUser();
     if (!me) return;
     const life = lifetime(api);
-    const isTeacher = me.email === TEACHER_EMAIL;
+    const isTeacher = isTeacherNow();
     const tabs = h('div', { class: 'sl-chips', role: 'tablist', style: 'margin-bottom:12px' });
     const box = h('div', { class: 'sl-table-wrap' });
     el.appendChild(tabs); el.appendChild(box);
@@ -885,22 +886,15 @@
     // offline, Firestore answers from its (empty) cache: that is not "no classes"
     function fromServer(s) { if (s.metadata && s.metadata.fromCache) throw Object.assign(new Error('offline'), { code: 'unavailable' }); return s; }
     if (isTeacher) {
-      // the runs are sorted into the teacher's classes, so they are only listened to once the classes came from the server
+      // a teacher (the owner too) sees only their OWN classes: each class is listened to by its own id,
+      // which is the only kind of read the database allows a teacher
       (function loadTeacher() {
-        db().collection('classes').where('teacherEmail', '==', TEACHER_EMAIL).get().then(fromServer).then(function (s) {
+        db().collection('classes').where('teacherEmail', '==', String(me.email || '').toLowerCase()).get().then(fromServer).then(function (s) {
           if (life.left) return;
-          const known = s.docs.map(function (d) { return { id: d.id, name: d.data().name || 'Class' }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
-          life.keep(db().collection('sailcar_runs').onSnapshot(function (snap) {
-            runsByClass = {};
-            snap.docs.forEach(function (d) {
-              const r = row(d);
-              const k = known.some(function (c) { return c.id === r.classId; }) ? r.classId : '';
-              (runsByClass[k] = runsByClass[k] || []).push(r);
-            });
-            classes = known.concat(runsByClass[''] ? [{ id: '', name: 'No class' }] : []);
-            if (active == null || !classes.some(function (c) { return c.id === active; })) active = classes.length ? classes[0].id : null;
-            draw();
-          }, function () { if (life.left) return; box.textContent = ''; api.ui.note(box, 'warn', '⚠️ Runs can’t be loaded yet — publish the new Firestore rules.'); }));
+          classes = s.docs.map(function (d) { return { id: d.id, name: d.data().name || 'Class' }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+          active = classes.length ? classes[0].id : null;
+          classes.forEach(function (c) { watchClass(c.id); });
+          draw();
         }).catch(function () { problem(NO_CLASSES, loadTeacher); });
       })();
       return;

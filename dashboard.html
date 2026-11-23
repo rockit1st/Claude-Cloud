@@ -192,7 +192,7 @@
 
   // Auto-unlock for teacher account
   firebase.auth().onAuthStateChanged(function(user) {
-    if (user && user.email === TEACHER_EMAIL) {
+    if (user && String(user.email || '').toLowerCase() === TEACHER_EMAIL) {
       document.getElementById('gate').style.display = 'none';
       document.getElementById('dashboard-content').style.display = 'block';
       loadResults();
@@ -216,14 +216,23 @@
   function loadResults() {
     document.getElementById('results-area').innerHTML = '<div class="loading-msg">Loading results...</div>';
     const db = firebase.firestore();
+    // Classes that belong to other teachers are not shown here (this page is for your own classes).
+    // If the class list cannot be read, nothing is hidden.
+    const others = db.collection('classes').get().then(function(snap) {
+      const ids = {};
+      snap.forEach(function(d) { if (String(d.data().teacherEmail || '').toLowerCase() !== TEACHER_EMAIL) ids[d.id] = true; });
+      return ids;
+    }).catch(function() { return {}; });
     Promise.all([
       db.collection('results').orderBy('savedAt', 'desc').get(),
-      db.collection('game-results').orderBy('savedAt', 'desc').get()
+      db.collection('game-results').orderBy('savedAt', 'desc').get(),
+      others
     ]).then(function(snapshots) {
+      const notMine = snapshots[2];
       allResults = [];
-      snapshots[0].forEach(function(doc) { allResults.push(Object.assign({ id: doc.id }, doc.data())); });
+      snapshots[0].forEach(function(doc) { const d = doc.data(); if (!(d.classId && notMine[d.classId])) allResults.push(Object.assign({ id: doc.id }, d)); });
       allGameResults = [];
-      snapshots[1].forEach(function(doc) { allGameResults.push(Object.assign({ id: doc.id }, doc.data())); });
+      snapshots[1].forEach(function(doc) { const d = doc.data(); if (!(d.classId && notMine[d.classId])) allGameResults.push(Object.assign({ id: doc.id }, d)); });
       renderDashboard();
     }).catch(function() {
       document.getElementById('results-area').innerHTML = '<div class="empty-msg">Error loading results. Make sure Firestore is set up.</div>';
@@ -365,7 +374,7 @@
   }
 
   function clearAll() {
-    if (!confirm('Delete ALL altitude results from the database, for every class? This cannot be undone.')) return;
+    if (!confirm('Delete ALL altitude results from the database, for every class of yours? This cannot be undone.')) return;
     const db = firebase.firestore();
     const jobs = [];
     for (let i = 0; i < allResults.length; i += 400) {

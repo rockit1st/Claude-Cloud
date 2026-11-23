@@ -25,17 +25,27 @@
     return { classId: '', className: '', period: (ps && ps.value) || '—' };
   };
 
+  // The classes this signed-in student has joined (whoever the teacher is),
+  // read from their own enrollments: Promise -> [{ classId, className }], sorted
+  // by name. A denied or failed read rejects, so callers can fall back quietly.
+  window.loadMyClasses = function (uid) {
+    return firebase.firestore().collection('enrollments').where('uid', '==', uid).get()
+      .then(function (snap) {
+        var seen = {};
+        return snap.docs.map(function (d) { var x = d.data(); return { classId: x.classId, className: x.className }; })
+          .filter(function (c) { if (!c.classId || seen[c.classId]) return false; seen[c.classId] = true; return true; })
+          .sort(function (a, b) { return String(a.className || '').localeCompare(String(b.className || '')); });
+      });
+  };
+
   window.setupClassPicker = function (classSelId, periodSelId) {
     if (typeof firebase === 'undefined') return;
     firebase.auth().onAuthStateChanged(function (user) {
       if (!user) return;
       var cs = document.getElementById(classSelId);
       var ps = document.getElementById(periodSelId);
-      firebase.firestore().collection('enrollments').where('uid', '==', user.uid).get()
-        .then(function (snap) {
-          var classes = snap.docs.map(function (d) { var x = d.data(); return { classId: x.classId, className: x.className }; })
-            .filter(function (c) { return c.classId; })
-            .sort(function (a, b) { return String(a.className || '').localeCompare(String(b.className || '')); });
+      window.loadMyClasses(user.uid)
+        .then(function (classes) {
           if (classes.length && cs) {
             cs.innerHTML = '';
             classes.forEach(function (c) {
@@ -52,7 +62,7 @@
           }
         })
         .catch(function (e) {
-          console.error(e);
+          console.warn('Could not read your classes:', e && e.code);
           if (cs) cs.style.display = 'none';
           if (ps) ps.style.display = '';
         });

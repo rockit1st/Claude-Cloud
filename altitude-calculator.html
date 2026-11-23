@@ -381,6 +381,7 @@
     .save-ok { display:none; margin-top:10px; padding:10px 14px; border-radius:8px; background:rgba(64,192,122,0.12); border:1px solid rgba(64,192,122,0.4); color:#80e0a8; font-size:0.88rem; font-weight:600; }
     .save-ok.show { display:block; }
     .save-btn:disabled { opacity:0.6; cursor:default; }
+    body.no-save #save-btn { display:none !important; }
     /* let a card be narrower than its widest child (the table scrolls inside .table-scroll instead of widening the page) */
     .container > .card { min-width:0; }
     @media (max-width: 480px) { .results-table .col-extra { display:none; } }
@@ -678,7 +679,9 @@
 </div>
 
 <script>
-  let distUnit = 'ft', lastResult = null, rankingsLocked = false, lockSeen = false, isTeacher = false;
+  let distUnit = 'ft', lastResult = null, rankingsLocked = false, lockSeen = false, isTeacher = false, isOwner = false;
+  // isTeacher: the owner or a teacher the owner added (teacher view of THEIR OWN classes).
+  // isOwner: only the owner has the site-wide controls (delete, lock, Clear, setup, approve).
   // Teacher's launch-day setup (settings/altitude-setup): measured stations and believable limits
   let setup = { stations: [], maxFt: 300, minAngle: 10, maxAngle: 80 };
   let myBuild = null;            // the student's Rocket Lab build (rocket_builds/{uid}), if they saved one
@@ -1064,7 +1067,8 @@
   let classState = {};         // classId -> 'loading' | 'ready' | 'error'
   let classUnsubs = {};        // classId -> unsubscribe function
   let ownResults = [];         // the signed-in student's own results
-  let allResults = [];         // every result (teacher only)
+  let allResults = [];         // the owner: every result; another teacher: the results of their own classes
+  let otherClassIds = {};      // owner only: ids of classes that belong to other teachers (kept off his boards)
   let topEntries = [];         // the public Top 20
   let roster = {};             // classId -> [{ name, email }] enrolled students (teacher only)
   let activeBoard = 'top';     // 'top' | 'c:<classId>' | 'none'
@@ -1155,7 +1159,7 @@
   // the teacher sees everything and rebuilds it outright; a student only ever
   // adds, updates or removes their OWN entry and leaves everyone else's alone.
   function desiredTop(current) {
-    if (isTeacher) return rankEntries(bestPerStudent(confirmed(allResults)).map(toEntry).map(cleanEntry).filter(Boolean));
+    if (isOwner) return rankEntries(bestPerStudent(confirmed(allResults)).map(toEntry).map(cleanEntry).filter(Boolean));
     const mine = bestPerStudent(confirmed(ownResults)).map(toEntry).map(cleanEntry).filter(Boolean);
     const others = current.filter(function(e) { return e.o !== me.tag; });
     return rankEntries(others.concat(mine));
@@ -1168,8 +1172,9 @@
   }
   function runSync() {
     if (!me || syncBusy || !loaded.top || topError) return;
-    if (isTeacher ? !fresh.all : !fresh.own) return;              // never decide from cached or partial data
-    if (isTeacher && allResults.some(function(r) { return r._pending; })) return;   // the commit snapshot re-runs this
+    if (isTeacher && !isOwner) return;                            // another teacher only reads the Top 20
+    if (isOwner ? !fresh.all : !fresh.own) return;              // never decide from cached or partial data
+    if (isOwner && allResults.some(function(r) { return r._pending; })) return;   // the commit snapshot re-runs this
     if (canon(desiredTop(topEntries)) === canon(topEntries)) return;
     const now = Date.now();
     syncLog = syncLog.filter(function(t) { return now - t < 600000; });
@@ -1193,12 +1198,12 @@
 
   // ── Which boards the viewer may open ──
   function noClassResult(r) {
-    return !r.classId || (loaded.classes && !myClasses.some(function(c) { return c.classId === r.classId; }));
+    return !r.classId || (loaded.classes && !otherClassIds[r.classId] && !myClasses.some(function(c) { return c.classId === r.classId; }));
   }
   function boardList() {
     const list = [{ id: 'top', label: '🌎 Top ' + TOP_N + ' · All Classes' }];
     myClasses.forEach(function(c) { list.push({ id: 'c:' + c.classId, label: (isTeacher ? '' : '👥 ') + c.className, classId: c.classId }); });
-    if (isTeacher && allResults.some(noClassResult)) list.push({ id: 'none', label: 'No class' });
+    if (isOwner && allResults.some(noClassResult)) list.push({ id: 'none', label: 'No class' });
     return list;
   }
   function currentBoard() {
@@ -1209,7 +1214,7 @@
     activeBoard = id;
     const b = currentBoard();
     if (isTeacher && b.classId) loadRoster(b.classId);
-    if (isTeacher && b.id === 'none') myClasses.forEach(function(c) { loadRoster(c.classId); });
+    if (isOwner && b.id === 'none') myClasses.forEach(function(c) { loadRoster(c.classId); });
     renderBoards();
   }
 
@@ -1259,9 +1264,9 @@
       if (t === 'Distance' || t === 'Angle' || t === 'Period') th.className = 'col-extra';
       tr.appendChild(th);
     });
-    if (isTeacher) { const th = document.createElement('th'); th.setAttribute('aria-label', 'Delete'); tr.appendChild(th); }
+    if (isOwner) { const th = document.createElement('th'); th.setAttribute('aria-label', 'Delete'); tr.appendChild(th); }
     head.appendChild(tr);
-    return cols.length + (isTeacher ? 1 : 0);
+    return cols.length + (isOwner ? 1 : 0);
   }
   function emptyRow(text, span) {
     const tr = document.createElement('tr'), c = document.createElement('td');
@@ -1290,7 +1295,7 @@
     const body = $('results-body'), note = $('board-note'), missing = $('missing-list');
     body.textContent = ''; note.textContent = ''; missing.textContent = ''; missing.style.display = 'none';
     $('final-badge').classList.toggle('show', rankingsLocked);
-    if (isTeacher) $('clear-all-btn').textContent = board.id === 'top' ? 'Clear All' : 'Clear This Board';
+    if (isOwner) $('clear-all-btn').textContent = board.id === 'top' ? 'Clear All' : 'Clear This Board';
 
     if (board.id === 'top') {
       const span = setHead(['#', 'Name', 'Class', 'Altitude']);
@@ -1317,7 +1322,7 @@
         td(tr, e.n || 'Anonymous');
         td(tr, e.g);
         altTd(tr, e.a, e.u, e.f);
-        if (isTeacher) delTd(tr, e.id, e.n);
+        if (isOwner) delTd(tr, e.id, e.n);
         if (!isTeacher && e.o && e.o === me.tag) tr.classList.add('me');
         body.appendChild(tr);
       });
@@ -1380,7 +1385,7 @@
       td(tr, r.distance + ' ' + unit).className = 'col-extra';
       td(tr, r.angle + '°').className = 'col-extra';
       altTd(tr, r.altitude, unit, altFt(r));
-      if (isTeacher) delTd(tr, r.id, String(r.name || ''));
+      if (isOwner) delTd(tr, r.id, String(r.name || ''));
       if (!isTeacher && r.userEmail && String(r.userEmail).toLowerCase() === me.email.toLowerCase()) tr.classList.add('me');
       body.appendChild(tr);
     });
@@ -1388,14 +1393,14 @@
 
   // ── Teacher actions ──
   function deleteResult(id, name) {
-    if (!isTeacher || !id) return;
+    if (!isOwner || !id) return;
     if (!confirm('Delete the result for ' + (name || 'this student') + '?')) return;
     db().collection('results').doc(id).delete()
       .catch(function(err) { console.error('Delete failed:', err); alert('That result could not be deleted. Check your connection and try again.'); });
   }
 
   function lockRankings() {
-    if (!isTeacher) return;
+    if (!isOwner) return;
     db().collection('settings').doc('altitude-rankings').set({ locked: !rankingsLocked })
       .catch(function(err) { console.error('Lock failed:', err); alert('The rankings could not be ' + (rankingsLocked ? 'unlocked' : 'locked') + '. Check your connection and try again.'); });
   }
@@ -1430,7 +1435,7 @@
     }).filter(Boolean);
   }
   function adoptResults(list) {
-    if (!isTeacher || !list.length) return;
+    if (!isOwner || !list.length) return;
     if (!confirm('Move ' + list.length + ' result' + (list.length === 1 ? '' : 's') + ' onto the board of the class each student has joined?')) return;
     const jobs = [];
     for (let i = 0; i < list.length; i += 400) {
@@ -1449,7 +1454,7 @@
   function loadRoster(classId) {
     db().collection('enrollments').where('classId', '==', classId).get().then(function(snap) {
       roster[classId] = snap.docs.map(function(d) { const x = d.data(); return { name: x.name || '', email: x.email || '' }; });
-      if (isTeacher && $('student-class').value === classId) fillRosterNames();
+      if (isOwner && $('student-class').value === classId) fillRosterNames();
       renderBoards();
     }).catch(function(err) { console.error('Roster load failed:', err); });
   }
@@ -1489,7 +1494,8 @@
       cs.value = keep;
     }
     renderWho();
-    if (isTeacher) fillRosterNames();
+    if (isOwner) fillRosterNames();
+    if (isTeacher && !isOwner) syncTeacherClasses();
     if (!isTeacher) {
       const want = {};
       myClasses.forEach(function(c) { want[c.classId] = true; if (!classUnsubs[c.classId]) watchClass(c.classId); });
@@ -1513,6 +1519,14 @@
       });
     }
     const settled = loaded.classes || classesSlow;
+
+    // another teacher: no student name or class to pick here (the database only lets students and the owner save a launch)
+    if (isTeacher && !isOwner) {
+      document.querySelector('.who-row').style.display = 'none';
+      document.body.classList.add('no-save');
+      say(['You can try the calculator here. Students save their own launches, and the boards below show the results of your classes.']);
+      return;
+    }
 
     // the name
     if (me && !isTeacher) {
@@ -1590,12 +1604,61 @@
       });
   }
 
+  // Another teacher's boards: one live query per class they own (the database only allows
+  // results to be read by class, never the whole list), joined into allResults.
+  const tUnsubs = {}, tRows = {}, tDone = {};
+  function rebuildTeacherResults() {
+    allResults = [];
+    myClasses.forEach(function(c) { allResults = allResults.concat(tRows[c.classId] || []); });
+    loaded.all = myClasses.every(function(c) { return tDone[c.classId]; });
+    fresh.all = loaded.all;
+    renderBoards();
+  }
+  function syncTeacherClasses() {
+    const want = {};
+    myClasses.forEach(function(c) {
+      want[c.classId] = true;
+      if (tUnsubs[c.classId]) return;
+      const cid = c.classId;
+      tDone[cid] = false;
+      tUnsubs[cid] = db().collection('results').where('classId', '==', cid)
+        .onSnapshot({ includeMetadataChanges: true }, function(snap) {
+          tRows[cid] = rowsOf(snap); tDone[cid] = true; rebuildTeacherResults();
+        }, function(err) {
+          console.warn('Class results not available:', err && err.code);
+          tRows[cid] = []; tDone[cid] = true; rebuildTeacherResults();
+        });
+    });
+    Object.keys(tUnsubs).forEach(function(cid) {
+      if (want[cid]) return;
+      tUnsubs[cid](); delete tUnsubs[cid]; delete tRows[cid]; delete tDone[cid];
+    });
+    rebuildTeacherResults();
+  }
+
+  // Who is this? The owner, a teacher the owner added, or a student. A failed or slow
+  // check means student (the student page never depends on it).
+  function findRole(user) {
+    const email = String(user.email || '').toLowerCase();
+    const fallback = { isOwner: email === TEACHER_EMAIL, isTeacher: email === TEACHER_EMAIL, email: email };
+    if (!window.TeacherRole) return Promise.resolve(fallback);
+    return Promise.race([
+      TeacherRole.check(db(), user),
+      new Promise(function(res) { setTimeout(function() { res(fallback); }, 8000); })
+    ]).catch(function() { return fallback; });
+  }
+
   function startBoards(user) {
     me = { uid: user.uid, email: user.email || '', name: user.displayName || '', tag: ownerTag(user.email) };
-    isTeacher = me.email === TEACHER_EMAIL;
+    findRole(user).then(function(role) {
+      isOwner = role.isOwner; isTeacher = role.isTeacher;
+      beginBoards(user, role.email);
+    });
+  }
 
+  function beginBoards(user, myEmail) {
     const nameEl = $('student-name');
-    if (isTeacher) {
+    if (isOwner) {
       nameEl.readOnly = false; nameEl.classList.remove('locked');
       nameEl.placeholder = "Student's first and last name";
       nameEl.setAttribute('list', 'roster-names');
@@ -1633,10 +1696,10 @@
       renderStations(); fillSetupForm();
       showFlagState();
     }, function(err) { console.error('Launch-day setup failed:', err); });
-    if (isTeacher) {
+    if (isOwner) {
       $('setup-card').style.display = '';
       initSetupForm();
-    } else {
+    } else if (!isTeacher) {
       // the rocket this student said they are building in Rocket Lab (predicted vs. measured)
       db().collection('rocket_builds').doc(me.uid).onSnapshot(function(doc) {
         myBuild = doc.exists ? doc.data() : null;
@@ -1649,11 +1712,19 @@
     }
 
     if (isTeacher) {
-      db().collection('results').onSnapshot({ includeMetadataChanges: true }, function(snap) {
-        allResults = rowsOf(snap); loaded.all = true; fresh.all = !snap.metadata.fromCache;
-        renderBoards(); scheduleSync();
-      }, function(err) { console.error('Results failed:', err); loaded.all = true; renderBoards(); });
-      db().collection('classes').where('teacherEmail', '==', me.email).onSnapshot(function(snap) {
+      if (isOwner) {
+        db().collection('results').onSnapshot({ includeMetadataChanges: true }, function(snap) {
+          allResults = rowsOf(snap); loaded.all = true; fresh.all = !snap.metadata.fromCache;
+          renderBoards(); scheduleSync();
+        }, function(err) { console.error('Results failed:', err); loaded.all = true; renderBoards(); });
+        // which results belong to other teachers' classes (kept off his boards; any failure hides nothing extra)
+        db().collection('classes').get().then(function(snap) {
+          const o = {};
+          snap.forEach(function(d) { if (String(d.data().teacherEmail || '').toLowerCase() !== myEmail) o[d.id] = true; });
+          otherClassIds = o; renderBoards();
+        }).catch(function(err) { console.warn('Other classes not available:', err && err.code); });
+      }
+      db().collection('classes').where('teacherEmail', '==', myEmail).onSnapshot(function(snap) {
         setMyClasses(snap.docs.map(function(d) { return { classId: d.id, className: d.data().name || 'Class' }; }));
       }, function(err) { console.error('Classes failed:', err); setMyClasses([], true); });
     } else {
@@ -1710,7 +1781,7 @@
     $('station-rows').appendChild(row);
   }
   function fillSetupForm() {
-    if (!isTeacher) return;
+    if (!isOwner) return;
     const n = setup.stations.length;
     $('setup-summary').textContent = (n ? n + ' station' + (n === 1 ? '' : 's') : 'no stations yet') + ' · limit ' + setup.maxFt + ' ft · angles ' + setup.minAngle + '°–' + setup.maxAngle + '°';
     if (setupDirty) return;                 // never overwrite what the teacher is typing
@@ -1747,6 +1818,18 @@
   function renderReview() {
     const box = $('review-strip');
     if (!isTeacher) { box.style.display = 'none'; return; }
+    if (!isOwner) {          // another teacher can see that a check is waiting, but only the owner can approve
+      const n = allResults.filter(function(r) { return r.review === 'pending'; }).length;
+      const sig2 = 'ro:' + n;
+      if (sig2 === reviewSig) return;
+      reviewSig = sig2; box.textContent = '';
+      if (!n) { box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      const t2 = document.createElement('div'); t2.className = 'review-title';
+      t2.textContent = '⏳ ' + n + ' result' + (n === 1 ? ' is' : 's are') + ' waiting for the site owner to check.';
+      box.appendChild(t2);
+      return;
+    }
     const pend = allResults.filter(function(r) { return r.review === 'pending'; }).sort(function(a, b) { return savedMs(a) - savedMs(b); });
     if (fixingId && !pend.some(function(r) { return r.id === fixingId; })) fixingId = null;
     const sig = pend.map(function(r) { return r.id + ':' + r.altitude + ':' + r.name; }).join(',') + '|' + fixingId;
@@ -1809,7 +1892,7 @@
     }
   }
   function reviewUpdate(id, data) {
-    if (!isTeacher) return;
+    if (!isOwner) return;
     db().collection('results').doc(id).update(data).then(function() {
       if (fixingId === id) { fixingId = null; renderReview(); }
     }, function(err) { console.error('Review update failed:', err); alert('That result could not be updated. Check your connection and try again.'); });
@@ -1914,12 +1997,12 @@
   const TEACHER_PASSWORD = 'rocket';
 
   function clearResults() {
-    if (!isTeacher) return;
+    if (!isOwner) return;
     const board = currentBoard();
     clearScope = board.id;
     $('clear-title').textContent = board.id === 'top' ? 'Clear All Results?' : 'Clear This Board?';
     $('clear-text').textContent = board.id === 'top'
-      ? 'This will permanently delete every saved result in EVERY class. Are you sure you want to continue?'
+      ? 'This will permanently delete every saved result in EVERY class' + (allResults.some(function(r) { return r.classId && otherClassIds[r.classId]; }) ? ', other teachers\' classes too' : '') + '. Are you sure you want to continue?'
       : board.id === 'none'
         ? 'This will permanently delete every saved result that has no class. Are you sure you want to continue?'
         : 'This will permanently delete every saved result for ' + board.label + '. Other classes are not touched. Are you sure you want to continue?';
@@ -1935,7 +2018,7 @@
     setTimeout(function() { $('modal-pw').focus(); }, 50);
   }
   function checkPassword() {
-    if (!isTeacher) return;
+    if (!isOwner) return;
     if ($('modal-pw').value !== TEACHER_PASSWORD) {
       $('pw-error').textContent = 'Incorrect password. Try again.';
       $('modal-pw').value = '';
@@ -1970,7 +2053,7 @@
   $('eye-height').addEventListener('input', function() { rememberEye(); invalidateResult(); });
   $('student-class').addEventListener('change', function() {
     try { if (this.value) localStorage.setItem(CLASS_PICK_KEY, this.value); } catch (e) {}
-    if (isTeacher) fillRosterNames();
+    if (isOwner) fillRosterNames();
   });
   // Enter runs the calculation only from the measurement boxes (not from buttons, tabs or the password box)
   ['student-name', 'distance', 'angle', 'eye-height'].forEach(function(id) {
@@ -1986,6 +2069,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script src="teacher-role.js"></script>
 <script>
   firebase.auth().onAuthStateChanged(function(user) {
     // auth.js sends signed-out and off-domain visitors to the login page
