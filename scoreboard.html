@@ -231,6 +231,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script src="teacher-role.js"></script>
+<script src="student-classes.js"></script>
 <script>
   const GAMES = [
     { key: 'inclinometer', label: 'Inclinometer', icon: '📐' },
@@ -260,7 +262,7 @@
     }
     addBtn('all', 'All');
     allClasses.forEach(function(c) { addBtn(c.id, c.name); });
-    addBtn('unassigned', 'Unassigned');
+    if (isOwner || !isTeacher) addBtn('unassigned', 'Unassigned');
     if (currentClass !== 'all' && currentClass !== 'unassigned'
         && !allClasses.some(function(c) { return c.id === currentClass; })) {
       currentClass = 'all';
@@ -279,14 +281,29 @@
     sel.value = keep;
   }
 
-  function subscribeClasses() {
-    firebase.firestore().collection('classes').where('teacherEmail', '==', TEACHER_EMAIL)
-      .onSnapshot(function(snap) {
-        allClasses = snap.docs.map(function(d) { var x = d.data(); return { id: d.id, name: x.name || 'Class' }; })
-          .sort(function(a, b) { return String(a.name).localeCompare(String(b.name)); });
-        renderClassFilter();
-        populateClassDropdown();
-      }, function(e) { console.error(e); });
+  // Which classes show up as filter buttons:
+  //  - a teacher (the owner included): their OWN classes only;
+  //  - a student: the classes they joined, whoever the teacher is.
+  // A refused or failed read just leaves the list empty (the All view still works).
+  function setClasses(list) {
+    allClasses = list.sort(function(a, b) { return String(a.name).localeCompare(String(b.name)); });
+    classesLoaded = true;
+    renderClassFilter();
+    populateClassDropdown();
+    renderScoreboard();
+  }
+
+  function subscribeClasses(user) {
+    if (isTeacher) {
+      firebase.firestore().collection('classes').where('teacherEmail', '==', myEmail)
+        .onSnapshot(function(snap) {
+          setClasses(snap.docs.map(function(d) { var x = d.data(); return { id: d.id, name: x.name || 'Class' }; }));
+        }, function(e) { console.warn('Classes not available:', e && e.code); setClasses([]); });
+    } else {
+      loadMyClasses(user.uid)
+        .then(function(list) { setClasses(list.map(function(c) { return { id: c.classId, name: c.className || 'Class' }; })); })
+        .catch(function(e) { console.warn('Your classes are not available:', e && e.code); setClasses([]); });
+    }
   }
 
   function groupLabel(row) {
@@ -323,10 +340,18 @@
   }
 
   function renderScoreboard() {
+    if (isTeacher && !classesLoaded) return;      // a teacher's view waits for their own class list
+    // a teacher sees only their own classes' scores (the owner also keeps older scores that have no class)
+    let base = allScores;
+    if (isTeacher) {
+      const mine = {};
+      allClasses.forEach(function(c) { mine[c.id] = true; });
+      base = allScores.filter(function(s) { return s.classId ? mine[s.classId] === true : isOwner; });
+    }
     const filtered =
-      currentClass === 'all' ? allScores :
-      currentClass === 'unassigned' ? allScores.filter(s => !s.classId) :
-      allScores.filter(s => s.classId === currentClass);
+      currentClass === 'all' ? base :
+      currentClass === 'unassigned' ? base.filter(s => !s.classId) :
+      base.filter(s => s.classId === currentClass);
 
     const content = document.getElementById('scoreboard-content');
     const html = [];
@@ -349,7 +374,7 @@
       if (rows.length === 0) {
         html.push(`<div class="empty-state"><div class="empty-icon">🎮</div>No scores yet for this game.<br>Play a game and opt in to appear here!</div>`);
       } else {
-        const actionsTh = isTeacher ? '<th class="right">Edit</th>' : '';
+        const actionsTh = isOwner ? '<th class="right">Edit</th>' : '';
         html.push(`<table class="score-table"><thead><tr><th>#</th><th>Name</th><th>Class</th><th class="right">Best Streak</th><th class="right">Score</th>${actionsTh}</tr></thead><tbody>`);
         rows.forEach((row, i) => {
           const rank = i + 1;
@@ -362,7 +387,7 @@
           const inputPart = inputLabel(row) ? `<span class="mode-badge input-badge">${inputLabel(row)}</span>` : '';
           const diffPart = row.difficulty ? ` · ${diffLabel(row.difficulty)}` : '';
           const streakPart = (row.streak != null) ? `🔥 ${row.streak}` : '—';
-          const actionsTd = isTeacher
+          const actionsTd = isOwner
             ? `<td class="actions-col"><button class="row-edit" onclick="editEntry('${row.id}')" title="Edit">✎</button><button class="row-del" onclick="deleteEntry('${row.id}')" title="Delete">✕</button></td>`
             : '';
           html.push(`<tr class="score-row"><td><span class="rank-num ${rankClass}">${medal || rank}</span></td><td><div class="player-name">${escHtml(row.name || 'Anonymous')}</div><div class="score-meta">${modePart}${inputPart}${diffPart}</div></td><td><div class="player-period">${groupLabel(row)}</div></td><td class="streak-col"><span class="streak-val">${streakPart}</span></td><td><div class="score-val">${row.score != null ? row.score : '—'}</div></td>${actionsTd}</tr>`);
@@ -379,8 +404,7 @@
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
-  let isTeacher = false;
+  let isTeacher = false, isOwner = false, classesLoaded = false, myEmail = '';
   let editingId = null;
 
   function subscribeScores() {
@@ -475,12 +499,29 @@
     document.getElementById('tp-title-mode').textContent = '';
   }
 
+  // Who is signed in? The owner and added teachers get the teacher view of their own classes;
+  // everyone else is a student. A failed check or a slow answer means student view.
+  function findRole(user) {
+    const email = String(user.email || '').toLowerCase();
+    const fallback = { isOwner: window.TeacherRole ? email === TeacherRole.OWNER : false, isTeacher: false, email: email };
+    fallback.isTeacher = fallback.isOwner;
+    if (!window.TeacherRole) return Promise.resolve(fallback);
+    return Promise.race([
+      TeacherRole.check(firebase.firestore(), user),
+      new Promise(function(res) { setTimeout(function() { res(fallback); }, 8000); })
+    ]).catch(function() { return fallback; });
+  }
+
+  let started = false;
   firebase.auth().onAuthStateChanged(function(user) {
-    if (!user) return;
-    isTeacher = (user.email === TEACHER_EMAIL);
-    if (isTeacher) document.getElementById('teacher-panel').style.display = 'block';
-    subscribeScores();
-    subscribeClasses();
+    if (!user || started) return;
+    started = true;
+    findRole(user).then(function(role) {
+      isOwner = role.isOwner; isTeacher = role.isTeacher; myEmail = role.email;
+      if (isOwner) document.getElementById('teacher-panel').style.display = 'block';
+      subscribeScores();
+      subscribeClasses(user);
+    });
   });
 </script>
 </body>

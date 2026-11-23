@@ -793,7 +793,27 @@
   // (localStorage): quiz attempts that haven't reached the database yet wait there as "pending" and
   // upload on the next try — after each quiz, on a timer, when the network comes back, and on the
   // next visit.
-  const PROGRESS_FIELDS = ['uid', 'name', 'email', 'updatedAt', 'modules'];   // the only fields this file writes
+  const PROGRESS_FIELDS = ['uid', 'name', 'email', 'updatedAt', 'modules'];   // the only fields this file always writes
+  // 'classIds' (the classes the student joined, copied from their own enrollments) is written too when it
+  // changed, so the teacher of each class can read this student's progress. The database only accepts it
+  // when each id is a class the student really joined; before the new rules are published it refuses the
+  // field, and the save is simply tried again without it.
+  let idsDenied = false;                                                      // this page load: the database refused 'classIds'
+  let idsCache = null;                                                        // { uid, at, ids } the last good read of the enrollments
+  function enrolledIds(u) {
+    if (idsCache && idsCache.uid === u.uid && Date.now() - idsCache.at < 120000) return Promise.resolve(idsCache.ids);
+    return withTimeout(firebase.firestore().collection('enrollments').where('uid', '==', u.uid).get({ source: 'server' }), 8000).then(function (snap) {
+      const seen = {};
+      snap.docs.forEach(function (d) { const c = d.data() && d.data().classId; if (typeof c === 'string' && /^[A-Za-z0-9]{1,40}$/.test(c)) seen[c] = true; });
+      const ids = Object.keys(seen).sort().slice(0, 4);
+      idsCache = { uid: u.uid, at: Date.now(), ids: ids };
+      return ids;
+    }, function () { return null; });          // unknown (offline, denied): leave 'classIds' as it is
+  }
+  function sameIds(a, b) {
+    a = Array.isArray(a) ? a : []; b = Array.isArray(b) ? b : [];
+    return JSON.stringify(a.slice().sort()) === JSON.stringify(b.slice().sort());
+  }
   const RETRY_S = [5, 15, 60, 120, 300];                                      // seconds between tries after a failure
 
   function count(v) { v = Math.floor(Number(v)); return isFinite(v) && v > 0 ? v : 0; }
@@ -902,7 +922,7 @@
   // (The progress doc has no room for a device mark, so if another device of the same student wrote exactly
   // the same records a moment earlier, that looks the same: those attempts count once instead of twice.
   // A pass is never lost: passes are also kept in local.modules.)
-  function upload(u) {
+  function upload(u, ids) {                 // ids: the class ids to store, or null to leave 'classIds' alone
     const db = firebase.firestore(), ref = db.collection('sailcar_progress').doc(u.uid);
     let server = null, out = null, id = null;
     const tx = db.runTransaction(function (t) {
@@ -915,13 +935,22 @@
         }
         id = null;
         out = combine(server && server.modules, l.modules, l.pending);
-        if (server ? modsSig(out) === sig : !Object.keys(out).length) return;   // nothing new
-        const entry = { id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10), sig: modsSig(out), pending: l.pending };
-        id = entry.id;
-        writeLocal(function (x) { x.sending = x.sending.concat([entry]).slice(-8); });
-        t.set(ref, { uid: u.uid, name: String(u.displayName || u.email || '').slice(0, 100), email: String(u.email || '').slice(0, 100),
-                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(), modules: out },
-              { mergeFields: PROGRESS_FIELDS });   // 'design' (the Studio's) is left exactly as it is
+        const idsNew = !!ids && !sameIds(ids, server && server.classIds);       // (a doc is only made once there is progress)
+        if (server ? modsSig(out) === sig && !idsNew : !Object.keys(out).length) return;   // nothing new
+        if (!server || modsSig(out) !== sig) {     // (a write of 'classIds' alone carries no attempts: nothing to track)
+          const entry = { id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10), sig: modsSig(out), pending: l.pending };
+          id = entry.id;
+          writeLocal(function (x) { x.sending = x.sending.concat([entry]).slice(-8); });
+        }
+        if (server && modsSig(out) === sig) {      // only the class list changed: write just that, leave every other field as it is
+          t.set(ref, { classIds: ids }, { mergeFields: ['classIds'] });
+          return;
+        }
+        const data = { uid: u.uid, name: String(u.displayName || u.email || '').slice(0, 100), email: String(u.email || '').slice(0, 100),
+                       updatedAt: firebase.firestore.FieldValue.serverTimestamp(), modules: out };
+        const fields = PROGRESS_FIELDS.slice();
+        if (idsNew) { data.classIds = ids; fields.push('classIds'); }
+        t.set(ref, data, { mergeFields: fields });   // 'design' (the Studio's) is left exactly as it is
       });
     });
     // runs whenever the transaction ends well, even if we stopped waiting for it
@@ -950,7 +979,17 @@
     clearTimeout(retryTimer); retryTimer = null;
     if (!u || typeof firebase === 'undefined' || !firebase.firestore) return Promise.resolve(false);
     return Promise.resolve().then(function () {       // (a throw anywhere below becomes a failed try, never an exception)
-      return withLock('sailcar-progress-' + u.uid, function () { return withTimeout(upload(u), 30000); });
+      return withLock('sailcar-progress-' + u.uid, function () {
+        return (idsDenied ? Promise.resolve(null) : enrolledIds(u)).then(function (ids) {
+          return withTimeout(upload(u, ids), 30000).catch(function (err) {
+            if (ids && err && err.code === 'permission-denied') {   // the database does not know 'classIds' yet: save without it
+              idsDenied = true;
+              return withTimeout(upload(u, null), 30000);
+            }
+            throw err;
+          });
+        });
+      });
     }).then(function (res) {
       if (progress.user !== u) return false;
       failures = 0;
@@ -1023,7 +1062,7 @@
   };
 
   // ── LAB SHELL (hub, module player, quiz) ──────────────────────────────────
-  const state = { isTeacher: false, current: null, step: 0, cleanups: [], doneSteps: {} };
+  const state = { isTeacher: false, role: { isOwner: false, isTeacher: false, email: '' }, current: null, step: 0, cleanups: [], doneSteps: {} };
   function $(id) { return document.getElementById(id); }
 
   function register(m) {
@@ -1245,17 +1284,21 @@
   }
 
   // ── TEACHER: class progress ───────────────────────────────────────────────
+  // Shows the signed-in teacher's OWN classes only (the owner's too: only his own). Each student's progress
+  // is read one document at a time: the database lets a teacher read a student's progress only while the
+  // student is in one of the teacher's classes.
   function renderTeacher() {
     const box = $('sl-teacher');
     box.style.display = 'block';
     box.textContent = '';
     box.appendChild(h('h2', { class: 'sl-teacher-title', text: '👩‍🏫 Class progress' }));
     const sel = h('select', { id: 'sl-class', 'aria-label': 'Class' }, [h('option', { value: '', text: 'Loading classes…' })]);
-    const status = h('div');                       // a problem loading everyone's progress stays visible here
+    const status = h('div');                       // a problem loading the classes stays visible here
     const table = h('div', { class: 'sl-table-wrap' });
     box.appendChild(sel); box.appendChild(status); box.appendChild(table);
     const db = firebase.firestore();
-    let all = {}, classes = [], ticket = 0, loads = 0;
+    const myEmail = String(state.role.email || '').toLowerCase();
+    let classes = [], ticket = 0, loads = 0;
     // Offline, Firestore answers a read from its (often empty) cache. That is not "no classes" or "nobody has
     // started", so a cached answer counts as a failed read: the teacher gets a Retry instead of a wrong table.
     function fromServer(snap) { if (snap.metadata && snap.metadata.fromCache) throw { code: 'unavailable' }; return snap; }
@@ -1264,23 +1307,19 @@
       b.addEventListener('click', again);
       where.appendChild(h('p', { class: 'sl-muted' }, [text, b]));
     }
+    // one student's progress: { doc } (a missing doc is "not started"), { denied } or { failed }
+    function readProgress(uid) {
+      return db.collection('sailcar_progress').doc(uid).get({ source: 'server' }).then(function (d) {
+        return { doc: d.exists ? d.data() : null };
+      }, function (err) { return err && err.code === 'permission-denied' ? { denied: true } : { failed: true }; });
+    }
     sel.addEventListener('change', function () { showClass(sel.value); });
     function load() {
       const run = ++loads;
-      all = {}; classes = []; ++ticket;
+      classes = []; ++ticket;
       status.textContent = ''; table.textContent = '';
       sel.textContent = ''; sel.appendChild(h('option', { value: '', text: 'Loading classes…' }));
-      db.collection('sailcar_progress').get().then(fromServer).then(function (snap) {
-        snap.docs.forEach(function (d) { all[d.id] = d.data(); });
-      }, function (err) {
-        if (err && err.code === 'permission-denied') {   // today's rules: show the rosters anyway
-          status.appendChild(h('p', { class: 'sl-muted', text: 'Progress can’t be loaded yet (' + err.code + '). Publish the new Firestore rules first.' }));
-          return;
-        }
-        throw err;
-      })
-        .then(function () { return db.collection('classes').where('teacherEmail', '==', TEACHER_EMAIL).get(); })
-        .then(fromServer)
+      db.collection('classes').where('teacherEmail', '==', myEmail).get().then(fromServer)
         .then(function (snap) {
           if (run !== loads) return;
           sel.textContent = '';
@@ -1303,29 +1342,39 @@
       table.textContent = '';
       table.appendChild(h('p', { class: 'sl-muted', text: 'Loading ' + name + '…' }));
       db.collection('enrollments').where('classId', '==', classId).get().then(fromServer).then(function (snap) {
+        const kids = snap.docs.map(function (d) { return d.data(); }).filter(function (k) { return k && k.uid; })
+          .sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+        return Promise.all(kids.map(function (k) { return readProgress(String(k.uid)); })).then(function (got) { return { kids: kids, got: got }; });
+      }).then(function (res) {
         if (mine !== ticket) return;             // another class was picked while this one loaded
+        const kids = res.kids, got = res.got;
         table.textContent = '';
         table.appendChild(h('h3', { class: 'sl-class-name', text: name }));
-        const kids = snap.docs.map(function (d) { return d.data(); }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
         if (!kids.length) { table.appendChild(h('p', { class: 'sl-muted', text: 'No students have joined this class yet.' })); return; }
         const graded = modules.filter(function (m) { return !m.noQuiz; });
         const t = h('table', { class: 'sl-table' });
         t.appendChild(h('thead', null, [h('tr', null, [h('th', { text: 'Student' })].concat(graded.map(function (m) { return h('th', { title: m.title, text: m.icon + ' ' + m.num }); })).concat([h('th', { text: 'Done' })]))]));
         const tb = h('tbody');
-        kids.forEach(function (k) {
-          const p = (all[k.uid] && all[k.uid].modules) || {};
+        let anyDenied = false, anyFailed = false;
+        kids.forEach(function (k, i) {
+          const g = got[i] || {};
+          if (g.denied) anyDenied = true;
+          if (g.failed) anyFailed = true;
+          const p = (g.doc && g.doc.modules) || {};
           let n = 0;
           const cells = graded.map(function (m) {
             const r = p[m.id];
             if (r && r.passed) { n++; return h('td', { class: 'ok', title: 'Best ' + (r.best || 0) + '/' + (r.total || QUIZ_SIZE) + ', ' + (r.attempts || 0) + ' attempt(s)', text: '✓' }); }
             if (r && r.attempts) return h('td', { class: 'try', title: 'Best ' + (r.best || 0) + '/' + (r.total || QUIZ_SIZE) + ', ' + r.attempts + ' attempt(s)', text: (r.best || 0) + '/' + (r.total || QUIZ_SIZE) });
-            return h('td', { class: 'none', text: '·' });
+            return h('td', { class: 'none', title: g.denied ? 'Not started, or has not opened the lab since the update' : g.failed ? 'Could not load' : null, text: g.failed ? '?' : '·' });
           });
           tb.appendChild(h('tr', null, [h('td', { text: k.name || k.email })].concat(cells).concat([h('td', { text: n + '/' + graded.length })])));
         });
         t.appendChild(tb);
         table.appendChild(t);
-        table.appendChild(h('p', { class: 'sl-muted', text: '✓ = passed · 3/5 = best score so far (not passed yet) · · = not started. Hover a cell to see attempts.' }));
+        table.appendChild(h('p', { class: 'sl-muted', text: '✓ = passed · 3/5 = best score so far (not passed yet) · · = not started. Hover a cell to see attempts.' +
+          (anyDenied ? ' A student’s progress shows up here after they open the Sail Car Lab once.' : '') }));
+        if (anyFailed) retryNote(table, '? = couldn’t load that student — check Wi-Fi and tap Retry.', function () { showClass(classId); });
       }).catch(function (err) {
         if (mine !== ticket) return;
         table.textContent = '';
@@ -1336,8 +1385,22 @@
   }
 
   // ── START ─────────────────────────────────────────────────────────────────
+  // who is a teacher: the owner, or anyone the owner added (teacher-role.js); without it, only the owner
+  function findRole(user) {
+    const email = String((user && user.email) || '').toLowerCase();
+    if (window.TeacherRole && typeof window.TeacherRole.check === 'function' && typeof firebase !== 'undefined' && firebase.firestore) {
+      return Promise.resolve(window.TeacherRole.check(firebase.firestore(), user)).catch(function () { return { isOwner: false, isTeacher: false, email: email }; });
+    }
+    return Promise.resolve({ isOwner: email === TEACHER_EMAIL, isTeacher: email === TEACHER_EMAIL, email: email });
+  }
   function start(user) {
-    state.isTeacher = (user.email || '') === TEACHER_EMAIL;
+    findRole(user).then(function (role) {
+      state.role = { isOwner: !!role.isOwner, isTeacher: !!role.isTeacher, email: String(role.email || user.email || '').toLowerCase() };
+      state.isTeacher = state.role.isTeacher;
+      go(user);
+    });
+  }
+  function go(user) {
     // a background upload finished (or failed): refresh the hub if it is on screen
     progress.onChange = function () { if (state.current == null && $('sl-hub-wrap').style.display === 'block') renderHub(); };
     progress.load(user).then(function () {
@@ -1357,6 +1420,6 @@
   }
 
   window.SailLab = { register: register, physics: physics, kid: kid, draw: draw, ui: ui, h: h, svg: svg, fmt: fmt, progress: progress,
-                     start: start, modules: modules, isTeacher: function () { return state.isTeacher; },
+                     start: start, modules: modules, isTeacher: function () { return state.isTeacher; }, role: function () { return state.role; },
                      _test: { unlocked: unlocked, openModule: openModule, state: state } };
 })();

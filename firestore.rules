@@ -36,11 +36,13 @@
 //    another teacher's classes, join codes or rosters. That includes the owner:
 //    his Classes page shows and manages his own classes only.
 //  - Read the altitude results and the Sail Car Lab runs that were saved for
-//    one of their own classes (so a later update can show each teacher their
-//    own classes' boards).
+//    one of their own classes, and delete a Sail Car Lab run of their own class.
+//  - Read the Sail Car Lab progress of a student who is in one of their own
+//    classes (one student at a time; the student's progress lists the classes
+//    they are in, and each must be a class they really joined).
 //  - A teacher who is not the owner has none of the owner's site-wide powers:
 //    they cannot read everyone's results or progress, change the settings or
-//    the races, or change or delete a result or a run.
+//    the races, or change or delete a result, or change a run.
 //  - A teacher can update only three fields of their own "teachers" entry: when
 //    they were last here and how many classes and students they have. The
 //    Classes page does that so the owner can see who is using the site.
@@ -60,7 +62,8 @@
 //    student may read. "settings/altitude-rankings" (the lock) is owner-only.
 //  - rocket_builds: each student's "I'm building this one" design from Rocket Lab.
 //  - Sail Car Lab: sailcar_progress (each student's modules and Design Studio
-//    design; only the student and the owner can read or save it) and
+//    design; the student and the owner can read it, and the teacher of a class
+//    the student is in; only the student and the owner can save it) and
 //    sailcar_runs (real hallway runs, private to the class like the altitude
 //    boards). A student can save only their own progress and runs, only in the
 //    shape the lab saves them and under their own Google name.
@@ -245,12 +248,49 @@ service cloud.firestore {
     // will be after the merge, so each save must leave the whole doc valid.
     function validProgress(id) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['uid', 'name', 'email', 'updatedAt', 'modules', 'design'])
+      return d.keys().hasOnly(['uid', 'name', 'email', 'updatedAt', 'modules', 'design', 'classIds'])
              && d.get('uid', id) == id
              && d.get('name', '') is string && d.get('name', '').size() <= 100
              && d.get('email', '') is string && d.get('email', '').size() <= 100
              && d.get('modules', {}) is map && d.get('modules', {}).size() <= 12
-             && d.get('design', {}) is map && d.get('design', {}).size() <= 40;
+             && d.get('design', {}) is map && d.get('design', {}).size() <= 40
+             && validClassIds(id);
+    }
+    // classIds: the classes the student is in, kept by the lab from the student's
+    // own enrollments so that the teacher of each class can read this progress
+    // (see the read rule below). At most 4 plain class ids. When a save changes
+    // the list, every id in it must be a class the student really joined (their
+    // enrollment exists), so nobody can point their progress at a teacher whose
+    // class they are not in. A list that a save leaves as it is (an older page
+    // that does not know the field, or a class left since) is not checked again:
+    // the read rule checks the enrollment at the moment of reading.
+    function validClassIds(uid) {
+      let n = request.resource.data.get('classIds', []);
+      return n is list && n.size() <= 4
+             && ((resource != null && resource.data.get('classIds', []) == n)
+                 || (classIdJoined(n, 0, uid) && classIdJoined(n, 1, uid)
+                     && classIdJoined(n, 2, uid) && classIdJoined(n, 3, uid)));
+    }
+    // Entry i of the list (if there is one) is a plain class id of a class this student joined.
+    function classIdJoined(n, i, uid) {
+      return n.size() <= i
+             || (n[i] is string && n[i].matches('^[A-Za-z0-9]{1,40}$')
+                 && exists(/databases/$(database)/documents/enrollments/$(n[i] + '_' + uid)));
+    }
+    // Teacher read of a progress doc: entry i of its classIds is a class the
+    // signed-in teacher owns and the student is still enrolled in.
+    function teachesClassIdAt(n, i, uid) {
+      return n.size() > i
+             && n[i] is string && n[i].matches('^[A-Za-z0-9]{1,40}$')
+             && exists(/databases/$(database)/documents/classes/$(n[i]))
+             && get(/databases/$(database)/documents/classes/$(n[i])).data.teacherEmail == request.auth.token.email
+             && exists(/databases/$(database)/documents/enrollments/$(n[i] + '_' + uid));
+    }
+    function teachesProgress(uid) {
+      let n = resource.data.get('classIds', []);
+      return isTeacher() && n is list && n.size() <= 4
+             && (teachesClassIdAt(n, 0, uid) || teachesClassIdAt(n, 1, uid)
+                 || teachesClassIdAt(n, 2, uid) || teachesClassIdAt(n, 3, uid));
     }
     // A real hallway run, exactly as the Design Studio logs it: only these
     // fields, under the student's own account, stamped with the server's time.
@@ -282,22 +322,29 @@ service cloud.firestore {
              && d.classId is string
              && (d.classId == '' || inClass(d.classId));
     }
-    // Each student's module progress and design (the owner reads everyone's)
+    // Each student's module progress and design. Read by the student, by the
+    // owner (everyone's), and by the teacher of a class the student is in (the
+    // class is named in classIds; see validClassIds). A teacher reads these one
+    // student at a time (get), never as a list.
     match /sailcar_progress/{uid} {
-      allow read: if isOwner() || (signedIn() && request.auth.uid == uid);
+      allow read: if isOwner() || (signedIn() && request.auth.uid == uid)
+                  || (signedIn() && teachesProgress(uid));
       allow create, update: if isOwner()
                             || (signedIn() && request.auth.uid == uid && validProgress(uid));
       allow delete: if isOwner();
     }
     // Real hallway runs: visible to the student, their class, the owner, and
-    // the teacher whose class the run was saved for
+    // the teacher whose class the run was saved for. That teacher can also
+    // delete a run of their class (a wrong or silly entry); only the owner can
+    // change one.
     match /sailcar_runs/{id} {
       allow read: if isOwner()
                   || (signedIn() && resource.data.userEmail == request.auth.token.email)
                   || (signedIn() && inClass(resource.data.classId))
                   || (isTeacher() && ownsClass(resource.data.classId));
       allow create: if isOwner() || (signedIn() && validRun());
-      allow update, delete: if isOwner();
+      allow update: if isOwner();
+      allow delete: if isOwner() || (isTeacher() && ownsClass(resource.data.classId));
     }
 
     // Rocket Lab: the design a student says they are really building
