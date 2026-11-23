@@ -854,12 +854,15 @@
           rm.disabled = true;
           // a counted award comes out of the student's running total in the same batch; an older one (no mark) is just deleted
           let p;
-          if (d.counted) {
+          const coupled = function() {
             const batch = db().batch(), fv = firebase.firestore.FieldValue;
             batch.delete(d.ref);
             batch.set(db().collection('techbucks_totals').doc(d.uid), { uid: d.uid, earned: fv.increment(-d.amount), spent: fv.increment(0), last: d.id, updatedAt: fv.serverTimestamp() }, { merge: true });
-            p = batch.commit();
-          } else p = d.ref.delete();
+            return batch.commit();
+          };
+          if (d.counted) p = coupled();
+          // an older one (no mark) is just deleted; if the student's page counted it a moment ago, the plain delete is refused: try the coupled one
+          else p = d.ref.delete().catch(function(e) { if (!isDenied(e)) throw e; return coupled(); });
           p.catch(function(e) { rm.disabled = false; alert(isDenied(e) ? 'Tech Bucks turn on after the new rules are published.' : 'Could not remove it. Check the Wi-Fi and try again.'); });
         });
         li.appendChild(rm);
