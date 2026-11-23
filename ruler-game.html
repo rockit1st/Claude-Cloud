@@ -321,6 +321,7 @@
     <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
     <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
     <a href="classes.html" class="nav-link">👥 Classes</a>
+    <a href="tech-bucks.html" class="nav-link">🪙 Tech Bucks</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -963,6 +964,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 <script src="teacher-role.js"></script>
+<script src="techbucks.js"></script>
 <script src="student-classes.js"></script>
 <script>
   // One Firestore doc per run: the first save creates it, later saves in the
@@ -1254,6 +1256,8 @@
   function endRaceLocal(){
     if (!race.on) return;
     race.on = false;
+    // Tech Bucks: 2 for playing in a race and scoring (once per race). Quiet if it cannot be saved.
+    try { if (window.TechBucks && !race.isTeacher && race.id && race.score > 0) window.TechBucks.award('ruler_race_' + race.id, 'Played in a race'); } catch (e) { /* never get in the way */ }
     if (race.timer){ clearInterval(race.timer); race.timer = null; }
     document.querySelectorAll('.choice-btn').forEach(function(b){ b.disabled = true; });
     var cb = document.getElementById('check-btn'); if (cb) cb.disabled = true;

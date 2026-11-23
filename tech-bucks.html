@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tech Bucks | Tech Class Hub</title>
+  <meta name="description" content="Earn Tech Bucks for finishing things on the Tech Class site." />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px; background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #f0c040; background: rgba(240,192,64,0.1); border-color: rgba(240,192,64,0.45); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+    .banner { margin-top: 60px; background: linear-gradient(135deg, #0a000f 0%, #1a0030 50%, #0d001a 100%); padding: 44px 20px; text-align: center; position: relative; overflow: hidden; border-bottom: 2px solid rgba(240,192,64,0.35); }
+    .banner::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #f0c040, transparent); box-shadow: 0 0 20px #f0c040; }
+    .banner-icon { font-size: 3.5rem; margin-bottom: 10px; }
+    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.8rem, 6vw, 3rem); font-weight: 900; color: #f0c040; letter-spacing: 4px; text-shadow: 0 0 20px rgba(240,192,64,0.6); }
+    .banner-sub { color: #9080b0; font-size: 1rem; margin-top: 10px; letter-spacing: 1px; }
+
+    .content { max-width: 760px; margin: 0 auto; padding: 36px 16px 80px; }
+    .breadcrumb { font-size: 0.85rem; color: #9080b0; margin-bottom: 26px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #f0c040; }
+    .section-label { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: #f0c040; letter-spacing: 3px; text-transform: uppercase; margin: 36px 0 16px; }
+
+    .balance-card { text-align: center; background: linear-gradient(160deg, rgba(240,192,64,0.14), rgba(180,79,255,0.08)); border: 2px solid rgba(240,192,64,0.5); border-radius: 22px; padding: 28px 16px 26px; }
+    .balance-label { font-size: 1.15rem; color: #d9c2ff; font-weight: 600; }
+    .balance-num { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: clamp(3.6rem, 18vw, 6rem); line-height: 1.1; color: #f0c040; text-shadow: 0 0 24px rgba(240,192,64,0.55); margin: 6px 0; }
+    .balance-num .coin { font-size: 0.7em; margin-right: 8px; }
+    .balance-sub { font-size: 1.05rem; color: #d9c2ff; line-height: 1.5; }
+
+    .note { background: rgba(180,79,255,0.08); border: 1px solid rgba(180,79,255,0.35); border-radius: 14px; padding: 14px 16px; margin-top: 16px; color: #d9c2ff; font-size: 1.02rem; line-height: 1.55; }
+    .note.warn { background: rgba(255,190,60,0.08); border-color: rgba(255,190,60,0.45); color: #ffcf6a; }
+
+    .earn-list, .hist-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .earn-list li { display: flex; align-items: center; gap: 12px; background: rgba(180,79,255,0.06); border: 1px solid rgba(180,79,255,0.25); border-radius: 14px; padding: 14px 14px; }
+    .earn-icon { font-size: 1.8rem; flex: 0 0 auto; width: 2.2rem; text-align: center; }
+    .earn-text { flex: 1 1 auto; min-width: 0; }
+    .earn-text strong { display: block; font-size: 1.08rem; line-height: 1.35; font-weight: 600; }
+    .earn-text span { display: block; font-size: 0.92rem; color: #9080b0; margin-top: 3px; line-height: 1.4; }
+    .pill { flex: 0 0 auto; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.05rem; color: #0a000f; background: linear-gradient(135deg, #f0c040, #c89010); border-radius: 999px; padding: 8px 14px; white-space: nowrap; }
+    .pill.text { font-size: 0.8rem; }
+
+    .hist-list li { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(180,79,255,0.18); border-radius: 12px; padding: 12px 14px; }
+    .hist-main { flex: 1 1 auto; min-width: 0; }
+    .hist-reason { font-size: 1.02rem; font-weight: 600; overflow-wrap: anywhere; }
+    .hist-date { font-size: 0.85rem; color: #9080b0; margin-top: 2px; }
+    .hist-amt { flex: 0 0 auto; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.1rem; color: #f0c040; }
+    .hist-amt.neg { color: #ff8080; }
+    .empty { text-align: center; padding: 26px 16px; border: 1px dashed rgba(180,79,255,0.3); border-radius: 14px; color: #9080b0; font-size: 1.05rem; line-height: 1.6; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
+
+    body.light-mode { background: #f4eeff; color: #1a0030; }
+    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
+    body.light-mode .nav-link { color: #5a4a8a; }
+    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
+    body.light-mode .nav-link.active { color: #8a5a00; }
+    body.light-mode .banner { background: linear-gradient(135deg, #f4eeff, #ebe0ff); }
+    body.light-mode .breadcrumb, body.light-mode .breadcrumb a, body.light-mode .banner-sub, body.light-mode .earn-text span, body.light-mode .hist-date, body.light-mode .empty { color: #5a4a8a; }
+    body.light-mode .balance-label, body.light-mode .balance-sub, body.light-mode .note { color: #4a2a8a; }
+    body.light-mode .balance-num, body.light-mode .banner-title, body.light-mode .section-label, body.light-mode .hist-amt { color: #8a5a00; text-shadow: none; }
+    body.light-mode .note.warn { color: #8a5a00; background: rgba(255,190,60,0.15); }
+    body.light-mode .hist-list li { background: rgba(255,255,255,0.7); color: #1a0030; }
+    body.light-mode footer { color: rgba(90,74,130,0.55); background: #f4eeff; }
+    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
+    .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
+    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
+  </style>
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
+    <a href="classes.html" class="nav-link">👥 Classes</a>
+    <a href="tech-bucks.html" class="nav-link active">🪙 Tech Bucks</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon">🪙</div>
+  <div class="banner-title">TECH BUCKS</div>
+  <div class="banner-sub">Do great work. Earn Tech Bucks.</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / Tech Bucks</div>
+
+  <section class="balance-card" aria-labelledby="bal-label">
+    <div class="balance-label" id="bal-label">You have</div>
+    <div class="balance-num" id="bal-num" aria-live="polite"><span class="coin" aria-hidden="true">🪙</span><span id="bal-val">…</span></div>
+    <div class="balance-sub" id="bal-sub">Tech Bucks</div>
+  </section>
+  <div class="note" id="teacher-note" style="display:none">Tech Bucks are for students. To give some to a student, open <a href="classes.html" style="color:inherit;font-weight:700">Classes</a>.</div>
+  <div class="note warn" id="off-note" style="display:none">Tech Bucks are not turned on yet. Come back soon. Your work is not lost: you will get your Tech Bucks when they turn on.</div>
+
+  <h2 class="section-label">How to earn Tech Bucks</h2>
+  <ul class="earn-list" id="earn-list"></ul>
+
+  <h2 class="section-label" id="hist-head">Your Tech Bucks so far</h2>
+  <ul class="hist-list" id="hist-list"></ul>
+  <div class="empty" id="hist-empty" style="display:none">You have no Tech Bucks yet.<br>Pick something from the list above to start!</div>
+</div>
+
+<footer>Tech Class Hub</footer>
+
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}let l=false;try{l=localStorage.getItem('theme')==='light';}catch(e){}apply(l);btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);try{localStorage.setItem('theme',light?'light':'dark');}catch(e){}});})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="teacher-role.js"></script>
+<script src="techbucks.js"></script>
+<script>
+(function () {
+  var TB = window.TechBucks;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  // the "How to earn" list: the same table the rules use (techbucks.js)
+  var earn = $('earn-list');
+  ((TB && TB.TABLE) || []).forEach(function (row) {
+    var li = el('li');
+    li.appendChild(el('span', 'earn-icon', row.icon));
+    var t = el('div', 'earn-text');
+    t.appendChild(el('strong', null, row.text));
+    t.appendChild(el('span', null, row.note));
+    li.appendChild(t);
+    li.appendChild(el('span', row.amount == null ? 'pill text' : 'pill', row.amount == null ? '1 to 50' : '+' + row.amount));
+    earn.appendChild(li);
+  });
+
+  function fmtDate(ms) {
+    if (!ms) return '';
+    var d = new Date(ms);
+    try { return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); } catch (e) { return d.toDateString(); }
+  }
+
+  function draw(st) {
+    var hist = $('hist-list');
+    if (st.ready && !TB.isStudent()) {           // a teacher (or anyone who is not a student): a short note instead of a balance
+      $('teacher-note').style.display = 'block';
+      $('off-note').style.display = 'none';
+      $('bal-num').style.display = 'none';
+      $('bal-sub').style.display = 'none';
+      $('bal-label').textContent = 'Tech Bucks are for students';
+      $('hist-head').style.display = 'none';
+      $('hist-empty').style.display = 'none';
+      return;
+    }
+    $('off-note').style.display = st.ready && TB.isStudent() && !st.ok ? 'block' : 'none';
+    if (st.ok) {
+      $('bal-val').textContent = String(st.balance);
+      $('bal-sub').textContent = Math.abs(st.balance) === 1 ? 'Tech Buck' : 'Tech Bucks';
+    } else if (st.ready) {
+      $('bal-val').textContent = TB.isStudent() ? '–' : '';
+    }
+    hist.textContent = '';
+    var list = st.entries.slice(0, 30);
+    list.forEach(function (e) {
+      var li = el('li');
+      var main = el('div', 'hist-main');
+      main.appendChild(el('div', 'hist-reason', (e.reason || 'Tech Bucks') + (e.kind === 'bonus' ? ' (from your teacher)' : '')));
+      main.appendChild(el('div', 'hist-date', fmtDate(e.createdAt)));
+      li.appendChild(main);
+      li.appendChild(el('div', e.amount < 0 ? 'hist-amt neg' : 'hist-amt', (e.amount > 0 ? '+' : '') + e.amount));
+      hist.appendChild(li);
+    });
+    $('hist-empty').style.display = st.ok && !list.length ? 'block' : 'none';
+  }
+
+  if (!TB) { $('off-note').style.display = 'block'; return; }
+  TB.subscribe(draw);
+})();
+</script>
+</body>
+</html>

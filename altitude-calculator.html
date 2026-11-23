@@ -497,6 +497,7 @@
     <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
     <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
     <a href="classes.html" class="nav-link">👥 Classes</a>
+    <a href="tech-bucks.html" class="nav-link">🪙 Tech Bucks</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -1958,6 +1959,8 @@
         ? '⏳ Saved! ' + shown + ' will go on the board after your teacher checks it.'
         : '✓ Saved! ' + shown + ' is on the ' + (grp.classId ? grp.className + ' board' : 'leaderboard') + '.';
       okEl.classList.add('show');
+      // Tech Bucks: 10 for the first launch, then 2 each (up to 3 a day). Not for one waiting for a teacher check.
+      if (!flagged && !isTeacher) { try { if (window.TechBucks) window.TechBucks.awardFirstThenSlots('altitude_first', 'altitude_launch', 'Saved a launch', { classId: grp.classId }); } catch (e) { /* never get in the way */ } }
       if (isTeacher) $('student-name').value = '';
       selectBoard(grp.classId ? 'c:' + grp.classId : 'top');
       setTimeout(function() { $('results-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 300);
@@ -2070,6 +2073,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 <script src="teacher-role.js"></script>
+<script src="techbucks.js"></script>
 <script>
   firebase.auth().onAuthStateChanged(function(user) {
     // auth.js sends signed-out and off-domain visitors to the login page
