@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Avatar Shop | Tech Class Hub</title>
+  <meta name="description" content="Spend Tech Bucks on your avatar: helmets, goggles, capes and more." />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Exo 2', sans-serif; background: #0a000f; color: #f0e6ff; min-height: 100vh; }
+
+    .topnav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px; background: rgba(10,0,15,0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(180,79,255,0.3);
+    }
+    .nav-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #ff2d78; text-decoration: none; letter-spacing: 3px; text-shadow: 0 0 12px rgba(255,45,120,0.7); }
+    .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nav-link { text-decoration: none; color: #9080b0; padding: 7px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.5px; transition: color 0.2s, background 0.2s; border: 1px solid transparent; }
+    .nav-link:hover { color: #fff; background: rgba(180,79,255,0.15); }
+    .nav-link.active { color: #f0c040; background: rgba(240,192,64,0.1); border-color: rgba(240,192,64,0.45); }
+    .nav-user { align-items: center; gap: 10px; }
+    .nav-user-name { font-size: 0.78rem; color: #9080b0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signout-btn { background: none; border: 1px solid rgba(255,45,120,0.4); color: #ff2d78; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+    .signout-btn:hover { background: rgba(255,45,120,0.1); }
+    @media (max-width: 600px) { .topnav { padding: 12px 16px; } .nav-link { padding: 6px 10px; font-size: 0.75rem; } }
+
+
+    .banner { margin-top: 60px; background: linear-gradient(135deg, #0a000f 0%, #1a0030 50%, #0d001a 100%); padding: 30px 20px; text-align: center; position: relative; overflow: hidden; border-bottom: 2px solid rgba(240,192,64,0.35); }
+    .banner-icon { font-size: 2.6rem; margin-bottom: 6px; }
+    .banner-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.6rem, 6vw, 2.6rem); font-weight: 900; color: #f0c040; letter-spacing: 3px; text-shadow: 0 0 20px rgba(240,192,64,0.6); }
+    .banner-sub { color: #9080b0; font-size: 1rem; margin-top: 8px; }
+    .content { max-width: 860px; margin: 0 auto; padding: 22px 16px 90px; }
+    .breadcrumb { font-size: 0.85rem; color: #9080b0; margin-bottom: 18px; }
+    .breadcrumb a { color: #9080b0; text-decoration: none; }
+    .breadcrumb a:hover { color: #f0c040; }
+
+    a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 3px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 5px #7a3fff; }
+
+    .me-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 18px 26px; background: linear-gradient(160deg, rgba(240,192,64,0.14), rgba(180,79,255,0.08)); border: 2px solid rgba(240,192,64,0.5); border-radius: 22px; padding: 20px 16px; }
+    .me-ava { width: 150px; max-width: 42vw; border-radius: 14px; overflow: hidden; border: 3px solid rgba(240,192,64,0.6); line-height: 0; position: relative; }
+    .me-ava.pop { animation: pop .7s ease-out; }
+    @keyframes pop { 0% { transform: scale(1); } 35% { transform: scale(1.08) rotate(-2deg); } 100% { transform: scale(1); } }
+    .spark { position: absolute; font-size: 1.4rem; line-height: 1; pointer-events: none; animation: rise 1s ease-out forwards; }
+    @keyframes rise { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-40px); } }
+    .me-bal { text-align: center; }
+    .balance-label { font-size: 1.1rem; color: #d9c2ff; font-weight: 600; }
+    .balance-num { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: clamp(3rem, 14vw, 4.6rem); line-height: 1.1; color: #f0c040; text-shadow: 0 0 24px rgba(240,192,64,0.55); }
+    .balance-num .coin { font-size: 0.65em; margin-right: 6px; }
+    .balance-sub { font-size: 1rem; color: #d9c2ff; }
+    .me-links { margin-top: 10px; font-size: 0.95rem; }
+    .me-links a { color: #f0c040; font-weight: 700; }
+
+    .note { background: rgba(180,79,255,0.08); border: 1px solid rgba(180,79,255,0.35); border-radius: 14px; padding: 14px 16px; margin-top: 16px; color: #d9c2ff; font-size: 1.05rem; line-height: 1.55; }
+    .note.warn { background: rgba(255,190,60,0.08); border-color: rgba(255,190,60,0.45); color: #ffcf6a; }
+    .say { min-height: 1.6em; margin-top: 14px; font-size: 1.1rem; font-weight: 700; text-align: center; color: #40e080; }
+    .say.bad { color: #ffb0a0; }
+
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
+    @media (min-width: 640px) { .tabs { grid-template-columns: repeat(6, 1fr); } }
+    .tab { min-height: 58px; border-radius: 14px; border: 2px solid rgba(180,79,255,0.35); background: rgba(180,79,255,0.08); color: #f0e6ff; font-family: 'Exo 2', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px; }
+    .tab .ti { font-size: 1.4rem; line-height: 1; }
+    .tab[aria-selected="true"] { background: rgba(240,192,64,0.18); border-color: #f0c040; color: #f0c040; }
+
+    .grid { list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+    @media (min-width: 560px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 780px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+    .card { background: rgba(255,255,255,0.04); border: 2px solid rgba(180,79,255,0.25); border-radius: 16px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+    .card.on { border-color: #40e080; background: rgba(64,224,128,0.07); }
+    .card .pv { width: 100%; max-width: 110px; border-radius: 10px; overflow: hidden; line-height: 0; }
+    .card .pv.none { aspect-ratio: 5 / 6; display: flex; align-items: center; justify-content: center; font-size: 2.4rem; background: rgba(255,255,255,0.05); line-height: 1; }
+    .card h3 { font-size: 1.02rem; font-weight: 700; line-height: 1.25; }
+    .rare { font-size: 0.78rem; font-weight: 700; color: #ffd36e; }
+    .price { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1rem; color: #0a000f; background: linear-gradient(135deg, #f0c040, #c89010); border-radius: 999px; padding: 5px 12px; }
+    .price.free { background: rgba(64,224,128,0.9); }
+    .need { font-size: 0.9rem; color: #ffcf6a; font-weight: 600; line-height: 1.3; }
+    .btn { min-height: 46px; width: 100%; border-radius: 12px; border: 2px solid #f0c040; background: rgba(240,192,64,0.15); color: #f0c040; font-family: 'Exo 2', sans-serif; font-size: 1.02rem; font-weight: 700; cursor: pointer; padding: 8px 10px; }
+    .btn:hover { background: rgba(240,192,64,0.28); }
+    .btn.go { background: linear-gradient(135deg, #f0c040, #c89010); color: #1a0030; }
+    .btn.is { border-color: #40e080; color: #40e080; background: rgba(64,224,128,0.12); cursor: default; }
+    .btn.dim { border-color: rgba(180,79,255,0.4); color: #b8a8d8; background: rgba(180,79,255,0.08); }
+    .btn:disabled { opacity: 0.55; cursor: default; }
+
+    .veil { position: fixed; inset: 0; z-index: 500; background: rgba(5,0,10,0.78); display: none; align-items: center; justify-content: center; padding: 16px; }
+    .veil.open { display: flex; }
+    .dlg { width: 100%; max-width: 380px; background: #1a0030; border: 2px solid #f0c040; border-radius: 20px; padding: 20px 18px; text-align: center; }
+    .dlg h2 { font-size: 1.3rem; margin-bottom: 10px; }
+    .dlg .pv { width: 130px; margin: 0 auto 10px; border-radius: 12px; overflow: hidden; line-height: 0; }
+    .dlg p { font-size: 1.1rem; line-height: 1.5; margin-bottom: 14px; }
+    .dlg .row { display: flex; gap: 10px; }
+    .dlg .row .btn { flex: 1; }
+
+    footer { text-align: center; padding: 30px; color: rgba(144,128,176,0.4); font-size: 0.8rem; border-top: 1px solid rgba(180,79,255,0.1); }
+    .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    @media (max-width: 600px) { .topnav { position: relative; } .banner { margin-top: 0; } }   /* the nav wraps to several rows on a phone: let it scroll away instead of covering the page */
+    @media (prefers-reduced-motion: reduce) { .me-ava.pop, .spark { animation: none; } .spark { display: none; } }
+    body.light-mode { background: #f4eeff; color: #1a0030; }
+    body.light-mode .topnav { background: rgba(244,238,255,0.95); border-bottom-color: rgba(180,79,255,0.2); }
+    body.light-mode .nav-link { color: #5a4a8a; }
+    body.light-mode .nav-link:hover { color: #1a0030; background: rgba(180,79,255,0.12); }
+    body.light-mode .nav-link.active { color: #8a5a00; }
+    body.light-mode .banner { background: linear-gradient(135deg, #f4eeff, #ebe0ff); }
+    body.light-mode .breadcrumb, body.light-mode .breadcrumb a, body.light-mode .banner-sub { color: #5a4a8a; }
+    body.light-mode .balance-label, body.light-mode .balance-sub, body.light-mode .note { color: #4a2a8a; }
+    body.light-mode .balance-num, body.light-mode .banner-title, body.light-mode .me-links a { color: #8a5a00; text-shadow: none; }
+    body.light-mode .note.warn, body.light-mode .need { color: #8a5a00; }
+    body.light-mode .tab { color: #1a0030; background: rgba(255,255,255,0.7); }
+    body.light-mode .tab[aria-selected="true"] { color: #8a5a00; background: rgba(240,192,64,0.3); }
+    body.light-mode .card { background: rgba(255,255,255,0.75); }
+    body.light-mode .btn { color: #6a4200; }
+    body.light-mode .btn.go { color: #1a0030; }
+    body.light-mode .btn.is { color: #0a6a30; }
+    body.light-mode .btn.dim { color: #4a3a7a; }
+    body.light-mode .say { color: #0a6a30; }
+    body.light-mode .say.bad { color: #a02a10; }
+    body.light-mode .rare { color: #8a5a00; }
+    body.light-mode .dlg { background: #fff; color: #1a0030; }
+    body.light-mode footer { color: rgba(90,74,130,0.55); background: #f4eeff; }
+    .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
+    body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); }
+  </style>
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
+    <a href="classes.html" class="nav-link">👥 Classes</a>
+    <a href="tech-bucks.html" class="nav-link">🪙 Tech Bucks</a>
+    <a href="avatar.html" class="nav-link active">🧑‍🚀 Avatar</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<div class="banner">
+  <div class="banner-icon" aria-hidden="true">🧑‍🚀</div>
+  <h1 class="banner-title">AVATAR SHOP</h1>
+  <div class="banner-sub">Spend your Tech Bucks. Dress up your avatar.</div>
+</div>
+
+<main class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="tech-bucks.html">Tech Bucks</a> / Avatar Shop</div>
+
+  <section class="me-card" aria-label="Your avatar and Tech Bucks">
+    <div class="me-ava" id="me-ava"></div>
+    <div class="me-bal">
+      <div class="balance-label" id="bal-label">You have</div>
+      <div class="balance-num" id="bal-num"><span class="coin" aria-hidden="true">🪙</span><span id="bal-val">…</span></div>
+      <div class="balance-sub" id="bal-sub">Tech Bucks</div>
+      <div class="me-links" id="me-links"><a href="tech-bucks.html">How do I get more?</a></div>
+    </div>
+  </section>
+
+  <div class="note" id="teacher-note" style="display:none">The Avatar Shop is for students. Teachers can see each student's avatar on the <a href="classes.html" style="color:inherit;font-weight:700">Classes</a> page.</div>
+  <div class="note warn" id="off-note" style="display:none">The Avatar Shop opens soon. Keep earning Tech Bucks. They will be waiting for you!</div>
+  <div class="note warn" id="wait-note" style="display:none">Counting your Tech Bucks. This takes a few seconds.</div>
+  <div class="say" id="say" role="status" aria-live="polite"></div>
+
+  <div id="shop">
+    <div class="tabs" role="tablist" aria-label="Shop sections" id="tabs"></div>
+    <ul class="grid" id="grid" role="tabpanel" tabindex="-1"></ul>
+  </div>
+</main>
+
+<div class="veil" id="veil">
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-h" id="dlg">
+    <h2 id="dlg-h">Buy this?</h2>
+    <div class="pv" id="dlg-pv"></div>
+    <p id="dlg-p"></p>
+    <div class="row"><button class="btn go" id="dlg-yes" type="button">Yes, buy it</button><button class="btn" id="dlg-no" type="button">Not now</button></div>
+  </div>
+</div>
+
+<footer>Tech Class Hub</footer>
+
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode" aria-label="Switch light or dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}let l=false;try{l=localStorage.getItem('theme')==='light';}catch(e){}apply(l);btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);try{localStorage.setItem('theme',light?'light':'dark');}catch(e){}});})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="teacher-role.js"></script>
+<script src="avatar.js"></script>
+<script src="techbucks.js"></script>
+<script>
+(function () {
+  var TB = window.TechBucks, AV = window.Avatar;
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  var st = null;                    // the last Tech Bucks state
+  var equipped = AV ? AV.normalize(null) : {};   // what the student wears now
+  var avatarKnown = false;
+  var tab = 'hat';
+  var asking = null;                // the item the dialog is about
+  var busy = false;
+  var user = null;
+  var lastFocus = null;
+
+  function say(text, bad) { var s = $('say'); s.textContent = text || ''; s.className = 'say' + (bad ? ' bad' : ''); }
+  function coins(n) { return n + (n === 1 ? ' Tech Buck' : ' Tech Bucks'); }
+  function mine(item) { return item.price === 0 || !!(st && st.owned && st.owned[item.id]); }
+  function shopOn() { return !!st && st.shop === 'on'; }
+
+  function drawMe() { if (AV) AV.render($('me-ava'), equipped, 150); }
+
+  // ── tabs ──
+  function drawTabs() {
+    var host = $('tabs');
+    host.textContent = '';
+    AV.SLOTS.forEach(function (slot) {
+      var b = el('button', 'tab');
+      b.type = 'button'; b.id = 'tab-' + slot;
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', slot === tab ? 'true' : 'false');
+      b.setAttribute('aria-controls', 'grid');
+      b.tabIndex = slot === tab ? 0 : -1;
+      b.appendChild(el('span', 'ti', AV.SLOT_ICON[slot])).setAttribute('aria-hidden', 'true');
+      b.appendChild(el('span', null, AV.SLOT_LABEL[slot]));
+      b.addEventListener('click', function () { tab = slot; drawTabs(); drawGrid(); });
+      b.addEventListener('keydown', function (ev) {
+        var i = AV.SLOTS.indexOf(slot), n = -1;
+        if (ev.key === 'ArrowRight' || ev.key === 'ArrowDown') n = (i + 1) % AV.SLOTS.length;
+        else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowUp') n = (i + AV.SLOTS.length - 1) % AV.SLOTS.length;
+        else if (ev.key === 'Home') n = 0; else if (ev.key === 'End') n = AV.SLOTS.length - 1;
+        if (n >= 0) { ev.preventDefault(); tab = AV.SLOTS[n]; drawTabs(); drawGrid(); $('tab-' + tab).focus(); }
+      });
+      host.appendChild(b);
+    });
+    $('grid').setAttribute('aria-labelledby', 'tab-' + tab);
+  }
+
+  // ── cards ──
+  function drawGrid() {
+    var grid = $('grid');
+    grid.textContent = '';
+    var items = AV.ITEMS.filter(function (i) { return i.slot === tab; }).sort(function (a, b) { return a.price - b.price || (a.name < b.name ? -1 : 1); });
+    var bal = st && st.balance != null ? st.balance : 0;
+    if (AV.NONE_LABEL[tab]) items.unshift({ id: '', slot: tab, name: AV.NONE_LABEL[tab], price: 0, none: true });
+    items.forEach(function (it) {
+      var on = it.none ? !equipped[tab] : equipped[tab] === it.id;
+      var li = el('li', 'card' + (on ? ' on' : ''));
+      var pv = el('div', it.none ? 'pv none' : 'pv');
+      if (it.none) { pv.textContent = '🚫'; pv.setAttribute('aria-hidden', 'true'); }
+      else { var eq = Object.assign({}, equipped); eq[tab] = it.id; AV.render(pv, eq, 100, false); }
+      li.appendChild(pv);
+      li.appendChild(el('h3', null, it.name));
+      if (it.rare) li.appendChild(el('div', 'rare', '✨ Rare'));
+      var btn = el('button', 'btn'); btn.type = 'button';
+      if (it.none || mine(it)) {
+        if (!it.none) li.appendChild(el('span', it.price === 0 ? 'price free' : 'price', it.price === 0 ? 'Free' : 'You have it'));
+        if (on) { btn.className = 'btn is'; btn.textContent = '✓ Wearing'; btn.setAttribute('aria-pressed', 'true'); btn.setAttribute('aria-label', 'Wearing ' + it.name); }
+        else {
+          btn.textContent = 'Wear it'; btn.setAttribute('aria-label', it.none ? it.name : 'Wear ' + it.name);
+          btn.disabled = !shopOn();
+          btn.addEventListener('click', function () { wear(tab, it.none ? '' : it.id); });
+        }
+      } else {
+        li.appendChild(el('span', 'price', '🪙 ' + it.price));
+        var short = it.price - bal;
+        if (!shopOn()) { btn.className = 'btn dim'; btn.textContent = st && st.shop === 'off' ? 'Opens soon' : 'Wait…'; btn.disabled = true; }
+        else if (short > 0) {
+          btn.className = 'btn dim'; btn.textContent = 'Need ' + short + ' more';
+          btn.setAttribute('aria-label', it.name + ' costs ' + coins(it.price) + '. You need ' + short + ' more.');
+          btn.setAttribute('aria-disabled', 'true');
+          btn.addEventListener('click', function () { say('Not enough Tech Bucks yet - you need ' + short + ' more.', true); });
+        } else {
+          btn.className = 'btn go'; btn.textContent = 'Buy';
+          btn.setAttribute('aria-label', 'Buy ' + it.name + ' for ' + coins(it.price));
+          btn.addEventListener('click', function () { ask(it, btn); });
+        }
+      }
+      li.appendChild(btn);
+      grid.appendChild(li);
+    });
+  }
+
+  // ── wearing ──
+  function wear(slot, id) {
+    if (!user || busy) return;
+    var next = Object.assign({}, equipped);
+    if (id) next[slot] = id; else delete next[slot];
+    say('');
+    busy = true;
+    var prev = equipped;
+    equipped = AV.normalize(next);                 // always keeps a body, a face and a scene
+    drawMe(); drawGrid();
+    saveAvatar(equipped).then(function () { busy = false; say('Saved!'); }, function () {
+      busy = false; equipped = prev; drawMe(); drawGrid();
+      say('Could not save that. Check the Wi-Fi and try again.', true);
+    });
+  }
+  function saveAvatar(eq) {
+    return firebase.firestore().collection('avatars').doc(user.uid).set({ uid: user.uid, equipped: eq, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  }
+
+  // ── buying ──
+  function openVeil(on) { $('veil').classList.toggle('open', on); }
+  function ask(item, opener) {
+    if (busy) return;
+    asking = item; lastFocus = opener;
+    var eq = Object.assign({}, equipped); eq[item.slot] = item.id;
+    AV.render($('dlg-pv'), eq, 130, false);
+    $('dlg-h').textContent = 'Buy the ' + item.name + '?';
+    $('dlg-p').textContent = 'It costs ' + coins(item.price) + '. You will have ' + coins(Math.max(0, (st.balance || 0) - item.price)) + ' left.';
+    $('dlg-yes').disabled = false;
+    openVeil(true);
+    $('dlg-yes').focus();
+  }
+  function closeAsk() { openVeil(false); asking = null; if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); else $('grid').focus(); }
+  $('dlg-no').addEventListener('click', closeAsk);
+  $('veil').addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') { ev.preventDefault(); closeAsk(); return; }
+    if (ev.key === 'Tab') {                                  // keep the keyboard inside the box
+      var f = [$('dlg-yes'), $('dlg-no')].filter(function (b) { return !b.disabled; });
+      if (!f.length) return;
+      var i = f.indexOf(document.activeElement);
+      if (ev.shiftKey && i <= 0) { ev.preventDefault(); f[f.length - 1].focus(); }
+      else if (!ev.shiftKey && (i === f.length - 1)) { ev.preventDefault(); f[0].focus(); }
+    }
+  });
+  $('dlg-yes').addEventListener('click', function () {
+    var item = asking;
+    if (!item || busy) return;
+    busy = true; $('dlg-yes').disabled = true;
+    var eq = Object.assign({}, equipped); eq[item.slot] = item.id;       // a new thing goes on right away
+    TB.spend(item.id, { equip: eq }).then(function (r) {
+      busy = false;
+      closeAsk();
+      if (r.ok) {
+        equipped = eq; drawMe(); drawGrid();
+        celebrate();
+        say('You got the ' + item.name + '! It is on your avatar now.');
+      } else if (r.why === 'poor') say('Not enough Tech Bucks yet - you need ' + r.need + ' more.', true);
+      else if (r.why === 'owned') { say('You already have the ' + item.name + '.', true); }
+      else if (r.why === 'wait') say('Hang on a moment. Your Tech Bucks are still being counted. Try again in a few seconds.', true);
+      else if (r.why === 'off') say('The Avatar Shop opens soon.', true);
+      else if (r.why === 'offline') say('You are offline. Try again when the Wi-Fi is back.', true);
+      else say('The shop could not finish that. Nothing was taken. Try again.', true);
+    });
+  });
+  function celebrate() {
+    var box = $('me-ava');
+    box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop');
+    ['✨', '⭐', '✨'].forEach(function (c, i) {
+      var s = el('span', 'spark', c); s.setAttribute('aria-hidden', 'true');
+      s.style.left = (20 + i * 30) + '%'; s.style.top = '40%';
+      box.appendChild(s);
+      setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 1100);
+    });
+  }
+
+  // ── what to show ──
+  function draw(s) {
+    st = s;
+    var teacher = s.ready && !TB.isStudent();
+    $('teacher-note').style.display = teacher ? 'block' : 'none';
+    $('shop').style.display = teacher ? 'none' : '';
+    $('me-ava').parentNode.style.display = teacher ? 'none' : '';
+    if (teacher) return;
+    $('off-note').style.display = s.ready && s.shop === 'off' ? 'block' : 'none';
+    $('wait-note').style.display = s.ready && s.shop === 'wait' ? 'block' : 'none';
+    if (s.ok && s.balance != null) {
+      $('bal-val').textContent = String(s.balance);
+      $('bal-sub').textContent = Math.abs(s.balance) === 1 ? 'Tech Buck' : 'Tech Bucks';
+    } else if (s.ready) $('bal-val').textContent = '–';
+    drawGrid();
+  }
+
+  if (!TB || !AV) { $('off-note').style.display = 'block'; return; }
+  drawTabs(); drawMe(); drawGrid();
+  TB.subscribe(draw);
+
+  // the student's own avatar, live
+  var unsubAv = null;
+  firebase.auth().onAuthStateChanged(function (u) {
+    user = u || null;
+    if (unsubAv) { unsubAv(); unsubAv = null; }
+    if (!u) return;
+    unsubAv = firebase.firestore().collection('avatars').doc(u.uid).onSnapshot(function (snap) {
+      avatarKnown = true;
+      var x = snap.exists ? snap.data() : null;
+      equipped = AV.normalize(x && x.equipped);
+      AV.remember(u.uid, equipped);
+      drawMe(); drawGrid();
+    }, function () { /* not readable yet (the shop rules are not published): keep the default avatar */ });
+  });
+})();
+</script>
+</body>
+</html>

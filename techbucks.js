@@ -12,9 +12,23 @@
 //                                'altitude_launch' (the first free slot for today is used).
 //   awardFirstThenSlots(firstKey, slotName, reason, opts)  the first time pays `firstKey`, then day slots.
 //   balance()                 -> the student's total, or null while it is not known (or not readable).
-//   subscribe(cb)             -> calls cb({ ready, ok, balance, entries }) now and on every change; returns a function that stops it.
+//   subscribe(cb)             -> calls cb({ ready, ok, balance, entries, shop, owned }) now and on every change; returns a function that stops it.
+//                                shop: 'on' (spending works), 'wait' (the totals are being brought up to date),
+//                                'off' (the database rules for the shop are not published yet) or 'unknown'.
+//                                owned: { itemId: true } for everything the student has bought.
+//   spend(itemId, opts)       -> Promise. Never rejects. Resolves { ok: true } or { ok: false, why, need? } with why one of
+//                                'owned', 'poor' (need = how many more), 'unknown', 'off', 'wait', 'offline', 'error', 'skipped'.
+//                                Price comes from window.Avatar.PRICES (avatar.js), the same list as priceFor() in firestore.rules.
+//                                Any "buy_<itemId>" with a price in that one list works (games later). opts.equip = a map to save
+//                                as the avatar in the same batch.
 //   badge(el)                 -> keeps el's text as "🪙 N"; returns the stop function.
 //   TABLE                     -> the list the "How to earn" page shows (same amounts as firestore.rules, amountFor()).
+//
+// STAGE B (the Avatar Shop). A running total techbucks_totals/{uid} = { uid, earned, spent, last, updatedAt } sits beside the
+// ledger. It changes only in the same batch as one matching ledger change (the rules check that), so award() writes both
+// together. An award the total already includes carries counted: true. Awards made before the total existed are counted by
+// a quiet migration (below), one at a time. If the database does not accept the total yet (the old rules), everything falls
+// back to exactly what stage A did: the ledger document alone; the balance is then the sum of the ledger.
 //
 // The amounts here MUST match amountFor() in firestore.rules. The database checks them again: a student
 // cannot give themselves a different amount, or the same award twice (its id is uid_key).
@@ -90,6 +104,8 @@
   var S = {
     user: null, role: 'unknown',              // 'student' | 'other' once known
     ledger: {}, entries: [], ledgerOk: null,  // ledgerOk: null = not loaded, true = loaded, false = could not read
+    totals: null, totalsLoaded: false, stageB: null, unsubT: null,   // stageB: null = not known, true = the totals can be read, false = the rules do not know them yet
+    migrating: false, migBad: {}, migTries: 0, coupledOffUntil: 0, notifyTimer: null,
     inflight: {}, subs: [], unsub: null, classes: null, classesAt: 0,
     ready: null, resolveReady: null, retryTimer: null, started: false
   };
@@ -98,11 +114,33 @@
   setTimeout(function () { if (S.resolveReady) S.resolveReady(); }, 15000);     // never wait forever (no sign-in, slow network)
 
   function total() { return S.entries.reduce(function (n, e) { return n + (Number(e.amount) || 0); }, 0); }
-  function state() { return { ready: S.role !== 'unknown', ok: S.ledgerOk === true, balance: S.ledgerOk === true ? total() : null, entries: S.entries.slice() }; }
-  function notify() {
+  // awards (earn / bonus) the totals do not include yet
+  function uncounted() { return S.entries.filter(function (e) { return e.amount > 0 && (e.kind === 'earn' || e.kind === 'bonus') && !e.counted; }); }
+  // earned - spent from the totals when they exist and include every award; otherwise the sum of the ledger
+  // (the same number, just slower to get: it is never smaller than what stage A showed).
+  function balanceNow() {
+    if (S.ledgerOk !== true) return null;
+    if (S.stageB === true && S.totals && !uncounted().length) return S.totals.earned - S.totals.spent;
+    return total();
+  }
+  function shopState() {
+    if (S.stageB === false) return 'off';
+    if (S.stageB !== true || S.ledgerOk !== true || !S.totalsLoaded) return 'unknown';
+    return S.totals && !uncounted().length ? 'on' : 'wait';
+  }
+  function ownedMap() {
+    var o = {};
+    S.entries.forEach(function (e) { if (e.kind === 'spend' && /^buy_[a-z]+-[a-z]+$/.test(e.key)) o[e.key.slice(4)] = true; });
+    return o;
+  }
+  function state() { return { ready: S.role !== 'unknown', ok: S.ledgerOk === true, balance: balanceNow(), entries: S.entries.slice(), shop: shopState(), owned: ownedMap() }; }
+  function notifyNow() {
+    S.notifyTimer = null;
     var st = state();
     S.subs.slice().forEach(function (cb) { safe(function () { cb(st); }); });
   }
+  // the ledger and the totals arrive as two separate snapshots: tell the page once, after both
+  function notify() { if (!S.notifyTimer) S.notifyTimer = setTimeout(notifyNow, 30); }
 
   // ── the toast ──
   var toastHost = null;
@@ -159,7 +197,7 @@
         var x = d.data() || {};
         var at = x.createdAt && typeof x.createdAt.toMillis === 'function' ? x.createdAt.toMillis() : (d.metadata.hasPendingWrites ? Date.now() : 0);
         led[String(x.key || d.id)] = true;
-        list.push({ id: d.id, key: String(x.key || ''), amount: Number(x.amount) || 0, kind: String(x.kind || 'earn'), reason: String(x.reason || ''), createdAt: at, by: x.by ? String(x.by) : '' });
+        list.push({ id: d.id, key: String(x.key || d.id), amount: Number(x.amount) || 0, kind: String(x.kind || 'earn'), reason: String(x.reason || ''), createdAt: at, by: x.by ? String(x.by) : '', counted: x.counted === true });
       });
       list.sort(function (a, b) { return b.createdAt - a.createdAt; });
       S.ledger = led; S.entries = list; S.ledgerOk = true;
@@ -167,12 +205,68 @@
       if (S.resolveReady) S.resolveReady();
       notify();
       applyNavBadge();
+      migrateSoon();
     }, function (err) {
       S.ledgerOk = false;
       safe(function () { console.warn('Tech Bucks: the ledger is not readable yet (' + (err && err.code) + ').'); });
       if (S.resolveReady) S.resolveReady();
       notify();
     });
+  }
+
+  // ── the student's running totals (stage B) ──
+  // Reading the totals document is also the test for "are the new rules published?": the old rules refuse it.
+  function startTotals(user) {
+    if (S.unsubT) { safe(S.unsubT); S.unsubT = null; }
+    S.unsubT = firebase.firestore().collection('techbucks_totals').doc(user.uid).onSnapshot(function (snap) {
+      var x = snap.exists ? (snap.data() || {}) : null;
+      S.totals = x && typeof x.earned === 'number' && typeof x.spent === 'number' ? { earned: x.earned, spent: x.spent } : null;
+      S.totalsLoaded = true; S.stageB = true;
+      notify(); applyNavBadge(); migrateSoon();
+    }, function (err) {
+      S.stageB = err && err.code === 'permission-denied' ? false : S.stageB;
+      S.totals = null; S.totalsLoaded = true;
+      notify();
+    });
+  }
+
+  // The totals change goes in the same batch as its ledger change: earned goes up/down by exactly the amount.
+  function totalsChange(db, uid, ledgerId, earnedBy, spentBy) {
+    var fv = firebase.firestore.FieldValue;
+    return { uid: uid, earned: fv.increment(earnedBy), spent: fv.increment(spentBy), last: ledgerId, updatedAt: fv.serverTimestamp() };
+  }
+
+  // ── bring the old ledger documents into the totals (quietly, once per session) ──
+  // Each old award (made before the totals existed) is marked counted in the same batch as earned going up by
+  // exactly its amount. One per batch: a totals change can name only one ledger document.
+  function migrateSoon() { setTimeout(function () { safe(migrate); }, 600); }
+  function migrate() {
+    var user = S.user;
+    if (!user || S.role !== 'student' || S.migrating || S.stageB !== true || S.ledgerOk !== true || !S.totalsLoaded) return;
+    var db = firebase.firestore(), todo = uncounted().filter(function (e) { return !S.migBad[e.id] && e.id.indexOf(user.uid + '_') === 0; });
+    if (!todo.length) {
+      if (!S.totals && S.migTries < 3) {                      // nothing to count: just make the (zero) totals document
+        S.migTries++; S.migrating = true;
+        db.collection('techbucks_totals').doc(user.uid).set({ uid: user.uid, earned: 0, spent: 0, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+          .then(function () { S.migrating = false; }, function () { S.migrating = false; });
+      }
+      return;
+    }
+    if (S.migTries > 60) return;
+    S.migrating = true;
+    var fails = 0;
+    (function next(i) {
+      if (S.user !== user || i >= todo.length || fails >= 3) { S.migrating = false; return; }
+      var e = todo[i], batch = db.batch();
+      batch.update(db.collection('techbucks').doc(e.id), { counted: true });
+      batch.set(db.collection('techbucks_totals').doc(user.uid), totalsChange(db, user.uid, e.id, e.amount, 0), { merge: true });
+      S.migTries++;
+      batch.commit().then(function () { next(i + 1); }, function (err) {
+        fails++; S.migBad[e.id] = true;
+        safe(function () { console.warn('Tech Bucks: could not count one award yet (' + (err && err.code) + ').'); });
+        next(i + 1);
+      });
+    })(0);
   }
 
   // the classes this student has joined (to tag awards, so the teacher can see them)
@@ -226,19 +320,37 @@
                      reason: String(entry.reason || 'Nice work').slice(0, 80),
                      createdAt: firebase.firestore.FieldValue.serverTimestamp() };
         if (cid) data.classId = cid;
-        return firebase.firestore().collection('techbucks').doc(user.uid + '_' + key).set(data).then(function () {
+        var db = firebase.firestore(), ref = db.collection('techbucks').doc(user.uid + '_' + key);
+        function ok() {
           clearTimeout(wait);
           delete S.inflight[key];
           dropPending(user.uid, key);
           S.ledger[key] = true;
           toast('+' + data.amount + ' Tech Bucks! (' + data.reason + ')');
           finish('ok');
-        }, function (err) {
+        }
+        function bad(err) {
           clearTimeout(wait);
           delete S.inflight[key];
           bumpPending(user.uid, key);
           safe(function () { console.warn('Tech Bucks: not saved yet (' + (err && err.code) + '); will try again later.'); });
           finish('denied');
+        }
+        // stage A: the ledger document alone, exactly as before
+        function plain() { return ref.set(data).then(ok, bad); }
+        if (S.stageB === false || Date.now() < S.coupledOffUntil) return plain();
+        // stage B: the ledger document (counted) and the totals, in one batch
+        var batch = db.batch(), counted = Object.assign({ counted: true }, data);
+        batch.set(ref, counted);
+        batch.set(db.collection('techbucks_totals').doc(user.uid), totalsChange(db, user.uid, user.uid + '_' + key, data.amount, 0), { merge: true });
+        return batch.commit().then(ok, function (err) {
+          if (err && err.code === 'permission-denied') {            // the old rules (or the totals are not allowed yet): fall back to stage A
+            return ref.set(data).then(function () {
+              S.coupledOffUntil = Date.now() + 180000;               // the plain one worked, so it was the totals that were refused: skip them for a few minutes
+              ok();
+            }, bad);
+          }
+          return bad(err);
         });
       }).catch(function () { clearTimeout(wait); delete S.inflight[key]; finish('denied'); });
     });
@@ -254,6 +366,8 @@
       var user = S.user;
       if (!user || S.role !== 'student') return;
       if (S.ledgerOk === false) startLedger(user);       // maybe the new rules are live now
+      if (S.stageB === false) startTotals(user);          // ...and the stage B ones
+      S.migTries = Math.min(S.migTries, 30); migrate();
       var now = Date.now();
       cleanPending(user.uid).forEach(function (x) {
         if (S.inflight[x.key] || S.ledger[x.key]) return;
@@ -304,7 +418,48 @@
     } catch (e) { return Promise.resolve('skipped'); }
   }
 
-  function balance() { return S.ledgerOk === true ? total() : null; }
+  function balance() { return balanceNow(); }
+
+  // ── spending (stage B) ──
+  // One purchase = one ledger document techbucks/{uid}_buy_{itemId} (kind "spend", amount = -price) + the totals' "spent" going
+  // up by the price + (optionally) the avatar document, all in ONE batch. The database checks the price, the balance and that
+  // the item was not bought before; the checks here only give a friendly answer first.
+  function spend(itemId, opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var done = false;
+      function fin(r) { if (!done) { done = true; resolve(r); } }
+      try {
+        var user = S.user;
+        if (!user || S.role !== 'student') return fin({ ok: false, why: 'skipped' });
+        var price = window.Avatar && window.Avatar.priceOf ? window.Avatar.priceOf(itemId) : -1;
+        if (!(price > 0)) return fin({ ok: false, why: 'unknown' });
+        var st = shopState();
+        if (st === 'off') return fin({ ok: false, why: 'off' });
+        if (st !== 'on') return fin({ ok: false, why: 'wait' });
+        if (ownedMap()[itemId]) return fin({ ok: false, why: 'owned' });
+        var bal = balanceNow();
+        if (bal == null || bal < price) return fin({ ok: false, why: 'poor', need: Math.max(1, price - (bal || 0)) });
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return fin({ ok: false, why: 'offline' });
+        var item = window.Avatar.itemOf(itemId);
+        var timer = setTimeout(function () { fin({ ok: false, why: 'error' }); }, 15000);
+        myClasses(user).then(function (classes) {
+          var db = firebase.firestore(), fv = firebase.firestore.FieldValue, id = user.uid + '_buy_' + itemId;
+          var data = { uid: user.uid, key: 'buy_' + itemId, amount: -price, kind: 'spend', reason: ('Bought ' + (item ? item.name : itemId)).slice(0, 80), createdAt: fv.serverTimestamp() };
+          if (classes.length) data.classId = classes[0].id;
+          var b = db.batch();
+          b.set(db.collection('techbucks').doc(id), data);
+          b.set(db.collection('techbucks_totals').doc(user.uid), totalsChange(db, user.uid, id, 0, price), { merge: true });
+          if (opts.equip && typeof opts.equip === 'object') b.set(db.collection('avatars').doc(user.uid), { uid: user.uid, equipped: opts.equip, updatedAt: fv.serverTimestamp() });
+          return b.commit().then(function () { clearTimeout(timer); fin({ ok: true }); }, function (err) {
+            clearTimeout(timer);
+            safe(function () { console.warn('Tech Bucks: the purchase was refused (' + (err && err.code) + ').'); });
+            fin({ ok: false, why: err && err.code === 'permission-denied' ? 'refused' : 'error' });
+          });
+        }).catch(function () { fin({ ok: false, why: 'error' }); });
+      } catch (e) { fin({ ok: false, why: 'error' }); }
+    });
+  }
   function subscribe(cb) {
     if (typeof cb !== 'function') return function () {};
     S.subs.push(cb);
@@ -327,7 +482,7 @@
         navBadge.style.cssText = 'margin-left:6px;font-weight:700';
         a.appendChild(navBadge);
       }
-      navBadge.textContent = String(total());
+      navBadge.textContent = String(balanceNow());
     });
   }
 
@@ -339,13 +494,16 @@
     firebase.auth().onAuthStateChanged(function (user) {
       safe(function () {
         if (S.unsub) { safe(S.unsub); S.unsub = null; }
+        if (S.unsubT) { safe(S.unsubT); S.unsubT = null; }
         S.user = user || null; S.role = 'unknown'; S.ledger = {}; S.entries = []; S.ledgerOk = null; S.classes = null;
+        S.totals = null; S.totalsLoaded = false; S.stageB = null; S.migrating = false; S.migBad = {}; S.migTries = 0; S.coupledOffUntil = 0;
         if (!user) return;
         checkRole(user).then(function (role) {
           if (S.user !== user) return;
           S.role = role;
           if (role === 'student') {
             startLedger(user);
+            startTotals(user);
             setTimeout(retryPending, 4000);
             if (!S.retryTimer) S.retryTimer = setInterval(retryPending, RETRY_EVERY_MS);
           } else if (S.resolveReady) S.resolveReady();
@@ -355,7 +513,7 @@
     });
   }
   window.TechBucks = {
-    award: award, awardFirstThenSlots: awardFirstThenSlots, balance: balance, subscribe: subscribe, badge: badge,
+    award: award, awardFirstThenSlots: awardFirstThenSlots, balance: balance, subscribe: subscribe, badge: badge, spend: spend,
     TABLE: TABLE, amountFor: amountFor, utcDay: utcDay, isStudent: function () { return S.role === 'student'; }
   };
   safe(init);

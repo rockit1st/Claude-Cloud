@@ -105,6 +105,9 @@
     .tb-awards .tb-a-rm { background: none; border: 1px solid rgba(255,96,96,0.35); color: #ff8080; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; font-family: 'Exo 2', sans-serif; }
     .tb-awards .tb-a-rm:hover { background: rgba(255,96,96,0.12); }
     .tb-note { margin-top: 10px; font-size: 0.85rem; color: #ffcf6a; }
+    .tb-ava { flex: 0 0 auto; width: 30px; border-radius: 6px; overflow: hidden; line-height: 0; background: rgba(255,255,255,0.06); }
+    .tb-buys { font-size: 0.78rem; color: #9080b0; white-space: nowrap; }
+    body.light-mode .tb-buys { color: #5a4a8a; }
     .tb-allpanel { display: none; margin-top: 10px; background: rgba(240,192,64,0.05); border: 1px solid rgba(240,192,64,0.3); border-radius: 10px; padding: 10px 12px; }
     .tb-allpanel.open { display: block; }
     .tb-allpanel .tb-label { font-size: 0.85rem; color: #9080b0; margin-bottom: 8px; }
@@ -181,6 +184,7 @@
     <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
     <a href="classes.html" class="nav-link active">👥 Classes</a>
     <a href="tech-bucks.html" class="nav-link">🪙 Tech Bucks</a>
+    <a href="avatar.html" class="nav-link">🧑‍🚀 Avatar</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -282,6 +286,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
+<script src="avatar.js"></script>
 <script>
   // The owner: always a teacher, with no database lookup (matches isOwner() in firestore.rules).
   const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
@@ -592,7 +597,7 @@
     rosterUnsubs = [];
     classDocs = {};
     rosterCount = {};
-    rosterRows = {}; bucksBy = {}; bucksDocs = {}; bucksOff = {};
+    rosterRows = {}; bucksBy = {}; bucksDocs = {}; bucksBuys = {}; bucksOff = {};
     snap.forEach(function(d) { classDocs[d.id] = d.data(); });
     const wrap = document.getElementById('class-list');
     if (snap.empty) { wrap.innerHTML = '<div class="empty">No classes yet. Create one above.</div>'; updateNotes(); scheduleUsage(); return; }
@@ -642,14 +647,15 @@
       // Tech Bucks given in this class (only this teacher's own classes can be asked for). If the database
       // refuses (the new rules are not published yet) the roster simply shows no Tech Bucks.
       const ub = db().collection('techbucks').where('classId', '==', id).onSnapshot(function(bs) {
-        const by = {}, list = [];
+        const by = {}, list = [], buys = {};
         bs.docs.forEach(function(d) {
           const x = d.data() || {};
+          if (x.kind === 'spend') { buys[x.uid] = (buys[x.uid] || 0) + 1; return; }    // a purchase: counted, never listed (a teacher cannot remove one)
           by[x.uid] = (by[x.uid] || 0) + (Number(x.amount) || 0);
-          list.push({ ref: d.ref, uid: String(x.uid || ''), amount: Number(x.amount) || 0, reason: String(x.reason || ''),
-                      kind: String(x.kind || 'earn'), at: x.createdAt && x.createdAt.toMillis ? x.createdAt.toMillis() : Date.now() });
+          list.push({ ref: d.ref, id: d.id, uid: String(x.uid || ''), amount: Number(x.amount) || 0, reason: String(x.reason || ''),
+                      kind: String(x.kind || 'earn'), counted: x.counted === true, at: x.createdAt && x.createdAt.toMillis ? x.createdAt.toMillis() : Date.now() });
         });
-        bucksBy[id] = by; bucksDocs[id] = list; delete bucksOff[id];
+        bucksBy[id] = by; bucksDocs[id] = list; bucksBuys[id] = buys; delete bucksOff[id];
         paintBucks(id);
       }, function(e) {
         bucksBy[id] = null; bucksDocs[id] = []; bucksOff[id] = true;
@@ -683,6 +689,7 @@
   let rosterRows = {};   // classId -> [enrollment data], sorted by name
   let bucksBy = {};      // classId -> { uid: total }  (null while the database refuses)
   let bucksDocs = {};    // classId -> [{ ref, uid, amount, reason, kind, at }]
+  let bucksBuys = {};    // classId -> { uid: how many things the student bought }
   let bucksOff = {};     // classId -> true when the database refused the list (the new rules are not published)
   let tbOpen = {};       // classId_uid -> true while that student's Tech Bucks panel is open
   let tbAllOpen = {};    // classId -> true while "Give everyone" is open
@@ -701,21 +708,35 @@
     try { return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (e) { return ''; }
   }
 
-  // Give `amount` to each student in `uids` (a bonus, one doc each). Batches of 10: each bonus makes the
-  // database look at the class and at the student's roster entry, and one batch may look at only so many documents.
+  // Give `amount` to each student in `uids` (a bonus, one doc each). Each bonus is written together with the student's
+  // running total (techbucks_totals, "earned" goes up by the same amount) in ONE batch. If the database does not know the
+  // totals yet (the stage A rules), the plain bonus is written as before. Batches of 5 students: each one makes the database look
+  // at the class, the roster entry and the totals, and one batch may look at only so many documents.
+  let tbCoupledOff = false;
   function giveBonus(classId, uids, amount, reason) {
-    const key = tbKey();
+    const key = tbKey(), fv = firebase.firestore.FieldValue;
     let i = 0, done = 0;
+    function fill(batch, uid, coupled) {
+      const data = { uid: uid, key: key, amount: amount, kind: 'bonus', reason: reason, classId: classId, by: me.email, createdAt: fv.serverTimestamp() };
+      if (coupled) data.counted = true;
+      batch.set(db().collection('techbucks').doc(uid + '_' + key), data);
+      if (coupled) batch.set(db().collection('techbucks_totals').doc(uid),
+        { uid: uid, earned: fv.increment(amount), spent: fv.increment(0), last: uid + '_' + key, updatedAt: fv.serverTimestamp() }, { merge: true });
+    }
+    function attempt(part, coupled) {
+      const batch = db().batch();
+      part.forEach(function(uid) { fill(batch, uid, coupled); });
+      return batch.commit();
+    }
     function next() {
       if (i >= uids.length) return Promise.resolve(done);
-      const part = uids.slice(i, i + 10), batch = db().batch();
-      part.forEach(function(uid) {
-        batch.set(db().collection('techbucks').doc(uid + '_' + key), {
-          uid: uid, key: key, amount: amount, kind: 'bonus', reason: reason, classId: classId,
-          by: me.email, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+      const part = uids.slice(i, i + 5);
+      const first = tbCoupledOff ? attempt(part, false) : attempt(part, true).catch(function(e) {
+        if (!isDenied(e)) throw e;
+        tbCoupledOff = true;                      // the old rules: the plain bonus (it is counted later, when the student next opens the site)
+        return attempt(part, false);
       });
-      return batch.commit().then(function() { done += part.length; i += 10; return next(); }, function(e) { e.doneCount = done; throw e; });
+      return first.then(function() { done += part.length; i += 5; return next(); }, function(e) { e.doneCount = done; throw e; });
     }
     return next();
   }
@@ -769,13 +790,17 @@
     rows.forEach(function(n) {
       const ref = id + '_' + n.uid;
       const li = tbEl('li');
+      const ava = tbEl('span', 'tb-ava'); ava.setAttribute('aria-hidden', 'true');
+      if (window.Avatar && n.uid) window.Avatar.attach(ava, String(n.uid), 30);
+      li.appendChild(ava);
       li.appendChild(tbEl('span', null, n.name || n.email));
+      const buysEl = tbEl('span', 'tb-buys'); buysEl.style.display = 'none';
       const chip = tbEl('span', 'tb-chip'); chip.title = 'Tech Bucks earned in this class'; chip.style.display = 'none';
       const btn = tbEl('button', 'mini-btn tb-btn', 'Tech Bucks'); btn.type = 'button'; btn.style.display = 'none';
       btn.title = 'Give Tech Bucks to this student, or take one away';
       const rm = tbEl('span', 'rm', '✕'); rm.title = 'Remove';
       rm.addEventListener('click', function() { removeStudent(n.classId, n.uid); });
-      li.appendChild(chip); li.appendChild(btn); li.appendChild(rm);
+      li.appendChild(chip); li.appendChild(buysEl); li.appendChild(btn); li.appendChild(rm);
       const panel = tbEl('div', 'tb-panel' + (tbOpen[ref] ? ' open' : ''));
       panel.appendChild(buildGiveForm(id, function() { return [n.uid]; }, 'Give'));
       const awards = tbEl('ul', 'tb-awards');
@@ -785,7 +810,7 @@
         const open = panel.classList.toggle('open');
         if (open) tbOpen[ref] = true; else delete tbOpen[ref];
       });
-      tbRefs[ref] = { chip: chip, btn: btn, awards: awards, uid: n.uid };
+      tbRefs[ref] = { chip: chip, btn: btn, awards: awards, uid: n.uid, buys: buysEl };
       ul.appendChild(li);
     });
     paintBucks(id);
@@ -813,6 +838,10 @@
       r.chip.style.display = ready ? '' : 'none';
       r.btn.style.display = ready ? '' : 'none';
       r.chip.textContent = '🪙 ' + (by[n.uid] || 0);
+      const nb = ((bucksBuys[id] || {})[n.uid]) || 0;
+      r.buys.style.display = ready ? '' : 'none';
+      r.buys.textContent = nb + (nb === 1 ? ' item bought' : ' items bought');
+      r.buys.title = 'Avatar Shop items this student bought';
       r.awards.textContent = '';
       docs.filter(function(d) { return d.uid === n.uid; }).sort(function(a, b) { return b.at - a.at; }).forEach(function(d) {
         const li = tbEl('li');
@@ -823,7 +852,15 @@
         rm.addEventListener('click', function() {
           if (!confirm('Take away ' + d.amount + ' Tech Buck' + (Math.abs(d.amount) === 1 ? '' : 's') + ' (' + d.reason + ')?')) return;
           rm.disabled = true;
-          d.ref.delete().catch(function(e) { rm.disabled = false; alert(isDenied(e) ? 'Tech Bucks turn on after the new rules are published.' : 'Could not remove it. Check the Wi-Fi and try again.'); });
+          // a counted award comes out of the student's running total in the same batch; an older one (no mark) is just deleted
+          let p;
+          if (d.counted) {
+            const batch = db().batch(), fv = firebase.firestore.FieldValue;
+            batch.delete(d.ref);
+            batch.set(db().collection('techbucks_totals').doc(d.uid), { uid: d.uid, earned: fv.increment(-d.amount), spent: fv.increment(0), last: d.id, updatedAt: fv.serverTimestamp() }, { merge: true });
+            p = batch.commit();
+          } else p = d.ref.delete();
+          p.catch(function(e) { rm.disabled = false; alert(isDenied(e) ? 'Tech Bucks turn on after the new rules are published.' : 'Could not remove it. Check the Wi-Fi and try again.'); });
         });
         li.appendChild(rm);
         r.awards.appendChild(li);

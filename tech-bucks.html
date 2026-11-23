@@ -45,6 +45,10 @@
     .balance-num .coin { font-size: 0.7em; margin-right: 8px; }
     .balance-sub { font-size: 1.05rem; color: #d9c2ff; line-height: 1.5; }
 
+    .me-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
+    .me-ava { width: 84px; border-radius: 12px; overflow: hidden; border: 2px solid rgba(240,192,64,0.6); line-height: 0; }
+    .shop-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 10px 22px; border-radius: 14px; border: 2px solid #f0c040; background: linear-gradient(135deg, #f0c040, #c89010); color: #1a0030; font-weight: 700; font-size: 1.1rem; text-decoration: none; }
+    .shop-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 5px #7a3fff; }
     .note { background: rgba(180,79,255,0.08); border: 1px solid rgba(180,79,255,0.35); border-radius: 14px; padding: 14px 16px; margin-top: 16px; color: #d9c2ff; font-size: 1.02rem; line-height: 1.55; }
     .note.warn { background: rgba(255,190,60,0.08); border-color: rgba(255,190,60,0.45); color: #ffcf6a; }
 
@@ -79,6 +83,7 @@
     body.light-mode .note.warn { color: #8a5a00; background: rgba(255,190,60,0.15); }
     body.light-mode .hist-list li { background: rgba(255,255,255,0.7); color: #1a0030; }
     body.light-mode footer { color: rgba(90,74,130,0.55); background: #f4eeff; }
+    @media (max-width: 600px) { .topnav { position: relative; } .banner { margin-top: 0; } }   /* the nav wraps to several rows on a phone: let it scroll away instead of covering the page */
     .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
     .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
     body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
@@ -96,6 +101,7 @@
     <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
     <a href="classes.html" class="nav-link">👥 Classes</a>
     <a href="tech-bucks.html" class="nav-link active">🪙 Tech Bucks</a>
+    <a href="avatar.html" class="nav-link">🧑‍🚀 Avatar</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -117,6 +123,10 @@
     <div class="balance-num" id="bal-num" aria-live="polite"><span class="coin" aria-hidden="true">🪙</span><span id="bal-val">…</span></div>
     <div class="balance-sub" id="bal-sub">Tech Bucks</div>
   </section>
+  <div class="me-row" id="me-row" style="display:none">
+    <div class="me-ava" id="me-ava" aria-hidden="true"></div>
+    <a class="shop-btn" href="avatar.html">🧑‍🚀 Open the Avatar Shop</a>
+  </div>
   <div class="note" id="teacher-note" style="display:none">Tech Bucks are for students. To give some to a student, open <a href="classes.html" style="color:inherit;font-weight:700">Classes</a>.</div>
   <div class="note warn" id="off-note" style="display:none">Tech Bucks are not turned on yet. Come back soon. Your work is not lost: you will get your Tech Bucks when they turn on.</div>
 
@@ -139,6 +149,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 <script src="teacher-role.js"></script>
+<script src="avatar.js"></script>
 <script src="techbucks.js"></script>
 <script>
 (function () {
@@ -166,6 +177,7 @@
     try { return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); } catch (e) { return d.toDateString(); }
   }
 
+  var meDrawn = false;
   function draw(st) {
     var hist = $('hist-list');
     if (st.ready && !TB.isStudent()) {           // a teacher (or anyone who is not a student): a short note instead of a balance
@@ -179,6 +191,9 @@
       return;
     }
     $('off-note').style.display = st.ready && TB.isStudent() && !st.ok ? 'block' : 'none';
+    var student = st.ready && TB.isStudent();
+    $('me-row').style.display = student ? 'flex' : 'none';
+    if (student && !meDrawn && window.Avatar && firebase.auth().currentUser) { meDrawn = true; window.Avatar.attach($('me-ava'), firebase.auth().currentUser.uid, 84); }
     if (st.ok) {
       $('bal-val').textContent = String(st.balance);
       $('bal-sub').textContent = Math.abs(st.balance) === 1 ? 'Tech Buck' : 'Tech Bucks';

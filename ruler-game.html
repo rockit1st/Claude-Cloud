@@ -322,6 +322,7 @@
     <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
     <a href="classes.html" class="nav-link">👥 Classes</a>
     <a href="tech-bucks.html" class="nav-link">🪙 Tech Bucks</a>
+    <a href="avatar.html" class="nav-link">🧑‍🚀 Avatar</a>
   </div>
   <div class="nav-user" id="nav-user-area" style="display:none">
     <span class="nav-user-name" id="nav-user-name"></span>
@@ -964,6 +965,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="auth.js"></script>
 <script src="teacher-role.js"></script>
+<script src="avatar.js"></script>
 <script src="techbucks.js"></script>
 <script src="student-classes.js"></script>
 <script>
@@ -1271,8 +1273,15 @@
     var el = document.getElementById('race-board-list'); if (!el) return;
     el.innerHTML = sorted.length ? sorted.map(function(p,i){
       var cls = (i<3?('p'+(i+1)):'') + (myUid && p.uid===myUid ? ' me' : '');
-      return '<li class="'+cls+'"><span class="rk">'+(i+1)+'</span><span>'+rEsc(p.name||'Anon')+'</span><span class="sc">'+(p.score||0)+'</span></li>';
+      return '<li class="'+cls+'" data-uid="'+rEsc(String(p.uid||''))+'"><span class="rk">'+(i+1)+'</span><span>'+rEsc(p.name||'Anon')+'</span><span class="sc">'+(p.score||0)+'</span></li>';
     }).join('') : '<li>No one has scored yet…</li>';
+    // each player's avatar next to their name (small, read in one batch; the board never waits for it)
+    if (window.Avatar) Array.prototype.forEach.call(el.querySelectorAll('li[data-uid]'), function(li){
+      var a = document.createElement('span');
+      a.setAttribute('aria-hidden','true'); a.style.cssText = 'display:inline-block;width:20px;margin:0 6px;border-radius:4px;overflow:hidden;line-height:0;vertical-align:middle';
+      li.insertBefore(a, li.children[1]);
+      window.Avatar.attach(a, li.getAttribute('data-uid'), 20);
+    });
   }
 
   function showRaceEnd(players){
