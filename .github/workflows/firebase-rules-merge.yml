@@ -1,0 +1,35 @@
+name: Publish Firestore rules on merge
+
+# Publishes firestore.rules to Firebase whenever it changes on main, so the
+# rules no longer have to be pasted into the Firebase console by hand.
+# It is a separate workflow on purpose: if it ever fails, the website deploys
+# still go out. You can also run it by hand (Actions tab > this workflow >
+# Run workflow) to publish the rules that are on main right now.
+#
+# One-time setup: the service account behind the secret below needs the
+# "Firebase Rules Admin" role (Google Cloud console > IAM).
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - firestore.rules
+  workflow_dispatch:
+
+concurrency:
+  group: firestore-rules
+  cancel-in-progress: false
+
+jobs:
+  publish_rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_TECHNO_TEACHER_6D631 }}'
+
+      - name: Publish firestore.rules
+        run: npx --yes firebase-tools@13 deploy --only firestore:rules --project techno-teacher-6d631 --non-interactive
