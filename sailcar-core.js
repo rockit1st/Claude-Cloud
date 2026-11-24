@@ -17,6 +17,7 @@
   'use strict';
 
   const TEACHER_EMAIL = 'ncapellini@hhh.k12.ny.us';
+  const HINT_AFTER = 2;                          // hints start on the try after this many tries that did not pass
   const QUIZ_SIZE = 5, PASS_COUNT = 4;              // 4 of 5 (80%) unlocks the next module
   const modules = [];
 
@@ -1223,7 +1224,11 @@
       return { q: q, order: order, picked: null };
     });
     const need = Math.ceil(qs.length * PASS_COUNT / QUIZ_SIZE);
+    // after two tries that did not pass, the third try (and every one after) offers a hint button on each question
+    const prevRec = progress.get(m.id);
+    const hintsOn = !!(prevRec && !prevRec.passed && prevRec.attempts >= HINT_AFTER);
     body.appendChild(h('h2', { class: 'sl-step-title', text: '✅ Check what you learned' }));
+    if (hintsOn) body.appendChild(h('div', { class: 'sl-note sl-note-tip', text: '💡 Hints are on! Stuck on a question? Tap “Need a hint?” under it. A hint helps you think. It does not give the answer.' }));
     body.appendChild(h('p', { class: 'sl-quiz-help', text: 'Answer all ' + qs.length + ' questions. Get ' + need + ' right to open the next module. You can try as many times as you want. You get new questions each time.' }));
     const list = h('ol', { class: 'sl-quiz' });
     qs.forEach(function (item, qi) {
@@ -1237,6 +1242,14 @@
         opts.appendChild(h('label', { class: 'sl-q-opt', for: id }, [input, h('span', { text: item.q.options[oi] })]));
       });
       li.appendChild(opts);
+      if (hintsOn) {
+        const hintText = item.q.hint || 'Go back and read the lesson. Then cross out the choices that cannot be true. Pick from the ones left.';
+        const hintBox = h('div', { class: 'sl-q-hint', 'aria-live': 'polite' });
+        const hintBtn = h('button', { type: 'button', class: 'sl-btn sl-q-hintbtn', text: '💡 Need a hint?' });
+        hintBtn.addEventListener('click', function () { hintBox.textContent = '💡 Hint: ' + hintText; hintBtn.style.display = 'none'; });
+        li.appendChild(hintBtn);
+        li.appendChild(hintBox);
+      }
       li.appendChild(h('div', { class: 'sl-q-why' }));
       list.appendChild(li);
     });
