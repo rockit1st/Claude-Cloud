@@ -193,7 +193,7 @@
     $('off-note').style.display = st.ready && TB.isStudent() && !st.ok ? 'block' : 'none';
     var student = st.ready && TB.isStudent();
     $('me-row').style.display = student ? 'flex' : 'none';
-    if (student && !meDrawn && window.Avatar && firebase.auth().currentUser) { meDrawn = true; window.Avatar.attach($('me-ava'), firebase.auth().currentUser.uid, 84); }
+    if (student && !meDrawn && window.Avatar && firebase.auth().currentUser) { meDrawn = true; window.Avatar.attach($('me-ava'), firebase.auth().currentUser.uid, 84, true); }
     if (st.ok) {
       $('bal-val').textContent = String(st.balance);
       $('bal-sub').textContent = Math.abs(st.balance) === 1 ? 'Tech Buck' : 'Tech Bucks';
