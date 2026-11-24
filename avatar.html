@@ -162,7 +162,7 @@
     </div>
   </section>
 
-  <div class="note" id="teacher-note" style="display:none">The Avatar Shop is for students. Teachers can see each student's avatar on the <a href="classes.html" style="color:inherit;font-weight:700">Classes</a> page.</div>
+  <div class="note" id="teacher-note" style="display:none">Teacher preview: you can look at everything in the shop. Only students can buy and wear items. You can see each student's avatar on the <a href="classes.html" style="color:inherit;font-weight:700">Classes</a> page.</div>
   <div class="note warn" id="off-note" style="display:none">The Avatar Shop opens soon. Keep earning Tech Bucks. They will be waiting for you!</div>
   <div class="note warn" id="wait-note" style="display:none">Counting your Tech Bucks. This takes a few seconds.</div>
   <div class="say" id="say" role="status" aria-live="polite"></div>
@@ -202,6 +202,7 @@
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
   var st = null;                    // the last Tech Bucks state
+  var previewOnly = false;          // true for a teacher: look, but no buying or wearing
   var equipped = AV ? AV.normalize(null) : {};   // what the student wears now
   var avatarKnown = false;
   var tab = 'hat';
@@ -260,6 +261,11 @@
       li.appendChild(el('h3', null, it.name));
       if (it.rare) li.appendChild(el('div', 'rare', '✨ Rare'));
       var btn = el('button', 'btn'); btn.type = 'button';
+      if (previewOnly) {
+        li.appendChild(el('span', it.price === 0 ? 'price free' : 'price', it.none ? 'Free' : (it.price === 0 ? 'Free' : '🪙 ' + it.price)));
+        btn.className = 'btn dim'; btn.textContent = 'Students only'; btn.disabled = true;
+        li.appendChild(btn); grid.appendChild(li); return;
+      }
       if (it.none || mine(it)) {
         if (!it.none) li.appendChild(el('span', it.price === 0 ? 'price free' : 'price', it.price === 0 ? 'Free' : 'You have it'));
         if (on) { btn.className = 'btn is'; btn.textContent = '✓ Wearing'; btn.setAttribute('aria-pressed', 'true'); btn.setAttribute('aria-label', 'Wearing ' + it.name); }
@@ -367,10 +373,11 @@
   function draw(s) {
     st = s;
     var teacher = s.ready && !TB.isStudent();
+    previewOnly = teacher;                         // a teacher can browse the shop but not buy or wear
     $('teacher-note').style.display = teacher ? 'block' : 'none';
-    $('shop').style.display = teacher ? 'none' : '';
+    $('shop').style.display = '';
     $('me-ava').parentNode.style.display = teacher ? 'none' : '';
-    if (teacher) return;
+    if (teacher) { drawGrid(); return; }
     $('off-note').style.display = s.ready && s.shop === 'off' ? 'block' : 'none';
     $('wait-note').style.display = s.ready && s.shop === 'wait' ? 'block' : 'none';
     if (s.ok && s.balance != null) {
