@@ -1219,10 +1219,15 @@
 
   function renderQuiz(m, body, nav) {
     const pool = m.quiz || [];
-    const qs = shuffle(pool).slice(0, Math.min(QUIZ_SIZE, pool.length)).map(function (q) {
+    // Going back to read the lesson must not lose the answers already picked: this try's questions, the choices and the
+    // hints that were opened stay in memory (state.quizDraft) until "Check my answers" is pressed.
+    const draft = state.quizDraft && state.quizDraft.id === m.id ? state.quizDraft : null;
+    const qs = draft ? draft.qs : shuffle(pool).slice(0, Math.min(QUIZ_SIZE, pool.length)).map(function (q) {
       const order = shuffle(q.options.map(function (_, i) { return i; }));
       return { q: q, order: order, picked: null };
     });
+    if (!draft) state.quizDraft = { id: m.id, qs: qs, hints: {} };
+    const hintsShown = state.quizDraft.hints;
     const need = Math.ceil(qs.length * PASS_COUNT / QUIZ_SIZE);
     // after two tries that did not pass, the third try (and every one after) offers a hint button on each question
     const prevRec = progress.get(m.id);
@@ -1238,6 +1243,7 @@
       item.order.forEach(function (oi) {
         const id = 'sl-q' + qi + '-' + oi;
         const input = h('input', { type: 'radio', name: 'sl-q' + qi, id: id, value: oi });
+        if (item.picked === oi) input.checked = true;
         input.addEventListener('change', function () { item.picked = oi; submit.disabled = qs.some(function (x) { return x.picked == null; }); });
         opts.appendChild(h('label', { class: 'sl-q-opt', for: id }, [input, h('span', { text: item.q.options[oi] })]));
       });
@@ -1246,7 +1252,9 @@
         const hintText = item.q.hint || 'Go back and read the lesson. Then cross out the choices that cannot be true. Pick from the ones left.';
         const hintBox = h('div', { class: 'sl-q-hint', 'aria-live': 'polite' });
         const hintBtn = h('button', { type: 'button', class: 'sl-btn sl-q-hintbtn', text: '💡 Need a hint?' });
-        hintBtn.addEventListener('click', function () { hintBox.textContent = '💡 Hint: ' + hintText; hintBtn.style.display = 'none'; });
+        function showHint() { hintBox.textContent = '💡 Hint: ' + hintText; hintBtn.style.display = 'none'; hintsShown[qi] = true; }
+        hintBtn.addEventListener('click', showHint);
+        if (hintsShown[qi]) showHint();
         li.appendChild(hintBtn);
         li.appendChild(hintBox);
       }
@@ -1257,9 +1265,11 @@
     const result = h('div', { class: 'sl-quiz-result', 'aria-live': 'polite' });
     body.appendChild(result);
     const submit = h('button', { type: 'button', class: 'sl-btn sl-btn-go', text: 'Check my answers', disabled: true });
-    nav.appendChild(h('button', { type: 'button', class: 'sl-btn', text: '← Back to the lesson', onclick: function () { state.step = (m.steps || []).length - 1; renderStep(); } }));
+    submit.disabled = qs.some(function (x) { return x.picked == null; });
+    nav.appendChild(h('button', { type: 'button', class: 'sl-btn', text: '📖 Read the lesson again (your answers stay)', onclick: function () { state.step = (m.steps || []).length - 1; renderStep(); } }));
     nav.appendChild(submit);
     submit.addEventListener('click', function () {
+      state.quizDraft = null;                         // this try is over; the next try draws new questions
       let score = 0;
       qs.forEach(function (item, qi) {
         const li = list.children[qi], right = item.picked === item.q.answer;
