@@ -103,7 +103,7 @@
 // A purchase can never be deleted or changed, by anyone. A teacher can read the purchases of
 // their classes (they carry the class, like awards) but not remove them.
 // AVATARS: avatars/{uid} = {uid, equipped: {slot: itemId}, updatedAt}. A student writes only
-// their own, only the six known slots, and only items that are free (price 0) or that they
+// their own, only the eight known slots, and only items that are free (price 0) or that they
 // own (their purchase document exists, or is created in the same batch). Any signed-in school
 // account can read them (cosmetic only: presets, no text, no personal data).
 // priceFor() below is the single price list; avatar.js carries a copy and a test fails if
@@ -504,19 +504,40 @@ service cloud.firestore {
 
     // ── Spending (stage B) ──
     // THE price list: every item's price, 0 = free for everyone. Item ids are slot-name
-    // (slots: skin, face, hat, gear, back, bg). Keep avatar.js PRICES identical (a test checks).
+    // (slots: skin, hair, face, hat, gear, pet, back, bg). Keep avatar.js PRICES identical (a test checks).
     // Any other "buy_<itemId>" later (games) is added here and nowhere else.
+    // The list is split by slot on purpose: a request may only evaluate 1000 expressions, and an avatar
+    // write looks up eight prices. A lookup now builds only the one small table for its own slot.
     function priceFor(item) {
-      return item is string
-        ? {
-            'skin-peach': 0, 'skin-tan': 0, 'skin-brown': 0, 'skin-deep': 0, 'skin-alien': 0, 'skin-robot': 0, 'skin-gold': 60,
-            'face-smile': 0, 'face-grin': 5, 'face-wink': 5, 'face-surprised': 8, 'face-starry': 15,
-            'hat-beanie': 8, 'hat-propeller': 12, 'hat-hardhat': 15, 'hat-wizard': 25, 'hat-rocket': 30, 'hat-astronaut': 40, 'hat-crown': 60,
-            'gear-glasses': 10, 'gear-sunglasses': 12, 'gear-goggles': 15, 'gear-antenna': 18, 'gear-headphones': 20,
-            'back-backpack': 15, 'back-cape': 25, 'back-jetpack': 45, 'back-wings': 55,
-            'bg-sky': 0, 'bg-stars': 15, 'bg-hallway': 15, 'bg-lab': 20, 'bg-launchpad': 30, 'bg-moon': 40, 'bg-blackhole': 55
-          }.get(item, -1)
-        : -1;
+      return item is string ? slotPrices(item.split('-')[0]).get(item, -1) : -1;
+    }
+    function slotPrices(slot) {
+      return slot == 'skin' ? {
+              'skin-peach': 0, 'skin-tan': 0, 'skin-brown': 0, 'skin-deep': 0, 'skin-alien': 0, 'skin-robot': 0, 'skin-gold': 60
+            }
+           : slot == 'hair' ? {
+              'hair-short': 0, 'hair-long': 0, 'hair-ponytail': 0, 'hair-pigtails': 0, 'hair-braids': 0, 'hair-bun': 0, 'hair-curly': 0, 'hair-buzz': 0
+            }
+           : slot == 'face' ? {
+              'face-smile': 0, 'face-grin': 5, 'face-wink': 5, 'face-surprised': 8, 'face-starry': 15
+            }
+           : slot == 'hat' ? {
+              'hat-beanie': 8, 'hat-propeller': 12, 'hat-bow': 8, 'hat-flowers': 15, 'hat-tiara': 30, 'hat-hardhat': 15, 'hat-wizard': 25, 'hat-rocket': 30, 'hat-astronaut': 40, 'hat-crown': 60
+            }
+           : slot == 'gear' ? {
+              'gear-earrings': 8, 'gear-glasses': 10, 'gear-sunglasses': 12, 'gear-goggles': 15, 'gear-antenna': 18, 'gear-headphones': 20
+            }
+           : slot == 'pet' ? {
+              'pet-dog': 15, 'pet-spot': 20, 'pet-puppy': 25, 'pet-husky': 30, 'pet-cat': 15, 'pet-blackcat': 20, 'pet-kitten': 25, 'pet-siamese': 30,
+              'pet-astrodog': 45, 'pet-astrocat': 45
+            }
+           : slot == 'back' ? {
+              'back-backpack': 15, 'back-cape': 25, 'back-jetpack': 45, 'back-wings': 55
+            }
+           : slot == 'bg' ? {
+              'bg-sky': 0, 'bg-stars': 15, 'bg-hallway': 15, 'bg-lab': 20, 'bg-launchpad': 30, 'bg-moon': 40, 'bg-blackhole': 55
+            }
+           : {};
     }
     // A student's purchase: techbucks/{uid}_buy_{itemId}, kind "spend", amount = -price,
     // coupled with the totals going up in "spent" in this same batch (checked on the totals side).
@@ -612,10 +633,10 @@ service cloud.firestore {
     // ── Avatars (stage B) ──
     // avatars/{uid} = {uid, equipped: {slot: itemId}, updatedAt}. Any signed-in school account reads;
     // only the student writes their own, with items they may wear.
-    // one item in one slot: the right slot, in the catalog, and free or bought. (priceFor is a big
-    // table, so it is read once here: rules stop a request that evaluates too many expressions.)
+    // one item in one slot: the right slot, in the catalog, and free or bought. (the price table of one
+    // slot is read once here, not the whole list: rules stop a request that evaluates too many expressions.)
     function wearable(uid, slot, v) {
-      let p = priceFor(v);
+      let p = v is string ? slotPrices(slot).get(v, -1) : -1;
       return v is string && v.matches('^' + slot + '-[a-z]+$') && p >= 0
              && (p == 0 || existsAfter(/databases/$(database)/documents/techbucks/$(uid + '_buy_' + v)));
     }
@@ -629,9 +650,9 @@ service cloud.firestore {
              && d.keys().hasAll(['uid', 'equipped', 'updatedAt'])
              && d.uid == uid && d.updatedAt == request.time
              && e is map
-             && e.keys().hasOnly(['skin', 'face', 'hat', 'gear', 'back', 'bg'])
-             && mayWear(uid, e, 'skin') && mayWear(uid, e, 'face') && mayWear(uid, e, 'hat')
-             && mayWear(uid, e, 'gear') && mayWear(uid, e, 'back') && mayWear(uid, e, 'bg');
+             && e.keys().hasOnly(['skin', 'hair', 'face', 'hat', 'gear', 'pet', 'back', 'bg'])
+             && mayWear(uid, e, 'skin') && mayWear(uid, e, 'hair') && mayWear(uid, e, 'face') && mayWear(uid, e, 'hat')
+             && mayWear(uid, e, 'gear') && mayWear(uid, e, 'pet') && mayWear(uid, e, 'back') && mayWear(uid, e, 'bg');
     }
     match /avatars/{uid} {
       allow read: if signedIn();

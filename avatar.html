@@ -58,8 +58,8 @@
     .say { min-height: 1.6em; margin-top: 14px; font-size: 1.1rem; font-weight: 700; text-align: center; color: #40e080; }
     .say.bad { color: #ffb0a0; }
 
-    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
-    @media (min-width: 640px) { .tabs { grid-template-columns: repeat(6, 1fr); } }
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 18px; }   /* 8 tabs: two clean rows on a phone */
+    @media (min-width: 640px) { .tabs { grid-template-columns: repeat(8, 1fr); } }
     .tab { min-height: 58px; border-radius: 14px; border: 2px solid rgba(180,79,255,0.35); background: rgba(180,79,255,0.08); color: #f0e6ff; font-family: 'Exo 2', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px; }
     .tab .ti { font-size: 1.4rem; line-height: 1; }
     .tab[aria-selected="true"] { background: rgba(240,192,64,0.18); border-color: #f0c040; color: #f0c040; }
@@ -248,7 +248,7 @@
   function drawGrid() {
     var grid = $('grid');
     grid.textContent = '';
-    var items = AV.ITEMS.filter(function (i) { return i.slot === tab; }).sort(function (a, b) { return a.price - b.price || (a.name < b.name ? -1 : 1); });
+    var items = AV.ITEMS.filter(function (i) { return i.slot === tab; }).sort(function (a, b) { return a.price - b.price || (tab === 'hair' ? 0 : a.name < b.name ? -1 : 1); });   // the hair styles stay in list order
     var bal = st && st.balance != null ? st.balance : 0;
     if (AV.NONE_LABEL[tab]) items.unshift({ id: '', slot: tab, name: AV.NONE_LABEL[tab], price: 0, none: true });
     items.forEach(function (it) {
@@ -305,7 +305,7 @@
     var prev = equipped;
     equipped = AV.normalize(next);                 // always keeps a body, a face and a scene
     drawMe(); drawGrid();
-    saveAvatar(equipped).then(function () { busy = false; say('Saved!'); }, function () {
+    saveAvatar(AV.forSave(equipped)).then(function () { busy = false; say('Saved!'); }, function () {
       busy = false; equipped = prev; drawMe(); drawGrid();
       say('Could not save that. Check the Wi-Fi and try again.', true);
     });
@@ -344,7 +344,7 @@
     if (!item || busy) return;
     busy = true; $('dlg-yes').disabled = true;
     var eq = Object.assign({}, equipped); eq[item.slot] = item.id;       // a new thing goes on right away
-    TB.spend(item.id, { equip: eq }).then(function (r) {
+    TB.spend(item.id, { equip: AV.forSave(eq) }).then(function (r) {
       busy = false;
       closeAsk();
       if (r.ok) {
