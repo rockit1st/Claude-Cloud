@@ -258,7 +258,8 @@
       if (it.none) { pv.textContent = '🚫'; pv.setAttribute('aria-hidden', 'true'); }
       else { var eq = Object.assign({}, equipped); eq[tab] = it.id; AV.render(pv, eq, 100, false); }
       li.appendChild(pv);
-      li.appendChild(el('h3', null, it.name));
+      // the Body tab shows only the pictures (no skin-tone words); the name stays in the page for screen readers
+      li.appendChild(el('h3', tab === 'skin' ? 'vh' : null, it.name));
       if (it.rare) li.appendChild(el('div', 'rare', '✨ Rare'));
       var btn = el('button', 'btn'); btn.type = 'button';
       if (previewOnly) {
