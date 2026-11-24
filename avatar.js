@@ -4,7 +4,7 @@
 //   <script src="avatar.js"></script>
 //
 // window.Avatar:
-//   SLOTS         the six places an item can go: skin, face, hat, gear, back, bg
+//   SLOTS         the eight places an item can go: skin, hair, face, hat, gear, pet, back, bg
 //   ITEMS         every item: { id, slot, name, price, rare }   (id is "<slot>-<word>")
 //   PRICES        { id: price }  -> THE price list. The same list is copied into firestore.rules (priceFor);
 //                 test-rules.mjs reads both files and fails if they ever differ. Price 0 = free for everyone.
@@ -23,19 +23,24 @@
   'use strict';
   if (window.Avatar) return;
 
-  var SLOTS = ['skin', 'face', 'hat', 'gear', 'back', 'bg'];
-  var SLOT_LABEL = { skin: 'Body', face: 'Face', hat: 'Hats', gear: 'Gear', back: 'Back', bg: 'Scene' };
-  var SLOT_ICON = { skin: '🧑‍🚀', face: '😀', hat: '🎩', gear: '🥽', back: '🚀', bg: '🌌' };
-  var NONE_LABEL = { skin: '', face: '', hat: 'No hat', gear: 'No gear', back: 'No back item', bg: '' };
+  var SLOTS = ['skin', 'hair', 'face', 'hat', 'gear', 'pet', 'back', 'bg'];
+  var SLOT_LABEL = { skin: 'Body', hair: 'Hair', face: 'Face', hat: 'Hats', gear: 'Gear', pet: 'Pets', back: 'Back', bg: 'Scene' };
+  var SLOT_ICON = { skin: '🧑‍🚀', hair: '💇', face: '😀', hat: '🎩', gear: '🥽', pet: '🐾', back: '🚀', bg: '🌌' };
+  var NONE_LABEL = { skin: '', hair: '', face: '', hat: 'No hat', gear: 'No gear', pet: 'No pet', back: 'No back item', bg: '' };
 
   // id, name, price, rare?  (the price list copied into firestore.rules; keep them the same)
   var LIST = [
     ['skin-peach', 'Peach', 0], ['skin-tan', 'Tan', 0], ['skin-brown', 'Brown', 0], ['skin-deep', 'Deep brown', 0],
     ['skin-alien', 'Alien green', 0], ['skin-robot', 'Robot silver', 0], ['skin-gold', 'Golden robot', 60, true],
+    ['hair-short', 'Short hair', 0], ['hair-long', 'Long hair', 0], ['hair-ponytail', 'Ponytail', 0], ['hair-pigtails', 'Pigtails', 0],
+    ['hair-braids', 'Braids', 0], ['hair-bun', 'Bun', 0], ['hair-curly', 'Curly hair', 0], ['hair-buzz', 'Buzz cut', 0],
     ['face-smile', 'Smile', 0], ['face-grin', 'Big grin', 5], ['face-wink', 'Wink', 5], ['face-surprised', 'Surprised', 8], ['face-starry', 'Star eyes', 15],
-    ['hat-beanie', 'Beanie', 8], ['hat-propeller', 'Propeller cap', 12], ['hat-hardhat', 'Hard hat', 15], ['hat-wizard', 'Wizard hat', 25],
+    ['hat-beanie', 'Beanie', 8], ['hat-propeller', 'Propeller cap', 12], ['hat-bow', 'Bow', 8], ['hat-flowers', 'Flower crown', 15], ['hat-tiara', 'Silver tiara', 30], ['hat-hardhat', 'Hard hat', 15], ['hat-wizard', 'Wizard hat', 25],
     ['hat-rocket', 'Rocket helmet', 30], ['hat-astronaut', 'Space helmet', 40], ['hat-crown', 'Gold crown', 60, true],
-    ['gear-glasses', 'Round glasses', 10], ['gear-sunglasses', 'Cool shades', 12], ['gear-goggles', 'Lab goggles', 15], ['gear-antenna', 'Antennas', 18], ['gear-headphones', 'Headphones', 20],
+    ['gear-earrings', 'Star earrings', 8], ['gear-glasses', 'Round glasses', 10], ['gear-sunglasses', 'Cool shades', 12], ['gear-goggles', 'Lab goggles', 15], ['gear-antenna', 'Antennas', 18], ['gear-headphones', 'Headphones', 20],
+    ['pet-dog', 'Brown dog', 15], ['pet-spot', 'Spotted dog', 20], ['pet-puppy', 'Puppy', 25], ['pet-husky', 'Husky', 30],
+    ['pet-cat', 'Orange cat', 15], ['pet-blackcat', 'Black cat', 20], ['pet-kitten', 'Kitten', 25], ['pet-siamese', 'Siamese cat', 30],
+    ['pet-astrodog', 'Space dog', 45, true], ['pet-astrocat', 'Space cat', 45, true],
     ['back-backpack', 'Backpack', 15], ['back-cape', 'Hero cape', 25], ['back-jetpack', 'Jetpack', 45], ['back-wings', 'Star wings', 55, true],
     ['bg-sky', 'Blue sky', 0], ['bg-stars', 'Starry night', 15], ['bg-hallway', 'School hallway', 15], ['bg-lab', 'Science lab', 20],
     ['bg-launchpad', 'Launch pad', 30], ['bg-moon', 'The Moon', 40], ['bg-blackhole', 'Black hole', 55, true]
@@ -45,12 +50,12 @@
     var it = { id: r[0], slot: r[0].split('-')[0], name: r[1], price: r[2], rare: !!r[3] };
     ITEMS.push(it); PRICES[it.id] = it.price; BY_ID[it.id] = it;
   });
-  var DEFAULTS = { skin: 'skin-peach', face: 'face-smile', bg: 'bg-sky' };
+  var DEFAULTS = { skin: 'skin-peach', hair: 'hair-short', face: 'face-smile', bg: 'bg-sky' };
 
   function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function itemOf(id) { return typeof id === 'string' && has(BY_ID, id) ? BY_ID[id] : null; }
   function priceOf(id) { return typeof id === 'string' && has(PRICES, id) ? PRICES[id] : -1; }
-  // keep only what exists; skin, face and bg always have a value
+  // keep only what exists; skin, hair, face and bg always have a value
   function normalize(e, noDefaults) {
     var out = {};
     SLOTS.forEach(function (s) {
@@ -60,14 +65,21 @@
     });
     return out;
   }
+  // what to write to the database: the default hair is left out (and no pet is simply absent), so a
+  // student who uses neither saves exactly what the older rules accept
+  function forSave(e) {
+    var out = normalize(e);
+    if (out.hair === DEFAULTS.hair) delete out.hair;
+    return out;
+  }
   function describe(e) {
     var n = normalize(e), parts = [];
-    ['skin', 'face', 'hat', 'gear', 'back', 'bg'].forEach(function (s) {
+    SLOTS.forEach(function (s) {
       if (!n[s]) return;
       var it = BY_ID[n[s]];
       if (s === 'skin') parts.unshift('Avatar: ' + it.name.toLowerCase());
       else if (s === 'bg') parts.push('in front of ' + it.name.toLowerCase());
-      else if (s !== 'face' || n[s] !== DEFAULTS.face) parts.push(it.name.toLowerCase());
+      else if ((s !== 'face' && s !== 'hair') || n[s] !== DEFAULTS[s]) parts.push(it.name.toLowerCase());
     });
     return parts.join(', ').replace(', in front', ' in front');
   }
@@ -75,6 +87,8 @@
   // ── the parts (fixed SVG text; "@" is replaced by a number so ids never clash on a page) ──
   var SKIN_COL = { 'skin-peach': '#f5c9a0', 'skin-tan': '#d9a066', 'skin-brown': '#a8693e', 'skin-deep': '#6b4226', 'skin-alien': '#93e58f', 'skin-robot': '#b9c5d3', 'skin-gold': 'url(#gold@)' };
   var HAIR_COL = { 'skin-peach': '#7a4a22', 'skin-tan': '#3a2412', 'skin-brown': '#241810', 'skin-deep': '#150e0a' };
+  // robots, aliens and the golden robot get a bright wig colour so every style shows on them
+  var WIG_COL = { 'skin-alien': '#ff6fb5', 'skin-robot': '#3fb8ff', 'skin-gold': '#ff6fb5' };
   function star(cx, cy, r, fill) {
     var pts = [], i, a, rr;
     for (i = 0; i < 10; i++) { a = -Math.PI / 2 + i * Math.PI / 5; rr = i % 2 ? r * 0.45 : r; pts.push((cx + rr * Math.cos(a)).toFixed(1) + ',' + (cy + rr * Math.sin(a)).toFixed(1)); }
@@ -120,6 +134,11 @@
       '<path d="M10 52Q18 64 28 72M16 44Q24 60 30 68" stroke="#d8d2f5" fill="none"/><path d="M90 52Q82 64 72 72M84 44Q76 60 70 68" stroke="#d8d2f5" fill="none"/>' + star(10, 30, 3.5, '#ffe58a') + star(90, 30, 3.5, '#ffe58a')
   };
 
+  function flower(cx, cy, col) {
+    var out = '', i, a;
+    for (i = 0; i < 5; i++) { a = i * 1.2566; out += '<circle cx="' + (cx + 2.3 * Math.cos(a)).toFixed(1) + '" cy="' + (cy + 2.3 * Math.sin(a)).toFixed(1) + '" r="1.9" fill="' + col + '"/>'; }
+    return out + '<circle cx="' + cx + '" cy="' + cy + '" r="1.5" fill="#f2a516"/>';
+  }
   var HAT = {
     'hat-beanie': '<path d="M26 40Q26 12 50 12Q74 12 74 40z" fill="#e8503a"/><rect x="25" y="35" width="50" height="9" rx="4" fill="#c43d2a"/><circle cx="50" cy="10" r="5" fill="#fff"/><path d="M36 20Q38 16 42 14M58 14Q62 16 64 20" stroke="#ff9a88" stroke-width="2" fill="none"/>',
     'hat-propeller': '<path d="M28 38Q30 18 50 18Q70 18 72 38z" fill="#3a8fe8"/><path d="M50 18V34" stroke="#2a6bb8" stroke-width="2"/><rect x="26" y="35" width="48" height="6" rx="3" fill="#2a6bb8"/><rect x="49" y="8" width="2" height="10" fill="#555"/><ellipse cx="40" cy="8" rx="10" ry="2.2" fill="#ffd23f"/><ellipse cx="60" cy="8" rx="10" ry="2.2" fill="#ff6f6f"/><circle cx="50" cy="8" r="2" fill="#333"/>',
@@ -127,15 +146,118 @@
     'hat-wizard': '<path d="M50 2L78 40Q50 47 22 40z" fill="#6a3fd0"/><ellipse cx="50" cy="40" rx="33" ry="6" fill="#4f2aa8"/><path d="M26 38Q50 44 74 38" stroke="#ffd23f" stroke-width="3" fill="none"/>' + star(46, 22, 3.6, '#ffe58a') + star(56, 31, 2.6, '#ffe58a') + star(41, 32, 2, '#fff'),
     'hat-rocket': '<path d="M27 44Q27 14 50 14Q73 14 73 44z" fill="#f4f4f8"/><path d="M44 16Q50 0 56 16z" fill="#e8402a"/><path d="M27 44Q27 30 36 24L36 44z" fill="#e8402a"/><path d="M73 44Q73 30 64 24L64 44z" fill="#e8402a"/><rect x="38" y="30" width="24" height="5" rx="2" fill="#3a8fe8"/><path d="M27 38L15 52L27 52zM73 38L85 52L73 52z" fill="#c4301c"/>',
     'hat-astronaut': '<circle cx="50" cy="50" r="33" fill="#cfe8ff" opacity=".22" stroke="#e8f0fa" stroke-width="3.5"/><path d="M30 28Q36 20 46 18" stroke="#fff" stroke-width="3" fill="none" opacity=".8" stroke-linecap="round"/><path d="M26 82Q50 92 74 82L72 90Q50 98 28 90z" fill="#e8edf5" stroke="#b9c3d4"/><circle cx="34" cy="88" r="2.4" fill="#e8402a"/><circle cx="66" cy="88" r="2.4" fill="#3a8fe8"/>',
+    'hat-bow': '<path d="M63 27Q50 15 50 27Q50 39 63 27z" fill="#ff5fa2" stroke="#d93a82" stroke-width="1"/><path d="M63 27Q76 15 76 27Q76 39 63 27z" fill="#ff5fa2" stroke="#d93a82" stroke-width="1"/><path d="M54 24Q56 21 59 24M72 24Q70 21 67 24" stroke="#ffb3d4" stroke-width="1.4" fill="none" stroke-linecap="round"/><circle cx="63" cy="27" r="3.4" fill="#e8408a" stroke="#d93a82" stroke-width="1"/>',
+    'hat-flowers': '<path d="M28 42Q28 22 50 22Q72 22 72 42" stroke="#3f9e52" stroke-width="2.6" fill="none" stroke-linecap="round"/>' +
+      flower(30, 38, '#ff7eb6') + flower(33, 29, '#ffffff') + flower(41, 24, '#b99cff') + flower(50, 22.5, '#ff7eb6') + flower(59, 24, '#ffd23f') + flower(67, 29, '#b99cff') + flower(70, 38, '#ffffff') +
+      '<path d="M36 25Q38 21 41 22M64 25Q62 21 59 22" stroke="#2f8a44" stroke-width="2" fill="none" stroke-linecap="round"/>',
+    'hat-tiara': '<path d="M33 37L36 24L42 31L50 19L58 31L64 24L67 37Q50 31 33 37z" fill="#dfe6f0" stroke="#8d9ab0" stroke-width="1.2" stroke-linejoin="round"/><path d="M33 37Q50 31 67 37" stroke="#b9c4d6" stroke-width="2.4" fill="none"/><circle cx="50" cy="27" r="2.6" fill="#ff6fb5" stroke="#fff" stroke-width=".8"/><circle cx="37" cy="29" r="1.5" fill="#6fc3ff"/><circle cx="63" cy="29" r="1.5" fill="#6fc3ff"/><path d="M45 24L47 21" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>',
     'hat-crown': '<path d="M29 36L32 12L41 25L50 8L59 25L68 12L71 36z" fill="#f2c230" stroke="#b88a10" stroke-width="1.2"/><rect x="29" y="33" width="42" height="6" rx="2" fill="#e0a916"/><circle cx="50" cy="19" r="2.6" fill="#e8402a"/><circle cx="36" cy="30" r="2" fill="#3a8fe8"/><circle cx="64" cy="30" r="2" fill="#3fb86a"/>'
   };
 
   var GEAR = {
+    'gear-earrings': '<path d="M26 56.5V60M74 56.5V60" stroke="#d9a516" stroke-width="1.1"/>' + star(26, 63, 3.8, '#ffd23f') + star(74, 63, 3.8, '#ffd23f'),
     'gear-glasses': '<circle cx="41" cy="50" r="7.5" fill="#fff" fill-opacity=".25" stroke="#2c2c34" stroke-width="2"/><circle cx="59" cy="50" r="7.5" fill="#fff" fill-opacity=".25" stroke="#2c2c34" stroke-width="2"/><path d="M48.5 50H51.5M33.5 49L27 47M66.5 49L73 47" stroke="#2c2c34" stroke-width="2"/>',
     'gear-sunglasses': '<rect x="32" y="44" width="16" height="11" rx="4" fill="#15151c"/><rect x="52" y="44" width="16" height="11" rx="4" fill="#15151c"/><path d="M48 47H52M32 46L27 45M68 46L73 45" stroke="#15151c" stroke-width="2.4"/><path d="M35 47L40 47M55 47L60 47" stroke="#5a5a7a" stroke-width="1.6"/>',
     'gear-goggles': '<path d="M25 44H75V56H25z" fill="#4a3f36" opacity=".9"/><circle cx="41" cy="50" r="8.5" fill="#9ff0b8" fill-opacity=".55" stroke="#f08a2a" stroke-width="3"/><circle cx="59" cy="50" r="8.5" fill="#9ff0b8" fill-opacity=".55" stroke="#f08a2a" stroke-width="3"/><path d="M36 46Q39 43 43 44" stroke="#fff" stroke-width="1.6" fill="none"/>',
     'gear-antenna': '<path d="M38 28L30 8M62 28L70 8" stroke="#6b7488" stroke-width="2.2" stroke-linecap="round"/><circle cx="30" cy="7" r="3.6" fill="#ff4f7b"/><circle cx="70" cy="7" r="3.6" fill="#37d6a0"/>',
     'gear-headphones': '<path d="M26 54Q24 18 50 18Q76 18 74 54" stroke="#2c2c34" stroke-width="4.5" fill="none" stroke-linecap="round"/><rect x="19" y="45" width="11" height="19" rx="5" fill="#e8402a"/><rect x="70" y="45" width="11" height="19" rx="5" fill="#e8402a"/><rect x="21" y="49" width="4" height="11" rx="2" fill="#ff8a78"/><rect x="75" y="49" width="4" height="11" rx="2" fill="#ff8a78"/>'
+  };
+
+
+  // ── hair: a part behind the head and a part on top. Short hair is the original look. ──
+  var CAP = 'M26 44Q24 24 50 22Q76 24 74 44Q66 34 50 34Q34 34 26 44z';
+  var FULL_HATS = { 'hat-beanie': 1, 'hat-propeller': 1, 'hat-hardhat': 1, 'hat-wizard': 1, 'hat-rocket': 1, 'hat-astronaut': 1 };
+  function hairParts(id, skin, hat) {
+    var human = has(HAIR_COL, skin), c = human ? HAIR_COL[skin] : WIG_COL[skin] || '#ff6fb5', back = '', front = '', i, y, x;
+    var cap = '<path d="' + CAP + '" fill="' + c + '"/>', full = !!FULL_HATS[hat], tie = '#ff5fa2';
+    var fill = '<ellipse cx="50" cy="47" rx="26.5" ry="27" fill="' + c + '"/>';
+    if (id === 'hair-short') { if (human) front = cap; }
+    else if (id === 'hair-buzz') front = '<path d="M27 42Q26 25 50 23Q74 25 73 42Q68 32 50 31Q32 32 27 42z" fill="' + c + '"/>';
+    else if (id === 'hair-long') {
+      back = fill + '<path d="M27 40Q15 66 20 100Q29 106 38 100Q31 78 34 56z" fill="' + c + '"/><path d="M73 40Q85 66 80 100Q71 106 62 100Q69 78 66 56z" fill="' + c + '"/>';
+      front = cap;
+    } else if (id === 'hair-ponytail') {
+      back = fill + '<path d="M68 29Q95 24 92 58Q91 74 82 86Q85 66 76 52Q72 42 66 38z" fill="' + c + '"/>';
+      front = cap + '<ellipse cx="71" cy="33" rx="3" ry="4.8" fill="' + tie + '" transform="rotate(-25 71 33)"/>';
+    } else if (id === 'hair-pigtails') {
+      back = fill + '<path d="M24 40Q7 48 9 72Q11 86 20 81Q20 66 28 54z" fill="' + c + '"/><path d="M76 40Q93 48 91 72Q89 86 80 81Q80 66 72 54z" fill="' + c + '"/>';
+      front = cap + '<circle cx="24" cy="42" r="3.6" fill="' + tie + '"/><circle cx="76" cy="42" r="3.6" fill="' + tie + '"/>';
+    } else if (id === 'hair-braids') {
+      back = fill;
+      for (i = 0; i < 5; i++) {
+        y = 56 + i * 9; x = i % 2 ? 24.6 : 21.4;
+        back += '<ellipse cx="' + x + '" cy="' + y + '" rx="4.6" ry="6" fill="' + c + '"/><ellipse cx="' + (100 - x) + '" cy="' + y + '" rx="4.6" ry="6" fill="' + c + '"/>';
+      }
+      back += '<circle cx="23" cy="98" r="3" fill="' + tie + '"/><circle cx="77" cy="98" r="3" fill="' + tie + '"/>';
+      front = cap;
+    } else if (id === 'hair-bun') {
+      front = (full ? '' : '<circle cx="50" cy="15" r="9.5" fill="' + c + '"/><path d="M42 21Q50 25 58 21" stroke="' + tie + '" stroke-width="2.4" fill="none" stroke-linecap="round"/>') + cap;
+    } else if (id === 'hair-curly') {
+      var ring = [[25, 34, 8.5], [75, 34, 8.5], [20, 48, 8], [80, 48, 8], [22, 62, 7.5], [78, 62, 7.5]];
+      if (!full) ring = ring.concat([[50, 19, 9], [34, 22, 8.5], [66, 22, 8.5]]);
+      back = dots(ring, c);
+      front = cap + dots([[33, 34, 5.4], [42, 31, 5.4], [51, 30, 5.4], [60, 31, 5.4], [68, 34, 5]], c);
+    }
+    return { back: back, front: front };
+  }
+
+
+  // ── pets: a small dog or cat in the bottom-left corner, in front of the scene (never near the face) ──
+  var INK = '#1a1a1f';
+  function dogSvg(o) {
+    var f = o.fur, m = o.muz, eye = o.eye || 1.5;
+    var s = o.curl ? '<path d="M24 25Q34 25 30.5 14Q29 10 25.5 14" stroke="' + f + '" stroke-width="4.6" fill="none" stroke-linecap="round"/><circle cx="25.6" cy="13.6" r="2.3" fill="' + (o.tip || f) + '"/>'
+      : '<path d="M24 24Q31 21 29.5 12" stroke="' + f + '" stroke-width="3.8" fill="none" stroke-linecap="round"/>';
+    if (o.upright) s += '<path d="M7.6 10L8 1.2L15.4 5.4z" fill="' + o.ear + '"/><path d="M24.4 10L24 1.2L16.6 5.4z" fill="' + o.ear + '"/><path d="M9.6 8L9.9 4L12.8 6z" fill="#f0bcbc"/><path d="M22.4 8L22.1 4L19.2 6z" fill="#f0bcbc"/>';
+    s += '<ellipse cx="16" cy="23" rx="10" ry="7.5" fill="' + f + '"/><ellipse cx="16" cy="25.5" rx="6" ry="4.6" fill="' + m + '"/>';
+    if (o.spots) s += '<circle cx="9.5" cy="21.5" r="3" fill="' + o.ear + '"/><circle cx="23.5" cy="25" r="2.4" fill="' + o.ear + '"/>';
+    s += '<ellipse cx="11" cy="28.6" rx="3.8" ry="2.2" fill="' + m + '"/><ellipse cx="21" cy="28.6" rx="3.8" ry="2.2" fill="' + m + '"/>';
+    s += '<circle cx="16" cy="13" r="9" fill="' + f + '"/>';
+    if (o.mask) s += '<path d="M16 4.2Q9 5 8 14Q10 21 16 22Q22 21 24 14Q23 5 16 4.2z" fill="' + o.mask + '"/>';
+    if (o.patch) s += '<circle cx="11.6" cy="10.4" r="4" fill="' + o.ear + '"/>';
+    if (!o.upright) s += '<ellipse cx="7" cy="12" rx="3.6" ry="6.4" fill="' + o.ear + '" transform="rotate(14 7 12)"/><ellipse cx="25" cy="12" rx="3.6" ry="6.4" fill="' + o.ear + '" transform="rotate(-14 25 12)"/>';
+    s += '<ellipse cx="16" cy="16.8" rx="5.4" ry="4.2" fill="' + m + '"/>';
+    s += '<circle cx="12.4" cy="10.6" r="' + eye + '" fill="' + (o.eyec || INK) + '"/><circle cx="19.6" cy="10.6" r="' + eye + '" fill="' + (o.eyec || INK) + '"/>' +
+      '<circle cx="12.9" cy="10" r=".55" fill="#fff"/><circle cx="20.1" cy="10" r=".55" fill="#fff"/>';
+    s += '<ellipse cx="16" cy="14.9" rx="2.6" ry="1.9" fill="' + INK + '"/><ellipse cx="15.2" cy="14.3" rx=".8" ry=".45" fill="#fff" opacity=".6"/>' +
+      '<path d="M16 16.8V18.4M16 18.4Q13.8 20 12.4 18.4M16 18.4Q18.2 20 19.6 18.4" stroke="' + INK + '" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M14.6 19.2Q16 23.4 17.4 19.2z" fill="#ff7a8a"/>';
+    if (o.collar) s += '<rect x="8.5" y="20.4" width="15" height="2.6" rx="1.3" fill="' + o.collar + '"/><circle cx="16" cy="24" r="1.5" fill="#ffd23f"/>';
+    return s;
+  }
+  function catSvg(o) {
+    var f = o.fur, pt = o.points || f, inner = o.inner || '#ff9fb2', wh = o.whisk || '#3a3a44', er = o.eye || 1.9;
+    var s = '<path d="M24 27Q34.5 27 31.5 15Q30.5 9.5 27 12" stroke="' + pt + '" stroke-width="3" fill="none" stroke-linecap="round"/>';
+    s += '<path d="M7.5 9.5L6.8 0.4L14.8 4.2z" fill="' + pt + '"/><path d="M24.5 9.5L25.2 0.4L17.2 4.2z" fill="' + pt + '"/><path d="M9 7.4L8.7 3L12.4 4.8z" fill="' + inner + '"/><path d="M23 7.4L23.3 3L19.6 4.8z" fill="' + inner + '"/>';
+    s += '<ellipse cx="16" cy="23.2" rx="9.6" ry="7.3" fill="' + f + '"/>';
+    if (o.stripe) s += '<path d="M8 20Q10 21 10.4 24M24 20Q22 21 21.6 24" stroke="' + o.stripe + '" stroke-width="1.4" fill="none" stroke-linecap="round"/>';
+    s += '<ellipse cx="11.2" cy="28.6" rx="3.4" ry="2.1" fill="' + (o.paw || pt) + '"/><ellipse cx="20.8" cy="28.6" rx="3.4" ry="2.1" fill="' + (o.paw || pt) + '"/>';
+    s += '<ellipse cx="16" cy="13.5" rx="9.8" ry="8.6" fill="' + f + '"/>';
+    if (o.mask) s += '<ellipse cx="16" cy="15.4" rx="5.6" ry="5.4" fill="' + o.mask + '"/>';
+    else s += '<ellipse cx="16" cy="16.8" rx="4.2" ry="3.2" fill="#fff6ea"/>';
+    if (o.stripe) s += '<path d="M16 5.2V8.4M12.4 5.8L13.1 8.2M19.6 5.8L18.9 8.2" stroke="' + o.stripe + '" stroke-width="1.2" stroke-linecap="round"/>';
+    s += '<ellipse cx="11.6" cy="12" rx="' + er + '" ry="' + (er + .5) + '" fill="' + o.eyec + '"/><ellipse cx="20.4" cy="12" rx="' + er + '" ry="' + (er + .5) + '" fill="' + o.eyec + '"/>' +
+      '<ellipse cx="11.6" cy="12" rx=".65" ry="' + (er + .2) + '" fill="#111"/><ellipse cx="20.4" cy="12" rx=".65" ry="' + (er + .2) + '" fill="#111"/>' +
+      '<circle cx="12.2" cy="11" r=".5" fill="#fff"/><circle cx="21" cy="11" r=".5" fill="#fff"/>';
+    s += '<path d="M14.7 15.3H17.3L16 16.7z" fill="#ff8fa3"/><path d="M16 16.7V17.4M16 17.4Q14.6 18.8 13.2 17.6M16 17.4Q17.4 18.8 18.8 17.6" stroke="#333" stroke-width=".8" fill="none" stroke-linecap="round"/>';
+    s += '<path d="M2.2 13.6L9.6 15M2.2 17.4L9.6 16.8M29.8 13.6L22.4 15M29.8 17.4L22.4 16.8" stroke="' + wh + '" stroke-width=".9" stroke-linecap="round"/>';
+    if (o.collar) s += '<rect x="9" y="20.6" width="14" height="2.4" rx="1.2" fill="' + o.collar + '"/><circle cx="16" cy="24" r="1.6" fill="#ffd23f"/>';
+    return s;
+  }
+  var HELMET = '<circle cx="16" cy="11.5" r="14.5" fill="#cfe8ff" fill-opacity=".28" stroke="#eef4fb" stroke-width="1.6"/><path d="M6 7Q8.6 2.4 13.4 1.6" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".9"/><rect x="7" y="20.4" width="18" height="3.2" rx="1.6" fill="#e8edf5" stroke="#b9c3d4" stroke-width=".7"/><circle cx="11" cy="22" r="1" fill="#e8402a"/><circle cx="21" cy="22" r="1" fill="#3a8fe8"/>';
+  function pet(svg, scale) { var k = scale || 1; return '<g transform="translate(3 ' + (88 + 30 * (1 - k)).toFixed(1) + ') scale(' + k + ')">' + svg + '</g>'; }
+  var BROWN = { fur: '#b9773f', ear: '#7a4a22', muz: '#f1d4a8' };
+  var GREYCAT = { fur: '#9aa3b2', stripe: '#6c7686', eyec: '#8fe08a' };
+  var PET = {
+    'pet-dog': pet(dogSvg(BROWN)),
+    'pet-spot': pet(dogSvg({ fur: '#f6f2ea', ear: '#3a2a22', muz: '#ffffff', spots: true, patch: true })),
+    'pet-puppy': pet(dogSvg({ fur: '#e9b866', ear: '#c98a3c', muz: '#fbe6bf', eye: 1.9, collar: '#e8402a' }), 0.86),
+    'pet-husky': pet(dogSvg({ fur: '#8b96a6', ear: '#8b96a6', muz: '#f4f6fa', upright: true, mask: '#f4f6fa', curl: true, tip: '#f4f6fa', eyec: '#3a9bf0', eye: 1.6 })),
+    'pet-cat': pet(catSvg({ fur: '#f29a3c', stripe: '#cf6f14', eyec: '#8fe08a' })),
+    'pet-blackcat': pet(catSvg({ fur: '#2c2c38', inner: '#6a4a72', eyec: '#ffd23f', whisk: '#e8e8f4' })),
+    'pet-kitten': pet(catSvg({ fur: '#f6dcb4', stripe: '#e0a868', eyec: '#5ab4ff', eye: 2.3, collar: '#ff5fa2' }), 0.86),
+    'pet-siamese': pet(catSvg({ fur: '#f3e4cc', points: '#5b4032', paw: '#5b4032', mask: '#5b4032', inner: '#a07c68', eyec: '#5ab4ff', whisk: '#e8e8f4' })),
+    'pet-astrodog': pet(dogSvg(BROWN) + HELMET),
+    'pet-astrocat': pet(catSvg(GREYCAT) + HELMET)
   };
 
   function faceSvg(id, robotish) {
@@ -149,21 +271,20 @@
     return eyeL + eyeR + mouth;
   }
 
-  function bodySvg(skin) {
-    var fill = SKIN_COL[skin] || SKIN_COL['skin-peach'], hair = HAIR_COL[skin];
+  function bodySvg(skin, hairId, hat) {
+    var fill = SKIN_COL[skin] || SKIN_COL['skin-peach'], hp = hairParts(hairId || DEFAULTS.hair, skin, hat);
     var shirt = '<path d="M20 120Q20 84 50 82Q80 84 80 120z" fill="#2f7fd1"/><path d="M40 84Q50 94 60 84" stroke="#1f5fa6" stroke-width="3" fill="none"/><rect x="30" y="100" width="14" height="6" rx="2" fill="#fff" opacity=".35"/>';
     var s = '<defs><linearGradient id="gold@" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0a0"/><stop offset=".5" stop-color="#f2c230"/><stop offset="1" stop-color="#b88a10"/></linearGradient></defs>';
-    s += shirt + '<rect x="43" y="72" width="14" height="14" rx="4" fill="' + fill + '"/>';
+    s += shirt + hp.back + '<rect x="43" y="72" width="14" height="14" rx="4" fill="' + fill + '"/>';
     if (skin === 'skin-robot' || skin === 'skin-gold') {
       s += '<rect x="25" y="25" width="50" height="52" rx="14" fill="' + fill + '" stroke="#7d8a9a" stroke-width="1.5"/><rect x="19" y="44" width="7" height="14" rx="3" fill="#8794a4"/><rect x="74" y="44" width="7" height="14" rx="3" fill="#8794a4"/><circle cx="50" cy="29" r="1.8" fill="#7d8a9a"/>';
       if (skin === 'skin-gold') s += star(31, 33, 2.4, '#fff') + star(70, 70, 2, '#fff');
     } else if (skin === 'skin-alien') {
       s += '<path d="M26 56Q18 52 14 42Q22 46 27 50z" fill="' + fill + '"/><path d="M74 56Q82 52 86 42Q78 46 73 50z" fill="' + fill + '"/><ellipse cx="50" cy="50" rx="24" ry="28" fill="' + fill + '"/><ellipse cx="42" cy="40" rx="6" ry="3" fill="#fff" opacity=".25"/>';
     } else {
-      s += '<circle cx="26" cy="52" r="4.5" fill="' + fill + '"/><circle cx="74" cy="52" r="4.5" fill="' + fill + '"/><ellipse cx="50" cy="50" rx="24" ry="26" fill="' + fill + '"/>' +
-        '<path d="M26 44Q24 24 50 22Q76 24 74 44Q66 34 50 34Q34 34 26 44z" fill="' + hair + '"/>';
+      s += '<circle cx="26" cy="52" r="4.5" fill="' + fill + '"/><circle cx="74" cy="52" r="4.5" fill="' + fill + '"/><ellipse cx="50" cy="50" rx="24" ry="26" fill="' + fill + '"/>';
     }
-    return s;
+    return s + hp.front;
   }
 
   var uidCounter = 0;
@@ -172,9 +293,10 @@
     var n = normalize(equipped), robotish = n.skin === 'skin-robot' || n.skin === 'skin-gold';
     var s = BG[n.bg] || BG['bg-sky'];
     if (n.back && BACK[n.back]) s += BACK[n.back];
-    s += bodySvg(n.skin) + faceSvg(n.face, robotish);
+    s += bodySvg(n.skin, n.hair, n.hat) + faceSvg(n.face, robotish);
     if (n.hat && HAT[n.hat]) s += HAT[n.hat];
     if (n.gear && GEAR[n.gear]) s += GEAR[n.gear];
+    if (n.pet && PET[n.pet]) s += PET[n.pet];
     return s.replace(/@/g, String(++uidCounter));
   }
   // The text above is fixed (from the catalog tables), never from the database. It is turned into
@@ -262,6 +384,6 @@
   window.Avatar = {
     SLOTS: SLOTS, SLOT_LABEL: SLOT_LABEL, SLOT_ICON: SLOT_ICON, NONE_LABEL: NONE_LABEL,
     ITEMS: ITEMS, PRICES: PRICES, DEFAULTS: DEFAULTS, itemOf: itemOf, priceOf: priceOf,
-    normalize: normalize, describe: describe, render: render, attach: attach, load: load, remember: remember
+    normalize: normalize, forSave: forSave, describe: describe, render: render, attach: attach, load: load, remember: remember
   };
 })();
