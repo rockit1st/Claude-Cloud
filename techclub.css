@@ -146,3 +146,14 @@ body.light-mode footer { color: rgba(90,74,130,0.55); background: #f4eeff; }
 .theme-toggle { position:fixed; bottom:24px; right:24px; z-index:200; width:50px; height:50px; border-radius:50%; border:1px solid rgba(180,79,255,0.4); background:rgba(20,0,40,0.85); backdrop-filter:blur(10px); cursor:pointer; font-size:1.4rem; display:flex; align-items:center; justify-content:center; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 18px rgba(0,0,0,0.4); }
 .theme-toggle:hover { transform:scale(1.12); box-shadow:0 6px 28px rgba(180,79,255,0.5); }
 body.light-mode .theme-toggle { background:rgba(255,255,255,0.92); border-color:rgba(180,79,255,0.25); box-shadow:0 4px 18px rgba(180,79,255,0.15); }
+
+/* Full-screen "Present" display of the club code (for the classroom screen) */
+.present-overlay { position: fixed; inset: 0; z-index: 600; background: #0a000f; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; cursor: pointer; }
+.present-overlay.open { display: flex; }
+.present-label { font-family: 'Orbitron', sans-serif; color: #7a8ab0; font-size: clamp(0.8rem, 2vw, 1.1rem); letter-spacing: 6px; }
+.present-name { font-family: 'Orbitron', sans-serif; color: #f0e6ff; font-size: clamp(1.1rem, 3.5vw, 2rem); letter-spacing: 2px; margin: 14px 0 28px; }
+.present-code { font-family: 'Orbitron', sans-serif; font-weight: 900; color: #00f5ff; font-size: clamp(2.2rem, 10.5vw, 10rem); letter-spacing: clamp(4px, 2vw, 18px); line-height: 1; text-shadow: 0 0 50px rgba(0,245,255,0.6); max-width: 95vw; word-break: break-all; }
+.present-hint { margin-top: 48px; color: #7a8ab0; font-size: 0.9rem; letter-spacing: 1px; }
+body.light-mode .present-overlay { background: #f4eeff; }
+body.light-mode .present-name { color: #1a0030; }
+body.light-mode .present-code { color: #0a6a8a; text-shadow: none; }
