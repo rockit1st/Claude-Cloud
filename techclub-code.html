@@ -39,13 +39,13 @@
   <p class="lead" id="tc-wait">Checking…</p>
 
   <div id="tc-content" style="display:none">
-    <div class="note">
+    <div class="note" id="code-note">
       You code in <b>MakeCode</b>. It is free and it runs in your browser:
       <a href="https://makecode.microbit.org" target="_blank" rel="noopener" style="color:inherit;font-weight:700">makecode.microbit.org</a>.
       Each lesson shows <b>blocks</b> and the same program as <b>JavaScript</b>.
       If a block looks different in your MakeCode, trust the block picture in MakeCode.
     </div>
-    <h2 class="section-label">Lessons</h2>
+    <h2 class="section-label" id="code-lessons">Lessons</h2>
     <ol class="num" id="toc" start="0" style="list-style:none;padding-left:0"></ol>
     <div id="lessons"></div>
   </div>
@@ -63,6 +63,7 @@
 <script src="auth.js"></script>
 <script src="teacher-role.js"></script>
 <script src="techclub.js"></script>
+<script src="techclub-helper.js"></script>
 <script>
 (function () {
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -142,32 +143,32 @@
       tryit: 'Change the speed to 100. Then try 20. Then change Forward to Reverse. What happens?' },
     { n: 4, title: 'Drive forward',
       learn: ['How to run both motors.', 'How to run for a time and then stop.'],
-      steps: ['Start with a new "on button A pressed" block.', 'Put in "motor on" for Motor1: Forward, speed 50.', 'Put in "motor on" for Motor2: Forward, speed 50.', 'Add "pause (ms) 800". It waits for 800 thousandths of a second.', 'Add "motor off" for Motor1. Add "motor off" for Motor2.', 'Put the robot on the floor. Press A.'],
+      steps: ['Start a new project. (Or drag the old button A and button B blocks from Lesson 3 to the trash.) MakeCode wants only one block for each button.', 'Get "on button A pressed". Put in "motor on" for Motor1: Forward, speed 50.', 'Put in "motor on" for Motor2: Forward, speed 50.', 'Add "pause (ms) 800". It waits for 800 thousandths of a second.', 'Add "motor off" for Motor1. Add "motor off" for Motor2.', 'Put the robot on the floor. Press A.'],
       blocks: [blk('input', 'on button [A] pressed', FWD)],
       js: 'input.onButtonPressed(Button.A, function () {\n' + lines(FWDJS, I) + '\n})',
       check: ['The robot drives forward and then stops.', 'If it goes backward, change Forward to Reverse in both blocks.'],
       tryit: 'The right numbers depend on your robot. Change the pause until it drives about as far as you want. Try a different speed too.' },
     { n: 5, title: 'Turn',
       learn: ['A robot turns when one wheel goes forward and the other goes back.', 'Or when one wheel stops.'],
-      steps: ['Keep your button A program from Lesson 4.', 'Make a new "on button B pressed" block.', 'Put in "motor on" for Motor1: Forward, speed 50.', 'Put in "motor on" for Motor2: Reverse, speed 50.', 'Add "pause (ms) 400". Then turn both motors off.', 'Press B. The robot turns on the spot.'],
+      steps: ['Keep your button A program from Lesson 4. Use no other button A or button B blocks.', 'Get "on button B pressed".', 'Put in "motor on" for Motor1: Forward, speed 50.', 'Put in "motor on" for Motor2: Reverse, speed 50.', 'Add "pause (ms) 400". Then turn both motors off.', 'Press B. The robot turns on the spot.'],
       blocks: [blk('input', 'on button [B] pressed', TURN)],
       js: 'input.onButtonPressed(Button.B, function () {\n' + lines(TURNJS, I) + '\n})',
       check: ['The robot turns. It stays about in the same place.', 'If it turns the wrong way, swap Forward and Reverse between the two motors.'],
       tryit: 'Change the pause to make a bigger turn or a smaller turn. Then try turning with only one motor on and the other one off.' },
     { n: 6, title: 'Drive a square',
       learn: ['How to repeat things.', 'A square is forward, turn, forward, turn, four times.'],
-      steps: ['Make a new "on button A pressed" block.', 'Get "repeat 4 times" from Loops. Put it inside.', 'Inside the loop, put "forward": both motors Forward, then pause 800.', 'Then put "turn": Motor2 Reverse, then pause 400.', 'After the loop, turn both motors off.', 'Press A. Is it a square?'],
+      steps: ['Start a new project. (Or drag your old button A block to the trash.) Get "on button A pressed".', 'Get "repeat 4 times" from Loops. Put it inside.', 'Inside the loop, put "forward": both motors Forward, then pause 800.', 'Then put "turn": Motor2 Reverse, then pause 400.', 'After the loop, turn both motors off.', 'Press A. Is it a square?'],
       blocks: [blk('input', 'on button [A] pressed', [blk('loops', 'repeat [4] times', [M1F, M2F, P800, M2R, P400]), M1X, M2X])],
       js: 'input.onButtonPressed(Button.A, function () {\n' + I + 'for (let index = 0; index < 4; index++) {\n' + lines([on(1, 'Forward', 50), on(2, 'Forward', 50), 'basic.pause(800)', on(2, 'Reverse', 50), 'basic.pause(400)'], I + I) + '\n' + I + '}\n' + lines([off(1), off(2)], I) + '\n})',
       check: ['The robot drives a shape with four sides.', 'Do the corners look like corners?'],
       tryit: 'Tune the turn pause (the 400) until the corners are square. Change the forward pause to make a bigger or smaller square.' },
     { n: 7, title: 'Challenge: make your own course',
       learn: ['How to make your own function so you can use it again.', 'How to plan a path, then code it.'],
-      steps: ['Open Advanced, then Functions. Click "Make a Function". Name it forward.', 'Put the forward blocks from Lesson 4 inside it.', 'Make another function. Name it turnRight. Put the turn blocks from Lesson 5 inside it.', 'In "on button A pressed", call forward, then turnRight, then forward.', 'Put a box on the floor. Can your robot drive around it?'],
-      blocks: [blk('func', 'function [forward]', FWD), blk('func', 'function [turnRight]', TURN), blk('input', 'on button [A] pressed', [blk('func', 'call [forward]'), blk('func', 'call [turnRight]'), blk('func', 'call [forward]')])],
-      js: 'function forward() {\n' + lines(FWDJS, I) + '\n}\nfunction turnRight() {\n' + lines(TURNJS, I) + '\n}\ninput.onButtonPressed(Button.A, function () {\n' + I + 'forward()\n' + I + 'turnRight()\n' + I + 'forward()\n})',
+      steps: ['Open Advanced, then Functions. Click "Make a Function". Name it forward.', 'Put the forward blocks from Lesson 4 inside it.', 'Make another function. Name it turn. Put the turn blocks from Lesson 5 inside it.', 'Use just one "on button A pressed" block. Call forward, then turn, then forward.', 'Put a box on the floor. Can your robot drive around it?'],
+      blocks: [blk('func', 'function [forward]', FWD), blk('func', 'function [turn]', TURN), blk('input', 'on button [A] pressed', [blk('func', 'call [forward]'), blk('func', 'call [turn]'), blk('func', 'call [forward]')])],
+      js: 'function forward() {\n' + lines(FWDJS, I) + '\n}\nfunction turn() {\n' + lines(TURNJS, I) + '\n}\ninput.onButtonPressed(Button.A, function () {\n' + I + 'forward()\n' + I + 'turn()\n' + I + 'forward()\n})',
       check: ['The robot drives, turns and drives again.', 'It goes around your box without a bump.'],
-      tryit: 'Make your own course. Draw it on paper first. Use forward and turnRight again and again. Can you make a turnLeft too?' }
+      tryit: 'Make your own course. Draw it on paper first. Use forward and turn again and again. Can you make a second turn that goes the other way?' }
   ];
 
   function listOf(tag, cls, items) { var u = el(tag, cls); items.forEach(function (t) { u.appendChild(el('li', null, t)); }); return u; }
