@@ -76,6 +76,7 @@
       <div class="btn-row" style="margin-top:10px">
         <button class="btn" id="code-show" type="button">Show code</button>
         <button class="btn alt" id="code-new" type="button">New code</button>
+        <button class="btn alt" id="code-present" type="button">📺 Present</button>
       </div>
       <div id="code-box" style="display:none">
         <div class="code-big" id="code-big" aria-live="polite"></div>
@@ -103,6 +104,13 @@
       </div>
     </section>
   </div>
+</div>
+
+<div class="present-overlay" id="present-overlay" role="dialog" aria-modal="true" aria-label="Tech Club join code" tabindex="-1">
+  <div class="present-label">JOIN CODE</div>
+  <div class="present-name">Tech Club</div>
+  <div class="present-code" id="present-code"></div>
+  <div class="present-hint">Tap anywhere to close</div>
 </div>
 
 <footer>Tech Class Hub</footer>
@@ -248,6 +256,21 @@
       currentCode = c; codeShown = true; paintCode();
       $('code-msg').className = 'msg ok'; $('code-msg').textContent = 'New code made. The old code does not work now.';
     }, function (e) { handleOwnerError(e, $('code-msg')); });
+  });
+  // Full-screen code for the classroom screen (the same idea as "Present" on the Classes page)
+  function closePresent() { $('present-overlay').classList.remove('open'); $('present-code').textContent = ''; }
+  function openPresent(code) {
+    $('present-code').textContent = code || '—';
+    $('present-overlay').classList.add('open');
+    $('present-overlay').focus();
+  }
+  $('present-overlay').addEventListener('click', closePresent);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePresent(); });
+  $('code-present').addEventListener('click', function () {
+    $('code-msg').textContent = '';
+    if (currentCode) { openPresent(currentCode); return; }
+    TC.getCode().then(function (c) { if (c) openPresent(c); else { $('code-msg').className = 'msg'; $('code-msg').textContent = 'No code yet. Press New code first.'; } },
+                      function (e) { handleOwnerError(e, $('code-msg')); });
   });
   $('code-copy').addEventListener('click', function () {
     var done = function () { $('code-msg').className = 'msg ok'; $('code-msg').textContent = 'Copied.'; };
