@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code the robot | Tech Class Hub</title>
+  <meta name="description" content="micro:bit lessons in MakeCode to drive the Kitronik robot." />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="techclub.css" />
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
+    <a href="classes.html" class="nav-link">👥 Classes</a>
+    <a href="tech-bucks.html" class="nav-link">🪙 Tech Bucks</a>
+    <a href="avatar.html" class="nav-link">🧑‍🚀 Avatar</a>
+    <a href="techclub.html" class="nav-link active">🤖 Tech Club</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+<div class="banner">
+  <div class="banner-icon">💻</div>
+  <div class="banner-title">CODE THE ROBOT</div>
+  <div class="banner-sub">micro:bit lessons in MakeCode</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="techclub.html">Tech Club</a> / Code the robot</div>
+  <p class="lead" id="tc-wait">Checking…</p>
+
+  <div id="tc-content" style="display:none">
+    <div class="note">
+      You code in <b>MakeCode</b>. It is free and it runs in your browser:
+      <a href="https://makecode.microbit.org" target="_blank" rel="noopener" style="color:inherit;font-weight:700">makecode.microbit.org</a>.
+      Each lesson shows <b>blocks</b> and the same program as <b>JavaScript</b>.
+      If a block looks different in your MakeCode, trust the block picture in MakeCode.
+    </div>
+    <h2 class="section-label">Lessons</h2>
+    <ol class="num" id="toc" start="0" style="list-style:none;padding-left:0"></ol>
+    <div id="lessons"></div>
+  </div>
+</div>
+
+<footer>Tech Class Hub</footer>
+
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}let l=false;try{l=localStorage.getItem('theme')==='light';}catch(e){}apply(l);btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);try{localStorage.setItem('theme',light?'light':'dark');}catch(e){}});})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="teacher-role.js"></script>
+<script src="techclub.js"></script>
+<script>
+(function () {
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  // ── the real extension names (the Kitronik Klip Motor extension) ──
+  var NS = 'kitronik_klip_motor';
+  function on(m, dir, sp) { return NS + '.motorOn(' + NS + '.Motors.Motor' + m + ', ' + NS + '.MotorDirection.' + dir + ', ' + sp + ')'; }
+  function off(m) { return NS + '.motorOff(' + NS + '.Motors.Motor' + m + ')'; }
+  function lines(a, ind) { return a.map(function (x) { return (ind || '') + x; }).join('\n'); }
+  var I = '    ';
+
+  // ── block pictures. [text in brackets] becomes a white pill. ──
+  function blk(c, t, kids) { return { c: c, t: t, kids: kids || null }; }
+  function renderBlock(b) {
+    var head = el('div', 'blk ' + (b.kids ? 'hat ' : '') + 'c-' + b.c);
+    b.t.split(/\[([^\]]+)\]/).forEach(function (part, i) {
+      if (!part) return;
+      head.appendChild(i % 2 ? el('span', 'pl', part) : document.createTextNode(part));
+    });
+    if (!b.kids) return head;
+    var wrap = el('div', 'cwrap');
+    wrap.appendChild(head);
+    var inner = el('div', 'cin c-' + b.c);
+    b.kids.forEach(function (k) { inner.appendChild(renderBlock(k)); });
+    wrap.appendChild(inner);
+    wrap.appendChild(el('div', 'cbot c-' + b.c));
+    return wrap;
+  }
+  function renderStack(s) { var d = el('div', 'stack'); d.appendChild(renderBlock(s)); return d; }
+  function renderMenu(items) {
+    var d = el('div', 'menu-pic');
+    items.forEach(function (it, i) {
+      if (i) d.appendChild(el('span', null, '→'));
+      d.appendChild(el('span', 'mp' + (it[1] ? ' hot' : ''), it[0]));
+    });
+    return d;
+  }
+
+  var M1F = blk('motor', 'motor on [Motor1] [Forward] speed [50]');
+  var M2F = blk('motor', 'motor on [Motor2] [Forward] speed [50]');
+  var M2R = blk('motor', 'motor on [Motor2] [Reverse] speed [50]');
+  var M1X = blk('motor', 'motor off [Motor1]'), M2X = blk('motor', 'motor off [Motor2]');
+  var P800 = blk('basic', 'pause (ms) [800]'), P400 = blk('basic', 'pause (ms) [400]');
+  var FWD = [M1F, M2F, P800, M1X, M2X];
+  var FWDJS = [on(1, 'Forward', 50), on(2, 'Forward', 50), 'basic.pause(800)', off(1), off(2)];
+  var TURNJS = [on(1, 'Forward', 50), on(2, 'Reverse', 50), 'basic.pause(400)', off(1), off(2)];
+  var TURN = [M1F, M2R, P400, M1X, M2X];
+
+  var LESSONS = [
+    { n: 0, title: 'Open MakeCode and start a project',
+      learn: ['What MakeCode is.', 'How to start a new project.', 'How to send a program to the micro:bit.'],
+      steps: ['Open makecode.microbit.org in your browser.', 'Click New Project.', 'Type a name, like "robot". Click Create.', 'Look at the screen. The micro:bit picture is on the left. Your blocks are in the middle.', 'To use the program on the micro:bit: plug it into the computer with the USB cable. Click Download. Move the file onto the drive called MICROBIT. If your computer does it a different way, ask Mr. Capellini.'],
+      blocks: [blk('basic', 'on start', []), blk('basic', 'forever', [])],
+      js: 'basic.forever(function () {\n\n})',
+      check: ['You can see the "on start" block and the "forever" block.', 'You can see the "JavaScript" button at the top. Click it, then click "Blocks" to go back.'],
+      tryit: 'Change the name of your project. Look for the box at the bottom of the screen.' },
+    { n: 1, title: 'Hello micro:bit',
+      learn: ['"on start" runs one time.', '"forever" runs again and again.', 'How to show a picture and words on the micro:bit lights.'],
+      steps: ['Open the Basic group of blocks.', 'Drag "show icon" into "on start". It shows a heart.', 'Drag "show string" into "forever". Type Hello in the box.', 'Click Download and put the file on the micro:bit.', 'Watch the lights.'],
+      blocks: [blk('basic', 'on start', [blk('basic', 'show icon [heart]')]), blk('basic', 'forever', [blk('basic', 'show string [Hello]')])],
+      js: 'basic.showIcon(IconNames.Heart)\nbasic.forever(function () {\n' + I + 'basic.showString("Hello")\n})',
+      check: ['You see a heart first. Then the word Hello again and again.'],
+      tryit: 'Show a different picture. Show your own name instead of Hello.' },
+    { n: 2, title: 'Add the Klip Motor extension',
+      learn: ['An extension adds new blocks.', 'The Klip Motor extension has blocks to run the motors.'],
+      steps: ['In MakeCode, click Advanced. It is under the groups of blocks.', 'Click Extensions.', 'In the search box, type: Kitronik Klip Motor. (Or type the address: github.com/KitronikLtd/pxt-kitronik-klip-motor)', 'Click the Klip Motor box.', 'A new group of blocks shows up. Look for blocks that turn a motor on and off.', 'Click JavaScript. The name of the extension in the code is kitronik_klip_motor.'],
+      menu: [['Advanced', 0], ['Extensions', 0], ['search: Kitronik Klip Motor', 1]],
+      js: '// the extension name in JavaScript:\n// ' + NS,
+      check: ['A new group of blocks is in the list.', 'You can find the blocks that turn a motor on and off.'],
+      tryit: 'Look at the new blocks. What can you change in each one?' },
+    { n: 3, title: 'Spin one motor with button A',
+      learn: ['Button A turns Motor 1 on.', 'Button B turns it off.', 'What "speed" means. It is a number from 0 to 100.'],
+      steps: ['Hold the robot in your hand so the wheels are in the air.', 'Get the "on button A pressed" block from Input.', 'Put "motor on" inside it. Choose Motor1, Forward, speed 50.', 'Get "on button B pressed". Put "motor off" inside it. Choose Motor1.', 'Download to the micro:bit. Press A, then press B.'],
+      blocks: [blk('input', 'on button [A] pressed', [M1F]), blk('input', 'on button [B] pressed', [M1X])],
+      js: 'input.onButtonPressed(Button.A, function () {\n' + I + on(1, 'Forward', 50) + '\n})\ninput.onButtonPressed(Button.B, function () {\n' + I + off(1) + '\n})',
+      check: ['Press A. One wheel spins.', 'Press B. The wheel stops.'],
+      tryit: 'Change the speed to 100. Then try 20. Then change Forward to Reverse. What happens?' },
+    { n: 4, title: 'Drive forward',
+      learn: ['How to run both motors.', 'How to run for a time and then stop.'],
+      steps: ['Start with a new "on button A pressed" block.', 'Put in "motor on" for Motor1: Forward, speed 50.', 'Put in "motor on" for Motor2: Forward, speed 50.', 'Add "pause (ms) 800". It waits for 800 thousandths of a second.', 'Add "motor off" for Motor1. Add "motor off" for Motor2.', 'Put the robot on the floor. Press A.'],
+      blocks: [blk('input', 'on button [A] pressed', FWD)],
+      js: 'input.onButtonPressed(Button.A, function () {\n' + lines(FWDJS, I) + '\n})',
+      check: ['The robot drives forward and then stops.', 'If it goes backward, change Forward to Reverse in both blocks.'],
+      tryit: 'The right numbers depend on your robot. Change the pause until it drives about as far as you want. Try a different speed too.' },
+    { n: 5, title: 'Turn',
+      learn: ['A robot turns when one wheel goes forward and the other goes back.', 'Or when one wheel stops.'],
+      steps: ['Keep your button A program from Lesson 4.', 'Make a new "on button B pressed" block.', 'Put in "motor on" for Motor1: Forward, speed 50.', 'Put in "motor on" for Motor2: Reverse, speed 50.', 'Add "pause (ms) 400". Then turn both motors off.', 'Press B. The robot turns on the spot.'],
+      blocks: [blk('input', 'on button [B] pressed', TURN)],
+      js: 'input.onButtonPressed(Button.B, function () {\n' + lines(TURNJS, I) + '\n})',
+      check: ['The robot turns. It stays about in the same place.', 'If it turns the wrong way, swap Forward and Reverse between the two motors.'],
+      tryit: 'Change the pause to make a bigger turn or a smaller turn. Then try turning with only one motor on and the other one off.' },
+    { n: 6, title: 'Drive a square',
+      learn: ['How to repeat things.', 'A square is forward, turn, forward, turn, four times.'],
+      steps: ['Make a new "on button A pressed" block.', 'Get "repeat 4 times" from Loops. Put it inside.', 'Inside the loop, put "forward": both motors Forward, then pause 800.', 'Then put "turn": Motor2 Reverse, then pause 400.', 'After the loop, turn both motors off.', 'Press A. Is it a square?'],
+      blocks: [blk('input', 'on button [A] pressed', [blk('loops', 'repeat [4] times', [M1F, M2F, P800, M2R, P400]), M1X, M2X])],
+      js: 'input.onButtonPressed(Button.A, function () {\n' + I + 'for (let index = 0; index < 4; index++) {\n' + lines([on(1, 'Forward', 50), on(2, 'Forward', 50), 'basic.pause(800)', on(2, 'Reverse', 50), 'basic.pause(400)'], I + I) + '\n' + I + '}\n' + lines([off(1), off(2)], I) + '\n})',
+      check: ['The robot drives a shape with four sides.', 'Do the corners look like corners?'],
+      tryit: 'Tune the turn pause (the 400) until the corners are square. Change the forward pause to make a bigger or smaller square.' },
+    { n: 7, title: 'Challenge: make your own course',
+      learn: ['How to make your own function so you can use it again.', 'How to plan a path, then code it.'],
+      steps: ['Open Advanced, then Functions. Click "Make a Function". Name it forward.', 'Put the forward blocks from Lesson 4 inside it.', 'Make another function. Name it turnRight. Put the turn blocks from Lesson 5 inside it.', 'In "on button A pressed", call forward, then turnRight, then forward.', 'Put a box on the floor. Can your robot drive around it?'],
+      blocks: [blk('func', 'function [forward]', FWD), blk('func', 'function [turnRight]', TURN), blk('input', 'on button [A] pressed', [blk('func', 'call [forward]'), blk('func', 'call [turnRight]'), blk('func', 'call [forward]')])],
+      js: 'function forward() {\n' + lines(FWDJS, I) + '\n}\nfunction turnRight() {\n' + lines(TURNJS, I) + '\n}\ninput.onButtonPressed(Button.A, function () {\n' + I + 'forward()\n' + I + 'turnRight()\n' + I + 'forward()\n})',
+      check: ['The robot drives, turns and drives again.', 'It goes around your box without a bump.'],
+      tryit: 'Make your own course. Draw it on paper first. Use forward and turnRight again and again. Can you make a turnLeft too?' }
+  ];
+
+  function listOf(tag, cls, items) { var u = el(tag, cls); items.forEach(function (t) { u.appendChild(el('li', null, t)); }); return u; }
+  function tag(cls, text) { return el('div', 'tag ' + cls, text); }
+
+  var toc = document.getElementById('toc'), root = document.getElementById('lessons');
+  LESSONS.forEach(function (L) {
+    var li = el('li'), a = el('a', null, 'Lesson ' + L.n + ': ' + L.title);
+    a.href = '#lesson' + L.n; a.style.color = 'inherit'; a.style.lineHeight = '1.9';
+    li.appendChild(a); toc.appendChild(li);
+
+    var s = el('section', 'lesson'); s.id = 'lesson' + L.n;
+    s.appendChild(el('h2', null, 'Lesson ' + L.n + ': ' + L.title));
+    s.appendChild(tag('learn', 'What you will learn'));
+    s.appendChild(listOf('ul', 'dots', L.learn));
+    s.appendChild(tag('learn', 'Steps'));
+    s.appendChild(listOf('ol', 'num', L.steps));
+    s.appendChild(tag('pic', 'Block picture'));
+    if (L.menu) s.appendChild(renderMenu(L.menu));
+    if (L.blocks) { var bx = el('div', 'blocks'); L.blocks.forEach(function (b) { bx.appendChild(renderStack(b)); }); s.appendChild(bx); }
+    s.appendChild(tag('js', 'The same program in JavaScript'));
+    var pre = el('pre', 'js'); pre.appendChild(el('code', null, L.js)); s.appendChild(pre);
+    s.appendChild(tag('check', 'Check it works'));
+    s.appendChild(listOf('ul', 'dots', L.check));
+    s.appendChild(tag('try', 'Try this'));
+    s.appendChild(el('p', null, L.tryit));
+    root.appendChild(s);
+  });
+})();
+</script>
+<script>TechClub.requireMember();</script>
+</body>
+</html>

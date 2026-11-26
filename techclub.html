@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tech Club | Tech Class Hub</title>
+  <meta name="description" content="Tech Club for members: news, robot building and micro:bit coding." />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="techclub.css" />
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
+    <a href="classes.html" class="nav-link">👥 Classes</a>
+    <a href="tech-bucks.html" class="nav-link">🪙 Tech Bucks</a>
+    <a href="avatar.html" class="nav-link">🧑‍🚀 Avatar</a>
+    <a href="techclub.html" class="nav-link active">🤖 Tech Club</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+<div class="banner">
+  <div class="banner-icon">🤖</div>
+  <div class="banner-title">TECH CLUB</div>
+  <div class="banner-sub" id="banner-sub">Build it. Code it. Drive it.</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / Tech Club</div>
+
+  <p class="lead" id="loading">Loading…</p>
+
+  <!-- NOT A MEMBER: just the card -->
+  <section class="card join-card" id="join-view" style="display:none" aria-labelledby="join-h">
+    <h2 id="join-h">Tech Club</h2>
+    <p>This is for Tech Club members. Type your club code.</p>
+    <label class="lb" for="club-code" style="display:none">Club code</label>
+    <input class="code-in" id="club-code" type="text" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" />
+    <button class="btn" id="join-btn" type="button">Join</button>
+    <div class="msg" id="join-msg" role="status" aria-live="polite"></div>
+  </section>
+
+  <!-- MEMBER (and OWNER) -->
+  <div id="member-view" style="display:none">
+    <div class="note warn" id="rules-note" style="display:none"></div>
+
+    <h2 class="section-label" id="next-head" style="display:none">Next meeting</h2>
+    <div id="next-list"></div>
+
+    <h2 class="section-label">Announcements</h2>
+    <div id="news-list"></div>
+
+    <h2 class="section-label">The robot</h2>
+    <div class="big-cards">
+      <a class="big-card" href="techclub-build.html"><div class="ic">🔧</div><div class="tt">Build the robot</div><div class="ds">Check your parts. Build step by step.</div></a>
+      <a class="big-card" href="techclub-code.html"><div class="ic">💻</div><div class="tt">Code the robot</div><div class="ds">Lessons for the micro:bit.</div></a>
+    </div>
+
+    <div class="leave-row" id="leave-row"><button class="link-btn" id="leave-btn" type="button">Leave the club</button></div>
+
+    <!-- OWNER ONLY -->
+    <section class="admin" id="admin" style="display:none" aria-label="Club admin">
+      <h2 class="section-label">Club admin</h2>
+
+      <h3 class="sub">Club code</h3>
+      <p class="tip" style="margin-top:0">Read this code to your students. Press New code to stop the old code from working.</p>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn" id="code-show" type="button">Show code</button>
+        <button class="btn alt" id="code-new" type="button">New code</button>
+      </div>
+      <div id="code-box" style="display:none">
+        <div class="code-big" id="code-big" aria-live="polite"></div>
+        <button class="btn alt" id="code-copy" type="button">Copy code</button>
+      </div>
+      <div class="msg" id="code-msg" role="status" aria-live="polite"></div>
+
+      <h3 class="sub">Members <span id="mem-count"></span></h3>
+      <div id="mem-list"></div>
+
+      <h3 class="sub">Post something</h3>
+      <div class="card">
+        <label class="lb" for="p-kind">What is it?</label>
+        <select class="field" id="p-kind"><option value="news">News</option><option value="meeting">Meeting</option></select>
+        <div id="p-date-row" style="display:none">
+          <label class="lb" for="p-date">Meeting date</label>
+          <input class="field" id="p-date" type="date" />
+        </div>
+        <label class="lb" for="p-title">Title</label>
+        <input class="field" id="p-title" type="text" maxlength="100" autocomplete="off" />
+        <label class="lb" for="p-body">Words</label>
+        <textarea class="field" id="p-body" maxlength="2000"></textarea>
+        <button class="btn" id="p-post" type="button">Post</button>
+        <div class="msg" id="p-msg" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<footer>Tech Class Hub</footer>
+
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}let l=false;try{l=localStorage.getItem('theme')==='light';}catch(e){}apply(l);btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);try{localStorage.setItem('theme',light?'light':'dark');}catch(e){}});})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="teacher-role.js"></script>
+<script src="techclub.js"></script>
+<script>
+(function () {
+  var TC = window.TechClub;
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  var me = null, st = null;
+
+  function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function niceDate(ymd) {
+    var p = String(ymd).split('-'); if (p.length !== 3) return ymd;
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    try { return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }); } catch (e) { return ymd; }
+  }
+  function niceStamp(ms) {
+    if (!ms) return '';
+    try { return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); } catch (e) { return ''; }
+  }
+  function rulesNote(on) {
+    var n = $('rules-note');
+    n.style.display = on ? 'block' : 'none';
+    n.textContent = on ? TC.NEEDS_RULES : '';
+  }
+
+  // ── what the page shows ──
+  function showJoin() {
+    $('loading').style.display = 'none';
+    $('member-view').style.display = 'none';
+    $('join-view').style.display = 'block';
+  }
+  function showMember() {
+    $('loading').style.display = 'none';
+    $('join-view').style.display = 'none';
+    $('member-view').style.display = 'block';
+    $('admin').style.display = st.isOwner ? 'block' : 'none';
+    $('leave-row').style.display = st.isOwner ? 'none' : 'block';
+    $('banner-sub').textContent = st.isOwner ? 'Club admin view' : 'Welcome, member!';
+    loadPosts();
+    if (st.isOwner) { loadMembers(); }
+  }
+
+  // ── join ──
+  var joining = false;
+  function doJoin() {
+    if (joining || !me) return;
+    var code = TC.cleanCode($('club-code').value);
+    $('club-code').value = code;
+    joining = true; $('join-btn').disabled = true; $('join-msg').className = 'msg'; $('join-msg').textContent = '';
+    TC.join(code, me).then(function () {
+      st = { isOwner: false, isMember: true, denied: false };
+      showMember();
+    }, function (e) {
+      $('join-msg').textContent = TC.friendly(e);
+    }).then(function () { joining = false; $('join-btn').disabled = false; });
+  }
+  $('join-btn').addEventListener('click', doJoin);
+  $('club-code').addEventListener('keydown', function (e) { if (e.key === 'Enter') doJoin(); });
+  $('club-code').addEventListener('input', function () { var v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (v !== this.value) this.value = v; });
+
+  // ── leave ──
+  $('leave-btn').addEventListener('click', function () {
+    if (!window.confirm('Leave the Tech Club? You can join again with the club code.')) return;
+    TC.leave(me).then(function () {
+      st = { isOwner: false, isMember: false, denied: false };
+      $('club-code').value = ''; $('join-msg').textContent = '';
+      showJoin();
+    }, function (e) { window.alert(TC.friendly(e)); });
+  });
+
+  // ── the feed ──
+  function postCard(p, owner) {
+    var c = el('article', 'post' + (p.kind === 'meeting' ? ' meeting' : ''));
+    if (p.kind === 'meeting') c.appendChild(el('div', 'when', '📅 ' + (p.meetingDate ? niceDate(p.meetingDate) : 'Meeting')));
+    c.appendChild(el('div', 'pt', p.title));
+    if (p.body) c.appendChild(el('div', 'pb', p.body));
+    if (p.kind !== 'meeting' && p.createdAt) c.appendChild(el('div', 'pd', niceStamp(p.createdAt)));
+    if (owner) {
+      var row = el('div', 'row-actions');
+      var b = el('button', 'btn danger', 'Delete'); b.type = 'button';
+      b.addEventListener('click', function () {
+        if (!window.confirm('Delete this post?')) return;
+        b.disabled = true;
+        TC.deletePost(p.id).then(loadPosts, function (e) { b.disabled = false; handleOwnerError(e, $('p-msg')); });
+      });
+      row.appendChild(b); c.appendChild(row);
+    }
+    return c;
+  }
+  function loadPosts() {
+    TC.listPosts().then(function (posts) {
+      rulesNote(false);
+      var t = today();
+      var upcoming = posts.filter(function (p) { return p.kind === 'meeting' && p.meetingDate && p.meetingDate >= t; })
+        .sort(function (a, b) { return a.meetingDate < b.meetingDate ? -1 : a.meetingDate > b.meetingDate ? 1 : 0; });
+      var rest = posts.filter(function (p) { return upcoming.indexOf(p) < 0; });
+      var nl = $('next-list'), fl = $('news-list');
+      nl.textContent = ''; fl.textContent = '';
+      $('next-head').style.display = upcoming.length ? 'block' : 'none';
+      upcoming.forEach(function (p) { nl.appendChild(postCard(p, st.isOwner)); });
+      rest.forEach(function (p) { fl.appendChild(postCard(p, st.isOwner)); });
+      if (!rest.length) fl.appendChild(el('div', 'empty', 'No news yet.'));
+    }, function (e) {
+      $('news-list').textContent = '';
+      if (st.isOwner && TC.isDenied(e)) rulesNote(true);
+      else $('news-list').appendChild(el('div', 'empty', TC.isDenied(e) ? TC.NOT_READY : 'Could not load the news. Try again later.'));
+    });
+  }
+
+  // ── owner: errors, code, members, posts ──
+  function handleOwnerError(e, msgEl) {
+    if (TC.isDenied(e)) { rulesNote(true); if (msgEl) msgEl.textContent = TC.NEEDS_RULES; }
+    else if (msgEl) msgEl.textContent = 'Something went wrong. Try again.';
+  }
+  var codeShown = false, currentCode = '';
+  function paintCode() {
+    $('code-box').style.display = codeShown ? 'block' : 'none';
+    $('code-show').textContent = codeShown ? 'Hide code' : 'Show code';
+    $('code-big').textContent = currentCode || 'No code yet';
+    $('code-copy').style.display = currentCode ? '' : 'none';
+  }
+  $('code-show').addEventListener('click', function () {
+    $('code-msg').textContent = '';
+    if (codeShown) { codeShown = false; currentCode = ''; paintCode(); return; }
+    TC.getCode().then(function (c) { currentCode = c; codeShown = true; paintCode(); }, function (e) { handleOwnerError(e, $('code-msg')); });
+  });
+  $('code-new').addEventListener('click', function () {
+    if (!window.confirm('Make a new club code? The old code will stop working. Members stay in the club.')) return;
+    $('code-msg').className = 'msg'; $('code-msg').textContent = '';
+    TC.newCode().then(function (c) {
+      currentCode = c; codeShown = true; paintCode();
+      $('code-msg').className = 'msg ok'; $('code-msg').textContent = 'New code made. The old code does not work now.';
+    }, function (e) { handleOwnerError(e, $('code-msg')); });
+  });
+  $('code-copy').addEventListener('click', function () {
+    var done = function () { $('code-msg').className = 'msg ok'; $('code-msg').textContent = 'Copied.'; };
+    try { navigator.clipboard.writeText(currentCode).then(done, function () { $('code-msg').textContent = 'Could not copy. Read the code from the screen.'; }); }
+    catch (e) { $('code-msg').textContent = 'Could not copy. Read the code from the screen.'; }
+  });
+
+  function joinedText(m) {
+    var t = m.joinedAt && m.joinedAt.toMillis ? m.joinedAt.toMillis() : 0;
+    return t ? 'joined ' + niceStamp(t) : '';
+  }
+  function loadMembers() {
+    TC.listMembers().then(function (list) {
+      list.sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+      var box = $('mem-list'); box.textContent = '';
+      $('mem-count').textContent = '(' + list.length + ')';
+      if (!list.length) box.appendChild(el('div', 'empty', 'No members yet. Share the club code.'));
+      list.forEach(function (m) {
+        var row = el('div', 'mem'), info = el('div', 'mi');
+        info.appendChild(el('div', 'mn', String(m.name || m.email)));
+        info.appendChild(el('div', 'me', String(m.email || '') + ' · ' + joinedText(m)));
+        row.appendChild(info);
+        var b = el('button', 'btn danger', 'Remove'); b.type = 'button';
+        b.addEventListener('click', function () {
+          if (!window.confirm('Remove ' + (m.name || m.email) + ' from the club?')) return;
+          b.disabled = true;
+          TC.removeMember(m.uid).then(loadMembers, function (e) { b.disabled = false; handleOwnerError(e, $('code-msg')); });
+        });
+        row.appendChild(b); box.appendChild(row);
+      });
+    }, function (e) { handleOwnerError(e, null); });
+  }
+
+  $('p-kind').addEventListener('change', function () { $('p-date-row').style.display = this.value === 'meeting' ? 'block' : 'none'; });
+  $('p-post').addEventListener('click', function () {
+    var kind = $('p-kind').value, title = $('p-title').value.trim(), body = $('p-body').value.trim(), date = $('p-date').value;
+    var msg = $('p-msg'); msg.className = 'msg'; msg.textContent = '';
+    if (!title) { msg.textContent = 'Write a title first.'; return; }
+    if (kind === 'meeting' && !/^\d{4}-\d{2}-\d{2}$/.test(date)) { msg.textContent = 'Pick the meeting date.'; return; }
+    $('p-post').disabled = true;
+    TC.addPost(me, { kind: kind, title: title, body: body, meetingDate: date }).then(function () {
+      $('p-title').value = ''; $('p-body').value = ''; $('p-date').value = '';
+      msg.className = 'msg ok'; msg.textContent = 'Posted.';
+      loadPosts();
+    }, function (e) { handleOwnerError(e, msg); }).then(function () { $('p-post').disabled = false; });
+  });
+
+  // ── start ──
+  firebase.auth().onAuthStateChanged(function (user) {
+    if (!user || me) return;
+    me = user;
+    TC.status(user).then(function (s) {
+      st = s;
+      if (s.isOwner || s.isMember) showMember(); else showJoin();
+    });
+  });
+})();
+</script>
+</body>
+</html>
