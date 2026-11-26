@@ -114,6 +114,25 @@
 // New pages, old rules: awards are written exactly as before (ledger only), the shop shows
 // "opens soon". What a determined student could still claim is listed above amountFor().
 //
+// TECH CLUB (members only, run by the OWNER alone; a teacher added on the Classes page gets
+// no club powers). Students join with ONE club code, like a class join code:
+//   clubCodes/{CODE}   = {clubId: 'techclub', createdAt}. CODE is exactly 8 characters A-Z or 0-9.
+//                        Any signed-in account can look up the one code they type; only the owner
+//                        can list, make or delete codes. The page keeps one active code (its
+//                        "New code" button deletes the old one and makes the new one in one batch).
+//   clubMembers/{uid}  = {uid, name, email, code, joinedAt}. A student writes only their own, with
+//                        a code that exists. They can read it and delete it (leave). The owner can
+//                        read, list and delete every member (he cannot make members).
+//   clubPosts/{postId} = {title, body, kind: 'news' | 'meeting', createdAt, by, meetingDate?}.
+//                        Only members and the owner can read them (that is what makes the news
+//                        members-only); only the owner writes, with the limits below.
+// KNOWN LIMITS: a member the owner removes can join again if they still know the club code, so
+// press "New code" to lock them out. The lessons on techclub-build.html and techclub-code.html
+// are plain page text, not database data: they are hidden from non-members by the page only,
+// so they are NOT secret (anyone signed in who views the page source can read them).
+// New rules, old pages: nothing changes for anyone. New pages, old rules: the Tech Club says it
+// is not ready yet to students, and the owner's panel asks him to publish the new rules.
+//
 // JOIN CODES: each code is kept in "joinCodes/{CODE}" with its class and its
 // teacher. "New code" on the Classes page replaces a class's code (new codes
 // have 8 characters, which makes guessing one hopeless; older 6-character codes
@@ -764,6 +783,74 @@ service cloud.firestore {
                     || (teacherRosterWrite(id) && ownsClass(resource.data.classId));
       allow delete: if (signedIn() && resource.data.uid == request.auth.uid)
                     || (isTeacher() && ownsClass(resource.data.classId));
+    }
+
+    // ── TECH CLUB (members only; see the header) ─────────────────────────────
+    // A club code is 8 characters, A-Z or 0-9.
+    function clubCodeFormat(c) {
+      return c is string && c.matches('^[A-Z0-9]{8}$');
+    }
+    // The signed-in account has joined the club (its clubMembers/{uid} exists).
+    function isClubMember() {
+      return exists(/databases/$(database)/documents/clubMembers/$(request.auth.uid));
+    }
+    // A student's own member entry, written exactly as techclub.js writes it.
+    function validClubMember(uid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['uid', 'name', 'email', 'code', 'joinedAt'])
+             && d.keys().hasAll(['uid', 'name', 'email', 'code', 'joinedAt'])
+             && uid == request.auth.uid
+             && d.uid == uid
+             && d.email == request.auth.token.email.lower()
+             && d.name is string && d.name.size() <= 80
+             && d.joinedAt == request.time
+             && clubCodeFormat(d.code)
+             && exists(/databases/$(database)/documents/clubCodes/$(d.code))
+             && get(/databases/$(database)/documents/clubCodes/$(d.code)).data.get('clubId', '') == 'techclub';
+    }
+    // A news post or a meeting, with its limits. A news post has no meetingDate.
+    function validClubPost() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['title', 'body', 'kind', 'createdAt', 'by', 'meetingDate'])
+             && d.keys().hasAll(['title', 'body', 'kind', 'createdAt', 'by'])
+             && d.title is string && d.title.size() >= 1 && d.title.size() <= 100
+             && d.body is string && d.body.size() <= 2000
+             && (d.kind == 'news' || d.kind == 'meeting')
+             && d.createdAt is timestamp
+             && d.by == request.auth.token.email
+             && (!('meetingDate' in d)
+                 || (d.kind == 'meeting' && d.meetingDate is string
+                     && d.meetingDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')));
+    }
+    // clubCodes/{CODE}: anyone signed in may look up the one code they type; only the owner lists or writes.
+    match /clubCodes/{code} {
+      allow get: if signedIn();
+      allow list: if isOwner();
+      allow create, update: if isOwner()
+                            && clubCodeFormat(code)
+                            && request.resource.data.keys().hasOnly(['clubId', 'createdAt'])
+                            && request.resource.data.keys().hasAll(['clubId', 'createdAt'])
+                            && request.resource.data.clubId == 'techclub'
+                            && request.resource.data.createdAt is timestamp;
+      allow delete: if isOwner();
+    }
+    // clubMembers/{uid}: a student reads, joins, re-joins and leaves only their own; the owner reads,
+    // lists and removes everyone (but cannot make a member).
+    match /clubMembers/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow list: if isOwner();
+      allow create: if signedIn() && validClubMember(uid);
+      allow update: if signedIn() && validClubMember(uid) && resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
+    }
+    // clubPosts/{postId}: members (and the owner) read; only the owner writes.
+    match /clubPosts/{postId} {
+      allow read: if signedIn() && (isOwner() || isClubMember());
+      allow create: if isOwner() && postId.matches('^[A-Za-z0-9]{1,40}$')
+                    && validClubPost() && request.resource.data.createdAt == request.time;
+      allow update: if isOwner() && validClubPost()
+                    && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isOwner();
     }
 
     // ── Ruler game Race Mode (unchanged) ────────────────────────────────────

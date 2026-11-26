@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build the robot | Tech Class Hub</title>
+  <meta name="description" content="Check your parts and build the Kitronik Simple Robotics Kit." />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="techclub.css" />
+</head>
+<body style="visibility:hidden">
+
+<nav class="topnav">
+  <a href="index.html" class="nav-brand">&#9889; TECH CLASS</a>
+  <div class="nav-links">
+    <a href="rockets.html" class="nav-link">&#128640; Rockets</a>
+    <a href="measuring.html" class="nav-link">&#128208; Measuring</a>
+    <a href="sailboat.html" class="nav-link">&#9973; Sail Cars</a>
+    <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="scoreboard.html" class="nav-link">🏆 Scoreboard</a>
+    <a href="classes.html" class="nav-link">👥 Classes</a>
+    <a href="tech-bucks.html" class="nav-link">🪙 Tech Bucks</a>
+    <a href="avatar.html" class="nav-link">🧑‍🚀 Avatar</a>
+    <a href="techclub.html" class="nav-link active">🤖 Tech Club</a>
+  </div>
+  <div class="nav-user" id="nav-user-area" style="display:none">
+    <span class="nav-user-name" id="nav-user-name"></span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+<div class="banner">
+  <div class="banner-icon">🔧</div>
+  <div class="banner-title">BUILD THE ROBOT</div>
+  <div class="banner-sub">Kitronik Simple Robotics Kit for the BBC micro:bit</div>
+</div>
+
+<div class="content">
+  <div class="breadcrumb"><a href="index.html">← Hub</a> / <a href="techclub.html">Tech Club</a> / Build the robot</div>
+  <p class="lead" id="tc-wait">Checking…</p>
+
+  <div id="tc-content" style="display:none">
+    <div class="note">
+      <b>Use the printed Kitronik guide too.</b> It is the booklet in the box (version V1.4). It has the exact steps and the pictures. This page is a checklist to help you. If this page and the booklet are different, <b>the booklet is right</b>.
+    </div>
+
+    <h2 class="section-label">1. Check your parts</h2>
+    <p class="lead" style="margin-bottom:12px">Open the box. Tick each part you find.</p>
+    <ul class="checklist">
+      <li><label><input type="checkbox" /><span><b>Klip Motor Driver</b> – the motor board. The micro:bit plugs into it.</span></label></li>
+      <li><label><input type="checkbox" /><span><b>2 small geared motors</b> – one for each wheel.</span></label></li>
+      <li><label><input type="checkbox" /><span><b>2 wheels with tyres</b></span></label></li>
+      <li><label><input type="checkbox" /><span><b>Clip leads</b> – wires with clips (alligator clips), in colours.</span></label></li>
+      <li><label><input type="checkbox" /><span><b>Cardboard chassis</b> – one flat piece. It folds into the body of the robot.</span></label></li>
+      <li><label><input type="checkbox" /><span><b>Ping pong ball</b> – it helps the robot roll.</span></label></li>
+      <li><label><input type="checkbox" /><span><b>Rubber band</b></span></label></li>
+    </ul>
+    <h3 class="sub">You may need to bring or ask for these</h3>
+    <p class="lead" style="margin-bottom:12px">These may not be in the box. Check, and ask Mr. Capellini.</p>
+    <ul class="checklist">
+      <li><label><input type="checkbox" /><span><b>A BBC micro:bit</b></span></label></li>
+      <li><label><input type="checkbox" /><span><b>Scissors</b></span></label></li>
+      <li><label><input type="checkbox" /><span><b>A small screwdriver</b></span></label></li>
+      <li><label><input type="checkbox" /><span><b>Batteries</b> – check what the booklet says</span></label></li>
+    </ul>
+    <p class="tip">The ticks are only for you. They are not saved when you close the page.</p>
+
+    <h2 class="section-label">2. Build in order</h2>
+    <p class="lead" style="margin-bottom:12px">Do one step at a time.</p>
+    <ol class="steps">
+      <li><span class="st">Fold the chassis</span>Cut and fold the cardboard chassis into shape. Take your time and fold along the lines.<span class="bk">Follow the booklet page for this step.</span></li>
+      <li><span class="st">Put on the motors</span>Fix the two small motors to the chassis.<span class="bk">Follow the booklet page for this step.</span></li>
+      <li><span class="st">Put on the wheels</span>Push a wheel with its tyre onto each motor.<span class="bk">Follow the booklet page for this step.</span></li>
+      <li><span class="st">Add the ball</span>Add the ping pong ball. It helps the robot roll.<span class="bk">Follow the booklet page for this step.</span></li>
+      <li><span class="st">Use the rubber band</span>Use the rubber band where the booklet shows.<span class="bk">Follow the booklet page for this step.</span></li>
+      <li><span class="st">Connect the motors</span>Use the clip leads to join each motor to Motor 1 or Motor 2 on the Klip Motor Driver. Do not guess. Follow the booklet.<span class="bk">Follow the booklet page for this step.</span></li>
+      <li><span class="st">Plug in the micro:bit</span>Slide the micro:bit into the Klip Motor Driver, the right way round.<span class="bk">Follow the booklet page for this step.</span></li>
+      <li><span class="st">Add power</span>Add power the way the booklet says. Ask Mr. Capellini before you switch on.<span class="bk">Follow the booklet page for this step.</span></li>
+    </ol>
+    <p class="tip">Your booklet may put the steps in a slightly different order. If it does, follow the booklet.</p>
+
+    <h2 class="section-label">3. Check it works</h2>
+    <ul class="checklist">
+      <li><label><input type="checkbox" /><span>The wheels turn easily when you push the robot.</span></label></li>
+      <li><label><input type="checkbox" /><span>Nothing is loose. The clips are on tight.</span></label></li>
+      <li><label><input type="checkbox" /><span>The metal clips are not touching each other.</span></label></li>
+      <li><label><input type="checkbox" /><span>The micro:bit is plugged in the right way round.</span></label></li>
+      <li><label><input type="checkbox" /><span>Show Mr. Capellini. Then try Lesson 3 on the <a href="techclub-code.html" style="color:inherit">Code the robot</a> page to spin one wheel.</span></label></li>
+    </ul>
+
+    <div class="safety">
+      <h3>⚠️ Stay safe</h3>
+      <ul>
+        <li><b>Scissors:</b> cut away from your body. Walk slowly with them.</li>
+        <li><b>Batteries:</b> do not mix old and new. If a battery feels hot or smells strange, tell Mr. Capellini right away.</li>
+        <li><b>Clips:</b> never touch the metal ends of the clip leads together.</li>
+        <li><b>Power:</b> ask before you switch it on.</li>
+        <li><b>Hands:</b> keep fingers and hair away from the wheels when the robot is on.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<footer>Tech Class Hub</footer>
+
+<button class="theme-toggle" id="theme-toggle" title="Toggle light / dark mode">☀️</button>
+<script>
+(function(){const btn=document.getElementById('theme-toggle'),body=document.body;function apply(light){body.classList.toggle('light-mode',light);btn.textContent=light?'🌙':'☀️';btn.title=light?'Switch to dark mode':'Switch to light mode';}let l=false;try{l=localStorage.getItem('theme')==='light';}catch(e){}apply(l);btn.addEventListener('click',()=>{const light=!body.classList.contains('light-mode');apply(light);try{localStorage.setItem('theme',light?'light':'dark');}catch(e){}});})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="teacher-role.js"></script>
+<script src="techclub.js"></script>
+<script>TechClub.requireMember();</script>
+</body>
+</html>
